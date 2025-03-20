@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Bonk.io Skin Search{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'skins/styles.css' %}">
+    <script src="{% static 'skins/scripts.js' %}" defer></script>
+</head>
+<body>
+
+    <!-- ✅ Navbar (Included in all views) -->
+    {% include 'skins/navbar.html' %}
+
+    <!-- ✅ Global Notifications (Success, Error, Info) -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="notification {% if

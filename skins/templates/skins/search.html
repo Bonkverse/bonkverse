@@ -1,0 +1,54 @@
+{% extends 'skins/base.html' %}
+
+{% block title %}Bonk.io Skin Search{% endblock %}
+
+{% block content %}
+    <h1>Bonk.io Skin Search</h1>
+    <form method="GET" action="{% url 'search_skins' %}">
+        <input type="text" name="q" placeholder="Search skins..." value="{{ query }}">
+        <br>
+        <br>
+        <button type="submit">Search</button>
+    </form>
+    <br>
+    <br>
+
+    <div class="skins-container">
+        {% for skin in skins %}
+            <div class="skin-card">
+                <img src="{{ MEDIA_URL }}{{ skin.image_url|default:'default_skin_url.png' }}" 
+                     alt="{{ skin.name }}" width="100"
+                     onclick="showImage(`{{ MEDIA_URL }}{{ skin.image_url|default:'default_skin_url.png' }}`)">
+                
+                <br>
+                <strong title="{{ skin.name }}">
+                    {{ skin.name|truncatechars:20 }}
+                <br>
+                </strong> by 
+                <span title="{{ skin.creator }}">
+                    {{ skin.creator|truncatechars:20 }}
+                </span>
+                <br>
+                <a href="{{ skin.link }}" target="_blank">View</a>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <!-- 🔹 Modal (Hidden by Default) -->
+    <div id="imageModal" class="modal" onclick="closeImage()">
+        <span class="close">&times;</span>
+        <img class="modal-content" id="zoomedImage">
+    </div>    
+
+    {% if skins.has_other_pages %}
+    <div class="pagination">
+        {% if skins.has_previous %}
+            <a href="?q={{ query }}&page=1">&laquo; First</a>
+            <a href="?q={{ query }}&page={{ skins.previous_page_number }}">Prev</a>
+        {% endif %}
+
+        <span class="current-page">Page {{ skins.number }} of {{ skins.paginator.num_pages }}</span>
+
+        {% if skins.has_next %}
+            <a href="?q={{ query }}&page={{ skins.next_page_number }}">Next</a>
+            <a href="?q={{ query }}&page={{ skins.paginator.num_pag

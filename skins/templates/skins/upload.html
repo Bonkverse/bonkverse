@@ -1,0 +1,28 @@
+{% extends 'skins/base.html' %}
+
+{% block title %}Upload a Bonk.io Skin{% endblock %}
+
+{% block content %}
+    <h1>Upload a Bonk.io Skin</h1>
+
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+
+    <div id="loading" style="display: none;">
+        <p>⏳ Uploading and processing your skin... Please wait!</p>
+    </div>
+
+    <div class="form-container">
+        <form id="upload-form" method="POST" action="{% url 'upload_skin' %}" onsubmit="return validateForm()">
+            {% csrf_token %}
+            
+            <label for="skin_name">Skin Name</label>
+            <i>(If you don't know the creator, please put UnknownSkinCreator)</i>
+            <input type="text" id="skin_name" name="skin_name" placeholder="Enter skin name..." required maxlength="1000">
+
+            <label for="creator">Creator</label>
+            <input type="text" id="creator" name="creator" placeholder="Enter creator name..." required maxlength="1000" autocomplete="off">
+            
+            <!-- Skin Creator Suggestions Label -->
+            <p id="creator-suggestions-label" cla
