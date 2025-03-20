@@ -51,4 +51,8 @@
 
         {% if skins.has_next %}
             <a href="?q={{ query }}&page={{ skins.next_page_number }}">Next</a>
-            <a href="?q={{ query }}&page={{ skins.paginator.num_pag
+            <a href="?q={{ query }}&page={{ skins.paginator.num_pages }}">Last &raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+{% endblock %}

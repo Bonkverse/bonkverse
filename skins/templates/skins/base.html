@@ -16,4 +16,18 @@
     <!-- ✅ Global Notifications (Success, Error, Info) -->
     {% if messages %}
         {% for message in messages %}
-            <div class="notification {% if
+            <div class="notification {% if message.tags %}{{ message.tags }}{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+
+
+    <!-- ✅ Main content (Each page inserts its content here) -->
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
+
+</body>
+</html>
