@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import dj_database_url
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -36,9 +37,10 @@ DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 SECRET_KEY = 'django-insecure-yk9clj4v65h-g9k74n2j%gx=uwp*ar*q#%mcox1qv6k()#u9zq'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["bonkverse-production.up.railway.app", "bonkverse.io"]
+
 
 
 # Application definition
@@ -88,23 +90,20 @@ WSGI_APPLICATION = 'bonk_skin_search.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+
 # DATABASES = {
 #     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / "db.sqlite3",
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'bonk_skin_search',
+#         'USER': 'admin',
+#         'PASSWORD': 'Teamj#1234',
+#         'HOST': 'localhost',
+#         'PORT': '5432',
 #     }
 # }
 
-
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'bonk_skin_search',
-        'USER': 'admin',
-        'PASSWORD': 'Teamj#1234',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
+    'default': dj_database_url.config(default=os.getenv("DATABASE_URL"))
 }
 
 

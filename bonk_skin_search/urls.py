@@ -31,7 +31,3 @@ urlpatterns = [
     path('upload/', upload_skin, name="upload_skin"),  # New Upload Page
     path('autocomplete-creator/', autocomplete_creator, name='autocomplete_creator'),
 ]
-
-# ✅ Serve media files in development mode
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT
