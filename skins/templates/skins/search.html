@@ -16,9 +16,10 @@
     <div class="skins-container">
         {% for skin in skins %}
             <div class="skin-card">
-                <img src="{{ MEDIA_URL }}{{ skin.image_url|default:'default_skin_url.png' }}" 
-                     alt="{{ skin.name }}" width="100"
-                     onclick="showImage(`{{ MEDIA_URL }}{{ skin.image_url|default:'default_skin_url.png' }}`)">
+                <img src="{{ skin.image_url|default:'https://bonkverse-skins.s3.us-east-2.amazonaws.com/uploads/defaults/default_skin_url.png' }}"
+                    alt="{{ skin.name }}" width="100"
+                    onclick="showImage(`{{ skin.image_url|default:'default_skin_url.png' }}`)">
+
                 
                 <br>
                 <strong title="{{ skin.name }}">
@@ -53,6 +54,4 @@
             <a href="?q={{ query }}&page={{ skins.next_page_number }}">Next</a>
             <a href="?q={{ query }}&page={{ skins.paginator.num_pages }}">Last &raquo;</a>
         {% endif %}
-    </div>
-    {% endif %}
-{% endblock %}
+    </

@@ -25,4 +25,81 @@
             <input type="text" id="creator" name="creator" placeholder="Enter creator name..." required maxlength="1000" autocomplete="off">
             
             <!-- Skin Creator Suggestions Label -->
-            <p id="creator-suggestions-label" cla
+            <p id="creator-suggestions-label" class="suggestion-label">Skin Creator Suggestions:</p>
+
+            <!-- Suggestions Box -->
+            <ul id="creator-suggestions" class="suggestions"></ul>
+
+            <br>
+            <label for="bonkleagues_link">Bonkleagues Skin URL</label>
+            <br>
+            <input type="url" id="bonkleagues_link" name="bonkleagues_link" placeholder="Paste Bonkleagues link..." required>
+            
+            <p id="error-message" class="error" style="display:none; color: red;"></p>
+
+            <button type="submit">Upload Skin</button>
+        </form>
+    </div>
+
+    <script>
+        function validateForm() {
+            let skinName = document.getElementById("skin_name").value.trim();
+            let creator = document.getElementById("creator").value.trim();
+            let bonkleaguesLink = document.getElementById("bonkleagues_link").value.trim();
+            let errorMessage = document.getElementById("error-message");
+
+            let bonkRegex = /^https:\/\/bonkleagues\.io\/s\/([A-Za-z0-9]{7})$/;
+
+            if (!skinName || !creator || !bonkleaguesLink) {
+                errorMessage.innerText = "All fields are required.";
+                errorMessage.style.display = "block";
+                return false;
+            }
+
+            if (skinName.length > 1000 || creator.length > 1000) {
+                errorMessage.innerText = "Skin name and creator must be under 1000 characters.";
+                errorMessage.style.display = "block";
+                return false;
+            }
+
+            if (!bonkRegex.test(bonkleaguesLink)) {
+                errorMessage.innerText = "Invalid Bonkleagues link format.";
+                errorMessage.style.display = "block";
+                return false;
+            }
+
+            showLoading();
+            return true;
+        }
+
+        // Autocomplete Creator Input
+        document.getElementById("creator").addEventListener("input", function () {
+            let query = this.value.trim();
+            let suggestionBox = document.getElementById("creator-suggestions");
+
+            if (query.length < 2) {
+                suggestionBox.innerHTML = "";
+                return;
+            }
+
+            fetch(`/autocomplete-creator/?q=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    suggestionBox.innerHTML = "";
+                    data.forEach(creator => {
+                        let suggestionItem = document.createElement("li");
+                        suggestionItem.innerText = creator;
+                        suggestionItem.onclick = function () {
+                            document.getElementById("creator").value = creator;
+                            suggestionBox.innerHTML = "";
+                        };
+                        suggestionBox.appendChild(suggestionItem);
+                    });
+                });
+        });
+
+        function showLoading() {
+            document.getElementById("loading").style.display = "block";
+            document.getElementById("upload-form").style.display = "none";
+        }
+   
