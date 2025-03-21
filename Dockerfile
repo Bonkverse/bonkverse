@@ -1,12 +1,11 @@
 # Use an official Python runtime as a parent image
-#
 FROM python:3.12
 
 # Set the working directory
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y libpq-dev
+RUN apt-get update && apt-get install -y libpq-dev libgl1
 
 # Install dependencies
 COPY requirements.txt .
