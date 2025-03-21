@@ -8,6 +8,10 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y libpq-dev libgl1
 
+# Install Playwright and its dependencies
+RUN pip install playwright
+RUN playwright install --with-deps
+
 # Install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
