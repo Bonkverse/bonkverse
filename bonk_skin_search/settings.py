@@ -23,6 +23,11 @@ STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://bonkverse.io",
+    "https://www.bonkverse.io"
+]
+
 # AWS S3 STORAGE SETTINGS
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")  # Make sure this is set in your environment
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")  # Make sure this is set in your environment
