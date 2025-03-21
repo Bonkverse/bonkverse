@@ -1,20 +1,18 @@
-FROM python:3.12-slim
+# Use an official Python runtime as a parent image
+FROM python:3.12
 
-# Install dependencies
-RUN apt-get update && apt-get install -y \
-    libgl1 \
-    libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set working directory
+# Set the working directory
 WORKDIR /app
 
-# Install Python deps
+# Install system dependencies
+RUN apt-get update && apt-get install -y libpq-dev
+
+# Install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project
+# Copy the rest of the application
 COPY . .
 
-# Start server (adjust as needed)
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "bonk_skin_search.wsgi:application"]
+# Set the command to run the application
+CMD ["gunicorn", "-b", "0.0.0.0:8000", "bonk_skin_search.wsgi:application"]
