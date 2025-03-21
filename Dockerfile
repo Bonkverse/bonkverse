@@ -16,4 +16,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Set the command to run the application
-CMD ["gunicorn", "-b", "0.0.0.0:$PORT", "--access-logfile", "-", "--error-logfile", "-", "bonk_skin_search.wsgi:application"]
+CMD ["gunicorn", "-b", "0.0.0.0:8080", "--access-logfile", "-", "--error-logfile", "-", "bonk_skin_search.wsgi:application"]
