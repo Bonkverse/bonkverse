@@ -30,7 +30,7 @@ def search_skins(request):
             "name": skin.name,
             "creator": skin.creator,
             "link": skin.link,
-            "image_url": f"{AWS_BASE_URL}/skinUrl{skin.id}.png"
+            "image_url": skin.image_url
         }
         for skin in skins
     ]
