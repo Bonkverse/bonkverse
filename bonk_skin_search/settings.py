@@ -165,4 +165,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMem
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-skin-cache",
+    }
+}
+
