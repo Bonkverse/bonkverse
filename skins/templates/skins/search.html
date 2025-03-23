@@ -16,9 +16,9 @@
     <div class="skins-container">
         {% for skin in skins %}
             <div class="skin-card">
-                <img src="{{ skin.image_url|default:'https://bonkverse-skins.s3.us-east-2.amazonaws.com/uploads/defaults/default_skin_url.png' }}"
+                <img src="{{ skin.image_url|default:'https://bonkleaguebot.herokuapp.com/avatar.svg?skinCode=CgcDYQACCQkBCgcFYWwAAQBNPlt5PUI19d8%2FGMUDPsJvGgAAAAAAAAoFAAEATT5beT1CNfXfvvn8kL80i70BAAAAAAAKBQABAEs%2BgkonQjVq%2FL2vivk9L4r5AAAAzxsPCgUAAQANP1yl2D9VbKUAAAAAAAAAAAAAAM8bDwAAAAA%3D' }}"
                     alt="{{ skin.name }}" width="100"
-                    onclick="showImage(`{{ skin.image_url|default:'default_skin_url.png' }}`)">
+                    onclick="showImage(`{{ skin.image_url}}`)">
 
                 
                 <br>

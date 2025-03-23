@@ -8,8 +8,6 @@ import random
 from django.contrib.postgres.search import SearchVector
 from django.contrib.postgres.search import TrigramSimilarity
 
-AWS_BASE_URL = "https://bonkverse-skins.s3.us-east-2.amazonaws.com/uploads/cropped"
-
 def search_skins(request):
     query = request.GET.get("q", "").strip()
     page_number = request.GET.get("page", 1)

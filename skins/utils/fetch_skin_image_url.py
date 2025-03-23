@@ -1,10 +1,7 @@
+import urllib.parse
 from playwright.sync_api import sync_playwright
 
 def fetch_skin_image_url(bonkleagues_link):
-    """
-    Uses Playwright to fetch the Bonkleagues skin image URL from the shared image element.
-    Returns the direct image URL or None if not found.
-    """
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
@@ -12,10 +9,23 @@ def fetch_skin_image_url(bonkleagues_link):
             page.goto(bonkleagues_link, wait_until="domcontentloaded")
 
             image_element = page.locator("//img[@id='sharedimg']")
-            skin_image_url = image_element.get_attribute("src") if image_element.count() > 0 else None
+            image_url = image_element.get_attribute("src") if image_element.count() > 0 else None
             browser.close()
 
-        return skin_image_url
+            if not image_url:
+                return None
+
+            parsed = urllib.parse.urlparse(image_url)
+            query_params = urllib.parse.parse_qs(parsed.query)
+            skin_code = query_params.get("skinCode", [None])[0]
+
+            if not skin_code:
+                return None
+
+            # Construct API URL
+            svg_url = f"https://bonkleaguebot.herokuapp.com/avatar.svg?skinCode={urllib.parse.quote(skin_code)}"
+            return svg_url
+
     except Exception as e:
-        print(f"❌ Error fetching image URL: {e}")
+        print(f"❌ Error fetching skin image URL: {e}")
         return None
