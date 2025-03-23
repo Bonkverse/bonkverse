@@ -50,7 +50,7 @@ SECRET_KEY = 'django-insecure-yk9clj4v65h-g9k74n2j%gx=uwp*ar*q#%mcox1qv6k()#u9zq
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["bonkverse-production.up.railway.app", "bonkverse.io"]
+ALLOWED_HOSTS = ["bonkverse-production.up.railway.app", "bonkverse.io", "127.0.0.1", "localhost",]
 
 
 
