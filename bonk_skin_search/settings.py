@@ -16,8 +16,6 @@ import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-MEDIA_URL = "/media/"
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "skins/static")]
@@ -30,15 +28,9 @@ CSRF_TRUSTED_ORIGINS = [
     "https://www.bonkverse.io"
 ]
 
-# AWS S3 STORAGE SETTINGS
-AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")  # Make sure this is set in your environment
-AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")  # Make sure this is set in your environment
-AWS_STORAGE_BUCKET_NAME = "bonkverse-skins"  # Replace with your actual bucket name
-AWS_S3_REGION_NAME = "us-east-2"  # Replace with your bucket's region
-AWS_S3_CUSTOM_DOMAIN = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
 
 # DEFAULT STORAGE BACKEND (Using S3 Instead of Local Storage)
-DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+DEFAULT_FILE_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 
 # Quick-start development settings - unsuitable for production
