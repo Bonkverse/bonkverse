@@ -166,15 +166,17 @@ button {
 
 
 .skin-card {
-    justify-content: space-between; /* Even spacing */
+    justify-content: space-between;
     width: 200px;
-    height: 270px;
+    height: auto;
     border: 4px solid #F20369;
     border-radius: 8px;
     padding: 10px;
     text-align: center;
     color: #ddd;
     background: #000;
+    position: relative;
+    overflow: hidden;
 }
 
 .skin-card img {
@@ -192,7 +194,7 @@ button {
 }
 
 .skin-card strong {
-    min-height: 30px; /* Adjust as needed */
+    min-height: 30px; 
 }
 
 .skin-card span {
@@ -208,24 +210,90 @@ button {
     text-overflow: ellipsis;
 }
 
-/* 🔹 Ensures the View link stays at the bottom */
-.skin-card a {
+.skin-card a.view-btn {
     background-color: #F20369;
     padding: 14px 25px;
     text-align: center;
     text-decoration: none;
     display: inline-block;
     border-radius: 8px;
-    margin-top: auto; /* Pushes it to the bottom */
-    padding-bottom: 10px; /* Adds a little space */
+    margin-top: auto; 
+    padding-bottom: 10px;
     color: #ddd;
     transition: transform 0.2s ease-in-out;
 }
 
-.skin-card a:hover {
+.skin-card a.view-btn:hover {
     transform: scale(1.1);
     color: #fcfbfb;
 }
+
+/* Container for top-right icons */
+.icon-actions {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    display: flex;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.icon-actions form {
+    all: unset; /* Reset all inherited form styles */
+    display: inline; /* Allow it to sit next to the edit icon */
+}
+
+.icon-actions form {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+    display: inline;
+}
+
+
+
+/* Generic icon button styling */
+.icon-btn {
+    background: none;
+    text-decoration: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #ddd;
+    padding: 0;
+    margin: 0;
+    transition: transform 0.2s ease-in-out;
+}
+
+.icon-btn:hover {
+    transform: scale(1.2);
+}
+
+/* Specific colors for each icon */
+.edit-icon {
+    color: #7bb1ff;
+}
+
+.edit-icon:hover {
+    color: #a6ceff;
+}
+
+.delete-icon {
+    color: #ff4d4d;
+}
+
+.delete-icon:hover {
+    color: #ff7777;
+}
+
+/* Fix form alignment inside icon-actions */
+.delete-form {
+    display: inline;
+}
+
+
 
 /* Image Modal */
 .modal {
@@ -239,6 +307,10 @@ button {
     background-color: rgba(0, 0, 0, 0.8);
     align-items: center;
     justify-content: center;
+}
+
+.edit-btn:hover {
+    background-color: #777;
 }
 
 /* Enlarged Image */
@@ -272,9 +344,11 @@ button {
 .pagination a {
     padding: 10px 15px;
     margin: 5px;
-    border: 1px solid #ddd;
     text-decoration: none;
-    color: #333;
+    color: #ddd;
+    background-color: #F20369;
+    text-align: center;
+    border-radius: 8px;
 }
 
 .pagination a.active {
@@ -309,6 +383,7 @@ button {
     display: inline;
 }
 
+
 .nav-links a {
     color: white;
     text-decoration: none;
@@ -321,6 +396,15 @@ button {
 
 .nav-links a:hover {
     background-color: #444; /* Slight highlight on hover */
+}
+
+.nav-links a.username-link {
+    color: #ff007f;  /* Light blue username */
+    background-color: transparent;
+}
+
+.nav-links a.username-link:hover {
+    background-color: #444;  /* Optional hover effect */
 }
 
 

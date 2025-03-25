@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 
 # Create your models here.
 
@@ -11,3 +12,23 @@ class Skin(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.link})"
+
+class BonkUserManager(BaseUserManager):
+    def create_user(self, username):
+        if not username:
+            raise ValueError("Bonk.io username is required")
+        user = self.model(username=username)
+        user.set_unusable_password()  # don't store Bonk.io passwords
+        user.save(using=self._db)
+        return user
+
+class BonkUser(AbstractBaseUser):
+    username = models.CharField(max_length=100, unique=True)
+    date_joined = models.DateTimeField(auto_now_add=True)
+
+    objects = BonkUserManager()
+
+    USERNAME_FIELD = 'username'
+
+    def __str__(self):
+        return self.username

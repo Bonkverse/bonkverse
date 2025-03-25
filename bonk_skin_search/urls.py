@@ -21,6 +21,9 @@ from skins.upload import upload_skin
 from skins.upload import upload_skin, autocomplete_creator
 from django.conf import settings
 from django.conf.urls.static import static
+from skins.login import login_view, logout_view
+from skins.my_profile import my_profile, edit_skin, delete_skin
+
 
 
 
@@ -30,4 +33,10 @@ urlpatterns = [
     path("", search_skins, name="home"),  # Home page is now the search page
     path('upload/', upload_skin, name="upload_skin"),  # New Upload Page
     path('autocomplete-creator/', autocomplete_creator, name='autocomplete_creator'),
+    path('login/', login_view, name='login'),
+    path('logout/', logout_view, name='logout'),
+    path('my-profile/', my_profile, name='my_profile'),
+    path('skin/<int:skin_id>/delete/', delete_skin, name='delete_skin'),
+    path('skin/<int:skin_id>/edit/', edit_skin, name='edit_skin'),
+
 ]
