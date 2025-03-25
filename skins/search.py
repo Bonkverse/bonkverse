@@ -6,6 +6,7 @@ from skins.models import Skin
 from django.conf import settings
 import random
 from django.utils import timezone
+from datetime import timedelta
 from django.contrib.postgres.search import SearchVector
 from django.contrib.postgres.search import TrigramSimilarity
 
@@ -37,8 +38,19 @@ def search_skins(request):
     paginator = Paginator(skins_data, per_page)
     page_obj = paginator.get_page(page_number)
 
-    today = timezone.now().date()
-    daily_skin_count = Skin.objects.filter(created_at__date=today).count()
+    # Get the user's timezone offset from the query string (in minutes)
+    try:
+        tz_offset_minutes = int(request.GET.get("tz_offset", "0"))
+    except ValueError:
+        tz_offset_minutes = 0
+
+    # Get user's local time by adjusting from UTC
+    now_utc = timezone.now()
+    user_now = now_utc - timedelta(minutes=tz_offset_minutes)
+    user_today = user_now.date()
+
+    # Count skins created on the user's local "today"
+    daily_skin_count = Skin.objects.filter(created_at__date=user_today).count()
     total_skin_count = Skin.objects.all().count()
 
     return render(request, "skins/search.html", {
