@@ -32,7 +32,7 @@
                     {{ skin.creator|truncatechars:20 }}
                 </span>
                 <br>
-                <a href="{{ skin.link }}" target="_blank">View</a>
+                <a href="{{ skin.link }}" target="_blank" class="view-btn">View</a>
             </div>
         {% endfor %}
     </div>
@@ -60,6 +60,7 @@
     {% endif %}
 {% endblock %}
 
+{% block extra_scripts %}
 <script>
     const url = new URL(window.location.href);
   
@@ -69,4 +70,4 @@
       window.location.replace(url.toString());
     }
   </script>
-  
+{% endblock %}
