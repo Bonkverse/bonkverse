@@ -5,6 +5,7 @@ from django.core.paginator import Paginator
 from skins.models import Skin
 from django.conf import settings
 import random
+from django.utils import timezone
 from django.contrib.postgres.search import SearchVector
 from django.contrib.postgres.search import TrigramSimilarity
 
@@ -36,7 +37,11 @@ def search_skins(request):
     paginator = Paginator(skins_data, per_page)
     page_obj = paginator.get_page(page_number)
 
+    today = timezone.now().date()
+    daily_skin_count = Skin.objects.filter(created_at__date=today).count()
+
     return render(request, "skins/search.html", {
         "skins": page_obj,
-        "query": query
+        "query": query,
+        'daily_skin_count': daily_skin_count
     })
