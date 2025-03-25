@@ -39,9 +39,11 @@ def search_skins(request):
 
     today = timezone.now().date()
     daily_skin_count = Skin.objects.filter(created_at__date=today).count()
+    total_skin_count = Skin.objects.all().count()
 
     return render(request, "skins/search.html", {
         "skins": page_obj,
         "query": query,
-        'daily_skin_count': daily_skin_count
+        'daily_skin_count': daily_skin_count,
+        'total_skin_count': total_skin_count,
     })
