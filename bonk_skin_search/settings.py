@@ -14,6 +14,8 @@ from pathlib import Path
 import dj_database_url
 import os
 
+AUTH_USER_MODEL = 'skins.BonkUser'
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -42,7 +44,7 @@ SECRET_KEY = 'django-insecure-yk9clj4v65h-g9k74n2j%gx=uwp*ar*q#%mcox1qv6k()#u9zq
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["bonkverse-production.up.railway.app", "bonkverse.io", "127.0.0.1", "localhost",]
+ALLOWED_HOSTS = ["bonkverse-production.up.railway.app", "bonkverse.io", "127.0.0.1", "localhost", "172.26.54.223"]
 
 
 

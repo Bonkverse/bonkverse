@@ -1,0 +1,79 @@
+{% extends 'skins/base.html' %}
+
+{% block title %}My Skins - {{ user.username }}{% endblock %}
+
+{% block content %}
+
+    <h1>{{ user.username }}'s Skins</h1>
+    <br>
+
+    <div class="skins-container">
+        {% for skin in skins %}
+            <div class="skin-card">
+                <div class="icon-actions">
+                    <!-- 🖊 Edit Icon -->
+                    <a href="{% url 'edit_skin' skin.id %}" class="icon-btn edit-icon" title="Edit Skin">🖊</a>
+                
+                    <!-- 🗑️ Delete Icon -->
+                    <form method="POST" action="{% url 'delete_skin' skin.id %}" class="delete-form" onsubmit="return confirmDelete(event);">
+                        {% csrf_token %}
+                        <button type="submit" class="icon-btn delete-icon" title="Delete Skin">🗑</button>
+                    </form>
+                </div>
+
+                <br>
+
+                <img src="{{ skin.image_url|default:'https://bonkleaguebot.herokuapp.com/avatar.svg?skinCode=CgcDYQACCQkBCgcFYWwAAQBNPlt5PUI19d8%2FGMUDPsJvGgAAAAAAAAoFAAEATT5beT1CNfXfvvn8kL80i70BAAAAAAAKBQABAEs%2BgkonQjVq%2FL2vivk9L4r5AAAAzxsPCgUAAQANP1yl2D9VbKUAAAAAAAAAAAAAAM8bDwAAAAA%3D' }}"
+                     alt="{{ skin.name }}" width="100"
+                     onclick="showImage(`{{ skin.image_url }}`)">
+                <br>
+                <strong title="{{ skin.name }}">{{ skin.name|truncatechars:20 }}</strong>
+                by <span title="{{ skin.creator }}">{{ skin.creator|truncatechars:20 }}</span>
+                <br>
+                <a href="{{ skin.link }}" target="_blank" class="view-btn">View</a>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if skins|length == 0 %}
+        <p>You haven't uploaded any skins yet.</p>
+    {% endif %}
+
+    <!-- 🔽 Pagination -->
+    {% if skins.has_other_pages %}
+    <div class="pagination">
+        {% if skins.has_previous %}
+            <a href="?page=1">&laquo; First</a>
+            <a href="?page={{ skins.previous_page_number }}">Prev</a>
+        {% endif %}
+
+        <span class="current-page">Page {{ skins.number }} of {{ skins.paginator.num_pages }}</span>
+
+        {% if skins.has_next %}
+            <a href="?page={{ skins.next_page_number }}">Next</a>
+            <a href="?page={{ skins.paginator.num_pages }}">Last &raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Modal -->
+    <div id="imageModal" class="modal" onclick="closeImage()">
+        <span class="close">&times;</span>
+        <img class="modal-content" id="zoomedImage">
+    </div>    
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function confirmDelete(event) {
+        if (!confirm("Are you sure you want to delete this skin?")) {
+            event.preventDefault();
+            return false;
+        }
+        return true;
+    }
+</script>
+{% endblock %}
+
+    
