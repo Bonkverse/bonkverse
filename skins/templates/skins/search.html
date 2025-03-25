@@ -3,7 +3,9 @@
 {% block title %}Bonk.io Skin Search{% endblock %}
 
 {% block content %}
+
     <h1>Bonk.io Skin Search</h1>
+    <h2>🔥 Skins uploaded today: {{ daily_skin_count }}</h2>
     <form method="GET" action="{% url 'search_skins' %}">
         <input type="text" name="q" placeholder="Search skins..." value="{{ query }}">
         <br>
