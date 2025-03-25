@@ -38,20 +38,31 @@ def search_skins(request):
     paginator = Paginator(skins_data, per_page)
     page_obj = paginator.get_page(page_number)
 
-    # Get the user's timezone offset from the query string (in minutes)
+   # Get user's local time by adjusting from UTC
+    now_utc = timezone.now()
     try:
         tz_offset_minutes = int(request.GET.get("tz_offset", "0"))
     except ValueError:
         tz_offset_minutes = 0
 
-    # Get user's local time by adjusting from UTC
-    now_utc = timezone.now()
+    # Convert UTC now to user's local time
     user_now = now_utc - timedelta(minutes=tz_offset_minutes)
-    user_today = user_now.date()
 
-    # Count skins created on the user's local "today"
-    daily_skin_count = Skin.objects.filter(created_at__date=user_today).count()
-    total_skin_count = Skin.objects.all().count()
+    # Get the start and end of the user's local "today"
+    user_today_start = user_now.replace(hour=0, minute=0, second=0, microsecond=0)
+    user_today_end = user_today_start + timedelta(days=1)
+
+    # Convert local start/end times back to UTC (to match DB storage)
+    user_today_start_utc = user_today_start + timedelta(minutes=tz_offset_minutes)
+    user_today_end_utc = user_today_end + timedelta(minutes=tz_offset_minutes)
+
+    # Count skins created within that range
+    daily_skin_count = Skin.objects.filter(
+        created_at__range=(user_today_start_utc, user_today_end_utc)
+    ).count()
+
+    # Total skins overall
+    total_skin_count = Skin.objects.count()
 
     return render(request, "skins/search.html", {
         "skins": page_obj,
