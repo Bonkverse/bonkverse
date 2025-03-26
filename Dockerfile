@@ -6,7 +6,7 @@ FROM python:3.12
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y libpq-dev libgl1
+RUN apt-get update && apt-get install -y libpq-dev libgl1 qt5-qmake qtbase5-dev
 
 # Install Playwright and its dependencies
 RUN pip install playwright

@@ -1,16 +1,10 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
-from django.db.models import Q
-from django.core.paginator import Paginator
 from django.conf import settings
 from django.urls import reverse
 from django.contrib import messages
 from skins.models import Skin
 from skins.utils.fetch_skin_image_url import fetch_skin_image_url  # You should have this as a separate utility
-import boto3
-import os
-import requests
-import cv2
 import re
 
 bonk_url_pattern = r"^https://bonkleagues\.io/s/([A-Za-z0-9]{7})$"
