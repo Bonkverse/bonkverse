@@ -17,7 +17,7 @@ def search_skins(request):
 
     if query:
         skins = Skin.objects.annotate(
-            search=SearchVector("name", "creator")
+            search=SearchVector("name", "creator", "description")
         ).filter(search=query)
     else:
         skins = list(Skin.objects.all())
