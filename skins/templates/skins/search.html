@@ -67,7 +67,9 @@
     if (!url.searchParams.get('tz_offset')) {
       const tzOffset = new Date().getTimezoneOffset(); // e.g. -240 for EDT
       url.searchParams.set('tz_offset', tzOffset);
-      window.location.replace(url.toString());
+      window.history.replaceState({}, '', url.toString());
     }
   </script>
+
+  
 {% endblock %}

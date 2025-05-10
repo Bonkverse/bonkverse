@@ -7,6 +7,7 @@
     <title>{% block title %}Bonk.io Skin Search{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'skins/styles.css' %}">
     <script src="{% static 'skins/scripts.js' %}" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
     <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
 </head>
 <body>
@@ -26,9 +27,58 @@
 
 
     <!-- ✅ Main content (Each page inserts its content here) -->
+    <div id="particles-js"></div>
+
     <div class="content">
         {% block content %}{% endblock %}
     </div>
+
+    <script>
+        particlesJS("particles-js", {
+          "particles": {
+            "number": {
+              "value": 120,
+              "density": {
+                "enable": true,
+                "value_area": 1000
+              }
+            },
+            "color": { "value": ["#ffffff", "#00c3ff", "#ff99ff", "#ffcc00"] },  // white stars
+            "shape": {
+              "type": "circle"
+            },
+            "opacity": {
+              "value": 0.9,
+              "random": true
+            },
+            "size": {
+              "value": 2.5,
+              "random": true
+            },
+            "line_linked": {
+              "enable": false  // 👈 disables constellation lines
+            },
+            "move": {
+              "enable": true,
+              "speed": 0.8,
+              "direction": "none",
+              "random": true,
+              "straight": false,
+              "out_mode": "out"
+            }
+          },
+          "interactivity": {
+            "detect_on": "canvas",
+            "events": {
+              "onhover": { "enable": false },
+              "onclick": { "enable": false }
+            }
+          },
+          "retina_detect": true
+        });
+    </script>
+        
+        
 
     {% block extra_scripts %}{% endblock %}
 
