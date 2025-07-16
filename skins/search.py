@@ -18,7 +18,7 @@ def search_skins(request):
     if query:
         skins = Skin.objects.annotate(
             search=SearchVector("name", "creator", "description")
-        ).filter(search=query)
+        ).filter(search=query).order_by("creator")
     else:
         skins = list(Skin.objects.all())
         random.shuffle(skins)
