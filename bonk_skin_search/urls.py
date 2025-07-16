@@ -23,6 +23,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from skins.login import login_view, logout_view
 from skins.my_profile import my_profile, edit_skin, delete_skin
+from skins.bonkbot import matchmaking_page, join_matchmaking
 
 
 
@@ -38,5 +39,8 @@ urlpatterns = [
     path('my-profile/', my_profile, name='my_profile'),
     path('skin/<int:skin_id>/delete/', delete_skin, name='delete_skin'),
     path('skin/<int:skin_id>/edit/', edit_skin, name='edit_skin'),
+    path('matchmaking/', matchmaking_page, name='matchmaking'),
+    path('api/join-matchmaking/', join_matchmaking),
+
 
 ]
