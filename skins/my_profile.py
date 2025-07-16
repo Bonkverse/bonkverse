@@ -9,7 +9,7 @@ from django.core.paginator import Paginator
 @login_required
 def my_profile(request):
     user = request.user
-    user_skins = Skin.objects.filter(creator__iexact=user.username)
+    user_skins = Skin.objects.filter(creator__iexact=user.username).order_by("name")
     paginator = Paginator(user_skins, 20)
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
