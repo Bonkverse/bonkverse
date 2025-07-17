@@ -23,7 +23,7 @@ def fetch_skin_image_url(bonkleagues_link):
                 return None
 
             # Construct API URL
-            svg_url = f"https://bonkleaguebot.herokuapp.com/avatar.svg?skinCode={urllib.parse.quote(skin_code)}"
+            svg_url = f"https://bonkleagues.io/api/avatar.svg?skinCode={urllib.parse.quote(skin_code)}"
             return svg_url
 
     except Exception as e:
