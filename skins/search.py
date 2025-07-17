@@ -24,7 +24,7 @@ def search_skins(request):
         random.shuffle(skins)
         skins = skins[:50]
 
-    # Convert skin list to include full AWS URLs
+    # Convert skin list to include full AWS URLs fr
     skins_data = [
         {
             "name": skin.name,
