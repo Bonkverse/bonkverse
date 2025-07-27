@@ -159,7 +159,8 @@ button {
 }
 
 .home-icon {
-    width: 80px;  /* Adjust the size */
+    margin-top: 10px;
+    width: 60px;
     height: auto;
     border-radius: 50%;
     object-fit: cover;
