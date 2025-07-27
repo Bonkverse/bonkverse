@@ -161,7 +161,15 @@ button {
 .home-icon {
     width: 80px;  /* Adjust the size */
     height: auto;
+    border-radius: 50%;
+    object-fit: cover;
 }
+
+.home-icon:hover {
+  transform: scale(1.05);
+  transition: transform 0.2s ease-in-out;
+}
+
 
 
 .skins-container {
