@@ -3,105 +3,73 @@
 {% block title %}Upload a Bonk.io Skin{% endblock %}
 
 {% block content %}
-    <h1>Upload a Bonk.io Skin</h1>
+  <h1>Upload a Bonk.io Skin</h1>
 
-    {% if error %}
-        <p class="error">{{ error }}</p>
-    {% endif %}
+  <!-- Django flash messages -->
+  {% if messages %}
+    <ul class="messages">
+      {% for message in messages %}
+        <li class="{{ message.tags }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
 
-    <div id="loading" style="display: none;">
-        <p>⏳ Uploading and processing your skin... Please wait!</p>
-    </div>
+  <!-- Who is submitting -->
+  <p class="muted">You’re uploading as: <strong>{{ user.username }}</strong></p>
 
-    <div class="form-container">
-        <form id="upload-form" method="POST" action="{% url 'upload_skin' %}" onsubmit="return validateForm()">
-            {% csrf_token %}
-            
-            <label for="skin_name">Skin Name</label>
-            <i>(If you don't know the creator, please put UnknownSkinCreator)</i>
-            <input type="text" id="skin_name" name="skin_name" placeholder="Enter skin name..." required maxlength="1000">
+  <div id="loading" style="display:none;">
+    <p>⏳ Uploading and processing your skin... Please wait!</p>
+  </div>
 
-            <label for="creator">Creator</label>
-            <input type="text" id="creator" name="creator" placeholder="Enter creator name..." required maxlength="1000" autocomplete="off">
-            
-            <!-- Skin Creator Suggestions Label -->
-            <p id="creator-suggestions-label" class="suggestion-label">Skin Creator Suggestions:</p>
+  <div class="form-container">
+    <form id="upload-form" method="POST" action="{% url 'upload_skin' %}" onsubmit="return validateForm()">
+      {% csrf_token %}
 
-            <!-- Suggestions Box -->
-            <ul id="creator-suggestions" class="suggestions"></ul>
+      <label for="skin_name">Skin Name</label>
+      <input type="text" id="skin_name" name="skin_name" placeholder="Enter skin name..." required maxlength="1000">
 
-            <br>
-            <label for="bonkleagues_link">Bonkleagues Skin URL</label>
-            <br>
-            <input type="url" id="bonkleagues_link" name="bonkleagues_link" placeholder="Paste Bonkleagues link..." required>
-            
-            <p id="error-message" class="error" style="display:none; color: red;"></p>
+      <label for="bonkleagues_link">Bonkleagues Skin URL</label>
+      <input type="url" id="bonkleagues_link" name="bonkleagues_link" placeholder="https://bonkleagues.io/s/ABCDEFG" required>
 
-            <button type="submit">Upload Skin</button>
-        </form>
-    </div>
+      <p id="error-message" class="error" style="display:none; color:red;"></p>
 
-    <script>
-        function validateForm() {
-            let skinName = document.getElementById("skin_name").value.trim();
-            let creator = document.getElementById("creator").value.trim();
-            let bonkleaguesLink = document.getElementById("bonkleagues_link").value.trim();
-            let errorMessage = document.getElementById("error-message");
+      <button type="submit">Upload Skin</button>
+    </form>
+  </div>
 
-            let bonkRegex = /^https:\/\/bonkleagues\.io\/s\/([A-Za-z0-9]{7})$/;
+  <script>
+    function validateForm() {
+      const skinName = document.getElementById("skin_name").value.trim();
+      const bonkleaguesLink = document.getElementById("bonkleagues_link").value.trim();
+      const errorMessage = document.getElementById("error-message");
 
-            if (!skinName || !creator || !bonkleaguesLink) {
-                errorMessage.innerText = "All fields are required.";
-                errorMessage.style.display = "block";
-                return false;
-            }
+      const bonkRegex = /^https:\/\/bonkleagues\.io\/s\/[A-Za-z0-9]{7}$/;
 
-            if (skinName.length > 1000 || creator.length > 1000) {
-                errorMessage.innerText = "Skin name and creator must be under 1000 characters.";
-                errorMessage.style.display = "block";
-                return false;
-            }
+      if (!skinName || !bonkleaguesLink) {
+        errorMessage.innerText = "All fields are required.";
+        errorMessage.style.display = "block";
+        return false;
+      }
 
-            if (!bonkRegex.test(bonkleaguesLink)) {
-                errorMessage.innerText = "Invalid Bonkleagues link format.";
-                errorMessage.style.display = "block";
-                return false;
-            }
+      if (skinName.length > 1000) {
+        errorMessage.innerText = "Skin name must be under 1000 characters.";
+        errorMessage.style.display = "block";
+        return false;
+      }
 
-            showLoading();
-            return true;
-        }
+      if (!bonkRegex.test(bonkleaguesLink)) {
+        errorMessage.innerText = "Invalid Bonkleagues link format.";
+        errorMessage.style.display = "block";
+        return false;
+      }
 
-        // Autocomplete Creator Input
-        document.getElementById("creator").addEventListener("input", function () {
-            let query = this.value.trim();
-            let suggestionBox = document.getElementById("creator-suggestions");
+      showLoading();
+      return true;
+    }
 
-            if (query.length < 2) {
-                suggestionBox.innerHTML = "";
-                return;
-            }
-
-            fetch(`/autocomplete-creator/?q=${query}`)
-                .then(response => response.json())
-                .then(data => {
-                    suggestionBox.innerHTML = "";
-                    data.forEach(creator => {
-                        let suggestionItem = document.createElement("li");
-                        suggestionItem.innerText = creator;
-                        suggestionItem.onclick = function () {
-                            document.getElementById("creator").value = creator;
-                            suggestionBox.innerHTML = "";
-                        };
-                        suggestionBox.appendChild(suggestionItem);
-                    });
-                });
-        });
-
-        function showLoading() {
-            document.getElementById("loading").style.display = "block";
-            document.getElementById("upload-form").style.display = "none";
-        }
-    </script>
-
+    function showLoading() {
+      document.getElementById("loading").style.display = "block";
+      document.getElementById("upload-form").style.display = "none";
+    }
+  </script>
 {% endblock %}

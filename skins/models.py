@@ -12,6 +12,10 @@ class Skin(models.Model):
     description = models.TextField(blank=True, null=True)
     labels = models.JSONField(blank=True, null=True)  # Django 3.1+ uses this instead of `from contrib.postgres`
     labeled_at = models.DateTimeField(blank=True, null=True)
+    upvotes = models.PositiveIntegerField(default=0)
+    downvotes = models.PositiveIntegerField(default=0)
+    favorited_by = models.ManyToManyField("BonkUser", related_name="favorite_skins", blank=True)
+
 
     def __str__(self):
         return f"{self.name} ({self.link})"
@@ -35,3 +39,18 @@ class BonkUser(AbstractBaseUser):
 
     def __str__(self):
         return self.username
+
+class SkinVote(models.Model):
+    VOTE_CHOICES = [
+        ('up', 'Upvote'),
+        ('down', 'Downvote'),
+    ]
+    user = models.ForeignKey("BonkUser", on_delete=models.CASCADE)
+    skin = models.ForeignKey(Skin, on_delete=models.CASCADE)
+    vote = models.CharField(max_length=4, choices=VOTE_CHOICES)
+
+    class Meta:
+        unique_together = ('user', 'skin')
+
+    def __str__(self):
+        return f"{self.user.username} voted {self.vote} on {self.skin.name}"

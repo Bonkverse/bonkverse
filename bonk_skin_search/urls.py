@@ -18,13 +18,14 @@ from django.contrib import admin
 from django.urls import path
 from skins.search import search_skins
 from skins.upload import upload_skin
-from skins.upload import upload_skin, autocomplete_creator
+from skins.upload import upload_skin
 from django.conf import settings
 from django.conf.urls.static import static
 from skins.login import login_view, logout_view
 from skins.my_profile import my_profile, edit_skin, delete_skin
 from skins.bonkbot import matchmaking_page, join_matchmaking
-
+from skins.skin_detail import skin_detail
+from skins.skin_votes import vote_skin_api, toggle_favorite_api
 
 
 
@@ -33,7 +34,6 @@ urlpatterns = [
     path("search/", search_skins, name="search_skins"),
     path("", search_skins, name="home"),  # Home page is now the search page
     path('upload/', upload_skin, name="upload_skin"),  # New Upload Page
-    path('autocomplete-creator/', autocomplete_creator, name='autocomplete_creator'),
     path('login/', login_view, name='login'),
     path('logout/', logout_view, name='logout'),
     path('my-profile/', my_profile, name='my_profile'),
@@ -41,6 +41,14 @@ urlpatterns = [
     path('skin/<int:skin_id>/edit/', edit_skin, name='edit_skin'),
     path('matchmaking/', matchmaking_page, name='matchmaking'),
     path('api/join-matchmaking/', join_matchmaking),
+    path('skins/<int:skin_id>/', skin_detail, name='skin_detail'),
+    # path('skins/<int:skin_id>/vote/', vote_skin, name='vote_skin'),
+    # path('skins/<int:skin_id>/favorite/', toggle_favorite, name='toggle_favorite'),
+    # NEW: AJAX/JSON endpoints used by search cards
+    path('api/skins/<int:skin_id>/vote/', vote_skin_api, name='api_vote_skin'),
+    path('api/skins/<int:skin_id>/favorite/', toggle_favorite_api, name='api_toggle_favorite'),
+
+
 
 
 ]
