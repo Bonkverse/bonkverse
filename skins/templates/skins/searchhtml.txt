@@ -1,0 +1,81 @@
+{% extends 'skins/base.html' %}
+
+{% block title %}Bonk.io Skin Search{% endblock %}
+
+{% block content %}
+
+    <h1>Bonk.io Skin Search</h1>
+    <h2>🔥 Skins uploaded today: {{ daily_skin_count }} 🔥 Total Skins: {{total_skin_count}} 🔥</h2>
+    <form method="GET" action="{% url 'search_skins' %}">
+        <input type="text" name="q" placeholder="Search skins..." value="{{ query }}">
+        <br>
+        <br>
+        <button type="submit">Search</button>
+    </form>
+    <br>
+    <br>
+
+    <div class="skins-container">
+        {% for skin in skins %}
+            <div class="skin-card">
+                <img crossorigin="anonymous" src="{{ skin.image_url|default:'https://bonkleagues.io/api/avatar.svg?skinCode=CgcDYQACCQkBCgcFYWwAAQBNPlt5PUI19d8%2FGMUDPsJvGgAAAAAAAAoFAAEATT5beT1CNfXfvvn8kL80i70BAAAAAAAKBQABAEs%2BgkonQjVq%2FL2vivk9L4r5AAAAzxsPCgUAAQANP1yl2D9VbKUAAAAAAAAAAAAAAM8bDwAAAAA%3D' }}"
+                    alt="{{ skin.name }}" width="100"
+                    onclick="showImage(`{{ skin.image_url}}`)">
+
+                
+                <br>
+                <strong title="{{ skin.name }}">
+                    {{ skin.name|truncatechars:20 }}
+                <br>
+                </strong> by 
+                <span title="{{ skin.creator }}">
+                    {{ skin.creator|truncatechars:20 }}
+                </span>
+                <br>
+                <span class="votes">🔼 {{ skin.upvotes }} 🔽 {{ skin.downvotes }}</span>
+                <br>
+                {% if skin.id %}
+                    <a href="{% url 'skin_detail' skin.id %}" class="view-btn">View Skin Details</a>
+                {% else %}
+                    <span style="color: red;">⚠️ No ID</span>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+    
+    <!-- 🔹 Modal (Hidden by Default) -->
+    <div id="imageModal" class="modal" onclick="closeImage()">
+        <span class="close">&times;</span>
+        <img class="modal-content" id="zoomedImage">
+    </div>    
+
+    {% if skins.has_other_pages %}
+    <div class="pagination">
+        {% if skins.has_previous %}
+            <a href="?q={{ query }}&page=1">&laquo; First</a>
+            <a href="?q={{ query }}&page={{ skins.previous_page_number }}">Prev</a>
+        {% endif %}
+
+        <span class="current-page">Page {{ skins.number }} of {{ skins.paginator.num_pages }}</span>
+
+        {% if skins.has_next %}
+            <a href="?q={{ query }}&page={{ skins.next_page_number }}">Next</a>
+            <a href="?q={{ query }}&page={{ skins.paginator.num_pages }}">Last &raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const url = new URL(window.location.href);
+  
+    if (!url.searchParams.get('tz_offset')) {
+      const tzOffset = new Date().getTimezoneOffset(); // e.g. -240 for EDT
+      url.searchParams.set('tz_offset', tzOffset);
+      window.history.replaceState({}, '', url.toString());
+    }
+  </script>
+
+  
+{% endblock %}

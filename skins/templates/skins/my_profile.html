@@ -7,6 +7,35 @@
     <h1>{{ user.username }}'s Skins</h1>
     <br>
 
+    <h2>Your Favorite Skins</h2>
+    <div class="skins-container">
+        {% for skin in favorites %}
+            <div class="skin-card">
+                <img src="{{ skin.image_url }}" alt="{{ skin.name }}" width="100"
+                    onclick="showImage(`{{ skin.image_url }}`)">
+                <br>
+                <strong title="{{ skin.name }}">{{ skin.name|truncatechars:20 }}</strong>
+                by <span title="{{ skin.creator }}">{{ skin.creator|truncatechars:20 }}</span>
+                <br>
+                <span class="votes">🔼 {{ skin.upvotes }} 🔽 {{ skin.downvotes }}</span>
+                <br>
+                {% if skin.id %}
+                    <a href="{% url 'skin_detail' skin.id %}" class="view-btn">View Skin Details</a>
+                {% else %}
+                    <span style="color: red;">⚠️ No ID</span>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if favorites|length == 0 %}
+        <p>You haven't favorited any skins yet.</p>
+    {% endif %}
+
+    <br>
+    <h2>Skins Made By You</h2>
+    <br>
+
     <div class="skins-container">
         {% for skin in skins %}
             <div class="skin-card">
@@ -30,7 +59,13 @@
                 <strong title="{{ skin.name }}">{{ skin.name|truncatechars:20 }}</strong>
                 by <span title="{{ skin.creator }}">{{ skin.creator|truncatechars:20 }}</span>
                 <br>
-                <a href="{{ skin.link }}" target="_blank" class="view-btn">View</a>
+                <span class="votes">🔼 {{ skin.upvotes }} 🔽 {{ skin.downvotes }}</span>
+                <br>
+                {% if skin.id %}
+                    <a href="{% url 'skin_detail' skin.id %}" class="view-btn">View Skin Details</a>
+                {% else %}
+                    <span style="color: red;">⚠️ No ID</span>
+                {% endif %}
             </div>
         {% endfor %}
     </div>

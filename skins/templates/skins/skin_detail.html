@@ -1,0 +1,63 @@
+{% extends 'skins/base.html' %}
+
+{% block social_meta %}
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="{{ og.site_name }}">
+  <meta property="og:title" content="{{ og.title }}">
+  <meta property="og:description" content="{{ og.description }}">
+  <meta property="og:url" content="{{ og.url }}">
+  <meta property="og:image" content="{{ og.image }}">
+  <!-- Optional but helpful -->
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ og.title }}">
+  <meta name="twitter:description" content="{{ og.description }}">
+  <meta name="twitter:image" content="{{ og.image }}">
+{% endblock %}
+
+{% block content %}
+<div class="skin-detail-container">
+
+  <!-- Top row: title, creator, favorite -->
+  <div class="skin-header">
+    <div class="text-group">
+      <h1 class="skin-title">{{ skin.name }}</h1>
+      <p class="skin-creator">By: <strong>{{ skin.creator }}</strong></p>
+      <a href="{{ skin.link }}" target="_blank" class="skin-bl-link"><strong>Bonkleagues Link</strong></a>
+    </div>
+  </div>
+
+  <!-- Large image -->
+  <div class="skin-image-wrapper">
+    <img src="{{ skin.image_url }}" alt="Skin image" class="skin-image-large">
+  </div>
+
+  <!-- Description -->
+   <p><strong>Description</strong></p>
+  <div class="skin-description">
+    <p>{{ skin.description }}</p>
+  </div>
+
+  <!-- Inline Tag Bubbles -->
+   <p><strong>Tags</strong></p>
+  {% if skin.labels %}
+    <div class="tag-bubbles">
+      {% for key, value in skin.labels.items %}
+        {% for tag in value %}
+          <span class="tag-bubble">{{ tag }}</span>
+        {% endfor %}
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- Stats -->
+  <div class="skin-stats">
+    <p>👍 Upvotes: {{ skin.upvotes }}</p>
+    <p>👎 Downvotes: {{ skin.downvotes }}</p>
+    <p>⭐ Favorites: {{ skin.favorited_by.count }}</p>
+  </div>
+</div>
+
+{% endblock %}

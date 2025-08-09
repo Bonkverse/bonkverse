@@ -10,12 +10,14 @@ from django.core.paginator import Paginator
 def my_profile(request):
     user = request.user
     user_skins = Skin.objects.filter(creator__iexact=user.username).order_by("name")
+    favorites = user.favorite_skins.all().order_by('-created_at')
     paginator = Paginator(user_skins, 20)
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
     return render(request, 'skins/my_profile.html', {
         'skins': page_obj,
+        'favorites': favorites,
         'user': user
     })
 

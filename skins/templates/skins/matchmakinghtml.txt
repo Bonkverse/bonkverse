@@ -1,3 +1,7 @@
+{% extends "skins/base.html" %}
+
+{% block content %}
+
 <form id="match-form">
   <label>Game Mode:</label>
   <select name="gameMode">
@@ -66,4 +70,14 @@ document.getElementById("match-form").onsubmit = function (e) {
   });
 };
 </script>
+{% endblock %}
+
+
+{% extends "skins/base.html" %}
+
+{% block content %}
+
+<h1>Matchmaking Coming Soon!</h1>
+<h2>Skip the wait and queue up for some 1v1s (causal or ranked)</h2>
+
 {% endblock %}

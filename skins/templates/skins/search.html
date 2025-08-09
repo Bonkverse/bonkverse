@@ -4,72 +4,166 @@
 
 {% block content %}
 
-    <h1>Bonk.io Skin Search</h1>
-    <h2>🔥 Skins uploaded today: {{ daily_skin_count }} 🔥 Total Skins: {{total_skin_count}} 🔥</h2>
-    <form method="GET" action="{% url 'search_skins' %}">
-        <input type="text" name="q" placeholder="Search skins..." value="{{ query }}">
-        <br>
-        <br>
-        <button type="submit">Search</button>
-    </form>
-    <br>
-    <br>
+  <h1>Bonk.io Skin Search</h1>
+  <h2>🔥 Skins uploaded today: {{ daily_skin_count }} 🔥 Total Skins: {{ total_skin_count }} 🔥</h2>
 
-    <div class="skins-container">
-        {% for skin in skins %}
-            <div class="skin-card">
-                <img crossorigin="anonymous" src="{{ skin.image_url|default:'https://bonkleagues.io/api/avatar.svg?skinCode=CgcDYQACCQkBCgcFYWwAAQBNPlt5PUI19d8%2FGMUDPsJvGgAAAAAAAAoFAAEATT5beT1CNfXfvvn8kL80i70BAAAAAAAKBQABAEs%2BgkonQjVq%2FL2vivk9L4r5AAAAzxsPCgUAAQANP1yl2D9VbKUAAAAAAAAAAAAAAM8bDwAAAAA%3D' }}"
-                    alt="{{ skin.name }}" width="100"
-                    onclick="showImage(`{{ skin.image_url}}`)">
+  <form method="GET" action="{% url 'search_skins' %}">
+    <input type="text" name="q" placeholder="Search skins..." value="{{ query }}">
+    <br><br>
+    <button type="submit">Search</button>
+  </form>
 
-                
-                <br>
-                <strong title="{{ skin.name }}">
-                    {{ skin.name|truncatechars:20 }}
-                <br>
-                </strong> by 
-                <span title="{{ skin.creator }}">
-                    {{ skin.creator|truncatechars:20 }}
-                </span>
-                <br>
-                <a href="{{ skin.link }}" target="_blank" class="view-btn">View</a>
-            </div>
-        {% endfor %}
+  <br><br>
+
+  <div class="skins-container">
+    {% for skin in skins %}
+      <div class="skin-card" data-id="{{ skin.id }}"
+        data-favorited="{% if user.is_authenticated and user in skin.favorited_by.all %}1{% else %}0{% endif %}">
+
+    {% if user.is_authenticated %}
+        <button class="fav-toggle" title="Favorite">
+        <span class="fav-icon">{% if user in skin.favorited_by.all %}⭐{% else %}☆{% endif %}</span>
+        <span class="fav-count">{{ skin.favorited_by.count }}</span>
+        </button>
+    {% else %}
+    <span class="fav-static" title="Favorite a skin (login required)">☆ {{ skin.favorited_by.count }}</span>
+    {% endif %}
+
+    <img crossorigin="anonymous"
+        src="{{ skin.image_url|default:'https://bonkleagues.io/api/avatar.svg?skinCode=CgcDYQACCQkBCgcFYWwAAQBNPlt5PUI19d8%2FGMUDPsJvGgAAAAAAAAoFAAEATT5beT1CNfXfvvn8kL80i70BAAAAAAAKBQABAEs%2BgkonQjVq%2FL2vivk9L4r5AAAAzxsPCgUAAQANP1yl2D9VbKUAAAAAAAAAAAAAAM8bDwAAAAA%3D' }}"
+        alt="{{ skin.name }}" width="100"
+        onclick="showImage(`{{ skin.image_url}}`)">
+
+    <br>
+    <strong title="{{ skin.name }}">{{ skin.name|truncatechars:20 }}</strong>
+    by <span title="{{ skin.creator }}">{{ skin.creator|truncatechars:20 }}</span>
+
+    <!-- One-line voting -->
+    <div class="vote-row">
+        <button class="vote-up" title="Upvote a skin (login required)">🔼</button>
+        <span class="up-count">{{ skin.upvotes }}</span>
+        <button class="vote-down" title="Downvote a skin (login required)">🔽</button>
+        <span class="down-count">{{ skin.downvotes }}</span>
     </div>
     
-    <!-- 🔹 Modal (Hidden by Default) -->
-    <div id="imageModal" class="modal" onclick="closeImage()">
-        <span class="close">&times;</span>
-        <img class="modal-content" id="zoomedImage">
-    </div>    
-
-    {% if skins.has_other_pages %}
-    <div class="pagination">
-        {% if skins.has_previous %}
-            <a href="?q={{ query }}&page=1">&laquo; First</a>
-            <a href="?q={{ query }}&page={{ skins.previous_page_number }}">Prev</a>
-        {% endif %}
-
-        <span class="current-page">Page {{ skins.number }} of {{ skins.paginator.num_pages }}</span>
-
-        {% if skins.has_next %}
-            <a href="?q={{ query }}&page={{ skins.next_page_number }}">Next</a>
-            <a href="?q={{ query }}&page={{ skins.paginator.num_pages }}">Last &raquo;</a>
-        {% endif %}
-    </div>
+    <br>
+    {% if skin.id %}
+        <a href="{% url 'skin_detail' skin.id %}" class="view-btn">View Skin Details</a>
+    {% else %}
+        <span style="color: red;">⚠️ No ID</span>
     {% endif %}
+    </div>
+
+    {% endfor %}
+  </div>
+
+  <!-- 🔹 Modal (Hidden by Default) -->
+  <div id="imageModal" class="modal" onclick="closeImage()">
+    <span class="close">&times;</span>
+    <img class="modal-content" id="zoomedImage">
+  </div>
+
+  {% if skins.has_other_pages %}
+    <div class="pagination">
+      {% if skins.has_previous %}
+        <a href="?q={{ query }}&page=1">&laquo; First</a>
+        <a href="?q={{ query }}&page={{ skins.previous_page_number }}">Prev</a>
+      {% endif %}
+
+      <span class="current-page">Page {{ skins.number }} of {{ skins.paginator.num_pages }}</span>
+
+      {% if skins.has_next %}
+        <a href="?q={{ query }}&page={{ skins.next_page_number }}">Next</a>
+        <a href="?q={{ query }}&page={{ skins.paginator.num_pages }}">Last &raquo;</a>
+      {% endif %}
+    </div>
+  {% endif %}
+
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
+  // ---- Keep user's tz offset in the query so "today" count matches their local day
+  (function ensureTzParam() {
     const url = new URL(window.location.href);
-  
     if (!url.searchParams.get('tz_offset')) {
-      const tzOffset = new Date().getTimezoneOffset(); // e.g. -240 for EDT
+      const tzOffset = new Date().getTimezoneOffset();
       url.searchParams.set('tz_offset', tzOffset);
       window.history.replaceState({}, '', url.toString());
     }
-  </script>
+  })();
 
-  
+  // ---- Modal helpers
+  function showImage(src) {
+    const modal = document.getElementById('imageModal');
+    const img = document.getElementById('zoomedImage');
+    img.src = src;
+    modal.style.display = 'block';
+  }
+  function closeImage() {
+    const modal = document.getElementById('imageModal');
+    modal.style.display = 'none';
+  }
+
+  // ---- CSRF + POST helper
+  function getCSRF() {
+    const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+  async function postForm(url, data) {
+    const body = new URLSearchParams(data || {});
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCSRF(), 'X-Requested-With': 'XMLHttpRequest' },
+      body
+    });
+    if (r.status === 401) {
+      const ret = encodeURIComponent(window.location.pathname + window.location.search);
+      window.location.href = `/login/?next=${ret}`;
+      return null;
+    }
+    if (!r.ok) throw new Error('Request failed');
+    return r.json();
+  }
+
+  // ---- Event delegation for all cards
+  document.addEventListener('click', async (e) => {
+    const card = e.target.closest('.skin-card');
+    if (!card) return;
+    const id = card.dataset.id;
+
+    // Upvote
+    if (e.target.closest('.vote-up')) {
+      try {
+        const json = await postForm(`/api/skins/${id}/vote/`, { vote: 'up' });
+        if (!json) return;
+        card.querySelector('.up-count').textContent   = json.upvotes;
+        card.querySelector('.down-count').textContent = json.downvotes;
+      } catch (err) { console.error(err); }
+      return;
+    }
+
+    // Downvote
+    if (e.target.closest('.vote-down')) {
+      try {
+        const json = await postForm(`/api/skins/${id}/vote/`, { vote: 'down' });
+        if (!json) return;
+        card.querySelector('.up-count').textContent   = json.upvotes;
+        card.querySelector('.down-count').textContent = json.downvotes;
+      } catch (err) { console.error(err); }
+      return;
+    }
+
+    // Favorite toggle (if logged in)
+    if (e.target.closest('.fav-toggle')) {
+      try {
+        const json = await postForm(`/api/skins/${id}/favorite/`);
+        if (!json) return;
+        card.querySelector('.fav-count').textContent = json.favorites;
+        card.querySelector('.fav-icon').textContent  = json.favorited ? '⭐' : '☆';
+      } catch (err) { console.error(err); }
+      return;
+    }
+  });
+</script>
 {% endblock %}
