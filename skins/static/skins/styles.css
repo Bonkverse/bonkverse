@@ -643,6 +643,86 @@ button {
   text-align: center;
 }
 
+.wear-card-btn{
+  position:absolute; top:8px; left:8px;
+  padding:4px 8px; border-radius:10px; cursor:pointer;
+  background:linear-gradient(180deg,rgba(251,191,36,.18),rgba(251,191,36,.10));
+  border:1px solid rgba(251,191,36,.35); color:#fff;
+  transition:border-color .15s, transform .05s;
+}
+.wear-card-btn:hover{ border-color:rgba(251,191,36,.6); }
+.wear-card-btn:active{ transform:translateY(1px) scale(.98); }
+
+.wear-inline{display:flex;gap:8px;align-items:center}
+  .wear-btn{padding:6px 10px;border-radius:10px;cursor:pointer}
+  .wear-slot{padding:4px 6px;border-radius:8px}
+  dialog{border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:16px;background:#111;color:#fff}
+  dialog form{display:flex;flex-direction:column;gap:8px;min-width:260px}
+  dialog .row{display:flex;gap:8px;justify-content:flex-end}
+  .muted{color:#9aa4b2;font-size:.9rem}
+
+/* Select wrapper (for custom chevron) */
+.slot-select {
+  position: relative;
+  display: inline-block;
+}
+
+/* Size variants */
+.slot-select.sm select { padding: 6px 28px 6px 10px; font-size: 0.95rem; }
+.slot-select.md select { padding: 8px 34px 8px 12px; }
+
+/* Pretty dark select */
+.slot-select select {
+  -webkit-appearance: none;
+  appearance: none;
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 10px;
+  color: #e6f7f5;
+  outline: none;
+  cursor: pointer;
+  line-height: 1.2;
+  box-shadow: 0 1px 0 rgba(0,0,0,.25) inset;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .05s ease;
+}
+
+/* Hover/focus states */
+.slot-select select:hover { border-color: rgba(94,234,212,.55); }
+.slot-select select:focus {
+  border-color: rgba(94,234,212,.75);
+  box-shadow: 0 0 0 2px rgba(94,234,212,.2);
+}
+
+/* Press */
+.slot-select select:active { transform: translateY(1px); }
+
+/* Custom chevron */
+.slot-select::after {
+  content: "▾";
+  position: absolute;
+  right: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #cdebe8;
+  opacity: .85;
+  font-size: .9rem;
+}
+
+/* Match your Wear button vibes */
+.wear-btn {
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(251,191,36,.18), rgba(251,191,36,.10));
+  border: 1px solid rgba(251,191,36,.35);
+  color: #fff;
+  cursor: pointer;
+  transition: border-color .15s ease, transform .05s ease;
+}
+.wear-btn:hover { border-color: rgba(251,191,36,.6); }
+.wear-btn:active { transform: translateY(1px) scale(.98); }
+
+
 
 
 /* 🔹 Responsive Fixes */
