@@ -26,6 +26,7 @@ from skins.my_profile import my_profile, edit_skin, delete_skin
 from skins.bonkbot import matchmaking_page, join_matchmaking
 from skins.skin_detail import skin_detail
 from skins.skin_votes import vote_skin_api, toggle_favorite_api
+from skins.wear_skin import wear_skin, bonk_login_for_wear
 
 
 
@@ -47,6 +48,8 @@ urlpatterns = [
     # NEW: AJAX/JSON endpoints used by search cards
     path('api/skins/<int:skin_id>/vote/', vote_skin_api, name='api_vote_skin'),
     path('api/skins/<int:skin_id>/favorite/', toggle_favorite_api, name='api_toggle_favorite'),
+    path("api/skins/<int:skin_id>/wear/", wear_skin, name="wear_skin"),
+    path("api/bonk/login/", bonk_login_for_wear, name="bonk_login_for_wear"),
 
 
 

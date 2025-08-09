@@ -21,6 +21,7 @@
         data-favorited="{% if user.is_authenticated and user in skin.favorited_by.all %}1{% else %}0{% endif %}">
 
     {% if user.is_authenticated %}
+        <button class="wear-card-btn" title="Wear this skin in Bonk.io">Wear</button>
         <button class="fav-toggle" title="Favorite">
         <span class="fav-icon">{% if user in skin.favorited_by.all %}⭐{% else %}☆{% endif %}</span>
         <span class="fav-count">{{ skin.favorited_by.count }}</span>
@@ -28,6 +29,9 @@
     {% else %}
     <span class="fav-static" title="Favorite a skin (login required)">☆ {{ skin.favorited_by.count }}</span>
     {% endif %}
+    
+    <br>
+    <br>
 
     <img crossorigin="anonymous"
         src="{{ skin.image_url|default:'https://bonkleagues.io/api/avatar.svg?skinCode=CgcDYQACCQkBCgcFYWwAAQBNPlt5PUI19d8%2FGMUDPsJvGgAAAAAAAAoFAAEATT5beT1CNfXfvvn8kL80i70BAAAAAAAKBQABAEs%2BgkonQjVq%2FL2vivk9L4r5AAAAzxsPCgUAAQANP1yl2D9VbKUAAAAAAAAAAAAAAM8bDwAAAAA%3D' }}"
@@ -78,6 +82,31 @@
       {% endif %}
     </div>
   {% endif %}
+
+  {% if user.is_authenticated %}
+<dialog id="bonk-login-modal">
+  <form id="bonk-login-form" method="dialog" onsubmit="return doBonkLoginFromSearch(event)">
+    <h3>Bonk.io Login</h3>
+    <p class="muted">We don’t store your password. It’s sent to Bonk.io once to apply the skin.</p>
+    <label>Bonk.io Username</label>
+    <input name="bonk_username" required>
+    <label>Bonk.io Password</label>
+    <input name="bonk_password" type="password" required>
+    <div class="row">
+      <button type="submit">Login</button>
+      <button type="button" onclick="closeBonkLogin()">Cancel</button>
+    </div>
+    <p id="bonk-login-msg" class="muted"></p>
+  </form>
+</dialog>
+<style>
+  dialog{border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:16px;background:#111;color:#fff}
+  dialog form{display:flex;flex-direction:column;gap:8px;min-width:260px}
+  dialog .row{display:flex;gap:8px;justify-content:flex-end}
+  .muted{color:#9aa4b2;font-size:.9rem}
+</style>
+{% endif %}
+
 
 {% endblock %}
 
@@ -166,4 +195,98 @@
     }
   });
 </script>
+
+<script>
+  // --- Special POST helper that DOESN'T redirect on 401 (we need the JSON: need_login)
+  async function postFormNoRedirect(url, data){
+    const body = new URLSearchParams(data || {});
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCSRF(), 'X-Requested-With': 'XMLHttpRequest' },
+      body
+    });
+    let json = {};
+    try { json = await r.json(); } catch(e) {}
+    return { ok: r.ok, status: r.status, json };
+  }
+
+  // --- Wear flow for cards
+  let pendingWearSkinId = null;   // set when we need to login first
+  const loginModal = document.getElementById('bonk-login-modal');
+
+  function openBonkLogin(){ if (loginModal?.showModal) loginModal.showModal(); else loginModal.style.display='block'; }
+  function closeBonkLogin(){ if (loginModal?.close) loginModal.close(); else loginModal.style.display='none'; }
+
+  async function tryWearCard(skinId, card){
+    // optionally show tiny inline feedback on the card
+    card?.setAttribute('data-wearing', '1');
+
+    const { ok, status, json } = await postFormNoRedirect(`/api/skins/${skinId}/wear/`, {});
+    if (ok && json.ok){
+      toast('✅ Applied to your active slot.'); // optional tiny toast below
+      card?.removeAttribute('data-wearing');
+      return;
+    }
+    if (status === 401 && json && json.need_login){
+      pendingWearSkinId = skinId;
+      openBonkLogin();
+      card?.removeAttribute('data-wearing');
+      return;
+    }
+    console.error('Wear failed:', json);
+    toast('❌ Failed to apply skin.');
+    card?.removeAttribute('data-wearing');
+  }
+
+  // Reuse the same Bonk login endpoint; after success, retry the pending wear.
+  async function doBonkLoginFromSearch(e){
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const msg = document.getElementById('bonk-login-msg');
+    msg.textContent = 'Logging in…';
+    const r = await fetch("{% url 'bonk_login_for_wear' %}", {
+      method:'POST',
+      headers:{ 'X-CSRFToken': getCSRF(), 'X-Requested-With':'XMLHttpRequest' },
+      body: fd
+    });
+    const json = await r.json().catch(()=>({}));
+    if (!r.ok || !json.ok){ msg.textContent = '❌ ' + (json.error || 'Login failed'); return false; }
+    msg.textContent = '✅ Logged in!';
+    closeBonkLogin();
+
+    // retry if we had a pending skin
+    if (pendingWearSkinId){
+      const id = pendingWearSkinId;
+      pendingWearSkinId = null;
+      const card = document.querySelector(`.skin-card[data-id="${id}"]`);
+      setTimeout(()=>tryWearCard(id, card), 120);
+    }
+    return false;
+  }
+
+  // Click handler for the wear button on any card
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.wear-card-btn');
+    if (!btn) return;
+    const card = e.target.closest('.skin-card');
+    if (!card) return;
+    const id = card.dataset.id;
+    tryWearCard(id, card);
+  });
+
+  // (Optional) micro toast
+  function toast(text){
+    const t = document.createElement('div');
+    t.textContent = text;
+    t.style.position='fixed'; t.style.bottom='18px'; t.style.left='50%'; t.style.transform='translateX(-50%)';
+    t.style.background='rgba(0,0,0,.8)'; t.style.color='#fff'; t.style.padding='8px 12px'; t.style.borderRadius='10px';
+    t.style.zIndex=9999; t.style.fontSize='14px';
+    document.body.appendChild(t);
+    setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .3s'; }, 1400);
+    setTimeout(()=>t.remove(), 1800);
+  }
+</script>
+
+
+
 {% endblock %}
