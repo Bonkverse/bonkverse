@@ -7,3 +7,5 @@ psycopg2-binary==2.9.9
 requests
 whitenoise
 django-extensions==3.2.3
+django-ratelimit==4.1.0
+

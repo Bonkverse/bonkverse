@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'whitenoise.runserver_nostatic',  # Add this before Django's staticfiles
     'skins',
     'django_extensions',
+    'ratelimit',
 ]
 
 MIDDLEWARE = [

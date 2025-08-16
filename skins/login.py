@@ -44,6 +44,7 @@ from django.contrib.auth import login, logout
 from django.contrib import messages
 from .models import BonkUser
 from .forms import LoginForm
+from ratelimit.decorators import ratelimit
 
 import json
 import requests
@@ -62,6 +63,7 @@ BROWSER_HEADERS = {
     "Accept-Language": "en-US,en;q=0.9",
 }
 
+@ratelimit(key='ip', rate='10/m', method='POST', block=True)
 def login_view(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
