@@ -39,9 +39,9 @@
     <h2>Skins Made By You</h2>
     <br>
 
-    <div class="skins-container" {% if skin.id %} data-id="{{ skin.id }}" data-wear-url="{% url 'wear_skin' skin.id %}" {% endif %}>
+    <div class="skins-container">
         {% for skin in skins %}
-            <div class="skin-card">
+            <div class="skin-card" {% if skin.id %} data-id="{{ skin.id }}" data-wear-url="{% url 'wear_skin' skin.id %}" {% endif %}>
                 <button class="wear-card-btn" title="Wear this skin in Bonk.io">Wear</button>
                 <div class="icon-actions">
                     <!-- 🖊 Edit Icon -->
