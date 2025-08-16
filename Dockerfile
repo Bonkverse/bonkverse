@@ -1,26 +1,16 @@
-# Use an official Python runtime as a parent image
-#
-FROM python:3.12
+FROM python:3.12-slim
 
-# Set the working directory
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y libpq-dev libgl1 qt5-qmake qtbase5-dev
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq-dev \
+ && rm -rf /var/lib/apt/lists/*
 
-# Install Playwright and its dependencies
-RUN pip install playwright --with-deps
-
-# Install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application
 COPY . .
-
-# Collect static files
 RUN python manage.py collectstatic --noinput
 
-# Set the command to run the application
-CMD ["sh", "-c", "python manage.py migrate && gunicorn -b 0.0.0.0:8080 --access-logfile - --error-logfile - bonk_skin_search.wsgi:application"]
-
+CMD ["sh","-c","python manage.py migrate && gunicorn -b 0.0.0.0:8080 --access-logfile - --error-logfile - bonk_skin_search.wsgi:application"]
