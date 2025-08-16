@@ -8,3 +8,5 @@ requests
 whitenoise
 django-extensions==3.2.3
 django-ratelimit==4.1.0
+django-redis==6.0.0
+redis==6.4.0
