@@ -8,4 +8,3 @@ requests
 whitenoise
 django-extensions==3.2.3
 django-ratelimit==4.1.0
-
