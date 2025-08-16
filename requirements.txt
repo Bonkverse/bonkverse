@@ -2,6 +2,7 @@ dj-database-url
 Django==5.1.7
 gunicorn
 opencv-python-headless
+playwright==1.46.0
 psycopg2-binary==2.9.9
 requests
 whitenoise
