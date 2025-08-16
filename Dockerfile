@@ -9,8 +9,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y libpq-dev libgl1 qt5-qmake qtbase5-dev
 
 # Install Playwright and its dependencies
-RUN pip install playwright
-RUN playwright install --with-deps
+RUN pip install playwright --with-deps
 
 # Install dependencies
 COPY requirements.txt .
