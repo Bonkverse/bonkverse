@@ -44,7 +44,8 @@ from django.contrib.auth import login, logout
 from django.contrib import messages
 from .models import BonkUser
 from .forms import LoginForm
-from ratelimit.decorators import ratelimit
+from django_ratelimit.decorators import ratelimit
+
 
 import json
 import requests
