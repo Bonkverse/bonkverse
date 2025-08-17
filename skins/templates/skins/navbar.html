@@ -4,7 +4,18 @@
     <a href="{% url 'search_skins' %}" class="home-button">
         <img src="{% static 'images/BonkverseLogo.png' %}" alt="Home" class="home-icon">
     </a>
+
+
     <ul class="nav-links">
+        <li class="nav-item">
+            <a href="#" class="nav-link">Leaderboards ▾</a>
+            <ul class="dropdown-menu">
+            <li><a href="{% url 'leaderboards_upvoted' %}">Most Upvoted</a></li>
+            <li><a href="{% url 'leaderboards_downvoted' %}">Most Downvoted</a></li>
+            <li><a href="{% url 'leaderboards_favorited' %}">Most Favorited</a></li>
+            </ul>
+        </li>
+
         <li><a href="{% url 'matchmaking' %}">1v1 Matchmaking</a></li>
         <li><a href="https://discord.gg/yAcdSCVrya">Discord</a></li>
         <li><a href="{% url 'search_skins' %}">Search Skins</a></li>
