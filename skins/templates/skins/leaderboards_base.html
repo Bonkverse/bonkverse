@@ -1,0 +1,37 @@
+<!-- templates/skins/leaderboards_base.html -->
+{% extends 'skins/base.html' %}
+
+{% block content %}
+<div class="leaderboard-container">
+    <h1 class="leaderboard-title">{{ title }}</h1>
+
+    <table class="leaderboard-table">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Skin</th>
+                <th>Creator</th>
+                <th>Score</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for skin in skins %}
+            <tr class="{% if forloop.counter == 1 %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">
+                <td>#{{ forloop.counter }}</td>
+                <td>
+                    <a href="{% url 'skin_detail' skin.id %}" class="skin-link">
+                        {{ skin.name }}
+                    </a>
+                </td>
+                <td>{{ skin.creator }}</td>
+                <td>{{ skin.score }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4">No skins found yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

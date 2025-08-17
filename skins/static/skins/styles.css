@@ -478,6 +478,132 @@ button {
     background-color: #444;  /* Optional hover effect */
 }
 
+/* Dropdown container */
+.nav-item {
+  position: relative;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;  /* show below the parent link */
+  left: 0;
+  background: #1e3146; /* same as navbar bg */
+  border: 2px solid #009688;
+  border-radius: 6px;
+  min-width: 180px;
+  z-index: 1000;
+  padding: 5px 0;
+}
+
+/* Dropdown links styled like nav links */
+.dropdown-menu li a {
+  display: block;
+  color: white;
+  text-decoration: none;
+  font-size: 14px;
+  padding: 10px 15px;
+  transition: background 0.3s ease-in-out;
+}
+
+.dropdown-menu li a:hover {
+  background-color: #444; /* same hover as nav-links */
+  border-radius: 0; /* flush edges */
+}
+
+/* Show on hover */
+.nav-item:hover .dropdown-menu {
+  display: block;
+}
+
+/* =============================
+   🌌 Leaderboards Styling
+============================= */
+
+.leaderboard-container {
+  text-align: center;
+  padding: 40px;
+  max-width: 1000px;
+  margin: auto;
+}
+
+.leaderboard-title {
+  font-size: 2.2rem;
+  margin-bottom: 25px;
+  color: #fff;
+  text-shadow: 0 0 12px rgba(0, 255, 204, 0.6); /* teal glow */
+  letter-spacing: 1px;
+}
+
+.leaderboard-table {
+  width: 100%;
+  margin: auto;
+  border-collapse: collapse;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(26, 39, 51, 0.8);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.leaderboard-table th, 
+.leaderboard-table td {
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: #ddd;
+  text-align: left;
+}
+
+.leaderboard-table th {
+  background: rgba(0, 150, 136, 0.2); /* teal tint */
+  color: #00e6c3;
+  font-weight: bold;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.leaderboard-table tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.leaderboard-table tr:hover {
+  background: rgba(0, 150, 136, 0.2);
+  transition: background 0.2s ease-in-out;
+}
+
+.skin-link {
+  color: #6cf;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.skin-link:hover {
+  text-decoration: underline;
+  color: #00e6c3;
+}
+
+/* Podium Ranks */
+.gold td {
+  background: linear-gradient(to right, #ffd700, #ffef9f);
+  color: #222;
+  font-weight: bold;
+}
+
+.silver td {
+  background: linear-gradient(to right, #c0c0c0, #f0f0f0);
+  color: #222;
+  font-weight: bold;
+}
+
+.bronze td {
+  background: linear-gradient(to right, #cd7f32, #e0a96d);
+  color: #222;
+  font-weight: bold;
+}
+
+
+
+
 /* =============================
    🎨 Skin Detail Page Styling
 ============================= */

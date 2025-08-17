@@ -27,6 +27,7 @@ from skins.bonkbot import matchmaking_page, join_matchmaking
 from skins.skin_detail import skin_detail
 from skins.skin_votes import vote_skin_api, toggle_favorite_api
 from skins.wear_skin import wear_skin, bonk_login_for_wear
+from skins import leaderboards
 
 
 
@@ -43,14 +44,17 @@ urlpatterns = [
     path('matchmaking/', matchmaking_page, name='matchmaking'),
     path('api/join-matchmaking/', join_matchmaking),
     path('skins/<int:skin_id>/', skin_detail, name='skin_detail'),
-    # path('skins/<int:skin_id>/vote/', vote_skin, name='vote_skin'),
-    # path('skins/<int:skin_id>/favorite/', toggle_favorite, name='toggle_favorite'),
+
     # NEW: AJAX/JSON endpoints used by search cards
     path('api/skins/<int:skin_id>/vote/', vote_skin_api, name='api_vote_skin'),
     path('api/skins/<int:skin_id>/favorite/', toggle_favorite_api, name='api_toggle_favorite'),
     path("api/skins/<int:skin_id>/wear/", wear_skin, name="wear_skin"),
     path("api/bonk/login/", bonk_login_for_wear, name="bonk_login_for_wear"),
 
+    # Leaderboards
+    path("leaderboards/upvoted/", leaderboards.most_upvoted_skins, name="leaderboards_upvoted"),
+    path("leaderboards/downvoted/", leaderboards.most_downvoted_skins, name="leaderboards_downvoted"),
+    path("leaderboards/favorited/", leaderboards.most_favorited_skins, name="leaderboards_favorited"),
 
 
 

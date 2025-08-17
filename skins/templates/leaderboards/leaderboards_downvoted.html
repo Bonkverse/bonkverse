@@ -1,0 +1,27 @@
+{% extends "skins/base.html" %}
+
+{% block content %}
+<div class="leaderboard-container">
+  <h2 class="leaderboard-title">Most Downvoted Skins</h2>
+  <table class="leaderboard-table">
+    <thead>
+      <tr>
+        <th>Rank</th>
+        <th>Skin</th>
+        <th>Creator</th>
+        <th>Downvotes</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for skin in skins %}
+      <tr>
+        <td>#{{ forloop.counter }}</td>
+        <td><a href="{% url 'skin_detail' skin.id %}" class="skin-link">{{ skin.name }}</a></td>
+        <td>{{ skin.creator }}</td>
+        <td>{{ skin.downvotes }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
