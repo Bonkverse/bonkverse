@@ -722,7 +722,25 @@ button {
 .wear-btn:hover { border-color: rgba(251,191,36,.6); }
 .wear-btn:active { transform: translateY(1px) scale(.98); }
 
+/* Sticky BuyMeACoffee Button */
+.support-bmc {
+  position: fixed;
+  bottom: 20px;   /* distance from bottom */
+  right: 20px;    /* distance from right */
+  z-index: 1000;  /* stays above most elements */
+}
 
+.support-bmc img {
+  height: 50px;         /* control size */
+  border-radius: 8px;   /* smooth corners */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.support-bmc img:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35);
+}
 
 
 /* 🔹 Responsive Fixes */
