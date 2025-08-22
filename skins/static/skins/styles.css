@@ -571,6 +571,18 @@ button {
   transition: background 0.2s ease-in-out;
 }
 
+.skin-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.skin-avatar:hover {
+    transform: scale(1.2);
+    transition: transform 0.2s ease-in-out;
+  }
+
 .skin-link {
   color: #6cf;
   text-decoration: none;
