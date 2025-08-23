@@ -27,7 +27,9 @@ from skins.bonkbot import matchmaking_page, join_matchmaking
 from skins.skin_detail import skin_detail
 from skins.skin_votes import vote_skin_api, toggle_favorite_api
 from skins.wear_skin import wear_skin, bonk_login_for_wear
+from skins.players import search_players_view, ego_graph_json, resync_friends_view, players_page
 from skins import leaderboards
+from skins import players
 
 
 
@@ -42,14 +44,19 @@ urlpatterns = [
     path('skin/<int:skin_id>/delete/', delete_skin, name='delete_skin'),
     path('skin/<int:skin_id>/edit/', edit_skin, name='edit_skin'),
     path('matchmaking/', matchmaking_page, name='matchmaking'),
-    path('api/join-matchmaking/', join_matchmaking),
+    path("players/", players_page, name="players_page"),
     path('skins/<int:skin_id>/', skin_detail, name='skin_detail'),
+
 
     # NEW: AJAX/JSON endpoints used by search cards
     path('api/skins/<int:skin_id>/vote/', vote_skin_api, name='api_vote_skin'),
     path('api/skins/<int:skin_id>/favorite/', toggle_favorite_api, name='api_toggle_favorite'),
     path("api/skins/<int:skin_id>/wear/", wear_skin, name="wear_skin"),
     path("api/bonk/login/", bonk_login_for_wear, name="bonk_login_for_wear"),
+    path("api/players/search/", players.search_players_view, name="players_search"),
+    path("api/players/resync/", players.resync_friends_view, name="resync_friends"),
+    path("api/players/ego/", players.ego_graph_json, name="ego_graph_json"),
+    path('api/join-matchmaking/', join_matchmaking),
 
     # Leaderboards
     path("leaderboards/upvoted/", leaderboards.most_upvoted_skins, name="leaderboards_upvoted"),
@@ -58,4 +65,4 @@ urlpatterns = [
 
 
 
-]
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

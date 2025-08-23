@@ -1,0 +1,278 @@
+{% extends "skins/base.html" %}
+{% load static %}
+
+{% block content %}
+<h1>Find Bonk Players</h1>
+
+<div id="notif" class="notification info" style="display:none;"></div>
+
+<form id="player-search-form" onsubmit="return false;">
+  <label for="player-query">Search by username or Bonk ID</label>
+  <input
+    type="text"
+    id="player-query"
+    placeholder="e.g. The Saucy Tulip or 14217850"
+    autocomplete="off"
+  />
+
+  <div class="suggestion-label" id="suggestion-label" style="display:none;">Suggestions</div>
+  <ul class="suggestions" id="suggestions" style="display:none;"></ul>
+
+  <div id="loading" style="display:none;">Searching…</div>
+</form>
+
+<section class="skins-container" id="results"></section>
+
+{% if request.session.bonk_user_id %}
+<section class="leaderboard-container" style="padding-top:20px;">
+  <h2 class="leaderboard-title">My Network</h2>
+  <p class="skin-stats">This shows your direct friend network (better visuals incoming). Will take longer to load for those with many friends.</p>
+
+  <div class="network-toolbar">
+    <button class="wear-btn" id="load-ego-btn">Load My Friend Graph</button>
+    <label class="label-toggle">
+      <input type="checkbox" id="toggle-labels" />
+      Show labels
+    </label>
+  </div>
+
+  <!-- Graph container -->
+  <div id="ego-graph" style="height:600px; border:1px solid #444; margin-top:16px; border-radius:8px;"></div>
+
+  <!-- Raw JSON (hidden by default) -->
+  <pre id="ego-json" style="display:none; text-align:left; white-space:pre-wrap; margin-top:12px;"></pre>
+</section>
+{% endif %}
+
+<!-- Routes -->
+<div id="route-refs"
+     data-search-url="{% url 'players_search' %}"
+     {% url 'resync_friends' as resync_url %}
+     data-resync-url="{{ resync_url|default:'' }}"
+     {% url 'ego_graph_json' as ego_url %}
+     data-ego-url="{{ ego_url|default:'' }}">
+</div>
+
+<a class="support-bmc" href="https://www.buymeacoffee.com/" target="_blank" rel="noopener">
+  <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="Support" />
+</a>
+
+<!-- Vis-network -->
+<link href="https://unpkg.com/vis-network/styles/vis-network.css" rel="stylesheet" />
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+
+<style>
+  .player-card { display:flex; flex-direction:column; gap:4px; }
+  .player-card strong { font-size:15px; color:#eaf3ff; }
+  .player-card span { font-size:12px; color:#9db2d0; }
+
+  .network-toolbar { display:flex; align-items:center; gap:10px; margin-top:6px; }
+  .label-toggle { display:flex; align-items:center; gap:6px; font-size:13px; color:#cfe3ff; }
+  .label-toggle input { transform: translateY(1px); }
+
+  #ego-graph .vis-network { border-radius:8px; }
+</style>
+
+<script>
+  const $ = (sel) => document.querySelector(sel);
+  function escapeHtml(s) {
+    return String(s)
+      .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+  }
+
+  const routesEl   = $("#route-refs");
+  const searchUrl  = routesEl?.dataset.searchUrl || "";
+  const egoGraphUrl= routesEl?.dataset.egoUrl || "";
+
+  const notif = $("#notif");
+  function showNotif(msg, type="info", ms=3500) {
+    notif.className = `notification ${type}`;
+    notif.textContent = msg;
+    notif.style.display = "block";
+    setTimeout(() => (notif.style.display = "none"), ms);
+  }
+
+  const loadingEl = $("#loading");
+  function setLoading(is) { loadingEl.style.display = is ? "block" : "none"; }
+
+  const qInput = $("#player-query");
+  const sugLabel = $("#suggestion-label");
+  const sugList  = $("#suggestions");
+  const results  = $("#results");
+
+  let lastFetchAbort = null;
+  let debounceTimer = null;
+
+  qInput.addEventListener("input", () => {
+    const q = qInput.value.trim();
+    if (!q) {
+      sugList.style.display = "none";
+      sugLabel.style.display = "none";
+      results.innerHTML = "";
+      return;
+    }
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => doSearch(q, {suggestOnly:true}), 220);
+  });
+
+  qInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      const q = qInput.value.trim();
+      if (q) doSearch(q, {suggestOnly:false});
+    }
+  });
+
+  async function doSearch(q, {suggestOnly}) {
+    try {
+      if (!searchUrl) { showNotif("Search route not configured.", "error"); return; }
+      setLoading(!suggestOnly);
+      if (lastFetchAbort) lastFetchAbort.abort();
+      lastFetchAbort = new AbortController();
+
+      const resp = await fetch(`${searchUrl}?q=${encodeURIComponent(q)}`, {
+        signal: lastFetchAbort.signal
+      });
+      const data = await resp.json();
+      const items = data.results || [];
+
+      if (suggestOnly) {
+        renderSuggestions(items);
+      } else {
+        sugList.style.display = "none";
+        sugLabel.style.display = "none";
+        renderResults(items);
+        showNotif(`Found ${items.length} player${items.length===1?"":"s"} for "${q}"`, "success");
+      }
+    } catch (err) {
+      if (err.name !== "AbortError") {
+        showNotif("Search failed. Try again.", "error");
+        console.error(err);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function renderSuggestions(items) {
+    if (!items.length) {
+      sugList.style.display = "none";
+      sugLabel.style.display = "none";
+      return;
+    }
+    sugList.innerHTML = "";
+    items.slice(0, 10).forEach(p => {
+      const li = document.createElement("li");
+      li.textContent = `${p.username} — ${p.bonk_id}`;
+      li.addEventListener("click", () => {
+        qInput.value = p.username;
+        sugList.style.display = "none";
+        sugLabel.style.display = "none";
+        renderResults([p]);
+      });
+      sugList.appendChild(li);
+    });
+    sugLabel.style.display = "block";
+    sugList.style.display = "block";
+  }
+
+  function renderResults(items) {
+    if (!items.length) {
+      results.innerHTML = "<p>No players found.</p>";
+      return;
+    }
+    const cards = items.map(p => `
+      <div class="player-card" tabindex="0">
+        <strong>${escapeHtml(p.username)}</strong>
+        <span>ID: ${p.bonk_id}</span>
+        <span>Friends (last sync): ${p.last_friend_count ?? p.friend_count ?? "—"}</span>
+        <span>Last seen: ${p.last_seen ? new Date(p.last_seen).toLocaleString() : "—"}</span>
+      </div>
+    `).join("");
+    results.innerHTML = cards;
+  }
+
+  // -------- Ego Graph (static circular layout with toggleable labels) --------
+  const loadEgoBtn   = $("#load-ego-btn");
+  const toggleLabels = $("#toggle-labels");
+  const egoJsonEl    = $("#ego-json");
+  const egoGraphDiv  = $("#ego-graph");
+
+  let network = null;
+  let lastGraphData = null;
+
+  loadEgoBtn?.addEventListener("click", async () => {
+    try {
+      setLoading(true);
+      const r = await fetch(egoGraphUrl);
+      const j = await r.json();
+      lastGraphData = j;
+      egoJsonEl.textContent = JSON.stringify(j, null, 2);
+      renderCircularGraph(j, { showLabels: toggleLabels.checked });
+    } catch (e) {
+      showNotif("Failed to load ego graph.", "error");
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  });
+
+  toggleLabels?.addEventListener("change", () => {
+    if (lastGraphData) renderCircularGraph(lastGraphData, { showLabels: toggleLabels.checked });
+  });
+
+  function renderCircularGraph(j, { showLabels }) {
+    if (!j || !j.nodes) return;
+    const me = j.nodes.find(n => n.me);
+    const friends = j.nodes.filter(n => !n.me);
+
+    const nodes = new vis.DataSet();
+    const edges = new vis.DataSet(j.edges || []);
+
+    nodes.add({
+      id: me?.id ?? "me",
+      label: me?.label ?? "Me",
+      x: 0, y: 0,
+      shape: "dot",
+      size: 28,
+      color: { background: "#39d353", border: "#2ba243" },
+      font: { color: "#0b1e2c", size: 16 }
+    });
+
+    const W = egoGraphDiv.clientWidth || 900;
+    const H = egoGraphDiv.clientHeight || 600;
+    const radius = Math.floor(Math.min(W, H) * 0.38);
+
+    friends.forEach((n, i) => {
+      const angle = (2 * Math.PI * i) / Math.max(1, friends.length);
+      nodes.add({
+        id: n.id,
+        label: showLabels ? n.label : undefined,
+        title: n.label,
+        x: Math.cos(angle) * radius,
+        y: Math.sin(angle) * radius,
+        shape: "dot",
+        size: 16,
+        color: { background: "#2ea8ff", border: "#1c6fb0" },
+        font: { color: "#cfe8ff", size: 12 },
+      });
+    });
+
+    const options = {
+      physics: false,
+      layout: { randomSeed: 1 },
+      interaction: { hover: true, dragNodes: false, zoomView: true, tooltipDelay: 100 },
+      edges: { width: 2, color: { color: "#90a4b4" }, smooth: false }
+    };
+
+    if (network) network.destroy();
+    network = new vis.Network(egoGraphDiv, { nodes, edges }, options);
+  }
+
+
+  document.addEventListener("DOMContentLoaded", () => {
+    doSearch("", { suggestOnly: false });
+  });
+</script>
+
+{% endblock %}

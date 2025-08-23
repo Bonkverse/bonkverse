@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.conf import settings
+from django.utils import timezone
 
 # Create your models here.
 
@@ -54,3 +56,73 @@ class SkinVote(models.Model):
 
     def __str__(self):
         return f"{self.user.username} voted {self.vote} on {self.skin.name}"
+
+class BonkPlayer(models.Model):
+    """
+    Any Bonk account we discover (friends, map authors, etc.).
+    This is NOT your Bonkverse login user (BonkUser) — it’s the in-game identity.
+    """
+    bonk_id = models.BigIntegerField(unique=True, db_index=True)
+    username = models.CharField(max_length=255, db_index=True)
+    last_seen = models.DateTimeField(default=timezone.now)
+    last_friend_count = models.IntegerField(default=0)  # snapshot at last sync
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["bonk_id"]),
+            models.Index(fields=["username"]),
+        ]
+
+    def __str__(self):
+        return f"{self.username} ({self.bonk_id})"
+
+
+class Friendship(models.Model):
+    """
+    Undirected friendship edge between two BonkPlayers.
+    Store once using ordered endpoints (player_low < player_high) to avoid duplicates.
+    """
+    player_low  = models.ForeignKey(BonkPlayer, on_delete=models.CASCADE, related_name="edges_low")
+    player_high = models.ForeignKey(BonkPlayer, on_delete=models.CASCADE, related_name="edges_high")
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_confirmed_at = models.DateTimeField(default=timezone.now)  # updated each sync we see it
+
+    class Meta:
+        constraints = [
+            # Enforce undirected uniqueness and no self-edges
+            models.UniqueConstraint(fields=["player_low", "player_high"], name="uniq_undirected_friendship"),
+            models.CheckConstraint(check=~models.Q(player_low=models.F("player_high")), name="no_self_friendship"),
+        ]
+        indexes = [
+            models.Index(fields=["player_low", "player_high"]),
+            models.Index(fields=["player_high", "player_low"]),
+        ]
+
+    def __str__(self):
+        return f"{self.player_low.bonk_id} ↔ {self.player_high.bonk_id}"
+
+class FriendCountHistory(models.Model):
+    player = models.ForeignKey(BonkPlayer, on_delete=models.CASCADE, related_name="friend_count_history")
+    count = models.IntegerField()
+    captured_at = models.DateTimeField(auto_now_add=True)
+
+
+class BonkAccountLink(models.Model):
+    """
+    Links a Bonkverse site user (BonkUser) to an in-game BonkPlayer.
+    Optionally stores an encrypted token for server-side Bonk API calls.
+    """
+    user = models.ForeignKey("BonkUser", on_delete=models.CASCADE, related_name="bonk_accounts")
+    bonk_player = models.ForeignKey(BonkPlayer, on_delete=models.CASCADE, related_name="linked_site_users")
+    token_encrypted = models.TextField(blank=True, null=True)  # store your encrypted session token, not password
+    token_expires_at = models.DateTimeField(blank=True, null=True)
+    scopes = models.JSONField(blank=True, null=True)  # e.g., {"friends": true}
+    active = models.BooleanField(default=True)
+    connected_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("user", "bonk_player")
