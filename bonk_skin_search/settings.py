@@ -162,14 +162,41 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 #     }
 # }
 
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": os.getenv("REDIS_URL"),
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+# CACHES = {
+#     "default": {
+#         "BACKEND": "django_redis.cache.RedisCache",
+#         "LOCATION": os.getenv("REDIS_URL"),
+#         "OPTIONS": {
+#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+#         }
+#     }
+# }
+
+REDIS_URL = os.getenv("REDIS_URL")  # e.g. redis://127.0.0.1:6379/1 or rediss://...
+print("Using REDIS_URL:", REDIS_URL)
+
+if REDIS_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                # "PASSWORD": os.getenv("REDIS_PASSWORD", ""),  # if your URL doesn’t embed it
+            },
+            "KEY_PREFIX": "bonkverse",
         }
     }
-}
+else:
+    # Dev fallback: per-process in-memory cache
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "bonkverse-locmem",
+        }
+    }
+
+# django-ratelimit should use the default cache
+RATELIMIT_USE_CACHE = "default"
 
 

@@ -21,6 +21,7 @@
         <li><a href="{% url 'search_skins' %}">Search Skins</a></li>
 
         {% if user.is_authenticated %}
+            <li><a href="{% url 'players_page' %}">Players</a></li>
             <li><a href="{% url 'upload_skin' %}">Upload Skin</a></li>
             <li><a href="{% url 'my_profile' %}" class="username-link">{{ user.username }}</a></li>
             <li><a href="{% url 'logout' %}">Logout</a></li>
