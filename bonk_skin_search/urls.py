@@ -27,7 +27,7 @@ from skins.bonkbot import matchmaking_page, join_matchmaking
 from skins.skin_detail import skin_detail
 from skins.skin_votes import vote_skin_api, toggle_favorite_api
 from skins.wear_skin import wear_skin, bonk_login_for_wear
-from skins.players import search_players_view, ego_graph_json, resync_friends_view, players_page
+from skins.players import search_players_view, players_page
 from skins import leaderboards
 from skins import players
 
@@ -54,8 +54,6 @@ urlpatterns = [
     path("api/skins/<int:skin_id>/wear/", wear_skin, name="wear_skin"),
     path("api/bonk/login/", bonk_login_for_wear, name="bonk_login_for_wear"),
     path("api/players/search/", players.search_players_view, name="players_search"),
-    path("api/players/resync/", players.resync_friends_view, name="resync_friends"),
-    path("api/players/ego/", players.ego_graph_json, name="ego_graph_json"),
     path('api/join-matchmaking/', join_matchmaking),
 
     # Leaderboards

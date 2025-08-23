@@ -6,6 +6,7 @@
 <h2>Total Bonk Players in database: <strong>{{ total_players }}</strong></h2>
 
 <div id="notif" class="notification info" style="display:none;"></div>
+<div id="loading" style="display:none;">Searching…</div>
 
 <form id="player-search-form" onsubmit="return false;">
   <label for="player-query">Search by username or Bonk ID</label>
@@ -15,63 +16,54 @@
     placeholder="e.g. The Saucy Tulip or 14217850"
     autocomplete="off"
   />
-
-  <div class="suggestion-label" id="suggestion-label" style="display:none;">Suggestions</div>
-  <ul class="suggestions" id="suggestions" style="display:none;"></ul>
-
-  <div id="loading" style="display:none;">Searching…</div>
 </form>
 
 <section class="skins-container" id="results"></section>
+<div class="pagination" id="pagination"></div>
 
-{% if request.session.bonk_user_id %}
-<section class="leaderboard-container" style="padding-top:20px;">
-  <h2 class="leaderboard-title">My Network</h2>
-  <p class="skin-stats">This shows your direct friend network (better visuals incoming). Will take longer to load for those with many friends.</p>
-
-  <div class="network-toolbar">
-    <button class="wear-btn" id="load-ego-btn">Load My Friend Graph</button>
-    <label class="label-toggle">
-      <input type="checkbox" id="toggle-labels" />
-      Show labels
-    </label>
-  </div>
-
-  <!-- Graph container -->
-  <div id="ego-graph" style="height:600px; border:1px solid #444; margin-top:16px; border-radius:8px;"></div>
-
-  <!-- Raw JSON (hidden by default) -->
-  <pre id="ego-json" style="display:none; text-align:left; white-space:pre-wrap; margin-top:12px;"></pre>
-</section>
-{% endif %}
-
-<!-- Routes -->
 <div id="route-refs"
-     data-search-url="{% url 'players_search' %}"
-     {% url 'resync_friends' as resync_url %}
-     data-resync-url="{{ resync_url|default:'' }}"
-     {% url 'ego_graph_json' as ego_url %}
-     data-ego-url="{{ ego_url|default:'' }}">
+     data-search-url="{% url 'players_search' %}">
 </div>
 
 <a class="support-bmc" href="https://www.buymeacoffee.com/" target="_blank" rel="noopener">
   <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="Support" />
 </a>
 
-<!-- Vis-network -->
-<link href="https://unpkg.com/vis-network/styles/vis-network.css" rel="stylesheet" />
-<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-
 <style>
-  .player-card { display:flex; flex-direction:column; gap:4px; }
+  .player-card { display:flex; flex-direction:column; gap:4px; margin-bottom:10px; padding:8px; background:#22303f; border-radius:6px; }
   .player-card strong { font-size:15px; color:#eaf3ff; }
   .player-card span { font-size:12px; color:#9db2d0; }
 
-  .network-toolbar { display:flex; align-items:center; gap:10px; margin-top:6px; }
-  .label-toggle { display:flex; align-items:center; gap:6px; font-size:13px; color:#cfe3ff; }
-  .label-toggle input { transform: translateY(1px); }
+  .pagination {
+    margin-top: 20px;
+  }
 
-  #ego-graph .vis-network { border-radius:8px; }
+  .pagination a, .pagination span {
+    padding: 8px 12px;
+    margin: 3px;
+    text-decoration: none;
+    color: #ddd;
+    background-color: #795548;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .pagination a.active {
+    font-weight: bold;
+    background-color: #ddd;
+    color: #222;
+    pointer-events: none;
+  }
+
+  .pagination a.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .pagination span {
+    background: transparent;
+    cursor: default;
+  }
 </style>
 
 <script>
@@ -82,99 +74,39 @@
       .replaceAll('"',"&quot;").replaceAll("'","&#039;");
   }
 
-  const routesEl   = $("#route-refs");
-  const searchUrl  = routesEl?.dataset.searchUrl || "";
-  const egoGraphUrl= routesEl?.dataset.egoUrl || "";
-
-  const notif = $("#notif");
-  function showNotif(msg, type="info", ms=3500) {
-    notif.className = `notification ${type}`;
-    notif.textContent = msg;
-    notif.style.display = "block";
-    setTimeout(() => (notif.style.display = "none"), ms);
-  }
-
+  const searchUrl = $("#route-refs")?.dataset.searchUrl || "";
   const loadingEl = $("#loading");
-  function setLoading(is) { loadingEl.style.display = is ? "block" : "none"; }
-
   const qInput = $("#player-query");
-  const sugLabel = $("#suggestion-label");
-  const sugList  = $("#suggestions");
-  const results  = $("#results");
+  const results = $("#results");
+  const paginationEl = $("#pagination");
 
   let lastFetchAbort = null;
-  let debounceTimer = null;
-
-  qInput.addEventListener("input", () => {
-    const q = qInput.value.trim();
-    if (!q) {
-      sugList.style.display = "none";
-      sugLabel.style.display = "none";
-      results.innerHTML = "";
-      return;
-    }
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => doSearch(q, {suggestOnly:true}), 220);
-  });
 
   qInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
+      e.preventDefault();
       const q = qInput.value.trim();
-      if (q) doSearch(q, {suggestOnly:false});
+      doSearch(q, 1);
     }
   });
 
-  async function doSearch(q, {suggestOnly}) {
+  async function doSearch(q, page=1) {
     try {
-      if (!searchUrl) { showNotif("Search route not configured.", "error"); return; }
-      setLoading(!suggestOnly);
+      setLoading(true);
       if (lastFetchAbort) lastFetchAbort.abort();
       lastFetchAbort = new AbortController();
 
-      const resp = await fetch(`${searchUrl}?q=${encodeURIComponent(q)}`, {
+      const resp = await fetch(`${searchUrl}?q=${encodeURIComponent(q)}&page=${page}`, {
         signal: lastFetchAbort.signal
       });
       const data = await resp.json();
-      const items = data.results || [];
-
-      if (suggestOnly) {
-        renderSuggestions(items);
-      } else {
-        sugList.style.display = "none";
-        sugLabel.style.display = "none";
-        renderResults(items);
-        showNotif(`Found ${items.length} player${items.length===1?"":"s"} for "${q}"`, "success");
-      }
+      renderResults(data.results);
+      renderPagination(data.total, data.page, data.page_size, q);
     } catch (err) {
-      if (err.name !== "AbortError") {
-        showNotif("Search failed. Try again.", "error");
-        console.error(err);
-      }
+      if (err.name !== "AbortError") console.error(err);
     } finally {
       setLoading(false);
     }
-  }
-
-  function renderSuggestions(items) {
-    if (!items.length) {
-      sugList.style.display = "none";
-      sugLabel.style.display = "none";
-      return;
-    }
-    sugList.innerHTML = "";
-    items.slice(0, 10).forEach(p => {
-      const li = document.createElement("li");
-      li.textContent = `${p.username} — ${p.bonk_id}`;
-      li.addEventListener("click", () => {
-        qInput.value = p.username;
-        sugList.style.display = "none";
-        sugLabel.style.display = "none";
-        renderResults([p]);
-      });
-      sugList.appendChild(li);
-    });
-    sugLabel.style.display = "block";
-    sugList.style.display = "block";
   }
 
   function renderResults(items) {
@@ -182,98 +114,87 @@
       results.innerHTML = "<p>No players found.</p>";
       return;
     }
-    const cards = items.map(p => `
+    results.innerHTML = items.map(p => `
       <div class="player-card" tabindex="0">
         <strong>${escapeHtml(p.username)}</strong>
         <span>ID: ${p.bonk_id}</span>
-        <span>Friends (last sync): ${p.last_friend_count ?? p.friend_count ?? "—"}</span>
+        <span>Friends (last sync): ${p.last_friend_count ?? "—"}</span>
         <span>Last seen: ${p.last_seen ? new Date(p.last_seen).toLocaleString() : "—"}</span>
       </div>
     `).join("");
-    results.innerHTML = cards;
   }
 
-  // -------- Ego Graph (static circular layout with toggleable labels) --------
-  const loadEgoBtn   = $("#load-ego-btn");
-  const toggleLabels = $("#toggle-labels");
-  const egoJsonEl    = $("#ego-json");
-  const egoGraphDiv  = $("#ego-graph");
+  function renderPagination(total, page, pageSize, q) {
+    paginationEl.innerHTML = "";
+    const totalPages = Math.ceil(total / pageSize);
+    if (totalPages <= 1) return;
 
-  let network = null;
-  let lastGraphData = null;
+    // Prev button
+    const prev = document.createElement("a");
+    prev.textContent = "Prev";
+    prev.href = "#";
+    if (page === 1) prev.classList.add("disabled");
+    prev.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (page > 1) doSearch(q, page - 1);
+    });
+    paginationEl.appendChild(prev);
 
-  loadEgoBtn?.addEventListener("click", async () => {
-    try {
-      setLoading(true);
-      const r = await fetch(egoGraphUrl);
-      const j = await r.json();
-      lastGraphData = j;
-      egoJsonEl.textContent = JSON.stringify(j, null, 2);
-      renderCircularGraph(j, { showLabels: toggleLabels.checked });
-    } catch (e) {
-      showNotif("Failed to load ego graph.", "error");
-      console.error(e);
-    } finally {
-      setLoading(false);
+    // Window of pages (max 5 around current)
+    let start = Math.max(1, page - 2);
+    let end = Math.min(totalPages, page + 2);
+
+    if (start > 1) {
+      addPageLink(1, page, q);
+      if (start > 2) addEllipsis();
     }
-  });
 
-  toggleLabels?.addEventListener("change", () => {
-    if (lastGraphData) renderCircularGraph(lastGraphData, { showLabels: toggleLabels.checked });
-  });
+    for (let i = start; i <= end; i++) {
+      addPageLink(i, page, q);
+    }
 
-  function renderCircularGraph(j, { showLabels }) {
-    if (!j || !j.nodes) return;
-    const me = j.nodes.find(n => n.me);
-    const friends = j.nodes.filter(n => !n.me);
+    if (end < totalPages) {
+      if (end < totalPages - 1) addEllipsis();
+      addPageLink(totalPages, page, q);
+    }
 
-    const nodes = new vis.DataSet();
-    const edges = new vis.DataSet(j.edges || []);
-
-    nodes.add({
-      id: me?.id ?? "me",
-      label: me?.label ?? "Me",
-      x: 0, y: 0,
-      shape: "dot",
-      size: 28,
-      color: { background: "#39d353", border: "#2ba243" },
-      font: { color: "#0b1e2c", size: 16 }
+    // Next button
+    const next = document.createElement("a");
+    next.textContent = "Next";
+    next.href = "#";
+    if (page === totalPages) next.classList.add("disabled");
+    next.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (page < totalPages) doSearch(q, page + 1);
     });
-
-    const W = egoGraphDiv.clientWidth || 900;
-    const H = egoGraphDiv.clientHeight || 600;
-    const radius = Math.floor(Math.min(W, H) * 0.38);
-
-    friends.forEach((n, i) => {
-      const angle = (2 * Math.PI * i) / Math.max(1, friends.length);
-      nodes.add({
-        id: n.id,
-        label: showLabels ? n.label : undefined,
-        title: n.label,
-        x: Math.cos(angle) * radius,
-        y: Math.sin(angle) * radius,
-        shape: "dot",
-        size: 16,
-        color: { background: "#2ea8ff", border: "#1c6fb0" },
-        font: { color: "#cfe8ff", size: 12 },
-      });
-    });
-
-    const options = {
-      physics: false,
-      layout: { randomSeed: 1 },
-      interaction: { hover: true, dragNodes: false, zoomView: true, tooltipDelay: 100 },
-      edges: { width: 2, color: { color: "#90a4b4" }, smooth: false }
-    };
-
-    if (network) network.destroy();
-    network = new vis.Network(egoGraphDiv, { nodes, edges }, options);
+    paginationEl.appendChild(next);
   }
 
+  function addPageLink(i, current, q) {
+    const a = document.createElement("a");
+    a.textContent = i;
+    a.href = "#";
+    if (i === current) a.classList.add("active");
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      doSearch(q, i);
+    });
+    paginationEl.appendChild(a);
+  }
 
+  function addEllipsis() {
+    const span = document.createElement("span");
+    span.textContent = "...";
+    paginationEl.appendChild(span);
+  }
+
+  function setLoading(is) {
+    loadingEl.style.display = is ? "block" : "none";
+  }
+
+  // Auto-load most recent players (page 1)
   document.addEventListener("DOMContentLoaded", () => {
-    doSearch("", { suggestOnly: false });
+    doSearch("", 1);
   });
 </script>
-
 {% endblock %}
