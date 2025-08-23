@@ -10,7 +10,8 @@ import requests
 @login_required
 def players_page(request):
     """Render the search UI page."""
-    return render(request, "skins/players.html")
+    total_players = BonkPlayer.objects.count()
+    return render(request, "skins/players.html", {"total_players": total_players})
 
 @login_required
 def search_players_view(request):
