@@ -2,41 +2,45 @@
 {% load static %}
 
 {% block content %}
-<h1>Find Bonk Players</h1>
-<h2>Total Bonk Players in database: <strong>{{ total_players }}</strong></h2>
+<h1>Find Flash Friends</h1>
+<h2>Total Flash Friends in DB: <strong>{{ total_flash }}</strong></h2>
 
 <div id="notif" class="notification info" style="display:none;"></div>
 <div id="loading" style="display:none;">Searching…</div>
 
-<form id="player-search-form" onsubmit="return false;">
-  <label for="player-query">Search by username or Bonk ID</label>
+<form id="flash-search-form" onsubmit="return false;">
+  <label for="flash-query">Search by Flash Friend name</label>
   <input
     type="text"
-    id="player-query"
-    placeholder="e.g. The Saucy Tulip or 14217850"
+    id="flash-query"
+    placeholder="e.g. TankMaster42"
     autocomplete="off"
   />
 </form>
 
-<section class="skins-container" id="results"></section>
-<div class="pagination" id="pagination"></div>
+<section class="skins-container" id="flash-results"></section>
+<div class="pagination" id="flash-pagination"></div>
 
-<div id="route-refs"
-     data-search-url="{% url 'players_search' %}">
-</div>
+<div id="route-refs" data-search-url="{% url 'flash_friends_search' %}"></div>
 
 <a class="support-bmc" href="https://www.buymeacoffee.com/" target="_blank" rel="noopener">
   <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="Support" />
 </a>
 
 <style>
-  .player-card { display:flex; flex-direction:column; gap:4px; margin-bottom:10px; padding:8px; background:#22303f; border-radius:6px; }
+  .player-card {
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    margin-bottom:10px;
+    padding:8px;
+    background:#22303f;
+    border-radius:6px;
+  }
   .player-card strong { font-size:15px; color:#eaf3ff; }
   .player-card span { font-size:12px; color:#9db2d0; }
 
-  .pagination {
-    margin-top: 20px;
-  }
+  .pagination { margin-top: 20px; }
 
   .pagination a, .pagination span {
     padding: 8px 12px;
@@ -76,9 +80,9 @@
 
   const searchUrl = $("#route-refs")?.dataset.searchUrl || "";
   const loadingEl = $("#loading");
-  const qInput = $("#player-query");
-  const results = $("#results");
-  const paginationEl = $("#pagination");
+  const qInput = $("#flash-query");
+  const results = $("#flash-results");
+  const paginationEl = $("#flash-pagination");
 
   let lastFetchAbort = null;
 
@@ -111,15 +115,13 @@
 
   function renderResults(items) {
     if (!items.length) {
-      results.innerHTML = "<p>No players found.</p>";
+      results.innerHTML = "<p>No flash friends found.</p>";
       return;
     }
-    results.innerHTML = items.map(p => `
+    results.innerHTML = items.map(f => `
       <div class="player-card" tabindex="0">
-        <strong>${escapeHtml(p.username)}</strong>
-        <span>ID: ${p.bonk_id}</span>
-        <span>Friends (last sync): ${p.last_friend_count ?? "—"}</span>
-        <span>Last seen: ${p.last_seen ? new Date(p.last_seen).toLocaleString() : "—"}</span>
+        <strong>${escapeHtml(f.name)}</strong>
+        <span>${f.bonk_player_id ? "Linked Bonk ID: " + f.bonk_player_id : "Legacy only (Unlinked)"}</span>
       </div>
     `).join("");
   }
@@ -140,7 +142,7 @@
     });
     paginationEl.appendChild(prev);
 
-    // Window of pages (max 5 around current)
+    // Window of pages
     let start = Math.max(1, page - 2);
     let end = Math.min(totalPages, page + 2);
 
@@ -192,7 +194,7 @@
     loadingEl.style.display = is ? "block" : "none";
   }
 
-  // Auto-load most recent players (page 1)
+  // Auto-load most recent (page 1)
   document.addEventListener("DOMContentLoaded", () => {
     doSearch("", 1);
   });

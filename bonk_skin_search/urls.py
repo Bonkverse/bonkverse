@@ -28,6 +28,7 @@ from skins.skin_detail import skin_detail
 from skins.skin_votes import vote_skin_api, toggle_favorite_api
 from skins.wear_skin import wear_skin, bonk_login_for_wear
 from skins.players import search_players_view, players_page
+from skins import flash_friends
 from skins import leaderboards
 from skins import players
 
@@ -44,8 +45,8 @@ urlpatterns = [
     path('skin/<int:skin_id>/delete/', delete_skin, name='delete_skin'),
     path('skin/<int:skin_id>/edit/', edit_skin, name='edit_skin'),
     path('matchmaking/', matchmaking_page, name='matchmaking'),
-    path("players/", players_page, name="players_page"),
     path('skins/<int:skin_id>/', skin_detail, name='skin_detail'),
+    
 
 
     # NEW: AJAX/JSON endpoints used by search cards
@@ -54,12 +55,19 @@ urlpatterns = [
     path("api/skins/<int:skin_id>/wear/", wear_skin, name="wear_skin"),
     path("api/bonk/login/", bonk_login_for_wear, name="bonk_login_for_wear"),
     path("api/players/search/", players.search_players_view, name="players_search"),
+    path("api/flash-friends/search/", flash_friends.search_flash_friends_view, name="flash_friends_search"),
     path('api/join-matchmaking/', join_matchmaking),
+
 
     # Leaderboards
     path("leaderboards/upvoted/", leaderboards.most_upvoted_skins, name="leaderboards_upvoted"),
     path("leaderboards/downvoted/", leaderboards.most_downvoted_skins, name="leaderboards_downvoted"),
     path("leaderboards/favorited/", leaderboards.most_favorited_skins, name="leaderboards_favorited"),
+
+    # Players Search
+    path("players_search/players/", players_page, name="players_page"),
+    path("players_search/flash-friends/", flash_friends.flash_friends_page, name="flash_friends_page"),
+
 
 
 
