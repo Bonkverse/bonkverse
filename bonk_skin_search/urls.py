@@ -30,6 +30,13 @@ from skins.wear_skin import wear_skin, bonk_login_for_wear
 from skins.players import search_players_view, players_page
 from skins import leaderboards
 from skins import players
+from django.conf.urls import handler404
+from django.shortcuts import render
+
+def custom_404_view(request, exception):
+    return render(request, "404.html", status=404)
+
+handler404 = custom_404_view
 
 
 
