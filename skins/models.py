@@ -126,3 +126,36 @@ class BonkAccountLink(models.Model):
 
     class Meta:
         unique_together = ("user", "bonk_player")
+
+class FlashFriend(models.Model):
+    """
+    Represents a legacy Flash friend (Bonk1/TinyTanks import).
+    Name-only unless we resolve to a BonkPlayer later.
+    """
+    name = models.CharField(max_length=255, db_index=True)
+    bonk_player = models.ForeignKey(
+        BonkPlayer, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="as_flash_friend"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("name", "bonk_player")  # prevent dupes
+
+    def __str__(self):
+        return f"{self.name} (linked to {self.bonk_player_id or '—'})"
+
+
+class FlashFriendship(models.Model):
+    """
+    Links a Bonkverse site user to their imported flash friends.
+    """
+    user = models.ForeignKey("BonkUser", on_delete=models.CASCADE, related_name="flash_friendships")
+    flash_friend = models.ForeignKey(FlashFriend, on_delete=models.CASCADE, related_name="friend_of")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "flash_friend")
+
+    def __str__(self):
+        return f"{self.user.username} ↔ {self.flash_friend.name}"

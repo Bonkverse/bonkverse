@@ -1,0 +1,201 @@
+{% extends "skins/base.html" %}
+{% load static %}
+
+{% block content %}
+<h1>Find Bonk Players</h1>
+<h2>Total Bonk Players in database: <strong>{{ total_players }}</strong></h2>
+
+<div id="notif" class="notification info" style="display:none;"></div>
+<div id="loading" style="display:none;">Searching…</div>
+
+<form id="player-search-form" onsubmit="return false;">
+  <label for="player-query">Search by username or Bonk ID</label>
+  <input
+    type="text"
+    id="player-query"
+    placeholder="e.g. The Saucy Tulip or 14217850"
+    autocomplete="off"
+  />
+</form>
+
+<section class="skins-container" id="results"></section>
+<div class="pagination" id="pagination"></div>
+
+<div id="route-refs"
+     data-search-url="{% url 'players_search' %}">
+</div>
+
+<a class="support-bmc" href="https://www.buymeacoffee.com/" target="_blank" rel="noopener">
+  <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="Support" />
+</a>
+
+<style>
+  .player-card { display:flex; flex-direction:column; gap:4px; margin-bottom:10px; padding:8px; background:#22303f; border-radius:6px; }
+  .player-card strong { font-size:15px; color:#eaf3ff; }
+  .player-card span { font-size:12px; color:#9db2d0; }
+
+  .pagination {
+    margin-top: 20px;
+  }
+
+  .pagination a, .pagination span {
+    padding: 8px 12px;
+    margin: 3px;
+    text-decoration: none;
+    color: #ddd;
+    background-color: #795548;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .pagination a.active {
+    font-weight: bold;
+    background-color: #ddd;
+    color: #222;
+    pointer-events: none;
+  }
+
+  .pagination a.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .pagination span {
+    background: transparent;
+    cursor: default;
+  }
+</style>
+
+<script>
+  const $ = (sel) => document.querySelector(sel);
+  function escapeHtml(s) {
+    return String(s)
+      .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+  }
+
+  const searchUrl = $("#route-refs")?.dataset.searchUrl || "";
+  const loadingEl = $("#loading");
+  const qInput = $("#player-query");
+  const results = $("#results");
+  const paginationEl = $("#pagination");
+
+  let lastFetchAbort = null;
+
+  qInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const q = qInput.value.trim();
+      doSearch(q, 1);
+    }
+  });
+
+  async function doSearch(q, page=1) {
+    try {
+      setLoading(true);
+      if (lastFetchAbort) lastFetchAbort.abort();
+      lastFetchAbort = new AbortController();
+
+      const resp = await fetch(`${searchUrl}?q=${encodeURIComponent(q)}&page=${page}`, {
+        signal: lastFetchAbort.signal
+      });
+      const data = await resp.json();
+      renderResults(data.results);
+      renderPagination(data.total, data.page, data.page_size, q);
+    } catch (err) {
+      if (err.name !== "AbortError") console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function renderResults(items) {
+    if (!items.length) {
+      results.innerHTML = "<p>No players found.</p>";
+      return;
+    }
+    results.innerHTML = items.map(p => `
+      <div class="player-card" tabindex="0">
+        <strong>${escapeHtml(p.username)}</strong>
+        <span>ID: ${p.bonk_id}</span>
+        <span>Friends (last sync): ${p.last_friend_count ?? "—"}</span>
+        <span>Flash Friends: ${p.flash_friend_count ?? 0}</span>
+        <span>Last seen: ${p.last_seen ? new Date(p.last_seen).toLocaleString() : "—"}</span>
+      </div>
+    `).join("");
+  }
+
+  function renderPagination(total, page, pageSize, q) {
+    paginationEl.innerHTML = "";
+    const totalPages = Math.ceil(total / pageSize);
+    if (totalPages <= 1) return;
+
+    // Prev button
+    const prev = document.createElement("a");
+    prev.textContent = "Prev";
+    prev.href = "#";
+    if (page === 1) prev.classList.add("disabled");
+    prev.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (page > 1) doSearch(q, page - 1);
+    });
+    paginationEl.appendChild(prev);
+
+    // Window of pages (max 5 around current)
+    let start = Math.max(1, page - 2);
+    let end = Math.min(totalPages, page + 2);
+
+    if (start > 1) {
+      addPageLink(1, page, q);
+      if (start > 2) addEllipsis();
+    }
+
+    for (let i = start; i <= end; i++) {
+      addPageLink(i, page, q);
+    }
+
+    if (end < totalPages) {
+      if (end < totalPages - 1) addEllipsis();
+      addPageLink(totalPages, page, q);
+    }
+
+    // Next button
+    const next = document.createElement("a");
+    next.textContent = "Next";
+    next.href = "#";
+    if (page === totalPages) next.classList.add("disabled");
+    next.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (page < totalPages) doSearch(q, page + 1);
+    });
+    paginationEl.appendChild(next);
+  }
+
+  function addPageLink(i, current, q) {
+    const a = document.createElement("a");
+    a.textContent = i;
+    a.href = "#";
+    if (i === current) a.classList.add("active");
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      doSearch(q, i);
+    });
+    paginationEl.appendChild(a);
+  }
+
+  function addEllipsis() {
+    const span = document.createElement("span");
+    span.textContent = "...";
+    paginationEl.appendChild(span);
+  }
+
+  function setLoading(is) {
+    loadingEl.style.display = is ? "block" : "none";
+  }
+
+  // Auto-load most recent players (page 1)
+  document.addEventListener("DOMContentLoaded", () => {
+    doSearch("", 1);
+  });
+</script>
+{% endblock %}

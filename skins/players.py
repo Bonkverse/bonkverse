@@ -2,14 +2,16 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
-from .models import BonkPlayer
+from django.db.models import Count
+from .models import BonkPlayer, FlashFriendship, BonkAccountLink
+from django.db.models import Q
 
 
 @login_required
 def players_page(request):
     """Render the search UI page."""
     total_players = BonkPlayer.objects.count()
-    return render(request, "skins/players.html", {"total_players": total_players})
+    return render(request, "players_search/players.html", {"total_players": total_players})
 
 
 @login_required
@@ -21,7 +23,7 @@ def search_players_view(request):
 
     qs = BonkPlayer.objects.none()
     if not q:
-        qs = BonkPlayer.objects.order_by("bonk_id")  # ✅ order by bonk_id
+        qs = BonkPlayer.objects.order_by("bonk_id")
     elif q.isdigit():
         qs = BonkPlayer.objects.filter(bonk_id=int(q)).order_by("bonk_id")
     else:
@@ -30,6 +32,20 @@ def search_players_view(request):
     total = qs.count()
     qs = qs[offset:offset + page_size]
 
+    # 🔹 Map BonkPlayer → BonkUser (if linked)
+    account_links = dict(
+        BonkAccountLink.objects.filter(bonk_player__in=qs)
+        .values_list("bonk_player_id", "user_id")
+    )
+
+    # 🔹 Count flash friendships for all relevant users
+    flash_counts = dict(
+        FlashFriendship.objects.filter(user_id__in=account_links.values())
+        .values("user_id")
+        .annotate(c=Count("id"))
+        .values_list("user_id", "c")
+    )
+
     return JsonResponse({
         "results": [
             {
@@ -37,6 +53,8 @@ def search_players_view(request):
                 "username": p.username,
                 "last_friend_count": p.last_friend_count,
                 "last_seen": p.last_seen.isoformat() if getattr(p, "last_seen", None) else None,
+                # ✅ Look up the BonkUser via account_links, then flash friend count
+                "flash_friend_count": flash_counts.get(account_links.get(p.id), 0),
             }
             for p in qs
         ],
