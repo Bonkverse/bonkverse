@@ -64,7 +64,7 @@ urlpatterns = [
     path("leaderboards/downvoted/", leaderboards.most_downvoted_skins, name="leaderboards_downvoted"),
     path("leaderboards/favorited/", leaderboards.most_favorited_skins, name="leaderboards_favorited"),
 
-    # Players Search
+    # Players Search navigation
     path("players_search/players/", players_page, name="players_page"),
     path("players_search/flash-friends/", flash_friends.flash_friends_page, name="flash_friends_page"),
 
