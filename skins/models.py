@@ -132,7 +132,7 @@ class FlashFriend(models.Model):
     Represents a legacy Flash friend (Bonk1/TinyTanks import).
     Name-only unless we resolve to a BonkPlayer later.
     """
-    name = models.CharField(max_length=255, db_index=True)
+    name = models.TextField(db_index=True)
     bonk_player = models.ForeignKey(
         BonkPlayer, on_delete=models.SET_NULL,
         null=True, blank=True, related_name="as_flash_friend"
