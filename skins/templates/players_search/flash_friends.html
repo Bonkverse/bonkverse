@@ -37,7 +37,16 @@
     background:#22303f;
     border-radius:6px;
   }
-  .player-card strong { font-size:15px; color:#eaf3ff; }
+  .player-card strong {
+    font-size: 15px;
+    color: #eaf3ff;
+    white-space: nowrap;        /* prevent wrapping */
+    overflow: hidden;           /* hide overflowed text */
+    text-overflow: ellipsis;    /* show … at cutoff */
+    max-width: 200px;           /* adjust width as needed */
+    display: inline-block;      /* required for ellipsis to work */
+}
+
   .player-card span { font-size:12px; color:#9db2d0; }
 
   .pagination { margin-top: 20px; }
@@ -127,50 +136,55 @@
   }
 
   function renderPagination(total, page, pageSize, q) {
-    paginationEl.innerHTML = "";
-    const totalPages = Math.ceil(total / pageSize);
-    if (totalPages <= 1) return;
+  paginationEl.innerHTML = "";
+  const totalPages = Math.ceil(total / pageSize);
+  if (totalPages <= 1) return;
 
-    // Prev button
-    const prev = document.createElement("a");
-    prev.textContent = "Prev";
-    prev.href = "#";
-    if (page === 1) prev.classList.add("disabled");
-    prev.addEventListener("click", (e) => {
-      e.preventDefault();
-      if (page > 1) doSearch(q, page - 1);
-    });
-    paginationEl.appendChild(prev);
+  // Prev button
+  const prev = document.createElement("a");
+  prev.textContent = "Prev";
+  prev.href = "#";
+  if (page === 1) prev.classList.add("disabled");
+  prev.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (page > 1) doSearch(q, page - 1);
+  });
+  paginationEl.appendChild(prev);
 
-    // Window of pages
-    let start = Math.max(1, page - 2);
-    let end = Math.min(totalPages, page + 2);
-
-    if (start > 1) {
-      addPageLink(1, page, q);
-      if (start > 2) addEllipsis();
+  // Current / jump-to-page input
+  const input = document.createElement("input");
+  input.type = "number";
+  input.min = 1;
+  input.max = totalPages;
+  input.value = page;
+  input.style.width = "60px";
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      let target = parseInt(input.value, 10);
+      if (!isNaN(target) && target >= 1 && target <= totalPages) {
+        doSearch(q, target);
+      }
     }
+  });
+  paginationEl.appendChild(input);
 
-    for (let i = start; i <= end; i++) {
-      addPageLink(i, page, q);
-    }
+  // Total pages label
+  const span = document.createElement("span");
+  span.textContent = ` / ${totalPages}`;
+  paginationEl.appendChild(span);
 
-    if (end < totalPages) {
-      if (end < totalPages - 1) addEllipsis();
-      addPageLink(totalPages, page, q);
-    }
+  // Next button
+  const next = document.createElement("a");
+  next.textContent = "Next";
+  next.href = "#";
+  if (page === totalPages) next.classList.add("disabled");
+  next.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (page < totalPages) doSearch(q, page + 1);
+  });
+  paginationEl.appendChild(next);
+}
 
-    // Next button
-    const next = document.createElement("a");
-    next.textContent = "Next";
-    next.href = "#";
-    if (page === totalPages) next.classList.add("disabled");
-    next.addEventListener("click", (e) => {
-      e.preventDefault();
-      if (page < totalPages) doSearch(q, page + 1);
-    });
-    paginationEl.appendChild(next);
-  }
 
   function addPageLink(i, current, q) {
     const a = document.createElement("a");
