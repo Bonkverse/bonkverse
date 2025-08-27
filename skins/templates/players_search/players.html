@@ -141,23 +141,27 @@
     });
     paginationEl.appendChild(prev);
 
-    // Window of pages (max 5 around current)
-    let start = Math.max(1, page - 2);
-    let end = Math.min(totalPages, page + 2);
+    // Current / jump-to-page input
+    const input = document.createElement("input");
+    input.type = "number";
+    input.min = 1;
+    input.max = totalPages;
+    input.value = page;
+    input.style.width = "60px";
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        let target = parseInt(input.value, 10);
+        if (!isNaN(target) && target >= 1 && target <= totalPages) {
+          doSearch(q, target);
+        }
+      }
+    });
+    paginationEl.appendChild(input);
 
-    if (start > 1) {
-      addPageLink(1, page, q);
-      if (start > 2) addEllipsis();
-    }
-
-    for (let i = start; i <= end; i++) {
-      addPageLink(i, page, q);
-    }
-
-    if (end < totalPages) {
-      if (end < totalPages - 1) addEllipsis();
-      addPageLink(totalPages, page, q);
-    }
+    // Total pages label
+    const span = document.createElement("span");
+    span.textContent = ` / ${totalPages}`;
+    paginationEl.appendChild(span);
 
     // Next button
     const next = document.createElement("a");
@@ -171,23 +175,6 @@
     paginationEl.appendChild(next);
   }
 
-  function addPageLink(i, current, q) {
-    const a = document.createElement("a");
-    a.textContent = i;
-    a.href = "#";
-    if (i === current) a.classList.add("active");
-    a.addEventListener("click", (e) => {
-      e.preventDefault();
-      doSearch(q, i);
-    });
-    paginationEl.appendChild(a);
-  }
-
-  function addEllipsis() {
-    const span = document.createElement("span");
-    span.textContent = "...";
-    paginationEl.appendChild(span);
-  }
 
   function setLoading(is) {
     loadingEl.style.display = is ? "block" : "none";
