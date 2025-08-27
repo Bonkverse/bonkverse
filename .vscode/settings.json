@@ -1,0 +1,15 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "server": "switchyard.proxy.rlwy.net",
+            "port": 51933,
+            "driver": "PostgreSQL",
+            "name": "Bonkverse Railway Postgres",
+            "database": "railway",
+            "username": "postgres",
+            "password": "XWBnMoqTayWYSWMoGgCQMtkXGZLEvlDK",
+            "connectionTimeout": 30
+        }
+    ]
+}

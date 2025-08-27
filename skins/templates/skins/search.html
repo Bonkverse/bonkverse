@@ -70,15 +70,20 @@
   {% if skins.has_other_pages %}
     <div class="pagination">
       {% if skins.has_previous %}
-        <a href="?q={{ query }}&page=1">&laquo; First</a>
         <a href="?q={{ query }}&page={{ skins.previous_page_number }}">Prev</a>
       {% endif %}
 
-      <span class="current-page">Page {{ skins.number }} of {{ skins.paginator.num_pages }}</span>
+      <!-- Page jump input -->
+      <input id="pageJump" type="number" 
+             min="1" 
+             max="{{ skins.paginator.num_pages }}" 
+             value="{{ skins.number }}" 
+             style="width:60px; margin:0 5px;">
+
+      <span>/ {{ skins.paginator.num_pages }}</span>
 
       {% if skins.has_next %}
         <a href="?q={{ query }}&page={{ skins.next_page_number }}">Next</a>
-        <a href="?q={{ query }}&page={{ skins.paginator.num_pages }}">Last &raquo;</a>
       {% endif %}
     </div>
   {% endif %}
@@ -107,7 +112,6 @@
 </style>
 {% endif %}
 
-
 {% endblock %}
 
 {% block extra_scripts %}
@@ -134,6 +138,23 @@
     modal.style.display = 'none';
   }
 
+  // ---- Page jump logic
+  document.addEventListener("DOMContentLoaded", () => {
+    const input = document.getElementById("pageJump");
+    if (!input) return;
+
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        const target = parseInt(input.value, 10);
+        const totalPages = parseInt("{{ skins.paginator.num_pages|default:0 }}", 10);
+        const query = "{{ query|escapejs }}";
+        if (!isNaN(target) && target >= 1 && target <= totalPages) {
+          window.location = `?q=${encodeURIComponent(query)}&page=${target}`;
+        }
+      }
+    });
+  });
+
   // ---- CSRF + POST helper
   function getCSRF() {
     const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
@@ -155,7 +176,7 @@
     return r.json();
   }
 
-  // ---- Event delegation for all cards
+  // ---- Event delegation for all cards (vote/favorite)
   document.addEventListener('click', async (e) => {
     const card = e.target.closest('.skin-card');
     if (!card) return;
@@ -218,12 +239,10 @@
   function closeBonkLogin(){ if (loginModal?.close) loginModal.close(); else loginModal.style.display='none'; }
 
   async function tryWearCard(skinId, card){
-    // optionally show tiny inline feedback on the card
     card?.setAttribute('data-wearing', '1');
-
     const { ok, status, json } = await postFormNoRedirect(`/api/skins/${skinId}/wear/`, {});
     if (ok && json.ok){
-      toast('✅ Applied to your active slot.'); // optional tiny toast below
+      toast('✅ Applied to your active slot.');
       card?.removeAttribute('data-wearing');
       return;
     }
@@ -238,7 +257,6 @@
     card?.removeAttribute('data-wearing');
   }
 
-  // Reuse the same Bonk login endpoint; after success, retry the pending wear.
   async function doBonkLoginFromSearch(e){
     e.preventDefault();
     const fd = new FormData(e.target);
@@ -254,7 +272,6 @@
     msg.textContent = '✅ Logged in!';
     closeBonkLogin();
 
-    // retry if we had a pending skin
     if (pendingWearSkinId){
       const id = pendingWearSkinId;
       pendingWearSkinId = null;
@@ -264,7 +281,6 @@
     return false;
   }
 
-  // Click handler for the wear button on any card
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('.wear-card-btn');
     if (!btn) return;
@@ -274,7 +290,6 @@
     tryWearCard(id, card);
   });
 
-  // (Optional) micro toast
   function toast(text){
     const t = document.createElement('div');
     t.textContent = text;
@@ -286,7 +301,4 @@
     setTimeout(()=>t.remove(), 1800);
   }
 </script>
-
-
-
 {% endblock %}
