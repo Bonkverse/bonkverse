@@ -1,0 +1,25 @@
+{% extends "skins/base.html" %}
+
+{% load static %}
+
+{% block title %}Bonkverse — Discover Skins{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="hero-inner">
+    <img class="hero-logo" src="{% static 'images/BonkverseLogo.png' %}" alt="Bonkverse" />
+    <h1 class="hero-title">Discover. Create. Share.</h1>
+    <p class="hero-sub">Explore thousands of Bonk.io skins from the community.</p>
+
+    {% include "skins/partials/search_bar.html" %}
+
+  </div>
+</section>
+
+<!-- Animated carousels -->
+{% include "skins/partials/carousel.html" with title="🔥 Trending Today" skins=trending speed=28 %}
+{% include "skins/partials/carousel.html" with title="⭐ Most Favorited" skins=top_favs speed=22 %}
+{% include "skins/partials/carousel.html" with title="🆕 Recently Uploaded" skins=recent speed=18 %}
+{% include "skins/partials/carousel.html" with title="🎲 Random Picks" skins=random_strip speed=25 %}
+
+{% endblock %}
