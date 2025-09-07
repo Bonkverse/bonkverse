@@ -31,13 +31,15 @@ from skins.players import search_players_view, players_page
 from skins import flash_friends
 from skins import leaderboards
 from skins import players
+from skins import home
 
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("search/", search_skins, name="search_skins"),
-    path("", search_skins, name="home"),  # Home page is now the search page
+    path("", home.home, name='home'),
+    # path("", search_skins, name="home"),  # Home page is now the search page
     path('upload/', upload_skin, name="upload_skin"),  # New Upload Page
     path('login/', login_view, name='login'),
     path('logout/', logout_view, name='logout'),
@@ -46,7 +48,7 @@ urlpatterns = [
     path('skin/<int:skin_id>/edit/', edit_skin, name='edit_skin'),
     path('matchmaking/', matchmaking_page, name='matchmaking'),
     path('skins/<int:skin_id>/', skin_detail, name='skin_detail'),
-    
+
 
 
     # NEW: AJAX/JSON endpoints used by search cards

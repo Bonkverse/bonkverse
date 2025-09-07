@@ -1,12 +1,13 @@
 {% load static %}
 
 <nav class="navbar">
-    <a href="{% url 'search_skins' %}" class="home-button">
+    <a href="{% url 'home' %}" class="home-button">
         <img src="{% static 'images/BonkverseLogo.png' %}" alt="Home" class="home-icon">
     </a>
 
 
     <ul class="nav-links">
+        <li><a href="{% url 'home' %}">Home</a></li>
         <li><a href="https://discord.gg/yAcdSCVrya">Discord</a></li>
         <li><a href="{% url 'search_skins' %}">Search Skins</a></li>
         <li><a href="{% url 'matchmaking' %}">1v1 Matchmaking</a></li>
