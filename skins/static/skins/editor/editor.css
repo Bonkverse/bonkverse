@@ -1,0 +1,170 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #1a2733; /* Match website theme */
+    color: #eee;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+.editor-container {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+}
+
+.sidebar {
+    width: 300px;
+    background-color: #141e29;
+    padding: 20px;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+    overflow-y: auto;
+}
+
+.logo {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.logo img {
+    width: 80px;
+    height: auto;
+}
+
+.logo h2 {
+    margin-top: 10px;
+    color: #00c3ff;
+}
+
+.tool-section {
+    margin-bottom: 25px;
+    border-bottom: 1px solid #243041;
+    padding-bottom: 20px;
+}
+
+.tool-section h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #fff;
+    font-size: 16px;
+}
+
+.tool-section h4 {
+    margin: 10px 0;
+    color: #aaa;
+    font-size: 14px;
+}
+
+.btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tool-btn {
+    padding: 8px 12px;
+    background: #243041;
+    border: none;
+    border-radius: 4px;
+    color: #eee;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-grow: 1;
+}
+
+.tool-btn:hover {
+    background: #2d3e52;
+}
+
+.tool-btn.active {
+    background: #00c3ff;
+    color: #222;
+}
+
+.tool-btn.primary {
+    background: #009688;
+    color: white;
+}
+
+.tool-btn.primary:hover {
+    background: #00b3a1;
+}
+
+#preview {
+    width: 100%;
+    height: 120px;
+    background: #141e29;
+    border: 1px solid #243041;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+#preview img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.main-content {
+    flex-grow: 1;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #1a2733;
+    position: relative;
+}
+
+.editor-wrapper {
+    width: 550px;
+    height: 550px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#editor {
+    width: 500px;
+    height: 500px;
+    background: #000;
+    border-radius: 50%; /* Make editor round for skins */
+    box-shadow: 0 0 20px rgba(0, 195, 255, 0.3);
+    position: relative;
+    overflow: hidden;
+    border: 2px solid #00c3ff;
+}
+
+#colorPicker {
+    width: 100%;
+    margin: 0 auto;
+}
+
+.layer-list {
+    max-height: 150px;
+    overflow-y: auto;
+    background: #141e29;
+    border-radius: 4px;
+    padding: 5px;
+    margin-bottom: 10px;
+}
+
+.layer-item {
+    padding: 8px;
+    margin-bottom: 4px;
+    background: #243041;
+    border-radius: 3px;
+    display: flex;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+.layer-item:hover {
+    background: #2d3e52;
+}
+
+.layer-item.active {
+    border-left: 3px solid #00c3ff;
+}

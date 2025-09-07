@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bonkverse Skin Editor</title>
+    <link rel="stylesheet" href="editor.css">
+    <!-- Konva.js for canvas manipulation -->
+    <script src="https://cdn.jsdelivr.net/npm/konva@9.2.2/konva.min.js"></script>
+    <!-- Color picker library -->
+    <script src="https://cdn.jsdelivr.net/npm/@jaames/iro@5.5.2/dist/iro.min.js"></script>
+</head>
+<body>
+    <div class="editor-container">
+        <div class="sidebar">
+            <div class="logo">
+                <h2>Skin Editor</h2>
+            </div>
+            
+            <div class="tool-section">
+                <h3>Upload</h3>
+                <input type="file" id="fileInput" accept=".png,.svg" />
+                <div class="preview-container">
+                    <h4>Preview</h4>
+                    <div id="preview"></div>
+                </div>
+            </div>
+            
+            <div class="tool-section">
+                <h3>Tools</h3>
+                <div class="btn-group">
+                    <button id="moveBtn" class="tool-btn active">Move</button>
+                    <button id="rotateBtn" class="tool-btn">Rotate</button>
+                    <button id="resizeBtn" class="tool-btn">Resize</button>
+                </div>
+            </div>
+            
+            <div class="tool-section">
+                <h3>Color</h3>
+                <div id="colorPicker"></div>
+            </div>
+            
+            <div class="tool-section">
+                <h3>Layers</h3>
+                <div id="layerList" class="layer-list">
+                    <!-- Layers will be added dynamically -->
+                </div>
+            </div>
+            
+            <div class="tool-section">
+                <h3>History</h3>
+                <div class="btn-group">
+                    <button id="undoBtn" class="tool-btn">Undo</button>
+                    <button id="redoBtn" class="tool-btn">Redo</button>
+                </div>
+            </div>
+            
+            <div class="tool-section">
+                <h3>Export</h3>
+                <div class="btn-group">
+                    <button id="downloadPng" class="tool-btn primary">Export PNG</button>
+                    <button id="downloadJson" class="tool-btn">Save Project</button>
+                    <button id="loadJson" class="tool-btn">Load Project</button>
+                    <button id="resetCanvas" class="tool-btn">Reset</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div id="editor"></div>
+        </div>
+    </div>
+
+    <script src="editor.js"></script>
+</body>
+</html>

@@ -38,6 +38,7 @@ urlpatterns = [
     path('logout/', logout_view, name='logout'),
     path('my-profile/', my_profile, name='my_profile'),
     path('skin/<int:skin_id>/delete/', delete_skin, name='delete_skin'),
+    path('editor/', __import__('skins.views').views.skin_editor, name='skin_editor'),
     path('skin/<int:skin_id>/edit/', edit_skin, name='edit_skin'),
     path('matchmaking/', matchmaking_page, name='matchmaking'),
     path('api/join-matchmaking/', join_matchmaking),

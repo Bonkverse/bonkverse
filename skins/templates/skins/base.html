@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Bonk.io Skin Search{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'skins/styles.css' %}">
+    {% block extra_css %}{% endblock %}
     <script src="{% static 'skins/scripts.js' %}" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
     <link rel="icon" type="image/png" href="{% static 'images/BonkverseLogo.png' %}">

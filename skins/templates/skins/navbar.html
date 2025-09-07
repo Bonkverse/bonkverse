@@ -9,6 +9,7 @@
         <li><a href="https://discord.gg/yAcdSCVrya">Discord</a></li>
         <li><a href="{% url 'search_skins' %}">Search Skins</a></li>
         <li><a href="{% url 'upload_skin' %}">Upload Skin</a></li>
+        <li><a href="{% url 'skin_editor' %}" style="color:#00c3ff;font-weight:bold;background:rgba(0,195,255,0.08);border-radius:6px;padding:6px 14px;box-shadow:0 0 8px #00c3ff80;">Skin Editor</a></li>
 
         {% if user.is_authenticated %}
             <li><a href="{% url 'my_profile' %}" class="username-link">{{ user.username }}</a></li>
