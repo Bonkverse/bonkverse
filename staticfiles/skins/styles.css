@@ -1321,6 +1321,67 @@ button {
   transform: translateY(-2px);
 }
 
+.update-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.update-modal {
+  background: #1a2733;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  max-width: 500px;
+  width: 90%;
+  color: #fff;
+  text-align: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.update-modal h2 {
+  margin-top: 0;
+  color: #00ffcc;
+  text-shadow: 0 0 8px #00ffcc;
+}
+
+.update-modal p {
+  margin: 15px 0;
+  line-height: 1.4;
+}
+
+.update-modal .read-more {
+  display: inline-block;
+  margin: 10px 0;
+  color: #00e6c3;
+  text-decoration: underline;
+}
+
+.update-modal button {
+  margin-top: 15px;
+  background: #444;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.update-modal button:hover {
+  background: #666;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+
 
 
 /* 🔹 Responsive Fixes */

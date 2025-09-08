@@ -94,6 +94,41 @@
           "retina_detect": true
         });
     </script>
+
+    {% if updates %}
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const latestUpdate = "{{ updates.first.created_at|date:'c' }}";  
+        const lastSeenUpdate = localStorage.getItem("lastSeenUpdate");
+
+        if (!lastSeenUpdate || new Date(latestUpdate) > new Date(lastSeenUpdate)) {
+          // Overlay
+          const overlay = document.createElement("div");
+          overlay.className = "update-overlay";
+
+          // Modal
+          const modal = document.createElement("div");
+          modal.className = "update-modal";
+          modal.innerHTML = `
+            <h2>New Update!</h2>
+            <h2>{{ updates.first.title }}</h2>
+            <p>{{ updates.first.content|truncatewords:30 }}</p>
+            <a href="{% url 'changelog' %}" class="read-more">Read full changelog!</a>
+            <br>
+            <button id="dismissUpdate">Close</button>
+          `;
+
+          overlay.appendChild(modal);
+          document.body.appendChild(overlay);
+
+          document.getElementById("dismissUpdate").addEventListener("click", () => {
+            localStorage.setItem("lastSeenUpdate", latestUpdate);
+            overlay.remove();
+          });
+        }
+      });
+    </script>
+    {% endif %}
         
         
 
