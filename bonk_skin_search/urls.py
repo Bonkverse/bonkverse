@@ -15,6 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
+from django.http import HttpResponse
 from django.urls import path
 from skins.search import search_skins
 from skins.upload import upload_skin
@@ -28,10 +29,14 @@ from skins.skin_detail import skin_detail
 from skins.skin_votes import vote_skin_api, toggle_favorite_api
 from skins.wear_skin import wear_skin, bonk_login_for_wear
 from skins.players import search_players_view, players_page
+from skins.create_changelog import add_changelog
+from skins.changelog import changelog_view
 from skins import flash_friends
 from skins import leaderboards
 from skins import players
 from skins import home
+
+
 
 
 
@@ -48,7 +53,7 @@ urlpatterns = [
     path('skin/<int:skin_id>/edit/', edit_skin, name='edit_skin'),
     path('matchmaking/', matchmaking_page, name='matchmaking'),
     path('skins/<int:skin_id>/', skin_detail, name='skin_detail'),
-
+    path("changelog/", changelog_view, name="changelog"),
 
 
     # NEW: AJAX/JSON endpoints used by search cards
@@ -70,6 +75,7 @@ urlpatterns = [
     path("players_search/players/", players_page, name="players_page"),
     path("players_search/flash-friends/", flash_friends.flash_friends_page, name="flash_friends_page"),
 
+    path("changelog/add/", add_changelog, name="add_changelog"),
 
 
 
