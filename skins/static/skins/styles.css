@@ -1150,6 +1150,239 @@ button {
   z-index: 1000;
 }
 
+.update-popup {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #1a2733;
+  color: #fff;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  max-width: 300px;
+  z-index: 2000;
+}
+.update-popup h3 { margin: 0 0 8px; font-size: 16px; }
+.update-popup a { color: #00ffcc; text-decoration: underline; }
+.update-popup button {
+  margin-top: 10px;
+  background: #444;
+  border: none;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.changelog-header {
+  text-align: center;
+  font-size: 32px;
+  margin: 20px 0 30px;
+  color: #00ffcc;
+  text-shadow: 0 0 12px #00ffcc;
+}
+
+.changelog-list {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.changelog-card {
+  background: #1a2733;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.changelog-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.7), 0 0 10px #00ffcc;
+}
+
+.changelog-card h2 {
+  margin: 0 0 8px;
+  color: #fff;
+}
+
+.changelog-card .meta {
+  font-size: 13px;
+  color: #aaa;
+  margin-bottom: 10px;
+  display: flex;
+  gap: 10px;
+}
+
+.changelog-card .version {
+  background: #00c3ff;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+/* =============================
+   📝 Changelog Form Styling
+============================= */
+
+.changelog-form-container {
+  max-width: 600px;
+  margin: 40px auto;
+  background: #1a2733;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  color: #ddd;
+}
+
+.changelog-title {
+  text-align: center;
+  font-size: 26px;
+  margin-bottom: 20px;
+  color: #00ffcc;
+  text-shadow: 0 0 8px #00ffcc;
+}
+
+/* 🔹 Form Layout */
+.changelog-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.changelog-form .form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.changelog-form label {
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* 🔹 Inputs + Textarea */
+.changelog-form input[type="text"],
+.changelog-form textarea {
+  width: 100%;
+  background: #0f1923;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 12px;
+  color: #ddd;
+  font-size: 15px;
+  outline: none;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Bigger textarea for better typing */
+.changelog-form textarea {
+  min-height: 160px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+/* 🔹 Placeholders */
+.changelog-form input::placeholder,
+.changelog-form textarea::placeholder {
+  color: #888;
+  font-style: italic;
+}
+
+/* 🔹 Focus state with glow */
+.changelog-form input:focus,
+.changelog-form textarea:focus {
+  border-color: #00ffcc;
+  box-shadow: 0 0 10px #00ffcc;
+}
+
+/* 🔹 Submit Button */
+.submit-btn {
+  display: block;
+  background: linear-gradient(180deg, #00c3ff, #009688);
+  color: #fff;
+  font-weight: bold;
+  border: none;
+  padding: 12px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 100%;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.submit-btn:hover {
+  background: #00ffcc;
+  transform: translateY(-2px);
+}
+
+.update-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.update-modal {
+  background: #1a2733;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  max-width: 500px;
+  width: 90%;
+  color: #fff;
+  text-align: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.update-modal h2 {
+  margin-top: 0;
+  color: #00ffcc;
+  text-shadow: 0 0 8px #00ffcc;
+}
+
+.update-modal p {
+  margin: 15px 0;
+  line-height: 1.4;
+}
+
+.update-modal .read-more {
+  display: inline-block;
+  margin: 10px 0;
+  color: #00e6c3;
+  text-decoration: underline;
+}
+
+.update-modal button {
+  margin-top: 15px;
+  background: #444;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.update-modal button:hover {
+  background: #666;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+
+
 
 /* 🔹 Responsive Fixes */
 @media (max-width: 768px) {
