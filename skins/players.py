@@ -7,14 +7,14 @@ from .models import BonkPlayer, FlashFriendship, BonkAccountLink
 from django.db.models import Q
 
 
-@login_required
+# @login_required
 def players_page(request):
     """Render the search UI page."""
     total_players = BonkPlayer.objects.count()
     return render(request, "players_search/players.html", {"total_players": total_players})
 
 
-@login_required
+# @login_required
 def search_players_view(request):
     q = (request.GET.get("q") or "").strip()
     page = int(request.GET.get("page", 1))

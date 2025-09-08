@@ -8,8 +8,7 @@
 
     <ul class="nav-links">
         <li><a href="{% url 'home' %}">Home</a></li>
-        <li><a href="https://discord.gg/yAcdSCVrya">Discord</a></li>
-        <li><a href="{% url 'search_skins' %}">Search Skins</a></li>
+        <li><a href="{% url 'changelog' %}">Changelog</a></li>
         <li><a href="{% url 'matchmaking' %}">1v1 Matchmaking</a></li>
 
         <li class="nav-item">
@@ -21,14 +20,16 @@
             </ul>
         </li>
 
+        <li class="nav-item">
+            <a href="#" class="nav-link">Search ▾</a>
+            <ul class="dropdown-menu">
+                <li><a href="{% url 'search_skins' %}">Skins</a></li>
+                <li><a href="{% url 'players_page' %}">Bonk Players</a></li>
+                <li><a href="{% url 'flash_friends_page' %}">Flash Friends</a></li>
+            </ul>
+        </li>
+
         {% if user.is_authenticated %}
-            <li class="nav-item">
-                <a href="#" class="nav-link">Players Search ▾</a>
-                <ul class="dropdown-menu">
-                    <li><a href="{% url 'players_page' %}">Bonk Players</a></li>
-                    <li><a href="{% url 'flash_friends_page' %}">Flash Friends</a></li>
-                </ul>
-            </li>
             <li><a href="{% url 'upload_skin' %}">Upload Skin</a></li>
             <li><a href="{% url 'my_profile' %}" class="username-link">My Profile</a></li>
             <li><a href="{% url 'logout' %}">Logout</a></li>

@@ -159,3 +159,12 @@ class FlashFriendship(models.Model):
 
     def __str__(self):
         return f"{self.user.username} ↔ {self.flash_friend.name}"
+
+class Changelog(models.Model):
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    created_at = models.DateTimeField(default=timezone.now)
+    version = models.CharField(max_length=20, blank=True, null=True)  # optional
+
+    def __str__(self):
+        return f"{self.version or ''} - {self.title}"

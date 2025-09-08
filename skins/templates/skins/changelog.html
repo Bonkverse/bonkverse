@@ -1,0 +1,50 @@
+{% extends "skins/base.html" %}
+{% block title %}Bonkverse Updates{% endblock %}
+
+{% block content %}
+<h1 class="changelog-header">Bonkverse Updates</h1>
+
+<div class="changelog-list">
+  {% for update in updates %}
+    <div class="changelog-card">
+      <h2>{{ update.title }}</h2>
+      <div class="meta">
+        <span>{{ update.created_at|date:"M d, Y" }}</span>
+        {% if update.version %}
+          <span class="version">v{{ update.version }}</span>
+        {% endif %}
+      </div>
+      <p>{{ update.content|linebreaks }}</p>
+    </div>
+  {% empty %}
+    <p>No updates yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const latestUpdate = "{{ updates.first.created_at|date:'c' }}";  
+    const lastSeenUpdate = localStorage.getItem("lastSeenUpdate");
+
+    if (!lastSeenUpdate || new Date(latestUpdate) > new Date(lastSeenUpdate)) {
+      // Show popup
+      const popup = document.createElement("div");
+      popup.className = "update-popup";
+      popup.innerHTML = `
+        <h3>New Update: {{ updates.first.title }}</h3>
+        <p>{{ updates.first.content|truncatewords:20 }}</p>
+        <a href="{% url 'changelog' %}">Read more →</a>
+        <button id="dismissUpdate">Close</button>
+      `;
+      document.body.appendChild(popup);
+
+      document.getElementById("dismissUpdate").addEventListener("click", () => {
+        localStorage.setItem("lastSeenUpdate", latestUpdate);
+        popup.remove();
+      });
+    }
+  });
+</script>
+{% endblock %}
