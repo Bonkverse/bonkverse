@@ -98,7 +98,7 @@
     {% if latest_update %}
     <script>
       document.addEventListener("DOMContentLoaded", () => {
-        const latestUpdate = "{{ latest_update.created_at|date:'c' }}";  
+        const latestUpdate = "{{ latest_update.created_at|date:'c'|escapejs }}";  
         const lastSeenUpdate = localStorage.getItem("lastSeenUpdate");
 
         if (!lastSeenUpdate || new Date(latestUpdate) > new Date(lastSeenUpdate)) {
@@ -109,8 +109,8 @@
           modal.className = "update-modal";
           modal.innerHTML = `
             <h2>New Update!</h2>
-            <h2>{{ latest_update.title }}</h2>
-            <p>{{ latest_update.content|truncatewords:30 }}</p>
+            <h2>{{ latest_update.title|escapejs }}</h2>
+            <p>{{ latest_update.content|truncatewords:30|escapejs }}</p>
             <a href="{% url 'changelog' %}" class="read-more">Read full changelog!</a>
             <br>
             <button id="dismissUpdate">Close</button>
@@ -127,6 +127,7 @@
       });
     </script>
     {% endif %}
+
 
 
     {% block extra_scripts %}{% endblock %}
