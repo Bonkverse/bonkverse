@@ -17,7 +17,7 @@ def skin_detail(request, skin_id):
     # image_url = skin.image_url
     # if image_url and not image_url.startswith('http'):
     #     image_url = request.build_absolute_uri(image_url)
-    png_path = f"{settings.MEDIA_URL}skins/{skin.id}_thumb.png"
+    png_path = f"{settings.MEDIA_URL}skins/{skin.id}.png"
     image_url = request.build_absolute_uri(png_path)
 
     # Nice description (fallbacks if none)
