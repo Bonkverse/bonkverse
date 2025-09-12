@@ -139,8 +139,8 @@ def upload_skin(request):
             cairosvg.svg2png(bytestring=svg_content, write_to=png_path, output_width=512, output_height=512)
             cairosvg.svg2png(bytestring=svg_content, write_to=thumb_path, output_width=128, output_height=128)
 
-            # Now update Skin.image_url to point at our local PNG
-            skin.image_url = f"{settings.MEDIA_URL}skins/{skin.id}.png"
+            # Now update Skin.image_url to point at our local SVG
+            skin.image_url = f"{settings.MEDIA_URL}skins/{skin.id}.svg"
             skin.save()
 
         except Exception as e:
