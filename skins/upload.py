@@ -100,37 +100,31 @@ def upload_skin(request):
             messages.error(request, "❌ Skin name must be under 1000 characters.")
             return render(request, "skins/upload.html")
 
-        # --- Step 1: Verify skin exists with Bonkleagues ---
+        # --- Step 1: Get the preview/SVG url (Bonkleagues serves the skin as SVG here) ---
         skin_image_url = fetch_skin_image_url(bonkleagues_link)
         if not skin_image_url:
-            messages.error(request, "❌ Could not fetch skin preview from Bonkleagues.")
+            messages.error(request, "❌ Could not fetch skin image from Bonkleagues.")
             return render(request, "skins/upload.html")
 
-        # --- Step 2: Try fetching SVG ---
-        match = re.match(bonk_url_pattern, bonkleagues_link)
-        skin_id = match.group(1)
-        svg_url = f"https://bonkleagues.io/s/{skin_id}.svg"
-
-        svg_content = None
+        # --- Step 2: Download the SVG from skin_image_url (same as fetch_svg.py) ---
         try:
-            r = requests.get(svg_url, timeout=10)
+            r = requests.get(skin_image_url, timeout=10)
             r.raise_for_status()
             svg_content = r.content
-        except Exception:
-            # If SVG fails, fallback gracefully
-            messages.error(request, "❌ Could not fetch SVG for this skin. Upload cancelled.")
+        except Exception as e:
+            messages.error(request, f"❌ Could not fetch SVG for this skin: {e}")
             return render(request, "skins/upload.html")
 
         # --- Step 3: Save files locally ---
         skin_dir = os.path.join(settings.MEDIA_ROOT, "skins")
         os.makedirs(skin_dir, exist_ok=True)
 
-        # Create DB skin entry first (so we have skin.id for filenames)
+        # Create DB skin entry first
         skin = Skin.objects.create(
             name=skin_name,
             creator=request.user.username,
             link=bonkleagues_link,
-            image_url=f"{settings.MEDIA_URL}skins/{skin_id}.png"  # default preview png
+            image_url=f"{settings.MEDIA_URL}skins/{skin.id}.png"
         )
 
         svg_path = os.path.join(skin_dir, f"{skin.id}.svg")
@@ -142,7 +136,7 @@ def upload_skin(request):
             with open(svg_path, "wb") as f:
                 f.write(svg_content)
 
-            # Convert PNG + thumbnail
+            # Generate PNG + thumbnail
             cairosvg.svg2png(bytestring=svg_content, write_to=png_path, output_width=512, output_height=512)
             cairosvg.svg2png(bytestring=svg_content, write_to=thumb_path, output_width=128, output_height=128)
 
