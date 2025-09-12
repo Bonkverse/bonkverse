@@ -1,19 +1,189 @@
 {% extends 'skins/base.html' %}
 
-{% block title %}Edit Skin{% endblock %}
+{% block title %}Edit {{ skin.name }}{% endblock %}
 
 {% block content %}
-<h1>Edit Skin</h1>
+<div class="skin-detail-container">
+    <h1 class="skin-title">Editing: {{ skin.name }}</h1>
 
-<form method="POST">
-    {% csrf_token %}
-    <label for="name">Skin Name:</label>
-    <input type="text" name="name" id="name" value="{{ skin.name }}" required>
-    <br><br>
-    <button type="submit">Update Name</button>
-    <input type="hidden" name="referer" value="{{ referer }}">
-</form>
+    <form method="POST" id="edit-skin-form">
+        {% csrf_token %}
 
-<br>
-<a href="{{ referer }}">Back to My Skins</a>
+        <!-- Skin Name -->
+        <div class="skin-header">
+            <input type="text" name="name" id="name" value="{{ skin.name }}" class="skin-input-title" required>
+        </div>
+
+        <!-- Description -->
+        <label for="description"><strong>Description</strong></label>
+        <textarea name="description" id="description" class="skin-description-edit">{{ skin.description }}</textarea>
+
+        <!-- Style -->
+        <label for="style"><strong>Style</strong></label>
+        <input type="text" name="style" id="style" value="{{ skin.labels.style|default:'' }}" class="skin-input">
+
+        <!-- Tags -->
+        <div class="tag-section">
+            <h3>Colors</h3>
+            <div class="tag-bubbles tags-container" data-name="colors"></div>
+        </div>
+
+        <div class="tag-section">
+            <h3>Objects</h3>
+            <div class="tag-bubbles tags-container" data-name="objects"></div>
+        </div>
+
+        <div class="tag-section">
+            <h3>Themes</h3>
+            <div class="tag-bubbles tags-container" data-name="themes"></div>
+        </div>
+
+        <div class="tag-section">
+            <h3>References</h3>
+            <div class="tag-bubbles tags-container" data-name="references"></div>
+        </div>
+
+        <!-- Hidden JSON -->
+        <input type="hidden" name="labels" id="labels">
+
+        <button type="submit" class="submit-btn">Save Changes</button>
+        <input type="hidden" name="referer" value="{{ referer }}">
+    </form>
+</div>
+
+<!-- JSON preload -->
+{{ skin.labels|default:"{}"|json_script:"initial-labels" }}
+
+<style>
+    .skin-input-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        width: 100%;
+        padding: 10px;
+        border: 2px solid #009688;
+        border-radius: 6px;
+        background: #0f1923;
+        color: #fff;
+        text-align: center;
+    }
+
+    .skin-description-edit {
+        width: 100%;
+        min-height: 150px;
+        padding: 12px;
+        border-radius: 6px;
+        border: 1px solid #009688;
+        background: rgba(255,255,255,0.05);
+        color: #fff;
+        margin: 10px auto 20px;
+        line-height: 1.6;
+    }
+
+    .skin-input {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 20px;
+        border: 1px solid #009688;
+        border-radius: 6px;
+        background: #0f1923;
+        color: #fff;
+    }
+
+    .tag-bubbles {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 10px;
+        background: rgba(0,0,0,0.3);
+        border-radius: 8px;
+    }
+
+    .tag-bubble {
+        padding: 6px 14px;
+        border-radius: 999px;
+        background: #4a90e2;
+        font-weight: bold;
+        font-size: 14px;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .tag-bubble button {
+        background: none;
+        border: none;
+        color: #fff;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .submit-btn {
+        margin-top: 20px;
+    }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const tagContainers = document.querySelectorAll(".tags-container");
+    const initialLabels = JSON.parse(document.getElementById("initial-labels").textContent);
+
+    tagContainers.forEach(container => {
+        const name = container.dataset.name;
+        const input = document.createElement("input");
+        input.type = "text";
+        input.placeholder = "Type and press Enter...";
+        input.style.background = "transparent";
+        input.style.border = "none";
+        input.style.color = "#ddd";
+        container.appendChild(input);
+
+        if (initialLabels[name]) {
+            initialLabels[name].forEach(tag => addTag(container, tag));
+        }
+
+        input.addEventListener("keydown", e => {
+            if (e.key === "Enter" || e.key === ",") {
+                e.preventDefault();
+                const value = input.value.trim();
+                if (value) {
+                    addTag(container, value);
+                    input.value = "";
+                }
+            }
+        });
+    });
+
+    function addTag(container, text) {
+        const tag = document.createElement("span");
+        tag.className = "tag-bubble";
+        tag.textContent = text;
+
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.textContent = "×";
+        removeBtn.onclick = () => tag.remove();
+
+        tag.appendChild(removeBtn);
+        container.insertBefore(tag, container.lastChild);
+    }
+
+    document.getElementById("edit-skin-form").addEventListener("submit", () => {
+        const labels = {
+            style: document.getElementById("style").value.trim(),
+            colors: getTags("colors"),
+            objects: getTags("objects"),
+            themes: getTags("themes"),
+            references: getTags("references"),
+        };
+        document.getElementById("labels").value = JSON.stringify(labels);
+    });
+
+    function getTags(name) {
+        const container = document.querySelector(`.tags-container[data-name="${name}"]`);
+        return Array.from(container.querySelectorAll(".tag-bubble"))
+            .map(tag => tag.childNodes[0].nodeValue.trim());
+    }
+});
+</script>
 {% endblock %}
