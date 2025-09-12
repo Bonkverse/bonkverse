@@ -57,12 +57,12 @@
 #     return render(request, "skins/upload.html")
 
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
+from django.shortcuts import render, redirect
 from django.conf import settings
 from django.urls import reverse
 from django.contrib import messages
-from skins.models import Skin
+from skins.models import Skin, SkinImage
+from skins.utils.fetch_skin_image_url import fetch_skin_image_url
 import re
 import os
 import requests
@@ -100,46 +100,56 @@ def upload_skin(request):
             messages.error(request, "❌ Skin name must be under 1000 characters.")
             return render(request, "skins/upload.html")
 
-        # --- Fetch SVG directly from Bonkleagues ---
-        svg_url = f"{bonkleagues_link}.svg"
-        try:
-            r = requests.get(svg_url, timeout=10)
-            r.raise_for_status()
-        except Exception:
-            messages.error(request, "❌ Could not fetch SVG for this skin.")
+        # --- Step 1: Fetch preview image (always reliable) ---
+        skin_image_url = fetch_skin_image_url(bonkleagues_link)
+        if not skin_image_url:
+            messages.error(request, "❌ Could not fetch preview image from Bonkleagues.")
             return render(request, "skins/upload.html")
 
-        svg_content = r.content
-
-        # --- Ensure media directory exists ---
-        skin_dir = os.path.join(settings.MEDIA_ROOT, "skins")
-        os.makedirs(skin_dir, exist_ok=True)
-
-        # Temporary ID for filenames (DB pk will be assigned after save)
-        temp_id = Skin.objects.count() + 1
-
-        # File paths
-        svg_path = os.path.join(skin_dir, f"{temp_id}.svg")
-        png_path = os.path.join(skin_dir, f"{temp_id}.png")
-        thumb_path = os.path.join(skin_dir, f"{temp_id}_thumb.png")
-
-        # Save SVG
-        with open(svg_path, "wb") as f:
-            f.write(svg_content)
-
-        # Convert to PNG (512px)
-        cairosvg.svg2png(bytestring=svg_content, write_to=png_path, output_width=512, output_height=512)
-
-        # Convert to thumbnail (128px)
-        cairosvg.svg2png(bytestring=svg_content, write_to=thumb_path, output_width=128, output_height=128)
-
-        # --- Save skin in DB ---
+        # --- Step 2: Save skin DB entry first ---
         skin = Skin.objects.create(
             name=skin_name,
             creator=request.user.username,
             link=bonkleagues_link,
-            image_url=f"{settings.MEDIA_URL}skins/{temp_id}.png"  # main PNG as preview
+            image_url=skin_image_url  # fallback preview, will update if PNG is saved
         )
+
+        # --- Step 3: Try fetching the raw SVG ---
+        svg_url = f"{bonkleagues_link}.svg"
+        try:
+            r = requests.get(svg_url, timeout=10)
+            r.raise_for_status()
+            svg_content = r.content
+
+            # Ensure media dir
+            skin_dir = os.path.join(settings.MEDIA_ROOT, "skins")
+            os.makedirs(skin_dir, exist_ok=True)
+
+            # Paths
+            svg_path = os.path.join(skin_dir, f"{skin.id}.svg")
+            png_path = os.path.join(skin_dir, f"{skin.id}.png")
+            thumb_path = os.path.join(skin_dir, f"{skin.id}_thumb.png")
+
+            # Save SVG
+            with open(svg_path, "wb") as f:
+                f.write(svg_content)
+
+            # Convert PNG + thumbnail
+            cairosvg.svg2png(bytestring=svg_content, write_to=png_path, output_width=512, output_height=512)
+            cairosvg.svg2png(bytestring=svg_content, write_to=thumb_path, output_width=128, output_height=128)
+
+            # Update skin to point to our PNG instead of Bonkleagues
+            skin.image_url = f"{settings.MEDIA_URL}skins/{skin.id}.png"
+            skin.save(update_fields=["image_url"])
+
+            # --- Step 4: Create SkinImage rows ---
+            SkinImage.objects.create(skin=skin, kind="svg", file=f"skins/{skin.id}.svg")
+            SkinImage.objects.create(skin=skin, kind="png", file=f"skins/{skin.id}.png")
+            SkinImage.objects.create(skin=skin, kind="thumbnail", file=f"skins/{skin.id}_thumb.png")
+
+        except Exception as e:
+            # If SVG fetch fails, we still keep the preview URL (no crash)
+            print(f"SVG fetch/convert failed: {e}")
 
         messages.success(request, "✅ Skin uploaded successfully!")
         return redirect(reverse("search_skins") + f"?q={skin_name}")
