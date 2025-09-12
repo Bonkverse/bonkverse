@@ -100,19 +100,24 @@ def upload_skin(request):
             messages.error(request, "❌ Skin name must be under 1000 characters.")
             return render(request, "skins/upload.html")
 
-        # --- Step 1: Fetch preview image (fallback check) ---
+        # --- Step 1: Verify skin exists with Bonkleagues ---
         skin_image_url = fetch_skin_image_url(bonkleagues_link)
         if not skin_image_url:
-            messages.error(request, "❌ Could not fetch preview image from Bonkleagues.")
+            messages.error(request, "❌ Could not fetch skin preview from Bonkleagues.")
             return render(request, "skins/upload.html")
 
-        # --- Step 2: Try fetching the raw SVG ---
-        svg_url = f"{bonkleagues_link}.svg"
+        # --- Step 2: Try fetching SVG ---
+        match = re.match(bonk_url_pattern, bonkleagues_link)
+        skin_id = match.group(1)
+        svg_url = f"https://bonkleagues.io/s/{skin_id}.svg"
+
+        svg_content = None
         try:
             r = requests.get(svg_url, timeout=10)
             r.raise_for_status()
             svg_content = r.content
         except Exception:
+            # If SVG fails, fallback gracefully
             messages.error(request, "❌ Could not fetch SVG for this skin. Upload cancelled.")
             return render(request, "skins/upload.html")
 
@@ -120,11 +125,17 @@ def upload_skin(request):
         skin_dir = os.path.join(settings.MEDIA_ROOT, "skins")
         os.makedirs(skin_dir, exist_ok=True)
 
-        # Temporarily reserve filenames using count+1 (safe once DB saves skin.id)
-        temp_id = Skin.objects.count() + 1
-        svg_path = os.path.join(skin_dir, f"{temp_id}.svg")
-        png_path = os.path.join(skin_dir, f"{temp_id}.png")
-        thumb_path = os.path.join(skin_dir, f"{temp_id}_thumb.png")
+        # Create DB skin entry first (so we have skin.id for filenames)
+        skin = Skin.objects.create(
+            name=skin_name,
+            creator=request.user.username,
+            link=bonkleagues_link,
+            image_url=f"{settings.MEDIA_URL}skins/{skin_id}.png"  # default preview png
+        )
+
+        svg_path = os.path.join(skin_dir, f"{skin.id}.svg")
+        png_path = os.path.join(skin_dir, f"{skin.id}.png")
+        thumb_path = os.path.join(skin_dir, f"{skin.id}_thumb.png")
 
         try:
             # Save SVG
@@ -141,17 +152,10 @@ def upload_skin(request):
             for path in (svg_path, png_path, thumb_path):
                 if os.path.exists(path):
                     os.remove(path)
+            skin.delete()
             return render(request, "skins/upload.html")
 
-        # --- Step 4: Save skin in DB ---
-        skin = Skin.objects.create(
-            name=skin_name,
-            creator=request.user.username,
-            link=bonkleagues_link,
-            image_url=f"{settings.MEDIA_URL}skins/{temp_id}.png"
-        )
-
-        # --- Step 5: Save SkinImage entries ---
+        # --- Step 4: Save SkinImage entries ---
         SkinImage.objects.bulk_create([
             SkinImage(skin=skin, kind="svg", path=f"skins/{skin.id}.svg"),
             SkinImage(skin=skin, kind="png", path=f"skins/{skin.id}.png"),
