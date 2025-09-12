@@ -35,6 +35,7 @@ from skins import flash_friends
 from skins import leaderboards
 from skins import players
 from skins import home
+from django.views.static import serve
 
 
 
@@ -80,3 +81,11 @@ urlpatterns = [
 
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+# Static files (always safe)
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+# Media files (needed for your volume-stored images)
+urlpatterns += [
+    path("media/<path:path>", serve, {"document_root": settings.MEDIA_ROOT}),
+]

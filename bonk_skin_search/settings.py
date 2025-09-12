@@ -32,7 +32,7 @@ CSRF_TRUSTED_ORIGINS = [
 
 
 # DEFAULT STORAGE BACKEND (Using S3 Instead of Local Storage)
-DEFAULT_FILE_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+# DEFAULT_FILE_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 
 # Quick-start development settings - unsuitable for production
