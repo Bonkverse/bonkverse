@@ -202,4 +202,9 @@ else:
 # django-ratelimit should use the default cache
 RATELIMIT_USE_CACHE = "default"
 
+# Media files (go to volume in prod, ./media locally)
+MEDIA_URL = "/media/"
+
+# Use the Railway volume if it exists, else fall back to ./media
+MEDIA_ROOT = os.getenv("RAILWAY_VOLUME_MOUNT_PATH", os.path.join(BASE_DIR, "media"))
 
