@@ -115,17 +115,16 @@ def upload_skin(request):
             messages.error(request, f"❌ Could not fetch SVG for this skin: {e}")
             return render(request, "skins/upload.html")
 
-        # --- Step 3: Save files locally ---
-        skin_dir = os.path.join(settings.MEDIA_ROOT, "skins")
-        os.makedirs(skin_dir, exist_ok=True)
-
-        # Create DB skin entry first
+        # --- Step 3: Create DB entry first (no image_url yet) ---
         skin = Skin.objects.create(
             name=skin_name,
             creator=request.user.username,
             link=bonkleagues_link,
-            image_url=f"{settings.MEDIA_URL}skins/{skin.id}.png"
+            image_url=""  # temporary
         )
+
+        skin_dir = os.path.join(settings.MEDIA_ROOT, "skins")
+        os.makedirs(skin_dir, exist_ok=True)
 
         svg_path = os.path.join(skin_dir, f"{skin.id}.svg")
         png_path = os.path.join(skin_dir, f"{skin.id}.png")
@@ -139,6 +138,10 @@ def upload_skin(request):
             # Generate PNG + thumbnail
             cairosvg.svg2png(bytestring=svg_content, write_to=png_path, output_width=512, output_height=512)
             cairosvg.svg2png(bytestring=svg_content, write_to=thumb_path, output_width=128, output_height=128)
+
+            # Now update Skin.image_url to point at our local PNG
+            skin.image_url = f"{settings.MEDIA_URL}skins/{skin.id}.png"
+            skin.save()
 
         except Exception as e:
             messages.error(request, f"❌ Failed to generate PNG/thumbnail: {e}")
@@ -160,3 +163,4 @@ def upload_skin(request):
         return redirect(reverse("search_skins") + f"?q={skin_name}")
 
     return render(request, "skins/upload.html")
+
