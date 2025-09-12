@@ -168,3 +168,12 @@ class Changelog(models.Model):
 
     def __str__(self):
         return f"{self.version or ''} - {self.title}"
+
+class SkinImage(models.Model):
+    skin = models.ForeignKey("skins.Skin", on_delete=models.CASCADE, related_name="images")
+    kind = models.CharField(max_length=50, default="original")
+    path = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.kind} image for {self.skin.name}"
