@@ -5,6 +5,8 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from .models import Skin
 from django.core.paginator import Paginator
+import json
+from django.contrib import messages
 
 @login_required
 def my_profile(request):
@@ -53,3 +55,45 @@ def delete_skin(request, skin_id):
     if skin.creator == request.user.username:
         skin.delete()
     return redirect('my_profile')
+
+
+@login_required
+def edit_skin(request, skin_id):
+    skin = get_object_or_404(Skin, id=skin_id)
+
+    if skin.creator != request.user.username:
+        return redirect('my_profile')
+
+    if request.method == 'POST':
+        # Name
+        new_name = request.POST.get('name', '').strip()
+        if new_name:
+            skin.name = new_name
+
+        # Description
+        new_description = request.POST.get('description', '').strip()
+        skin.description = new_description if new_description else None
+
+        # Labels JSON (from hidden field)
+        raw_labels = request.POST.get('labels')
+        try:
+            skin.labels = json.loads(raw_labels) if raw_labels else None
+        except json.JSONDecodeError:
+            messages.error(request, "❌ Failed to parse tags JSON.")
+            referer = request.POST.get('referer') or request.META.get('HTTP_REFERER') or reverse('my_profile')
+            return render(request, 'skins/edit_skin.html', {
+                'skin': skin,
+                'referer': referer
+            })
+
+        skin.save()
+        messages.success(request, "✅ Skin updated successfully!")
+
+        # referer = request.POST.get('referer') or request.META.get('HTTP_REFERER') or reverse('my_profile')
+        return redirect('skin_detail', skin_id=skin.id)
+
+    referer = request.META.get('HTTP_REFERER', reverse('my_profile'))
+    return render(request, 'skins/edit_skin.html', {
+        'skin': skin,
+        'referer': referer
+    })
