@@ -25,7 +25,7 @@ class Skin(models.Model):
         return f"{self.name} ({self.link})"
     
     def get_absolute_url(self):
-        return reverse("skin_detail", kwargs={"id": self.id, "uuid": self.uuid})
+        return reverse("skin_detail", kwargs={"skin_id": self.id, "uuid": self.uuid})
 
 class BonkUserManager(BaseUserManager):
     def create_user(self, username):
