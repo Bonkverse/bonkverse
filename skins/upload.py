@@ -56,6 +56,7 @@
 
 #     return render(request, "skins/upload.html")
 
+import uuid
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.conf import settings
@@ -120,7 +121,8 @@ def upload_skin(request):
             name=skin_name,
             creator=request.user.username,
             link=bonkleagues_link,
-            image_url=""  # temporary
+            image_url="",  # temporary
+            uuid=uuid.uuid4()
         )
 
         skin_dir = os.path.join(settings.MEDIA_ROOT, "skins")
