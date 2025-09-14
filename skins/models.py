@@ -19,7 +19,7 @@ class Skin(models.Model):
     upvotes = models.PositiveIntegerField(default=0)
     downvotes = models.PositiveIntegerField(default=0)
     favorited_by = models.ManyToManyField("BonkUser", related_name="favorite_skins", blank=True)
-    uuid = models.UUIDField(default=None, unique=True, editable=False, null=True, blank=True)
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
 
     def __str__(self):
         return f"{self.name} ({self.link})"
