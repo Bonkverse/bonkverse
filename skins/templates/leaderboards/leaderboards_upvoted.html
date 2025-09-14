@@ -18,7 +18,7 @@
       <tr>
         <td>#{{ forloop.counter }}</td>
         <td><img src="{{ skin.image_url }}" alt="{{ skin.name }}'s Avatar" class="skin-avatar" onclick="showImage(`{{ skin.image_url}}`)"></td>
-        <td><a href="{% url 'skin_detail' skin.id uuid=skin.uuid %}" class="skin-link">{{ skin.name }}</a></td>
+        <td><a href="{{ skin.get_absolute_url }}" class="skin-link">{{ skin.name }}</a></td>
         <td>{{ skin.creator }}</td>
         <td>{{ skin.upvotes }}</td>
       </tr>
