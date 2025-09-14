@@ -90,7 +90,7 @@ def edit_skin(request, skin_id):
         messages.success(request, "✅ Skin updated successfully!")
 
         # referer = request.POST.get('referer') or request.META.get('HTTP_REFERER') or reverse('my_profile')
-        return redirect('skin_detail', skin_id=skin.id)
+        return redirect('skin_detail', skin_id=skin.id, uuid=skin.uuid)
 
     referer = request.META.get('HTTP_REFERER', reverse('my_profile'))
     return render(request, 'skins/edit_skin.html', {

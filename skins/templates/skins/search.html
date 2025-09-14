@@ -8,82 +8,80 @@
   <h2>🔥 Skins uploaded today: {{ daily_skin_count }} 🔥 Total Skins: {{ total_skin_count }} 🔥</h2>
 
   <div class="hero-inner">
-    {% include "skins/partials/search_bar.html" %}
+    <div class="search-row">
+      <form id="searchForm" method="GET" action="{% url 'search_skins' %}" class="hero-search">
+        <input type="text" name="q" value="{{ query }}" placeholder="Search skins...">
+        <button type="submit">Search</button>
+      </form>
+
+      <br><br>
+
+      {% if query %}
+        <!-- Controls sit OUTSIDE to the right -->
+        <div class="search-controls-inline">
+          <label>Search By:</label>
+          <select name="mode" form="searchForm">
+            <option value="relevance" {% if mode == "relevance" %}selected{% endif %}>Relevance</option>
+            <option value="name" {% if mode == "name" %}selected{% endif %}>Name</option>
+            <option value="creator" {% if mode == "creator" %}selected{% endif %}>Creator</option>
+            <option value="tags" {% if mode == "tags" %}selected{% endif %}>Tags</option>
+            <option value="description" {% if mode == "description" %}selected{% endif %}>Description</option>
+          </select>
+
+          <label>Sort By:</label>
+          <select name="sort" form="searchForm">
+            <option value="relevance" {% if sort == "relevance" %}selected{% endif %}>Relevance</option>
+            <option value="newest" {% if sort == "newest" %}selected{% endif %}>Newest</option>
+            <option value="favorites" {% if sort == "favorites" %}selected{% endif %}>Most Favorited</option>
+            <option value="upvotes" {% if sort == "upvotes" %}selected{% endif %}>Most Upvoted</option>
+          </select>
+        </div>
+      {% endif %}
+    </div>
   </div>
 
-  <div class="search-controls">
-  <form method="GET" action="{% url 'search_skins' %}">
-    <input type="text" name="q" value="{{ query }}" placeholder="Search skins...">
-
-    <label>Search in:</label>
-    <select name="mode">
-      <option value="relevance" {% if mode == "relevance" %}selected{% endif %}>Relevance</option>
-      <option value="name" {% if mode == "name" %}selected{% endif %}>Name</option>
-      <option value="creator" {% if mode == "creator" %}selected{% endif %}>Creator</option>
-      <option value="tags" {% if mode == "tags" %}selected{% endif %}>Tags</option>
-      <option value="description" {% if mode == "description" %}selected{% endif %}>Description</option>
-    </select>
-
-    <label>Sort by:</label>
-    <select name="sort">
-      <option value="relevance" {% if sort == "relevance" %}selected{% endif %}>Relevance</option>
-      <option value="newest" {% if sort == "newest" %}selected{% endif %}>Newest</option>
-      <option value="favorites" {% if sort == "favorites" %}selected{% endif %}>Most Favorited</option>
-      <option value="upvotes" {% if sort == "upvotes" %}selected{% endif %}>Most Upvoted</option>
-    </select>
-
-    <button type="submit">Search</button>
-  </form>
-</div>
-
-
-
-  <br><br>
 
   <div class="skins-container">
     {% for skin in skins %}
       <div class="skin-card" data-id="{{ skin.id }}"
         data-favorited="{% if user.is_authenticated and user in skin.favorited_by.all %}1{% else %}0{% endif %}">
 
-    {% if user.is_authenticated %}
-        <button class="wear-card-btn" title="Wear this skin in Bonk.io">Wear</button>
-        <button class="fav-toggle" title="Favorite">
-        <span class="fav-icon">{% if user in skin.favorited_by.all %}⭐{% else %}☆{% endif %}</span>
-        <span class="fav-count">{{ skin.favorited_by.count }}</span>
-        </button>
-    {% else %}
-    <span class="fav-static" title="Favorite a skin (login required)">☆ {{ skin.favorited_by.count }}</span>
-    {% endif %}
-    
-    <br>
-    <br>
+        {% if user.is_authenticated %}
+          <button class="wear-card-btn" title="Wear this skin in Bonk.io">Wear</button>
+          <button class="fav-toggle" title="Favorite">
+            <span class="fav-icon">{% if user in skin.favorited_by.all %}⭐{% else %}☆{% endif %}</span>
+            <span class="fav-count">{{ skin.favorited_by.count }}</span>
+          </button>
+        {% else %}
+          <span class="fav-static" title="Favorite a skin (login required)">☆ {{ skin.favorited_by.count }}</span>
+        {% endif %}
 
-    <img crossorigin="anonymous"
-        src="{{ skin.image_url|default:'https://bonkleagues.io/api/avatar.svg?skinCode=CgcDYQACCQkBCgcFYWwAAQBNPlt5PUI19d8%2FGMUDPsJvGgAAAAAAAAoFAAEATT5beT1CNfXfvvn8kL80i70BAAAAAAAKBQABAEs%2BgkonQjVq%2FL2vivk9L4r5AAAAzxsPCgUAAQANP1yl2D9VbKUAAAAAAAAAAAAAAM8bDwAAAAA%3D' }}"
-        alt="{{ skin.name }}" width="100"
-        onclick="showImage(`{{ skin.image_url}}`)">
+        <br><br>
 
-    <br>
-    <strong title="{{ skin.name }}">{{ skin.name|truncatechars:20 }}</strong>
-    by <span title="{{ skin.creator }}">{{ skin.creator|truncatechars:20 }}</span>
+        <img crossorigin="anonymous"
+          src="{{ skin.image_url|default:'https://bonkleagues.io/api/avatar.svg?skinCode=DEFAULT' }}"
+          alt="{{ skin.name }}" width="100"
+          onclick="showImage(`{{ skin.image_url }}`)">
 
-    <!-- One-line voting -->
-    <div class="vote-row">
-        <button class="vote-up" title="Upvote a skin (login required)">🔼</button>
-        <span class="up-count">{{ skin.upvotes }}</span>
-        <button class="vote-down" title="Downvote a skin (login required)">🔽</button>
-        <span class="down-count">{{ skin.downvotes }}</span>
-    </div>
-    
-    <br>
-    {% if skin.id %}
-        <!-- <a href="{% url 'skin_detail' skin.id uuid=skin.uuid %}" class="view-btn">View Skin Details</a> -->
-        <a href="{{ skin.get_absolute_url }}" class="view-btn">View Skin Details</a>
-    {% else %}
-        <span style="color: red;">⚠️ No ID</span>
-    {% endif %}
-    </div>
+        <br>
+        <strong title="{{ skin.name }}">{{ skin.name|truncatechars:20 }}</strong>
+        by <span title="{{ skin.creator }}">{{ skin.creator|truncatechars:20 }}</span>
 
+        <!-- One-line voting -->
+        <div class="vote-row">
+          <button class="vote-up" title="Upvote a skin (login required)">🔼</button>
+          <span class="up-count">{{ skin.upvotes }}</span>
+          <button class="vote-down" title="Downvote a skin (login required)">🔽</button>
+          <span class="down-count">{{ skin.downvotes }}</span>
+        </div>
+
+        <br>
+        {% if skin.id %}
+          <a href="{{ skin.get_absolute_url }}" class="view-btn">View Skin Details</a>
+        {% else %}
+          <span style="color: red;">⚠️ No ID</span>
+        {% endif %}
+      </div>
     {% endfor %}
   </div>
 
@@ -99,11 +97,10 @@
         <a href="?q={{ query }}&page={{ skins.previous_page_number }}">Prev</a>
       {% endif %}
 
-      <!-- Page jump input -->
-      <input id="pageJump" type="number" 
-             min="1" 
-             max="{{ skins.paginator.num_pages }}" 
-             value="{{ skins.number }}" 
+      <input id="pageJump" type="number"
+             min="1"
+             max="{{ skins.paginator.num_pages }}"
+             value="{{ skins.number }}"
              style="width:60px; margin:0 5px;">
 
       <span>/ {{ skins.paginator.num_pages }}</span>
@@ -115,33 +112,39 @@
   {% endif %}
 
   {% if user.is_authenticated %}
-<dialog id="bonk-login-modal">
-  <form id="bonk-login-form" method="dialog" onsubmit="return doBonkLoginFromSearch(event)">
-    <h3>Bonk.io Login</h3>
-    <p class="muted">We don’t store your password. It’s sent to Bonk.io once to apply the skin.</p>
-    <label>Bonk.io Username</label>
-    <input name="bonk_username" required>
-    <label>Bonk.io Password</label>
-    <input name="bonk_password" type="password" required>
-    <div class="row">
-      <button type="submit">Login</button>
-      <button type="button" onclick="closeBonkLogin()">Cancel</button>
-    </div>
-    <p id="bonk-login-msg" class="muted"></p>
-  </form>
-</dialog>
-<style>
-  dialog{border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:16px;background:#111;color:#fff}
-  dialog form{display:flex;flex-direction:column;gap:8px;min-width:260px}
-  dialog .row{display:flex;gap:8px;justify-content:flex-end}
-  .muted{color:#9aa4b2;font-size:.9rem}
-</style>
-{% endif %}
+  <!-- Keep login modal inline -->
+  <dialog id="bonk-login-modal">
+    <form id="bonk-login-form" method="dialog" onsubmit="return doBonkLoginFromSearch(event)">
+      <h3>Bonk.io Login</h3>
+      <p class="muted">We don’t store your password. It’s sent to Bonk.io once to apply the skin.</p>
+      <label>Bonk.io Username</label>
+      <input name="bonk_username" required>
+      <label>Bonk.io Password</label>
+      <input name="bonk_password" type="password" required>
+      <div class="row">
+        <button type="submit">Login</button>
+        <button type="button" onclick="closeBonkLogin()">Cancel</button>
+      </div>
+      <p id="bonk-login-msg" class="muted"></p>
+    </form>
+  </dialog>
+  {% endif %}
 
 {% endblock %}
 
+
 {% block extra_scripts %}
 <script>
+  document.addEventListener("DOMContentLoaded", () => {
+  const searchForm = document.getElementById("searchForm");
+
+  document.querySelectorAll('.search-controls-inline select').forEach(select => {
+    select.addEventListener("change", () => {
+      searchForm.submit();
+    });
+  });
+});
+
   // ---- Keep user's tz offset in the query so "today" count matches their local day
   (function ensureTzParam() {
     const url = new URL(window.location.href);

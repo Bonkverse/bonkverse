@@ -19,7 +19,6 @@
             <tr class="{% if forloop.counter == 1 %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">
                 <td>#{{ forloop.counter }}</td>
                 <td>
-                    <!-- <a href="{% url 'skin_detail' skin.id uuid=skin.uuid %}" class="skin-link"> -->
                     <a href="{{ skin.get_absolute_url }}" class="skin-link">
                         {{ skin.name }}
                     </a>
