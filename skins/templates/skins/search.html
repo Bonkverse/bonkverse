@@ -11,6 +11,32 @@
     {% include "skins/partials/search_bar.html" %}
   </div>
 
+  <div class="search-controls">
+  <form method="GET" action="{% url 'search_skins' %}">
+    <input type="text" name="q" value="{{ query }}" placeholder="Search skins...">
+
+    <label>Search in:</label>
+    <select name="mode">
+      <option value="relevance" {% if mode == "relevance" %}selected{% endif %}>Relevance</option>
+      <option value="name" {% if mode == "name" %}selected{% endif %}>Name</option>
+      <option value="creator" {% if mode == "creator" %}selected{% endif %}>Creator</option>
+      <option value="tags" {% if mode == "tags" %}selected{% endif %}>Tags</option>
+      <option value="description" {% if mode == "description" %}selected{% endif %}>Description</option>
+    </select>
+
+    <label>Sort by:</label>
+    <select name="sort">
+      <option value="relevance" {% if sort == "relevance" %}selected{% endif %}>Relevance</option>
+      <option value="newest" {% if sort == "newest" %}selected{% endif %}>Newest</option>
+      <option value="favorites" {% if sort == "favorites" %}selected{% endif %}>Most Favorited</option>
+      <option value="upvotes" {% if sort == "upvotes" %}selected{% endif %}>Most Upvoted</option>
+    </select>
+
+    <button type="submit">Search</button>
+  </form>
+</div>
+
+
 
   <br><br>
 
@@ -51,7 +77,7 @@
     
     <br>
     {% if skin.id %}
-        <a href="{% url 'skin_detail' skin.id %}" class="view-btn">View Skin Details</a>
+        <a href="{% url 'skin_detail' skin.id uuid=skin.uuid %}" class="view-btn">View Skin Details</a>
     {% else %}
         <span style="color: red;">⚠️ No ID</span>
     {% endif %}
