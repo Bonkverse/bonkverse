@@ -1381,6 +1381,50 @@ button {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* 🔹 Filter row styling */
+.search-controls {
+  margin: 1rem auto;
+  text-align: center;
+}
+
+.filter-form {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0,0,0,0.4);
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.filter-form label {
+  font-size: 0.9rem;
+  color: #9aa4b2;
+}
+
+.filter-form select {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: #111;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.filter-btn {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 6px;
+  background: #4cafef;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s ease-in-out;
+}
+
+.filter-btn:hover {
+  background: #3a9bdc;
+}
 
 
 

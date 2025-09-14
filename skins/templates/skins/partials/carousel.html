@@ -9,7 +9,6 @@
   <div class="carousel" data-speed="{{ speed|default:20 }}">
     <div class="carousel-track">
       {% for s in skins %}
-      <!-- <a class="carousel-card" href="{% url 'skin_detail' s.id uuid=s.uuid %}" title="{{ s.name }}"> -->
       <a class="carousel-card" href="{{ s.get_absolute_url }}" title="{{ s.name }}">
         <img loading="lazy" src="{{ s.image_url }}" alt="{{ s.name }}">
         <div class="carousel-meta">
@@ -20,7 +19,6 @@
       {% endfor %}
       <!-- duplicate for seamless loop -->
       {% for s in skins %}
-      <!-- <a class="carousel-card" href="{% url 'skin_detail' s.id uuid=s.uuid %}" title="{{ s.name }}"> -->
       <a class="carousel-card" href="{{ s.get_absolute_url }}" title="{{ s.name }}">
         <img loading="lazy" src="{{ s.image_url }}" alt="{{ s.name }}">
         <div class="carousel-meta">

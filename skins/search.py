@@ -57,6 +57,7 @@
 from django.shortcuts import render
 from django.db.models import Q, Count, F
 from django.core.paginator import Paginator
+from numpy import sort
 from skins.models import Skin
 from django.utils import timezone
 from datetime import timedelta
@@ -112,11 +113,16 @@ def search_skins(request):
     elif sort == "upvotes":
         skins = skins.annotate(score=F("upvotes") - F("downvotes")).order_by("-score")
     else:  # relevance (default)
-        if query:
+        if query and mode == "relevance":
+            # only safe if rank/similarity are annotated
             skins = skins.order_by("-rank", "-similarity", "name")
+        elif query:
+            # fallback for other modes (name/creator/etc.)
+            skins = skins.order_by("name")
         else:
             # already randomized above
             pass
+
 
     # Pagination
     paginator = Paginator(skins, per_page)

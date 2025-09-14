@@ -1381,6 +1381,52 @@ button {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* 🔹 Filter form styled like hero search */
+
+/* Row container for search + filters */
+.search-row {
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin: 0 auto;
+  max-width: 1100px;
+}
+
+/* Search bar stays same as before */
+.hero-search {
+  flex: 1;
+}
+
+/* Controls float on the right */
+.search-controls-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border-radius: 10px;
+  padding: 8px 14px;
+}
+
+.search-controls-inline select {
+  background: #111;
+  border: 1px solid rgba(0,255,204,0.3);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.search-controls-inline select:hover,
+.search-controls-inline select:focus {
+  border-color: #00ffcc;
+  box-shadow: 0 0 8px rgba(0,255,204,0.6);
+}
+
+.search-controls-inline label {
+  font-size: 0.85rem;
+  color: #a9b3c1;
+}
+
 
 
 
