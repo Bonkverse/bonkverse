@@ -77,7 +77,8 @@
     
     <br>
     {% if skin.id %}
-        <a href="{% url 'skin_detail' skin.id uuid=skin.uuid %}" class="view-btn">View Skin Details</a>
+        <!-- <a href="{% url 'skin_detail' skin.id uuid=skin.uuid %}" class="view-btn">View Skin Details</a> -->
+        <a href="{{ skin.get_absolute_url }}" class="view-btn">View Skin Details</a>
     {% else %}
         <span style="color: red;">⚠️ No ID</span>
     {% endif %}
