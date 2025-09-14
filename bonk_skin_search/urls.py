@@ -54,7 +54,7 @@ urlpatterns = [
     path('skin/<int:skin_id>/edit/', edit_skin, name='edit_skin'),
     path('matchmaking/', matchmaking_page, name='matchmaking'),
     # path('skins/<int:skin_id>/', skin_detail, name='skin_detail'),
-    path("skins/<int:id>/<uuid:uuid>/", skin_detail, name="skin_detail"),
+    path("skins/<int:skin_id>/<uuid:uuid>/", skin_detail, name="skin_detail"),
     path("changelog/", changelog_view, name="changelog"),
 
 
