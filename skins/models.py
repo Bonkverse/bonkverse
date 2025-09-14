@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.conf import settings
 from django.utils import timezone
 import uuid
+from django.urls import reverse
 
 # Create your models here.
 
@@ -22,6 +23,9 @@ class Skin(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.link})"
+    
+    def get_absolute_url(self):
+        return reverse("skin_detail", kwargs={"id": self.id, "uuid": self.uuid})
 
 class BonkUserManager(BaseUserManager):
     def create_user(self, username):
