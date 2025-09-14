@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.conf import settings
 from django.utils import timezone
+import uuid
 
 # Create your models here.
 
@@ -17,7 +18,7 @@ class Skin(models.Model):
     upvotes = models.PositiveIntegerField(default=0)
     downvotes = models.PositiveIntegerField(default=0)
     favorited_by = models.ManyToManyField("BonkUser", related_name="favorite_skins", blank=True)
-
+    uuid = models.UUIDField(default=None, unique=True, editable=False, null=True, blank=True)
 
     def __str__(self):
         return f"{self.name} ({self.link})"

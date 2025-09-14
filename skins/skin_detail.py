@@ -7,8 +7,8 @@ from django.shortcuts import render, get_object_or_404
 from .models import Skin
 from django.conf import settings
 
-def skin_detail(request, skin_id):
-    skin = get_object_or_404(Skin, id=skin_id)
+def skin_detail(request, skin_id, uuid):
+    skin = get_object_or_404(Skin, id=skin_id, uuid=uuid)
 
     page_url = request.build_absolute_uri()  # absolute URL to this skin page
 
