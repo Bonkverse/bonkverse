@@ -4,7 +4,35 @@
 
 {% block title %}Bonkverse — Discover Skins{% endblock %}
 
+
 {% block content %}
+
+<div id="skin-warning" style="
+    background-color: #facc15; 
+    color: #000; 
+    text-align: center; 
+    font-weight: 600; 
+    padding: 10px; 
+    margin-bottom: 15px;
+    border-radius: 6px;
+    position: relative;
+">
+    Bonkverse.io is currently undergoing a transition away from Bonkleagues. The 
+    <b>skin wearing feature</b> is currently unavailable. 
+    We apologize for the inconvenience.
+
+    <span onclick="document.getElementById('skin-warning').style.display='none'" 
+          style="
+              position: absolute;
+              right: 10px;
+              top: 5px;
+              cursor: pointer;
+              font-weight: bold;
+          ">
+        ✖
+    </span>
+</div>
+
 <section class="hero">
   <div class="hero-inner">
     <img class="hero-logo" src="{% static 'images/BonkverseLogo.png' %}" alt="Bonkverse" />
