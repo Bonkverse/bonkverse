@@ -117,7 +117,8 @@ def wear_skin(request, skin_id: int):
         slot = _get_active_slot(request) or 3
 
     skin = get_object_or_404(Skin, id=skin_id)
-    skin_code = _extract_skin_code(skin.image_url)
+    # skin_code = _extract_skin_code(skin.image_url)
+    skin_code = skin.skin_code
     if not skin_code:
         return JsonResponse({"ok": False, "error": "skin_code_not_found"}, status=400)
 
