@@ -21,13 +21,19 @@ def _get_queryset(period):
         qs = qs.filter(created_at__gte=week_start)
 
     elif period == "month":
-        qs = qs.filter(created_at__year=now_utc.year, created_at__month=now_utc.month)
+        start = now_utc.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        if start.month == 12:
+            end = start.replace(year=start.year + 1, month=1)
+        else:
+            end = start.replace(month=start.month + 1)
+        qs = qs.filter(created_at__gte=start, created_at__lt=end)
 
     return (
         qs.values("username")
           .annotate(total=Count("id"))
-          .order_by("-total")[:20]
+          .order_by("-total")[:50]
     )
+
 
 
 def wins_hub(request, period="today"):
