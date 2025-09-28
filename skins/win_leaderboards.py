@@ -4,23 +4,31 @@ from django.db.models import Count
 from django.utils.timezone import now, timedelta
 from .models import PlayerWin
 
+from django.utils import timezone
+from datetime import timedelta
+
 def _get_queryset(period):
     qs = PlayerWin.objects.all()
-    now_ts = now()
+    now_utc = timezone.now()
 
     if period == "today":
-        qs = qs.filter(created_at__date=now_ts.date())
+        start = now_utc.replace(hour=0, minute=0, second=0, microsecond=0)
+        end = start + timedelta(days=1)
+        qs = qs.filter(created_at__gte=start, created_at__lt=end)
+
     elif period == "week":
-        week_start = now_ts - timedelta(days=now_ts.weekday())
+        week_start = now_utc - timedelta(days=now_utc.weekday())
         qs = qs.filter(created_at__gte=week_start)
+
     elif period == "month":
-        qs = qs.filter(created_at__year=now_ts.year, created_at__month=now_ts.month)
+        qs = qs.filter(created_at__year=now_utc.year, created_at__month=now_utc.month)
 
     return (
         qs.values("username")
           .annotate(total=Count("id"))
           .order_by("-total")[:20]
     )
+
 
 def wins_hub(request, period="today"):
     leaderboard = _get_queryset(period)
