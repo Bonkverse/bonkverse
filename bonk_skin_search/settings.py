@@ -13,11 +13,6 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import dj_database_url
 import os
-os.environ.setdefault("TZ", "UTC")
-
-
-TIME_ZONE = "Etc/UTC"
-USE_TZ = True
 
 AUTH_USER_MODEL = 'skins.BonkUser'
 
