@@ -184,3 +184,11 @@ class SkinImage(models.Model):
 
     def __str__(self):
         return f"{self.kind} image for {self.skin.name}"
+    
+# skins/models.py (or players/models.py)
+class PlayerWin(models.Model):
+    username = models.CharField(max_length=100, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.username} win at {self.created_at}"

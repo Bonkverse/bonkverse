@@ -21,6 +21,16 @@
         </li>
 
         <li class="nav-item">
+            <a href="#" class="nav-link">Win Leaderboards ▾</a>
+            <ul class="dropdown-menu">
+            <li><a href="{% url 'wins_hub' 'today' %}">Today</a></li>
+            <li><a href="{% url 'wins_hub' 'week' %}">This Week</a></li>
+            <li><a href="{% url 'wins_hub' 'month' %}">This Month</a></li>
+            <li><a href="{% url 'wins_hub' 'all' %}">All Time</a></li>
+            </ul>
+        </li>
+
+        <li class="nav-item">
             <a href="#" class="nav-link">Search ▾</a>
             <ul class="dropdown-menu">
                 <li><a href="{% url 'search_skins' %}">Skins</a></li>

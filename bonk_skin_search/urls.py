@@ -35,6 +35,8 @@ from skins import flash_friends
 from skins import leaderboards
 from skins import players
 from skins import home
+from skins import api
+from skins import win_leaderboards
 from django.views.static import serve
 
 
@@ -79,6 +81,11 @@ urlpatterns = [
 
     path("changelog/add/", add_changelog, name="add_changelog"),
 
+    path("api/wins/", api.record_win, name="api_record_win"),
+    path("api/leaderboard/<str:period>/", api.leaderboard, name="api_leaderboard"),
+
+    path("leaderboards/wins/<str:period>/", win_leaderboards.wins_hub, name="wins_hub"),
+    path("leaderboards/wins/", win_leaderboards.wins_hub, {"period": "today"}),  # default
 
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
