@@ -21,6 +21,7 @@ def add_cors_headers(response):
 
 
 @csrf_exempt
+@ratelimit(key="ip", rate="5/m", block=True)   # ✅ add rate limit
 def start_tracking(request):
     """Create a new session token for a player"""
     if request.method == "OPTIONS":
@@ -58,6 +59,7 @@ def start_tracking(request):
 
 
 @csrf_exempt
+@ratelimit(key="ip", rate="30/m", block=True)
 def heartbeat(request):
     """Keep a session alive"""
     if request.method == "OPTIONS":
@@ -73,6 +75,7 @@ def heartbeat(request):
 
 
 @csrf_exempt
+@ratelimit(key="ip", rate="20/m", block=True)
 def stop_tracking(request):
     """End a session"""
     if request.method == "OPTIONS":
