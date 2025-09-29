@@ -83,6 +83,10 @@ urlpatterns = [
 
     path("api/wins/", api.record_win, name="api_record_win"),
     path("api/leaderboard/<str:period>/", api.leaderboard, name="api_leaderboard"),
+    path("api/start_tracking/", api.start_tracking, name="start_tracking"),
+    path("api/heartbeat/", api.heartbeat, name="heartbeat"),
+    path("api/stop_tracking/", api.stop_tracking, name="stop_tracking"),
+
 
     path("leaderboards/wins/<str:period>/", win_leaderboards.wins_hub, name="wins_hub"),
     path("leaderboards/wins/", win_leaderboards.wins_hub, {"period": "today"}),  # default
