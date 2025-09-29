@@ -6,6 +6,9 @@ from datetime import timedelta
 import uuid
 from django.urls import reverse
 
+import re
+from django.core.exceptions import ValidationError
+
 # Create your models here.
 
 class Skin(models.Model):
@@ -186,16 +189,37 @@ class SkinImage(models.Model):
     def __str__(self):
         return f"{self.kind} image for {self.skin.name}"
     
-# skins/models.py (or players/models.py)
+
+USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9 _]+$")
+
+def validate_username(value: str):
+    if not value:
+        raise ValidationError("Username is required.")
+    if len(value) < 3:
+        raise ValidationError("Username must be at least 3 characters long.")
+    if not USERNAME_PATTERN.match(value):
+        raise ValidationError("Username can only contain letters, numbers, spaces, and underscores.")
+    if value.lower().startswith("guest"):
+        raise ValidationError("Guest accounts are not allowed.")
+
 class PlayerWin(models.Model):
-    username = models.CharField(max_length=100, db_index=True)
+    username = models.CharField(
+        max_length=100,
+        db_index=True,
+        validators=[validate_username]
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.username} win at {self.created_at}"
 
 class PlayerSession(models.Model):
-    username = models.CharField(max_length=100, unique=True, db_index=True)
+    username = models.CharField(
+        max_length=35,
+        unique=True,
+        db_index=True,
+        validators=[validate_username]
+    )
     token = models.CharField(max_length=255, unique=True, db_index=True)
     client_id = models.UUIDField(default=uuid.uuid4, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -205,3 +229,6 @@ class PlayerSession(models.Model):
     def is_active(self):
         now = timezone.now()
         return self.expires_at > now and (now - self.last_seen) < timedelta(seconds=60)
+
+    def __str__(self):
+        return f"Session for {self.username} (active={self.is_active()})"
