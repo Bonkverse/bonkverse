@@ -4,6 +4,14 @@
 <div class="leaderboard-container">
   <h2 class="leaderboard-title">{{ title }}</h2>
 
+  <!-- Info Box -->
+  <div class="leaderboard-info">
+    Want to appear on these leaderboards?  
+    Install the <a href="https://greasyfork.org/en/scripts/551009-bonk-io-win-tracker-by-bonkverse" target="_blank">
+      🏆 Bonk.io Win Tracker userscript
+    </a> (Tampermonkey required).
+  </div>
+
   <!-- Tabs -->
   <div class="leaderboard-tabs">
     <a href="{% url 'wins_hub' 'today' %}" class="{% if period == 'today' %}active{% endif %}">Today</a>
@@ -36,6 +44,24 @@
 </div>
 
 <style>
+.leaderboard-info {
+  margin: 10px 0 20px;
+  padding: 10px 14px;
+  background: rgba(0,0,0,0.6);
+  border-left: 4px solid #ffcc00;
+  color: #eee;
+  font-size: 14px;
+  border-radius: 6px;
+}
+.leaderboard-info a {
+  color: #00e6c3;
+  font-weight: bold;
+  text-decoration: none;
+}
+.leaderboard-info a:hover {
+  text-decoration: underline;
+}
+
 .leaderboard-tabs {
   margin: 15px 0;
   display: flex;
