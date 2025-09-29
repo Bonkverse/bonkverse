@@ -17,8 +17,14 @@ def _get_queryset(period):
         qs = qs.filter(created_at__gte=start, created_at__lt=end)
 
     elif period == "week":
+        # Start of the current week (Monday)
         week_start = now_utc - timedelta(days=now_utc.weekday())
-        qs = qs.filter(created_at__gte=week_start)
+        week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        # End of the current week (next Monday)
+        week_end = week_start + timedelta(days=7)
+
+        qs = qs.filter(created_at__gte=week_start, created_at__lt=week_end)
 
     elif period == "month":
         start = now_utc.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
