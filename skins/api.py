@@ -4,41 +4,115 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.timezone import now
 from datetime import timedelta
 from django_ratelimit.decorators import ratelimit
-import json
-from .models import PlayerWin
+import json, secrets
+from .models import PlayerWin, PlayerSession  # requires PlayerSession model
 
 # Blacklisted map keywords
 BLACKLISTED_KEYWORDS = ["xp", "farm"]
 
+SESSION_DEFAULT_MINUTES = 30  # default lifetime for session tokens
+
+
 def add_cors_headers(response):
     response["Access-Control-Allow-Origin"] = "*"
     response["Access-Control-Allow-Methods"] = "POST, OPTIONS"
-    response["Access-Control-Allow-Headers"] = "Content-Type"
+    response["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
     return response
 
+
 @csrf_exempt
-@ratelimit(key="ip", rate="10/m", block=False)  # ⚠️ don't auto-block
+def start_tracking(request):
+    """Create a new session token for a player"""
+    if request.method == "OPTIONS":
+        return add_cors_headers(JsonResponse({"success": True}))
+
+    if request.method != "POST":
+        return add_cors_headers(JsonResponse(
+            {"success": False, "reason": "Invalid method"}, status=405
+        ))
+
+    try:
+        data = json.loads(request.body)
+        username = data.get("username")
+        if not username:
+            return add_cors_headers(JsonResponse(
+                {"success": False, "reason": "Missing username"}, status=400
+            ))
+
+        # Remove any old session for this user
+        PlayerSession.objects.filter(username=username).delete()
+
+        token = secrets.token_urlsafe(32)
+        PlayerSession.objects.create(
+            username=username,
+            token=token,
+            expires_at=now() + timedelta(minutes=SESSION_DEFAULT_MINUTES),
+        )
+        return add_cors_headers(JsonResponse({
+            "success": True,
+            "token": token,
+            "expires_in": SESSION_DEFAULT_MINUTES * 60,
+        }))
+    except Exception as e:
+        return add_cors_headers(JsonResponse({"success": False, "reason": str(e)}, status=500))
+
+
+@csrf_exempt
+def heartbeat(request):
+    """Keep a session alive"""
+    if request.method == "OPTIONS":
+        return add_cors_headers(JsonResponse({"success": True}))
+
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    session = PlayerSession.objects.filter(token=token).first()
+    if not session:
+        return add_cors_headers(JsonResponse({"success": False, "reason": "Invalid session"}, status=403))
+    session.last_seen = now()
+    session.save(update_fields=["last_seen"])
+    return add_cors_headers(JsonResponse({"success": True}))
+
+
+@csrf_exempt
+def stop_tracking(request):
+    """End a session"""
+    if request.method == "OPTIONS":
+        return add_cors_headers(JsonResponse({"success": True}))
+
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    PlayerSession.objects.filter(token=token).delete()
+    return add_cors_headers(JsonResponse({"success": True}))
+
+
+@csrf_exempt
+@ratelimit(key="ip", rate="10/m", block=False)
 def record_win(request):
     try:
         if request.method == "OPTIONS":
             return add_cors_headers(JsonResponse({"success": True}))
 
         if request.method == "POST":
-            # ✅ handle ratelimit manually
+            # 🔑 First check session token
+            token = request.headers.get("Authorization", "").replace("Bearer ", "")
+            session = PlayerSession.objects.filter(token=token).first()
+            if not session or not session.is_active():
+                return add_cors_headers(JsonResponse(
+                    {"success": False, "reason": "Invalid or expired session"}, status=403
+                ))
+
+            # ✅ Now enforce ratelimit (only valid sessions hit the limiter)
             if getattr(request, "limited", False):
                 return add_cors_headers(JsonResponse(
                     {"success": False, "reason": "You're being rate limited: Too many wins per minute"}, status=429
                 ))
 
             data = json.loads(request.body)
-            print("DEBUG record_win got:", data)
-
             username = data.get("username")
             map_name = (data.get("map_name") or "").strip()
 
-            if not username:
+            # ✅ Enforce session-user binding
+            if username != session.username:
                 return add_cors_headers(JsonResponse(
-                    {"success": False, "reason": "Missing username"}, status=400
+                    {"success": False, "reason": "Username mismatch"}, status=403
                 ))
 
             # Reject blacklisted maps
@@ -71,6 +145,7 @@ def record_win(request):
             {"success": False, "reason": str(e)}, status=500
         ))
 
+
 def leaderboard(request, period="all"):
     """Return top players by wins (today, week, month, all)."""
     from django.db.models import Count
@@ -92,5 +167,4 @@ def leaderboard(request, period="all"):
           .annotate(total=Count("id"))
           .order_by("-total")[:20]
     )
-
     return JsonResponse(list(leaderboard_data), safe=False)
