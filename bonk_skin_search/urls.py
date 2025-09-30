@@ -83,9 +83,13 @@ urlpatterns = [
 
     path("api/wins/", api.record_win, name="api_record_win"),
     path("api/leaderboard/<str:period>/", api.leaderboard, name="api_leaderboard"),
-    path("api/start_tracking/", api.start_tracking, name="start_tracking"),
+    # path("api/start_tracking/", api.start_tracking, name="start_tracking"),
     path("api/heartbeat/", api.heartbeat, name="heartbeat"),
     path("api/stop_tracking/", api.stop_tracking, name="stop_tracking"),
+    # Verification
+    path("api/request_verification/", api.request_verification, name="request_verification"),
+    path("api/complete_verification/", api.complete_verification, name="complete_verification"),
+
 
 
     path("leaderboards/wins/<str:period>/", win_leaderboards.wins_hub, name="wins_hub"),
