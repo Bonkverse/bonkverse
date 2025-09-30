@@ -197,9 +197,11 @@ def validate_username(value: str):
         raise ValidationError("Username is required.")
     if len(value) < 3:
         raise ValidationError("Username must be at least 3 characters long.")
+    if len(value) > 35:
+        raise ValidationError("Username must be at most 35 characters long.")
     if not USERNAME_PATTERN.match(value):
         raise ValidationError("Username can only contain letters, numbers, spaces, and underscores.")
-    if value.lower().startswith("guest"):
+    if value.lower().startswith("guest") or value.lower().startswith("new player"):
         raise ValidationError("Guest accounts are not allowed.")
 
 class PlayerWin(models.Model):
