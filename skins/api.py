@@ -5,7 +5,9 @@ from django.utils.timezone import now
 from datetime import timedelta
 from django_ratelimit.decorators import ratelimit
 import json, secrets
-from .models import PlayerWin, PlayerSession  # requires PlayerSession model
+
+from .models import PlayerWin, PlayerSession, validate_username
+from django.core.exceptions import ValidationError
 
 # Blacklisted map keywords
 BLACKLISTED_KEYWORDS = ["xp", "farm"]
@@ -38,6 +40,14 @@ def start_tracking(request):
         if not username:
             return add_cors_headers(JsonResponse(
                 {"success": False, "reason": "Missing username"}, status=400
+            ))
+
+        # ✅ Run server-side validation
+        try:
+            validate_username(username)
+        except ValidationError as e:
+            return add_cors_headers(JsonResponse(
+                {"success": False, "reason": str(e)}, status=400
             ))
 
         # Remove any old session for this user
@@ -111,6 +121,14 @@ def record_win(request):
             data = json.loads(request.body)
             username = data.get("username")
             map_name = (data.get("map_name") or "").strip()
+
+            # ✅ Validate username again here for safety
+            try:
+                validate_username(username)
+            except ValidationError as e:
+                return add_cors_headers(JsonResponse(
+                    {"success": False, "reason": str(e)}, status=400
+                ))
 
             # ✅ Enforce session-user binding
             if username != session.username:
