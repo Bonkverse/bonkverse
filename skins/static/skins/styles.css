@@ -295,6 +295,14 @@ button {
   text-align: center;
 }
 
+.vote-row .vote-up.active, 
+.vote-row .vote-down.active {
+  border: 2px solid #009688 !important;
+  background-color: rgba(0,150,136,0.25) !important;
+}
+
+
+
 /* Container for top-right icons */
 .icon-actions {
     position: absolute;
