@@ -43,8 +43,12 @@
 
   <div class="skins-container">
     {% for skin in skins %}
-      <div class="skin-card" data-id="{{ skin.id }}"
-        data-favorited="{% if user.is_authenticated and user in skin.favorited_by.all %}1{% else %}0{% endif %}">
+      <div class="skin-card" 
+     data-id="{{ skin.id }}"
+     data-vote="{{ skin.current_vote|default:'' }}"
+     data-favorited="{% if user.is_authenticated and user in skin.favorited_by.all %}1{% else %}0{% endif %}">
+
+
 
         {% if user.is_authenticated %}
           <button class="wear-card-btn" title="Wear this skin in Bonk.io">Wear</button>
@@ -206,6 +210,19 @@
   }
 
   // ---- Event delegation for all cards (vote/favorite)
+
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll('.skin-card').forEach(card => {
+      const vote = card.dataset.vote;
+      if (vote === 'up') {
+        card.querySelector('.vote-up').classList.add('active');
+      } else if (vote === 'down') {
+        card.querySelector('.vote-down').classList.add('active');
+      }
+    });
+  });
+
+
   document.addEventListener('click', async (e) => {
     const card = e.target.closest('.skin-card');
     if (!card) return;
@@ -216,8 +233,21 @@
       try {
         const json = await postForm(`/api/skins/${id}/vote/`, { vote: 'up' });
         if (!json) return;
+
+        // update counts
         card.querySelector('.up-count').textContent   = json.upvotes;
         card.querySelector('.down-count').textContent = json.downvotes;
+
+        // clear highlights
+        card.querySelector('.vote-up').classList.remove('active');
+        card.querySelector('.vote-down').classList.remove('active');
+
+        // apply highlight
+        if (json.current_vote === 'up') {
+          card.querySelector('.vote-up').classList.add('active');
+        } else if (json.current_vote === 'down') {
+          card.querySelector('.vote-down').classList.add('active');
+        }
       } catch (err) { console.error(err); }
       return;
     }
@@ -227,8 +257,21 @@
       try {
         const json = await postForm(`/api/skins/${id}/vote/`, { vote: 'down' });
         if (!json) return;
+
+        // update counts
         card.querySelector('.up-count').textContent   = json.upvotes;
         card.querySelector('.down-count').textContent = json.downvotes;
+
+        // clear highlights
+        card.querySelector('.vote-up').classList.remove('active');
+        card.querySelector('.vote-down').classList.remove('active');
+
+        // apply highlight
+        if (json.current_vote === 'up') {
+          card.querySelector('.vote-up').classList.add('active');
+        } else if (json.current_vote === 'down') {
+          card.querySelector('.vote-down').classList.add('active');
+        }
       } catch (err) { console.error(err); }
       return;
     }
@@ -329,5 +372,7 @@
     setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .3s'; }, 1400);
     setTimeout(()=>t.remove(), 1800);
   }
+
+
 </script>
 {% endblock %}
