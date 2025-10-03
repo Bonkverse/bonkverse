@@ -8,16 +8,16 @@
   <div class="leaderboard-info">
     Want to appear on these leaderboards?  
     Install the <a href="https://greasyfork.org/en/scripts/551009-bonk-io-win-tracker-by-bonkverse" target="_blank">
-      🏆 Bonk.io Win/Loss Tracker userscript
+      💀 Bonk.io Win/Loss Tracker userscript
     </a> (Tampermonkey required).
   </div>
 
   <!-- Tabs -->
   <div class="leaderboard-tabs">
-    <a href="{% url 'wins_hub' 'today' %}" class="{% if period == 'today' %}active{% endif %}">Today</a>
-    <a href="{% url 'wins_hub' 'week' %}" class="{% if period == 'week' %}active{% endif %}">This Week</a>
-    <a href="{% url 'wins_hub' 'month' %}" class="{% if period == 'month' %}active{% endif %}">This Month</a>
-    <a href="{% url 'wins_hub' 'all' %}" class="{% if period == 'all' %}active{% endif %}">All Time</a>
+    <a href="{% url 'losses_hub' 'today' %}" class="{% if period == 'today' %}active{% endif %}">Today</a>
+    <a href="{% url 'losses_hub' 'week' %}" class="{% if period == 'week' %}active{% endif %}">This Week</a>
+    <a href="{% url 'losses_hub' 'month' %}" class="{% if period == 'month' %}active{% endif %}">This Month</a>
+    <a href="{% url 'losses_hub' 'all' %}" class="{% if period == 'all' %}active{% endif %}">All Time</a>
   </div>
 
   <!-- Leaderboard Table -->
@@ -26,7 +26,7 @@
       <tr>
         <th>Rank</th>
         <th>Player</th>
-        <th>Wins</th>
+        <th>Losses</th>
       </tr>
     </thead>
     <tbody>
@@ -37,7 +37,7 @@
         <td>{{ entry.total }}</td>
       </tr>
       {% empty %}
-      <tr><td colspan="3">No wins recorded yet.</td></tr>
+      <tr><td colspan="3">No losses recorded yet.</td></tr>
       {% endfor %}
     </tbody>
   </table>
@@ -48,13 +48,13 @@
   margin: 10px 0 20px;
   padding: 10px 14px;
   background: rgba(0,0,0,0.6);
-  border-left: 4px solid #ffcc00;
+  border-left: 4px solid #ff4d4d;
   color: #eee;
   font-size: 14px;
   border-radius: 6px;
 }
 .leaderboard-info a {
-  color: #00e6c3;
+  color: #ff8080;
   font-weight: bold;
   text-decoration: none;
 }
@@ -76,7 +76,7 @@
   font-weight: bold;
 }
 .leaderboard-tabs a.active {
-  background: #ffcc00;
+  background: #ff4d4d;
   color: black;
 }
 </style>

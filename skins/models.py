@@ -206,7 +206,7 @@ def validate_username(value: str):
 
 class PlayerWin(models.Model):
     username = models.CharField(
-        max_length=100,
+        max_length=35,
         db_index=True,
         validators=[validate_username]
     )
@@ -234,3 +234,14 @@ class PlayerSession(models.Model):
 
     def __str__(self):
         return f"Session for {self.username} (active={self.is_active()})"
+
+class PlayerLoss(models.Model):
+    username = models.CharField(
+        max_length=35,
+        db_index=True,
+        validators=[validate_username]
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.username} loss at {self.created_at}"
