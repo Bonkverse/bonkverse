@@ -37,6 +37,8 @@ from skins import players
 from skins import home
 from skins import api
 from skins import win_leaderboards
+from skins import loss_leaderboards
+from skins import winrate_leaderboards
 from django.views.static import serve
 
 
@@ -82,10 +84,12 @@ urlpatterns = [
     path("changelog/add/", add_changelog, name="add_changelog"),
 
     path("api/wins/", api.record_win, name="api_record_win"),
+    path("api/losses/", api.record_loss, name="api_record_loss"),
     path("api/leaderboard/<str:period>/", api.leaderboard, name="api_leaderboard"),
-    # path("api/start_tracking/", api.start_tracking, name="start_tracking"),
+    path("api/loss-leaderboard/<str:period>/", api.loss_leaderboard, name="api_loss_leaderboard"),
     path("api/heartbeat/", api.heartbeat, name="heartbeat"),
     path("api/stop_tracking/", api.stop_tracking, name="stop_tracking"),
+
     # Verification
     path("api/request_verification/", api.request_verification, name="request_verification"),
     path("api/complete_verification/", api.complete_verification, name="complete_verification"),
@@ -94,6 +98,10 @@ urlpatterns = [
 
     path("leaderboards/wins/<str:period>/", win_leaderboards.wins_hub, name="wins_hub"),
     path("leaderboards/wins/", win_leaderboards.wins_hub, {"period": "today"}),  # default
+    path("leaderboards/losses/<str:period>/", loss_leaderboards.losses_hub, name="losses_hub"),
+    path("leaderboards/losses/", loss_leaderboards.losses_hub, {"period": "today"}),  # default
+    path("leaderboards/winrate/<str:period>/", winrate_leaderboards.winrate_hub, name="winrate_hub"),
+    path("leaderboards/winrate/", winrate_leaderboards.winrate_hub, {"period": "today"}),
 
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

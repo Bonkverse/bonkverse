@@ -21,12 +21,11 @@
         </li>
 
         <li class="nav-item">
-            <a href="#" class="nav-link">Win Leaderboards ▾</a>
+            <a href="#" class="nav-link">Win/Loss Leaderboards ▾</a>
             <ul class="dropdown-menu">
-            <li><a href="{% url 'wins_hub' 'today' %}">Today</a></li>
-            <li><a href="{% url 'wins_hub' 'week' %}">This Week</a></li>
-            <li><a href="{% url 'wins_hub' 'month' %}">This Month</a></li>
-            <li><a href="{% url 'wins_hub' 'all' %}">All Time</a></li>
+            <li><a href="{% url 'wins_hub' 'today' %}">Wins</a></li>
+            <li><a href="{% url 'losses_hub' 'today' %}">Losses</a></li>
+            <li><a href="{% url 'winrate_hub' 'today' %}">Win/Loss % </a></li>
             </ul>
         </li>
 
