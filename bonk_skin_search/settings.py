@@ -141,13 +141,6 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
-USE_I18N = True
-
-USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
@@ -209,3 +202,22 @@ MEDIA_URL = "/media/"
 # Use the Railway volume if it exists, else fall back to ./media
 MEDIA_ROOT = os.getenv("RAILWAY_VOLUME_MOUNT_PATH", os.path.join(BASE_DIR, "media"))
 
+LANGUAGE_CODE = 'en-us'
+
+TIME_ZONE = 'UTC'
+USE_I18N = True
+USE_TZ = True
+
+# ---- Fix missing timezone info in Railway ----
+# Some slim Linux containers (like Railway’s default) don’t include tzdata,
+# causing ZoneInfoNotFoundError: 'No time zone found with key UTC'
+import logging
+from datetime import timezone as dt_timezone
+
+try:
+    from zoneinfo import ZoneInfo
+    ZoneInfo(TIME_ZONE)
+except Exception as e:
+    logging.warning(f"ZoneInfo not found for {TIME_ZONE}: {e}. Using UTC fallback.")
+    from django.utils import timezone as django_tz
+    django_tz.get_default_timezone = lambda: dt_timezone.utc
