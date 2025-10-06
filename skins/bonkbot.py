@@ -9,7 +9,7 @@ def join_matchmaking(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            response = requests.post('http://localhost:5050/join-matchmaking', json=data)
+            response = requests.post('https://bonkbot-api-production.up.railway.app/join-matchmaking', json=data)
 
             return JsonResponse(response.json(), status=response.status_code)
         except Exception as e:
