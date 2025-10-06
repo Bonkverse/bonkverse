@@ -78,6 +78,6 @@ document.getElementById("match-form").onsubmit = function (e) {
 {% block content %}
 
 <h1>Matchmaking Coming Soon!</h1>
-<h2>Skip the wait and queue up for some 1v1s (causal or ranked)</h2>
+<h2>Skip the wait and queue up for some 1v1s (casual or ranked)</h2>
 
 {% endblock %}
