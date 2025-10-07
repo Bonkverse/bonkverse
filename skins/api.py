@@ -261,7 +261,7 @@ def record_win(request):
                 }, status=400))
 
         # --- Passed all checks → log win ---
-        win = PlayerWin.objects.create(username=username, map_name=map_name)
+        win = PlayerWin.objects.create(username=username)
         return add_cors_headers(JsonResponse({
             "success": True,
             "id": win.id
