@@ -153,6 +153,54 @@ def stop_tracking(request):
     return add_cors_headers(JsonResponse({"success": True}))
 
 
+# @csrf_exempt
+# @ratelimit(key="ip", rate="10/m", block=False)
+# def record_win(request):
+#     try:
+#         if request.method == "OPTIONS":
+#             return add_cors_headers(JsonResponse({"success": True}))
+#         if request.method != "POST":
+#             return add_cors_headers(JsonResponse({"success": False, "reason": "Invalid method"}, status=405))
+
+#         token = request.headers.get("Authorization", "").replace("Bearer ", "")
+#         session = PlayerSession.objects.filter(token=token).first()
+#         if not session or not session.is_active():
+#             return add_cors_headers(JsonResponse({"success": False, "reason": "Invalid or expired session"}, status=403))
+
+#         if getattr(request, "limited", False):
+#             return add_cors_headers(JsonResponse(
+#                 {"success": False, "reason": "You're being rate limited: Too many wins per minute"}, status=429
+#             ))
+
+#         data = json.loads(request.body)
+#         username = data.get("username")
+#         map_name = (data.get("map_name") or "").strip()
+
+#         try:
+#             validate_username(username)
+#         except ValidationError as e:
+#             return add_cors_headers(JsonResponse({"success": False, "reason": str(e)}, status=400))
+
+#         if username != session.username:
+#             return add_cors_headers(JsonResponse({"success": False, "reason": "Username mismatch"}, status=403))
+
+#         if any(bad in map_name.lower() for bad in BLACKLISTED_KEYWORDS):
+#             return add_cors_headers(JsonResponse({"success": False, "reason": "XP farming maps not allowed"}, status=400))
+
+#         last_win = PlayerWin.objects.filter(username=username).order_by("-created_at").first()
+#         if last_win and (now() - last_win.created_at).total_seconds() < 5:
+#             return add_cors_headers(JsonResponse(
+#                 {"success": False, "reason": "Suspicious win: Won too soon after previous win"}, status=400
+#             ))
+
+#         win = PlayerWin.objects.create(username=username)
+#         return add_cors_headers(JsonResponse({"success": True, "id": win.id}))
+
+#     except Exception as e:
+#         import traceback
+#         traceback.print_exc()
+#         return add_cors_headers(JsonResponse({"success": False, "reason": str(e)}, status=500))
+
 @csrf_exempt
 @ratelimit(key="ip", rate="10/m", block=False)
 def record_win(request):
@@ -175,6 +223,7 @@ def record_win(request):
         data = json.loads(request.body)
         username = data.get("username")
         map_name = (data.get("map_name") or "").strip()
+        # match_type = (data.get("match_type") or "unknown").lower()  # optional param from client: "quickplay" or "custom"
 
         try:
             validate_username(username)
@@ -187,19 +236,42 @@ def record_win(request):
         if any(bad in map_name.lower() for bad in BLACKLISTED_KEYWORDS):
             return add_cors_headers(JsonResponse({"success": False, "reason": "XP farming maps not allowed"}, status=400))
 
+        # --- Compute match length ---
         last_win = PlayerWin.objects.filter(username=username).order_by("-created_at").first()
-        if last_win and (now() - last_win.created_at).total_seconds() < 5:
-            return add_cors_headers(JsonResponse(
-                {"success": False, "reason": "Suspicious win: Won too soon after previous win"}, status=400
-            ))
+        if last_win:
+            time_since_last = (now() - last_win.created_at).total_seconds()
 
-        win = PlayerWin.objects.create(username=username)
-        return add_cors_headers(JsonResponse({"success": True, "id": win.id}))
+            # estimate actual round duration after transition delay
+            # transition_delay = 4.8 if match_type == "quickplay" else 5.25
+            transition_delay = 5.25
+            actual_match_length = time_since_last - transition_delay
+
+            if actual_match_length < 5:
+                return add_cors_headers(JsonResponse({
+                    "success": False,
+                    "reason": f"Suspicious win: match ended too fast ({actual_match_length:.2f}s)",
+                    "match_length": actual_match_length
+                }, status=400))
+
+            # optional: also block impossible rapid sequences
+            if time_since_last < 4.8:  # physically impossible window
+                return add_cors_headers(JsonResponse({
+                    "success": False,
+                    "reason": "Impossible timing (transition not complete)"
+                }, status=400))
+
+        # --- Passed all checks → log win ---
+        win = PlayerWin.objects.create(username=username, map_name=map_name)
+        return add_cors_headers(JsonResponse({
+            "success": True,
+            "id": win.id
+        }))
 
     except Exception as e:
         import traceback
         traceback.print_exc()
         return add_cors_headers(JsonResponse({"success": False, "reason": str(e)}, status=500))
+
 
 @csrf_exempt
 @ratelimit(key="ip", rate="10/m", block=False)
