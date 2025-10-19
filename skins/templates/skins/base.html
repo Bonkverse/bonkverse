@@ -7,7 +7,15 @@
     <title>{% block title %}Bonk.io Skin Search{% endblock %}</title>
     <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'skins/styles.css' %}">
+
+    {% now "m" as current_month %}
+    {% if current_month == "10" %}
+      <link rel="stylesheet" href="{% static 'skins/halloween.css' %}">
+    {% endif %}
+
+
     <script src="{% static 'skins/scripts.js' %}" defer></script>
+
     <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
     <link rel="icon" type="image/png" href="{% static 'images/BonkverseLogo.png' %}">
     {% block social_meta %}{% endblock %}

@@ -1,0 +1,247 @@
+/* ============================================
+   🎃 BONKVERSE HALLOWEEN THEME (October Style)
+   ============================================ */
+
+/* --- GLOBAL --- */
+body {
+  background: radial-gradient(circle at top, #0b0004 0%, #000 100%);
+  color: #f4e8d2;
+  transition: background 0.5s ease;
+}
+
+#particles-js {
+  background: radial-gradient(circle at center, #13000c 0%, #000 100%);
+}
+
+/* --- HEADINGS --- */
+h1, .leaderboard-title, .changelog-header {
+  color: #ff8c00;
+  text-shadow: 0 0 12px #ff6a00, 0 0 28px rgba(255, 140, 0, 0.6);
+  animation: halloween-glow 3s infinite alternate;
+}
+@keyframes halloween-glow {
+  0%, 100% { text-shadow: 0 0 10px #ff7b00; }
+  50% { text-shadow: 0 0 20px #ffcc33; }
+}
+
+/* --- NOTIFICATIONS --- */
+.notification.success { background-color: #00a84b; }
+.notification.error { background-color: #c0392b; }
+.notification.info { background-color: #ffb347; color: #2b1300; }
+
+/* --- FORM --- */
+form {
+  border: 2px solid #ff7b00;
+  background: rgba(40, 10, 20, 0.9);
+  box-shadow: 0 0 12px rgba(255, 94, 0, 0.4);
+}
+label { color: #ffcf91; }
+
+input, textarea, select {
+  background: #1a0b0a;
+  border: 2px solid #6b1f5f;
+  color: #ffe6cc;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: #ff7b00;
+  box-shadow: 0 0 10px #ff7b00;
+}
+::placeholder {
+  color: #ffcc99;
+}
+
+/* --- BUTTONS --- */
+button, .view-btn, .submit-btn, .pagination a {
+  background: linear-gradient(180deg, #ff7b00, #a34100);
+  border: 2px solid #ffb347;
+  color: #fff7e6;
+  box-shadow: 0 0 10px rgba(255, 94, 0, 0.3);
+  transition: all 0.2s ease;
+}
+button:hover, .view-btn:hover, .submit-btn:hover, .pagination a:hover {
+  background: linear-gradient(180deg, #a34100, #ff7b00);
+  box-shadow: 0 0 18px rgba(255, 120, 0, 0.8);
+  transform: translateY(-2px);
+}
+
+/* --- NAVBAR --- */
+.navbar {
+  background: linear-gradient(90deg, #2a0d27, #12000f);
+  box-shadow: 0 0 20px rgba(255, 94, 0, 0.25);
+}
+.nav-links a {
+  color: #ffb347;
+}
+.nav-links a:hover {
+  background-color: rgba(255, 94, 0, 0.15);
+  box-shadow: 0 0 8px rgba(255, 94, 0, 0.3);
+}
+.nav-links a.username-link {
+  color: #ff6a00;
+}
+
+/* Dropdown container */
+.nav-item {
+  position: relative;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;  /* show below the parent link */
+  left: 0;
+  background: #2b1300; /* same as navbar bg */
+  border: 2px solid #ff7b00;
+  border-radius: 6px;
+  min-width: 180px;
+  z-index: 1000;
+  padding: 5px 0;
+}
+
+/* Dropdown links styled like nav links */
+.dropdown-menu li a {
+  display: block;
+  color: white;
+  text-decoration: none;
+  font-size: 14px;
+  padding: 10px 15px;
+  transition: background 0.3s ease-in-out;
+}
+
+.dropdown-menu li a:hover {
+  background-color: #444; /* same hover as nav-links */
+  border-radius: 0; /* flush edges */
+}
+
+/* Show on hover */
+.nav-item:hover .dropdown-menu {
+  display: block;
+}
+
+
+/* --- SKIN CARDS --- */
+.skin-card {
+  border: 2px solid #8b3a2b;
+  background: rgba(40, 10, 20, 0.9);
+  box-shadow: 0 0 15px rgba(255, 94, 0, 0.2);
+}
+.skin-card:hover {
+  box-shadow: 0 0 25px #ff7b00, 0 0 40px rgba(107, 31, 95, 0.4);
+  transform: translateY(-3px);
+}
+.skin-card a.view-btn {
+  background: linear-gradient(180deg, #a34100, #5c1e00);
+  border: 1px solid #ff7b00;
+  color: #ffe3c1;
+}
+.skin-card a.view-btn:hover {
+  background: linear-gradient(180deg, #ff7b00, #a34100);
+  color: #fff;
+}
+
+/* --- HERO --- */
+.hero {
+  background: radial-gradient(circle at top center, #3a0f26 0%, #0a0008 80%);
+  box-shadow: 0 0 60px rgba(255, 94, 0, 0.2) inset;
+}
+.hero-title {
+  color: #ff9e3d;
+  text-shadow: 0 0 20px #ff7b00;
+}
+.hero-sub {
+  color: #ffd9b3;
+}
+.hero-search {
+  border: 2px solid #ff7b00;
+  box-shadow: 0 0 12px rgba(255, 140, 0, 0.6);
+}
+.hero-search:hover {
+  box-shadow: 0 0 18px rgba(255, 94, 0, 0.75);
+}
+.hero-search button {
+  background: linear-gradient(180deg, #ff7b00, #b34700);
+}
+.hero-search button:hover {
+  box-shadow: 0 0 12px rgba(255, 94, 0, 0.8);
+}
+
+/* --- LEADERBOARD --- */
+.leaderboard-table {
+  background: rgba(30, 10, 15, 0.9);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+}
+.leaderboard-table th {
+  background: rgba(255, 140, 0, 0.25);
+  color: #ffa94d;
+}
+.leaderboard-table tr:hover {
+  background: rgba(255, 120, 0, 0.2);
+}
+.skin-link {
+  color: #ffb347;
+}
+.skin-link:hover {
+  color: #7fff9b;
+  text-shadow: 0 0 6px #7fff9b;
+}
+
+/* --- FAVORITES + ICONS --- */
+.favorite-btn {
+  color: #ffb347;
+  text-shadow: 0 0 6px #ff7b00;
+}
+.icon-btn {
+  color: #ffcf91;
+}
+.edit-icon { color: #ff8c00; }
+.delete-icon { color: #e14c00; }
+
+/* --- DETAIL PAGE --- */
+.skin-image-large {
+  border: 3px solid #ff7b00;
+  background-color: #000;
+}
+.skin-description {
+  border-left: 4px solid #ff7b00;
+  background: rgba(255, 255, 255, 0.03);
+  color: #ffdcb3;
+}
+.tag-bubble {
+  background: linear-gradient(180deg, #ff7b00, #b34700);
+  color: #fff;
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.3);
+}
+.vote-buttons button {
+  background: linear-gradient(180deg, #b34700, #5a1a00);
+}
+.vote-buttons button:hover {
+  background: linear-gradient(180deg, #ff7b00, #b34700);
+}
+
+/* --- POPUPS + MODALS --- */
+.update-modal, .changelog-card, .changelog-form-container {
+  background: rgba(30, 10, 20, 0.95);
+  border: 1px solid #b34700;
+  box-shadow: 0 0 20px rgba(255, 94, 0, 0.3);
+}
+.changelog-title {
+  color: #ffb347;
+  text-shadow: 0 0 8px #ff7b00;
+}
+
+/* --- HALLOWEEN TOUCHES --- */
+body::after {
+  content: "🎃 👻 🕸️";
+  position: fixed;
+  bottom: 15px;
+  right: 20px;
+  opacity: 0.25;
+  font-size: 28px;
+  pointer-events: none;
+  animation: floaty 5s infinite ease-in-out;
+}
+@keyframes floaty {
+  0%,100% { transform: translateY(0); opacity: 0.25; }
+  50% { transform: translateY(-6px); opacity: 0.4; }
+}
+
