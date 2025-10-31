@@ -12,3 +12,5 @@ django-ratelimit==4.1.0
 django-redis==6.0.0
 redis==6.4.0
 cairosvg==2.8.2
+pandas==2.3.3
+tqdm==4.67.1

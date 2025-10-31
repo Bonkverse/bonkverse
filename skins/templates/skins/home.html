@@ -7,6 +7,30 @@
 
 {% block content %}
 
+<div id="skin-wear-status" style="
+    background-color: #29c714; 
+    color: #000; 
+    text-align: center; 
+    font-weight: 600; 
+    padding: 10px; 
+    margin-bottom: 15px;
+    border-radius: 6px;
+    position: relative;
+">
+    Skin wearing is back online! Equip your favorite skins directly in Bonk.io by logging in with your Bonkleagues account.
+
+    <span onclick="document.getElementById('skin-wear-status').style.display='none'" 
+          style="
+              position: absolute;
+              right: 10px;
+              top: 5px;
+              cursor: pointer;
+              font-weight: bold;
+          ">
+        ✖
+    </span>
+</div>
+
 <div id="skin-warning" style="
     background-color: #facc15; 
     color: #000; 
@@ -17,7 +41,7 @@
     border-radius: 6px;
     position: relative;
 ">
-    We’re upgrading Bonkverse.io to run independently of Bonkleagues. For now, the <b>skin wearing feature</b> isn’t available. 
+    We’re upgrading Bonkverse.io to run independently of Bonkleagues. For now, the <b>skin uploading feature</b> isn’t available. 
     We appreciate your understanding while we make this change.
 
     <span onclick="document.getElementById('skin-warning').style.display='none'" 
