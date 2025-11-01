@@ -39,6 +39,7 @@ from skins import api
 from skins import win_leaderboards
 from skins import loss_leaderboards
 from skins import winrate_leaderboards
+from skins import staff
 from django.views.static import serve
 
 
@@ -60,6 +61,7 @@ urlpatterns = [
     # path('skins/<int:skin_id>/', skin_detail, name='skin_detail'),
     path("skins/<int:skin_id>/<uuid:uuid>/", skin_detail, name="skin_detail"),
     path("changelog/", changelog_view, name="changelog"),
+    path("staff/", staff.staff_page, name="staff"),
 
 
     # NEW: AJAX/JSON endpoints used by search cards

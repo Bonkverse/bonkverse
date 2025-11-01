@@ -1,0 +1,22 @@
+{% extends "skins/base.html" %}
+{% load static %}
+
+{% block title %}Our Staff - Bonkverse{% endblock %}
+
+{% block content %}
+<div class="staff-container">
+    <h1 class="staff-title">🌟 Meet the Bonkverse Team</h1>
+    <div class="staff-grid">
+        {% for staff in staff_members %}
+        <div class="staff-card">
+            {% if staff.image %}
+                <img src="{% static staff.image %}" alt="{{ staff.name }}" class="staff-photo">
+            {% endif %}
+            <h2>{{ staff.name }}</h2>
+            <p class="role">{{ staff.role }}</p>
+            <p class="bio">{{ staff.bio }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
