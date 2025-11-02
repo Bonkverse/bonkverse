@@ -117,10 +117,9 @@
     results.innerHTML = items.map(p => `
       <div class="player-card" tabindex="0">
         <strong>${escapeHtml(p.username)}</strong>
-        <span>ID: ${p.bonk_id}</span>
+        <span>Bonk.io ID: ${p.bonk_id}</span>
         <span>Friends (last sync): ${p.last_friend_count ?? "—"}</span>
         <span>Flash Friends: ${p.flash_friend_count ?? 0}</span>
-        <span>Last seen: ${p.last_seen ? new Date(p.last_seen).toLocaleString() : "—"}</span>
       </div>
     `).join("");
   }
