@@ -10,3 +10,6 @@ __pycache__/
 # Virtual Environments
 venv/
 .env/
+
+# Folders
+debug_dumps/

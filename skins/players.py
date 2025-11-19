@@ -22,12 +22,25 @@ def search_players_view(request):
     offset = (page - 1) * page_size
 
     qs = BonkPlayer.objects.none()
+    # if not q:
+    #     qs = BonkPlayer.objects.order_by("bonk_id")
+    # elif q.isdigit():
+    #     qs = BonkPlayer.objects.filter(bonk_id=int(q)).order_by("bonk_id")
+    # else:
+    #     qs = BonkPlayer.objects.filter(username__icontains=q).order_by("bonk_id")
+
+    mode = request.GET.get("mode", "username")
+
     if not q:
         qs = BonkPlayer.objects.order_by("bonk_id")
-    elif q.isdigit():
-        qs = BonkPlayer.objects.filter(bonk_id=int(q)).order_by("bonk_id")
-    else:
+    elif mode == "id":
+        try:
+            qs = BonkPlayer.objects.filter(bonk_id=int(q)).order_by("bonk_id")
+        except ValueError:
+            qs = BonkPlayer.objects.none()
+    else:  # mode == "username"
         qs = BonkPlayer.objects.filter(username__icontains=q).order_by("bonk_id")
+
 
     total = qs.count()
     qs = qs[offset:offset + page_size]

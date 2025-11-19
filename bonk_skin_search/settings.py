@@ -43,8 +43,8 @@ CSRF_TRUSTED_ORIGINS = [
 SECRET_KEY = 'django-insecure-yk9clj4v65h-g9k74n2j%gx=uwp*ar*q#%mcox1qv6k()#u9zq'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = True
-DEBUG = False
+DEBUG = True
+# DEBUG = False
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
 ALLOWED_HOSTS = ["bonkverse-production.up.railway.app", "bonkverse.io", "127.0.0.1", "localhost", "172.26.54.223"]

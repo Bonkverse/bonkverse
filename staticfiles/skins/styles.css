@@ -898,7 +898,7 @@ button {
   width: 280px;
   font-size: 14px;
   margin-left: 10px;
-  background: #2a3a4a;
+  background: transparent;
   color: #ddd;
 }
 
