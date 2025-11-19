@@ -69,18 +69,6 @@ def _sync_friends_bg(current_bonk_id: int | None, current_username: str, token: 
     try:
         payload = _fetch_friends(token)
 
-        import json, os, datetime
-        debug_dir = os.path.join(os.getcwd(), "debug_dumps")
-        os.makedirs(debug_dir, exist_ok=True)
-        path = os.path.join(
-            debug_dir,
-            f"friends_php_{current_username}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-        )
-        with open(path, "w") as f:
-            json.dump(payload, f, indent=2)
-        logger.debug(f"[DEBUG] Wrote friends.php payload to {path}")
-
-
         if payload.get("r") != "success":
             logger.warning("friends sync skipped: %s", payload.get("error") or payload)
             return
