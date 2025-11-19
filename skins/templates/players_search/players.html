@@ -8,15 +8,31 @@
 <div id="notif" class="notification info" style="display:none;"></div>
 <div id="loading" style="display:none;">Searching…</div>
 
-<form id="player-search-form" onsubmit="return false;">
-  <label for="player-query">Search by username or Bonk ID</label>
-  <input
-    type="text"
-    id="player-query"
-    placeholder="e.g. The Saucy Tulip or 14217850"
-    autocomplete="off"
-  />
-</form>
+<div class="hero-inner">
+  <div class="search-row">
+
+    <!-- MAIN SEARCH BAR -->
+    <form id="player-search-form" onsubmit="return false;" class="hero-search">
+      <input
+        type="text"
+        id="player-query"
+        placeholder="Search players..."
+        autocomplete="off"
+      />
+      <button type="submit">Search</button>
+    </form>
+
+    <!-- SEARCH BY CONTROLS -->
+    <div class="search-controls-inline">
+      <label>Search By:</label>
+      <select id="player-mode">
+        <option value="username">Username</option>
+        <option value="id">Bonk ID</option>
+      </select>
+    </div>
+
+  </div>
+</div>
 
 <section class="skins-container" id="results"></section>
 <div class="pagination" id="pagination"></div>
@@ -30,14 +46,19 @@
 </a>
 
 <style>
-  .player-card { display:flex; flex-direction:column; gap:4px; margin-bottom:10px; padding:8px; background:#22303f; border-radius:6px; }
+  .player-card {
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    margin-bottom:10px;
+    padding:8px;
+    background:#22303f;
+    border-radius:6px;
+  }
   .player-card strong { font-size:15px; color:#eaf3ff; }
   .player-card span { font-size:12px; color:#9db2d0; }
 
-  .pagination {
-    margin-top: 20px;
-  }
-
+  .pagination { margin-top: 20px; }
   .pagination a, .pagination span {
     padding: 8px 12px;
     margin: 3px;
@@ -47,19 +68,16 @@
     border-radius: 6px;
     cursor: pointer;
   }
-
   .pagination a.active {
     font-weight: bold;
     background-color: #ddd;
     color: #222;
     pointer-events: none;
   }
-
   .pagination a.disabled {
     opacity: 0.5;
     pointer-events: none;
   }
-
   .pagination span {
     background: transparent;
     cursor: default;
@@ -68,10 +86,14 @@
 
 <script>
   const $ = (sel) => document.querySelector(sel);
+
   function escapeHtml(s) {
     return String(s)
-      .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
   }
 
   const searchUrl = $("#route-refs")?.dataset.searchUrl || "";
@@ -82,26 +104,41 @@
 
   let lastFetchAbort = null;
 
+  // ENTER triggers search
   qInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      const q = qInput.value.trim();
-      doSearch(q, 1);
+      runSearch();
     }
   });
 
-  async function doSearch(q, page=1) {
+  // BUTTON triggers search
+  $("#player-search-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    runSearch();
+  });
+
+  // DROPDOWN triggers search
+  $("#player-mode").addEventListener("change", runSearch);
+
+  function runSearch(page=1) {
+    const q = qInput.value.trim();
+    const mode = $("#player-mode").value;
+    doSearch(q, page, mode);
+  }
+
+  async function doSearch(q, page=1, mode="username") {
     try {
       setLoading(true);
       if (lastFetchAbort) lastFetchAbort.abort();
       lastFetchAbort = new AbortController();
 
-      const resp = await fetch(`${searchUrl}?q=${encodeURIComponent(q)}&page=${page}`, {
+      const resp = await fetch(`${searchUrl}?q=${encodeURIComponent(q)}&page=${page}&mode=${mode}`, {
         signal: lastFetchAbort.signal
       });
       const data = await resp.json();
       renderResults(data.results);
-      renderPagination(data.total, data.page, data.page_size, q);
+      renderPagination(data.total, data.page, data.page_size, q, mode);
     } catch (err) {
       if (err.name !== "AbortError") console.error(err);
     } finally {
@@ -124,62 +161,59 @@
     `).join("");
   }
 
-  function renderPagination(total, page, pageSize, q) {
+  function renderPagination(total, page, pageSize, q, mode="username") {
     paginationEl.innerHTML = "";
     const totalPages = Math.ceil(total / pageSize);
     if (totalPages <= 1) return;
 
-    // Prev button
+    // Prev
     const prev = document.createElement("a");
     prev.textContent = "Prev";
     prev.href = "#";
     if (page === 1) prev.classList.add("disabled");
-    prev.addEventListener("click", (e) => {
+    prev.addEventListener("click", e => {
       e.preventDefault();
-      if (page > 1) doSearch(q, page - 1);
+      if (page > 1) doSearch(q, page - 1, mode);
     });
     paginationEl.appendChild(prev);
 
-    // Current / jump-to-page input
+    // Page input
     const input = document.createElement("input");
     input.type = "number";
     input.min = 1;
     input.max = totalPages;
     input.value = page;
     input.style.width = "60px";
-    input.addEventListener("keydown", (e) => {
+    input.addEventListener("keydown", e => {
       if (e.key === "Enter") {
-        let target = parseInt(input.value, 10);
-        if (!isNaN(target) && target >= 1 && target <= totalPages) {
-          doSearch(q, target);
-        }
+        const target = parseInt(input.value, 10);
+        if (!isNaN(target) && target >= 1 && target <= totalPages)
+          doSearch(q, target, mode);
       }
     });
     paginationEl.appendChild(input);
 
-    // Total pages label
     const span = document.createElement("span");
     span.textContent = ` / ${totalPages}`;
     paginationEl.appendChild(span);
 
-    // Next button
+    // Next
     const next = document.createElement("a");
     next.textContent = "Next";
     next.href = "#";
     if (page === totalPages) next.classList.add("disabled");
-    next.addEventListener("click", (e) => {
+    next.addEventListener("click", e => {
       e.preventDefault();
-      if (page < totalPages) doSearch(q, page + 1);
+      if (page < totalPages) doSearch(q, page + 1, mode);
     });
     paginationEl.appendChild(next);
   }
-
 
   function setLoading(is) {
     loadingEl.style.display = is ? "block" : "none";
   }
 
-  // Auto-load most recent players (page 1)
+  // Auto-load newest players
   document.addEventListener("DOMContentLoaded", () => {
     doSearch("", 1);
   });
