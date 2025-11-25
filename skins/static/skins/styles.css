@@ -1467,6 +1467,7 @@ button {
     padding: 20px;
     width: 100%;
     max-width: 260px;
+    height: 400px;
     text-align: center;
     word-wrap: break-word;
     overflow-wrap: break-word;
