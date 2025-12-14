@@ -1603,12 +1603,47 @@ form.filter-form {
   margin: 8px 0 10px;
 }
 
-/* Tags inside card */
+/* Limit vertical growth */
 .server-card .tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  max-height: 64px;              /* ~2 rows of tags */
+  overflow: hidden;
 }
+
+/* Tag bubbles (already exist, just polishing) */
+.server-card .tag-bubble {
+  font-size: 0.72rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.server-card .tag-more {
+  font-size: 0.75rem;
+  color: #9aa5ff;
+  background: rgba(255,255,255,0.08);
+  padding: 4px 8px;
+  border-radius: 999px;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.server-card .tag-more:hover {
+  background: rgba(255,255,255,0.15);
+  color: #c6ccff;
+}
+
+
+/* Empty tag state */
+.server-card .tags.empty {
+  opacity: 0.6;
+}
+
+.server-card .tag-placeholder {
+  font-size: 0.75rem;
+  color: #9aa4b2;
+  font-style: italic;
+}
+
 
 /* Empty state */
 .empty-state {
@@ -1743,6 +1778,7 @@ form.filter-form {
   display: flex;
   justify-content: center;
   margin-bottom: 32px;
+  margin-top: 32px;
 }
 
 /* Growth section */
@@ -1789,6 +1825,24 @@ form.filter-form {
   opacity: 0.75;
 }
 
+/* Detail page tags */
+.server-detail-tags {
+  margin-top: 24px;
+}
+
+.server-detail-section-title {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+  margin-bottom: 10px;
+}
+
+.server-detail-tags .tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
 
 
 
