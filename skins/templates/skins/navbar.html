@@ -10,6 +10,14 @@
         <li><a href="{% url 'home' %}">Home</a></li>
         <li><a href="{% url 'staff' %}">Our Team</a></li>
         <li><a href="{% url 'changelog' %}">Changelog</a></li>
+        
+        <li class="nav-item">
+            <a href="#" class="nav-link">Discord ▾</a>
+            <ul class="dropdown-menu">
+            <li><a href="{% url 'list' %}">Server Search</a></li>
+            <li><a href="{% url 'submit_server' %}">Submit Server</a></li>
+            </ul>
+        </li>
         <!-- <li><a href="{% url 'matchmaking' %}">1v1 Matchmaking</a></li> -->
 
         <li class="nav-item">

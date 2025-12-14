@@ -40,6 +40,8 @@ from skins import win_leaderboards
 from skins import loss_leaderboards
 from skins import winrate_leaderboards
 from skins import staff
+from skins import discord
+from skins import discord_views
 from django.views.static import serve
 
 
@@ -104,6 +106,12 @@ urlpatterns = [
     path("leaderboards/losses/", loss_leaderboards.losses_hub, {"period": "today"}),  # default
     path("leaderboards/winrate/<str:period>/", winrate_leaderboards.winrate_hub, name="winrate_hub"),
     path("leaderboards/winrate/", winrate_leaderboards.winrate_hub, {"period": "today"}),
+
+    path("serverlist/", discord.server_list, name="list"),
+    path("<uuid:server_id>/", discord.server_detail, name="detail"),
+    path("submit/", discord.submit_server_page, name="submit_server"),
+    path("api/discords/submit/", discord_views.submit_server, name="api_submit_server"),
+
 
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
