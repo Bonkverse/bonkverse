@@ -1,0 +1,65 @@
+{% extends "skins/base.html" %}
+{% block content %}
+
+<a href="{% url 'list' %}" class="back-link">← Back to directory</a>
+
+<div class="server-detail-container">
+
+  <!-- Header -->
+  <div class="server-detail-header">
+    {% if server.icon_hash %}
+      <img
+        src="https://cdn.discordapp.com/icons/{{ server.guild_id }}/{{ server.icon_hash }}.png"
+        class="server-detail-icon"
+        alt="{{ server.name }}"
+      >
+    {% endif %}
+
+    <div class="server-detail-meta">
+      <h1 class="server-detail-title">{{ server.name }}</h1>
+
+      <div class="server-detail-stats">
+        👥 {{ server.member_count }} members
+        <span class="dot">•</span>
+        🟢 {{ server.online_count }} online
+      </div>
+    </div>
+  </div>
+
+  <!-- Description -->
+  <div class="server-detail-description">
+    {{ server.description }}
+  </div>
+
+  <!-- Actions -->
+  <div class="server-detail-actions">
+    <a
+      href="{{ server.invite_url }}"
+      target="_blank"
+      class="discord-button"
+    >
+      Join Discord
+    </a>
+  </div>
+
+  <!-- Growth -->
+  <div class="server-growth">
+    <h2>Member Growth</h2>
+
+    <ul class="snapshot-list">
+      {% for s in snapshots %}
+        <li>
+          <span class="snapshot-date">
+            {{ s.recorded_at|date:"M d, H:i" }}
+          </span>
+          <span class="snapshot-count">
+            {{ s.member_count }} members
+          </span>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+</div>
+
+{% endblock %}

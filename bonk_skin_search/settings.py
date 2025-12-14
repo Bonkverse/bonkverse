@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'skins',
     'django_extensions',
     'django_ratelimit',
+    "django_celery_beat",
 ]
 
 MIDDLEWARE = [
@@ -172,6 +173,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REDIS_URL = os.getenv("REDIS_URL")  # e.g. redis://127.0.0.1:6379/1 or rediss://...
 print("Using REDIS_URL:", REDIS_URL)
 
+
 if REDIS_URL:
     CACHES = {
         "default": {
@@ -221,3 +223,17 @@ except Exception as e:
     logging.warning(f"ZoneInfo not found for {TIME_ZONE}: {e}. Using UTC fallback.")
     from django.utils import timezone as django_tz
     django_tz.get_default_timezone = lambda: dt_timezone.utc
+
+# --------------------
+# Celery configuration
+# --------------------
+
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
+
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = True

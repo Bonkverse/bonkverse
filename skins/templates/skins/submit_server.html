@@ -1,0 +1,65 @@
+{% extends "skins/base.html" %}
+{% block content %}
+
+<h1>Submit a Bonk.io Discord Server</h1>
+
+<form method="post" action="{% url 'api_submit_server' %}" id="server-submit-form">
+  {% csrf_token %}
+
+  <label>Discord Invite Link</label>
+  <input type="text" name="invite" placeholder="https://discord.gg/xxxxx" required>
+
+  <h3>Tags</h3>
+
+  <!-- Visible tag bubbles -->
+  <div class="tag-bubbles">
+    {% for tag in tags %}
+      <span
+        class="tag-bubble selectable-tag"
+        data-tag="{{ tag.name }}"
+      >
+        {{ tag.name }}
+      </span>
+    {% endfor %}
+  </div>
+
+  <!-- Hidden inputs will be injected here -->
+  <div id="selected-tags"></div>
+
+  <button type="submit">Submit Server</button>
+</form>
+
+<p class="note">
+  Servers must have permanent invites and be Bonk.io–related.
+</p>
+
+<script>
+  const selected = new Set();
+  const selectedTagsDiv = document.getElementById("selected-tags");
+
+  document.querySelectorAll(".selectable-tag").forEach(tag => {
+    tag.addEventListener("click", () => {
+      const name = tag.dataset.tag;
+
+      if (selected.has(name)) {
+        selected.delete(name);
+        tag.classList.remove("active");
+      } else {
+        selected.add(name);
+        tag.classList.add("active");
+      }
+
+      // Rebuild hidden inputs
+      selectedTagsDiv.innerHTML = "";
+      selected.forEach(t => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = "tags";
+        input.value = t;
+        selectedTagsDiv.appendChild(input);
+      });
+    });
+  });
+</script>
+
+{% endblock %}
