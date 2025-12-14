@@ -31,6 +31,19 @@
     {{ server.description }}
   </div>
 
+{% if server.tags.exists %}
+  <div class="server-detail-tags">
+    <h3 class="server-detail-section-title">Tags</h3>
+
+    <div class="tags">
+      {% for tag in server.tags.all %}
+        <span class="tag-bubble">{{ tag.name }}</span>
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}
+
+
   <!-- Actions -->
   <div class="server-detail-actions">
     <a

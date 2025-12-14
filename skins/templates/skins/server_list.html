@@ -112,12 +112,25 @@
 
 
       <div class="tags {% if not server.tags.exists %}empty{% endif %}">
-        {% for tag in server.tags.all %}
+        {% for tag in server.tags.all|slice:":4" %}
           <span class="tag-bubble">{{ tag.name }}</span>
-        {% empty %}
-          <span class="tag-placeholder">No tags provided</span>
         {% endfor %}
+
+        {% if server.tags.count > 4 %}
+          <a
+            href="{% url 'detail' server.id %}"
+            class="tag-more"
+          >
+            +{{ server.tags.count|add:"-4" }} more
+          </a>
+        {% endif %}
+
+
+        {% if not server.tags.exists %}
+          <span class="tag-placeholder">No tags provided</span>
+        {% endif %}
       </div>
+
 
 
       <div class="server-actions">
