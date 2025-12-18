@@ -175,7 +175,7 @@ def login_view(request):
 
     return render(request, "skins/login.html", {"form": form})
 
-
+@ratelimit(key="ip", rate="10/m", block=True)
 def logout_view(request):
     for k in ("bonk_token", "bonk_username", "bonk_user_id"):
         request.session.pop(k, None)

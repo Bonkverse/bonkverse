@@ -7,8 +7,10 @@ from .models import Skin
 from django.core.paginator import Paginator
 import json
 from django.contrib import messages
+from django_ratelimit.decorators import ratelimit
 
 @login_required
+@ratelimit(key="ip", rate="10/m", block=True)
 def my_profile(request):
     user = request.user
     user_skins = Skin.objects.filter(creator__iexact=user.username).order_by("name")
@@ -24,32 +26,34 @@ def my_profile(request):
     })
 
 
-@login_required
-def edit_skin(request, skin_id):
-    skin = get_object_or_404(Skin, id=skin_id)
+# @login_required
+# @ratelimit(key="ip", rate="10/m", block=True)
+# def edit_skin(request, skin_id):
+#     skin = get_object_or_404(Skin, id=skin_id)
     
-    if skin.creator != request.user.username:
-        return redirect('my_profile')
+#     if skin.creator != request.user.username:
+#         return redirect('my_profile')
 
-    if request.method == 'POST':
-        new_name = request.POST.get('name', '').strip()
-        if new_name:
-            skin.name = new_name
-            skin.save()
+#     if request.method == 'POST':
+#         new_name = request.POST.get('name', '').strip()
+#         if new_name:
+#             skin.name = new_name
+#             skin.save()
 
-        # Make sure referer is a valid fallback
-        referer = request.POST.get('referer') or request.META.get('HTTP_REFERER') or reverse('my_profile')
-        return redirect(referer)
+#         # Make sure referer is a valid fallback
+#         referer = request.POST.get('referer') or request.META.get('HTTP_REFERER') or reverse('my_profile')
+#         return redirect(referer)
 
-    # For GET request, pass referer into context
-    referer = request.META.get('HTTP_REFERER', reverse('my_profile'))
-    return render(request, 'skins/edit_skin.html', {
-        'skin': skin,
-        'referer': referer
-    })
+#     # For GET request, pass referer into context
+#     referer = request.META.get('HTTP_REFERER', reverse('my_profile'))
+#     return render(request, 'skins/edit_skin.html', {
+#         'skin': skin,
+#         'referer': referer
+#     })
 
 
 @login_required
+@ratelimit(key="ip", rate="10/m", block=True)
 def delete_skin(request, skin_id):
     skin = get_object_or_404(Skin, id=skin_id)
     if skin.creator == request.user.username:
@@ -58,6 +62,7 @@ def delete_skin(request, skin_id):
 
 
 @login_required
+@ratelimit(key="ip", rate="10/m", block=True)
 def edit_skin(request, skin_id):
     skin = get_object_or_404(Skin, id=skin_id)
 

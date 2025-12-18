@@ -4,7 +4,9 @@ from django.db.models import Count
 from django.utils import timezone
 from datetime import timedelta
 from .models import PlayerLoss   # 👈 new model for losses
+from django_ratelimit.decorators import ratelimit
 
+@ratelimit(key="ip", rate="10/m", block=True)
 def _get_queryset(period):
     qs = PlayerLoss.objects.all()
     now_utc = timezone.now()
@@ -38,7 +40,7 @@ def _get_queryset(period):
           .order_by("-total")[:50]
     )
 
-
+@ratelimit(key="ip", rate="10/m", block=True)
 def losses_hub(request, period="today"):
     leaderboard = _get_queryset(period)
     title_map = {
