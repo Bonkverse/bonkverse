@@ -8,7 +8,6 @@ from django.utils import timezone
 from datetime import timedelta
 from django_ratelimit.decorators import ratelimit
 
-@ratelimit(key="ip", rate="10/m", block=True)
 def _get_queryset(period):
     qs = PlayerWin.objects.all()
     now_utc = timezone.now()
@@ -43,7 +42,6 @@ def _get_queryset(period):
     )
 
 
-@ratelimit(key="ip", rate="10/m", block=True)
 def wins_hub(request, period="today"):
     leaderboard = _get_queryset(period)
     title_map = {
