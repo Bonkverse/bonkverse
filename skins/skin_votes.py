@@ -52,7 +52,7 @@ def _get_vote_from_request(request):
 #     })
 
 @require_POST
-@ratelimit(key="ip", rate="50/hr", block=True)
+@ratelimit(key="ip", rate="50/h", block=True)
 def vote_skin_api(request, skin_id):
     if not request.user.is_authenticated:
         return JsonResponse({"error": "auth required"}, status=401)
@@ -104,7 +104,7 @@ def vote_skin_api(request, skin_id):
 
 
 @require_POST
-@ratelimit(key="ip", rate="50/hr", block=True)
+@ratelimit(key="ip", rate="50/h", block=True)
 def toggle_favorite_api(request, skin_id):
     if not request.user.is_authenticated:
         return JsonResponse({"error": "auth required"}, status=401)

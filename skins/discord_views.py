@@ -24,7 +24,7 @@ def extract_invite_code(invite: str) -> str:
 
 @csrf_exempt
 @require_POST
-@ratelimit(key="ip", rate="7/hr", block=True)
+@ratelimit(key="ip", rate="7/h", block=True)
 def submit_server(request):
     invite = request.POST.get("invite", "").strip()
     tags = request.POST.getlist("tags")
