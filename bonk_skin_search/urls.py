@@ -122,8 +122,4 @@ urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 # Media files (needed for your volume-stored images)
 urlpatterns += [
     path("media/<path:path>", serve, {"document_root": settings.MEDIA_ROOT}),
-<<<<<<< HEAD
 ]
-=======
-]
->>>>>>> master
