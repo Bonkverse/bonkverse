@@ -1,0 +1,51 @@
+{% extends "skins/base.html" %}
+
+{% block content %}
+<div class="leaderboard-container">
+  <h2 class="leaderboard-title">Most Downvoted Skins</h2>
+  <table class="leaderboard-table">
+    <thead>
+      <tr>
+        <th>Rank</th>
+        <th>Avatar</th>
+        <th>Skin</th>
+        <th>Creator</th>
+        <th>Downvotes</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for skin in skins %}
+      <tr>
+        <td>#{{ forloop.counter }}</td>
+        <td><img src="{{ skin.image_url }}" alt="{{ skin.name }}'s Avatar" class="skin-avatar" onclick="showImage(`{{ skin.image_url}}`)"></td>
+        <td><a href="{{ skin.get_absolute_url }}" class="skin-link">{{ skin.name }}</a></td>
+        <td>{{ skin.creator }}</td>
+        <td>{{ skin.downvotes }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div id="imageModal" class="modal" onclick="closeImage()">
+  <span class="close">&times;</span>
+  <img class="modal-content" id="zoomedImage">
+</div>
+
+{% block extra_scripts %}
+
+<script>
+    function showImage(src) {
+    const modal = document.getElementById('imageModal');
+    const img = document.getElementById('imageModal');
+    img.src = src;
+    modal.style.display = 'block';
+  }
+  function closeImage() {
+    const modal = document.getElementById('avatar-modal');
+    modal.style.display = 'none';
+  }
+</script>
+{% endblock %}
+
+{% endblock %}

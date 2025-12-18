@@ -1,0 +1,223 @@
+{% extends "skins/base.html" %}
+{% load static %}
+
+{% block content %}
+<h1>Find Flash Friends</h1>
+<h2>Total Flash Friends in DB: <strong>{{ total_flash }}</strong></h2>
+
+<div id="notif" class="notification info" style="display:none;"></div>
+<div id="loading" style="display:none;">Searching…</div>
+
+<!-- Unified search UI -->
+<div class="hero-inner">
+  <div class="search-row">
+
+    <!-- Same neon search bar as skin search -->
+    <form id="flash-search-form" onsubmit="return false;" class="hero-search">
+      <input
+        type="text"
+        id="flash-query"
+        placeholder="Search flash friends..."
+        autocomplete="off"
+      />
+      <button type="submit">Search</button>
+    </form>
+
+  </div>
+</div>
+
+<section class="skins-container" id="flash-results"></section>
+<div class="pagination" id="flash-pagination"></div>
+
+<div id="route-refs" data-search-url="{% url 'flash_friends_search' %}"></div>
+
+<a class="support-bmc" href="https://www.buymeacoffee.com/" target="_blank" rel="noopener">
+  <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="Support" />
+</a>
+
+<style>
+  .player-card {
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    margin-bottom:10px;
+    padding:8px;
+    background:#22303f;
+    border-radius:6px;
+  }
+
+  .player-card strong {
+    font-size: 15px;
+    color: #eaf3ff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+    display: inline-block;
+  }
+
+  .player-card span {
+    font-size:12px;
+    color:#9db2d0;
+  }
+
+  .pagination { margin-top: 20px; }
+
+  .pagination a, .pagination span {
+    padding: 8px 12px;
+    margin: 3px;
+    text-decoration: none;
+    color: #ddd;
+    background-color: #795548;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .pagination a.active {
+    font-weight: bold;
+    background-color: #ddd;
+    color: #222;
+    pointer-events: none;
+  }
+
+  .pagination a.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .pagination span {
+    background: transparent;
+    cursor: default;
+  }
+</style>
+
+<script>
+  const $ = (sel) => document.querySelector(sel);
+
+  function escapeHtml(s) {
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  const searchUrl = $("#route-refs")?.dataset.searchUrl || "";
+  const loadingEl = $("#loading");
+  const qInput = $("#flash-query");
+  const results = $("#flash-results");
+  const paginationEl = $("#flash-pagination");
+
+  let lastFetchAbort = null;
+
+  // ENTER triggers search
+  qInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      runSearch();
+    }
+  });
+
+  // BUTTON triggers search
+  $("#flash-search-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    runSearch();
+  });
+
+  function runSearch(page=1) {
+    const q = qInput.value.trim();
+    doSearch(q, page);
+  }
+
+  async function doSearch(q, page=1) {
+    try {
+      setLoading(true);
+      if (lastFetchAbort) lastFetchAbort.abort();
+      lastFetchAbort = new AbortController();
+
+      const resp = await fetch(`${searchUrl}?q=${encodeURIComponent(q)}&page=${page}`, {
+        signal: lastFetchAbort.signal
+      });
+      const data = await resp.json();
+      renderResults(data.results);
+      renderPagination(data.total, data.page, data.page_size, q);
+    } catch (err) {
+      if (err.name !== "AbortError") console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function renderResults(items) {
+    if (!items.length) {
+      results.innerHTML = "<p>No flash friends found.</p>";
+      return;
+    }
+    results.innerHTML = items.map(f => `
+      <div class="player-card" tabindex="0">
+        <strong>${escapeHtml(f.name)}</strong>
+        <span>${f.bonk_player_id ? "Linked Bonk ID: " + f.bonk_player_id : "Legacy only (unlinked)"}</span>
+      </div>
+    `).join("");
+  }
+
+  function renderPagination(total, page, pageSize, q) {
+    paginationEl.innerHTML = "";
+    const totalPages = Math.ceil(total / pageSize);
+    if (totalPages <= 1) return;
+
+    // Prev
+    const prev = document.createElement("a");
+    prev.textContent = "Prev";
+    prev.href = "#";
+    if (page === 1) prev.classList.add("disabled");
+    prev.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (page > 1) doSearch(q, page - 1);
+    });
+    paginationEl.appendChild(prev);
+
+    // Page input
+    const input = document.createElement("input");
+    input.type = "number";
+    input.min = 1;
+    input.max = totalPages;
+    input.value = page;
+    input.style.width = "60px";
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        let target = parseInt(input.value, 10);
+        if (!isNaN(target) && target >= 1 && target <= totalPages)
+          doSearch(q, target);
+      }
+    });
+    paginationEl.appendChild(input);
+
+    const span = document.createElement("span");
+    span.textContent = ` / ${totalPages}`;
+    paginationEl.appendChild(span);
+
+    // Next
+    const next = document.createElement("a");
+    next.textContent = "Next";
+    next.href = "#";
+    if (page === totalPages) next.classList.add("disabled");
+    next.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (page < totalPages) doSearch(q, page + 1);
+    });
+    paginationEl.appendChild(next);
+  }
+
+  function setLoading(is) {
+    loadingEl.style.display = is ? "block" : "none";
+  }
+
+  // Auto-load page 1
+  document.addEventListener("DOMContentLoaded", () => {
+    doSearch("", 1);
+  });
+</script>
+
+{% endblock %}

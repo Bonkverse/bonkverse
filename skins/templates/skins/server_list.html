@@ -1,0 +1,179 @@
+{% extends "skins/base.html" %}
+{% block content %}
+
+<!-- HERO SEARCH -->
+<div class="hero">
+  <div class="hero-inner">
+    <h1 class="hero-title">Bonk.io Discord Servers</h1>
+    <p class="hero-sub">
+      Discover and join Bonk.io–related Discord communities
+    </p>
+
+    <form method="get" class="hero-search">
+      <input
+        type="text"
+        name="q"
+        placeholder="Search servers by name or description…"
+        value="{{ query }}"
+      >
+      <button type="submit">Search</button>
+    </form>
+  </div>
+</div>
+
+<!-- FILTERS -->
+<div class="filters">
+  <div class="filter-hint">
+    Click tags to filter servers by category
+  </div>
+
+  <form class="filter-form" method="get" id="tag-filter-form">
+    {% if query %}
+      <input type="hidden" name="q" value="{{ query }}">
+    {% endif %}
+
+    <div class="tag-bubbles">
+      {% for tag in tags %}
+        <span
+          class="tag-bubble selectable-tag {% if tag.name in active_tags %}active{% endif %}"
+          data-tag="{{ tag.name }}"
+        >
+          {{ tag.name }}
+        </span>
+      {% endfor %}
+    </div>
+
+    <div id="tag-inputs"></div>
+  </form>
+</div>
+
+{% if next_refresh %}
+  <div class="refresh-timer">
+    🔄 Next Discord server refresh in
+    <span id="refresh-countdown">--</span>
+  </div>
+
+  <script>
+    const nextRefresh = new Date("{{ next_refresh|date:'c' }}").getTime();
+
+    function updateCountdown() {
+      const now = new Date().getTime();
+      const diff = nextRefresh - now;
+
+      if (diff <= 0) {
+        document.getElementById("refresh-countdown").innerText = "updating now…";
+        return;
+      }
+
+      const minutes = Math.floor(diff / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+
+      document.getElementById("refresh-countdown").innerText =
+        `${minutes}m ${seconds}s`;
+    }
+
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+  </script>
+{% endif %}
+
+
+<!-- SERVER GRID -->
+<div class="server-grid">
+  {% for server in servers %}
+    <div class="server-card">
+
+      <div class="server-header">
+        {% if server.icon_hash %}
+          <img
+            src="https://cdn.discordapp.com/icons/{{ server.guild_id }}/{{ server.icon_hash }}.png"
+            alt="{{ server.name }}"
+            class="server-icon"
+          >
+        {% else %}
+          <div class="server-icon placeholder">🟣</div>
+        {% endif %}
+
+        <div class="server-title">
+          <strong>{{ server.name }}</strong>
+          <span class="members">
+            👥 {{ server.member_count }} • 🟢 {{ server.online_count }}
+          </span>
+        </div>
+      </div>
+
+      <p class="description {% if not server.description %}empty{% endif %}">
+        {% if server.description %}
+          {{ server.description|truncatechars:120 }}
+        {% else %}
+          <em>No description provided.</em>
+        {% endif %}
+      </p>
+
+
+      <div class="tags {% if not server.tags.exists %}empty{% endif %}">
+        {% for tag in server.tags.all|slice:":4" %}
+          <span class="tag-bubble">{{ tag.name }}</span>
+        {% endfor %}
+
+        {% if server.tags.count > 4 %}
+          <a
+            href="{% url 'detail' server.id %}"
+            class="tag-more"
+          >
+            +{{ server.tags.count|add:"-4" }} more
+          </a>
+        {% endif %}
+
+
+        {% if not server.tags.exists %}
+          <span class="tag-placeholder">No tags provided</span>
+        {% endif %}
+      </div>
+
+
+
+      <div class="server-actions">
+        <a href="{{ server.invite_url }}" class="discord-button">Join Discord</a>
+        <a href="{% url 'detail' server.id %}" class="discord-button">See Details</a>
+
+      </div>
+      
+
+    </div>
+  {% empty %}
+    <p class="empty-state">No servers found.</p>
+  {% endfor %}
+</div>
+
+<!-- TAG FILTER SCRIPT -->
+<script>
+  const active = new Set(JSON.parse('{{ active_tags|escapejs|default:"[]" }}'));
+  const inputs = document.getElementById("tag-inputs");
+  const form = document.getElementById("tag-filter-form");
+
+  function syncInputs() {
+    inputs.innerHTML = "";
+    active.forEach(tag => {
+      const i = document.createElement("input");
+      i.type = "hidden";
+      i.name = "tag";
+      i.value = tag;
+      inputs.appendChild(i);
+    });
+  }
+
+  document.querySelectorAll(".selectable-tag").forEach(tag => {
+    tag.addEventListener("click", () => {
+      const name = tag.dataset.tag;
+      tag.classList.toggle("active");
+      active.has(name) ? active.delete(name) : active.add(name);
+      syncInputs();
+      form.submit();
+    });
+  });
+
+  syncInputs();
+</script>
+
+{% endblock %}

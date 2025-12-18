@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Bonk.io Skin Search{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'skins/styles.css' %}">
+
+    {% now "m" as current_month %}
+    {% if current_month == "10" %}
+      <link rel="stylesheet" href="{% static 'skins/halloween.css' %}">
+    {% endif %}
+
+
+    <script src="{% static 'skins/scripts.js' %}" defer></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+    <link rel="icon" type="image/png" href="{% static 'images/BonkverseLogo.png' %}">
+    {% block social_meta %}{% endblock %}
+
+</head>
+<body>
+
+    <!-- ✅ Navbar (Included in all views) -->
+    {% include 'skins/navbar.html' %}
+
+    <!-- ✅ Global Notifications (Success, Error, Info) -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="notification {% if message.tags %}{{ message.tags }}{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- ✅ Main content (Each page inserts its content here) -->
+    <div id="particles-js"></div>
+
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <a href="https://discord.gg/2Zx7Cwhr4Z" 
+      target="_blank" 
+      class="discord-float">
+      <img src="{% static 'images/discord-icon.svg' %}" alt="Join Discord" />
+    </a>
+
+    <!-- Support Button -->
+    <div class="support-bmc">
+      <a href="https://www.buymeacoffee.com/misterurias" target="_blank" rel="noopener">
+        <img src="https://img.buymeacoffee.com/button-api/?text=Support Bonkverse!&emoji=&slug=misterurias&button_colour=5F7FFF&font_colour=ffffff&font_family=Arial&outline_colour=000000&coffee_colour=FFDD00" 
+            alt="Support Bonkverse!" />
+      </a>
+    </div>
+
+    <script>
+        particlesJS("particles-js", {
+          "particles": {
+            "number": {
+              "value": 120,
+              "density": {
+                "enable": true,
+                "value_area": 1000
+              }
+            },
+            "color": { "value": ["#ffffff", "#00c3ff", "#ff99ff", "#ffcc00"] },  // white stars
+            "shape": {
+              "type": "circle"
+            },
+            "opacity": {
+              "value": 0.9,
+              "random": true
+            },
+            "size": {
+              "value": 2.5,
+              "random": true
+            },
+            "line_linked": {
+              "enable": false  // 👈 disables constellation lines
+            },
+            "move": {
+              "enable": true,
+              "speed": 0.8,
+              "direction": "none",
+              "random": true,
+              "straight": false,
+              "out_mode": "out"
+            }
+          },
+          "interactivity": {
+            "detect_on": "canvas",
+            "events": {
+              "onhover": { "enable": false },
+              "onclick": { "enable": false }
+            }
+          },
+          "retina_detect": true
+        });
+    </script>
+
+
+
+
+    {% block extra_scripts %}{% endblock %}
+
+</body>
+
+
+</html>

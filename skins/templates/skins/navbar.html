@@ -1,0 +1,58 @@
+{% load static %}
+
+<nav class="navbar">
+    <a href="{% url 'home' %}" class="home-button">
+        <img src="{% static 'images/BonkverseLogo.png' %}" alt="Home" class="home-icon">
+    </a>
+
+
+    <ul class="nav-links">
+        <li><a href="{% url 'home' %}">Home</a></li>
+        <li><a href="{% url 'staff' %}">Our Team</a></li>
+        <li><a href="{% url 'changelog' %}">Changelog</a></li>
+        
+        <li class="nav-item">
+            <a href="#" class="nav-link">Discord ▾</a>
+            <ul class="dropdown-menu">
+            <li><a href="{% url 'list' %}">Server Search</a></li>
+            <li><a href="{% url 'submit_server' %}">Submit Server</a></li>
+            </ul>
+        </li>
+        <!-- <li><a href="{% url 'matchmaking' %}">1v1 Matchmaking</a></li> -->
+
+        <li class="nav-item">
+            <a href="#" class="nav-link">Skin Leaderboards ▾</a>
+            <ul class="dropdown-menu">
+            <li><a href="{% url 'leaderboards_upvoted' %}">Most Upvoted</a></li>
+            <li><a href="{% url 'leaderboards_downvoted' %}">Most Downvoted</a></li>
+            <li><a href="{% url 'leaderboards_favorited' %}">Most Favorited</a></li>
+            </ul>
+        </li>
+
+        <li class="nav-item">
+            <a href="#" class="nav-link">Win/Loss Leaderboards ▾</a>
+            <ul class="dropdown-menu">
+            <li><a href="{% url 'wins_hub' 'today' %}">Wins</a></li>
+            <li><a href="{% url 'losses_hub' 'today' %}">Losses</a></li>
+            <li><a href="{% url 'winrate_hub' 'today' %}">Win/Loss % </a></li>
+            </ul>
+        </li>
+
+        <li class="nav-item">
+            <a href="#" class="nav-link">Search ▾</a>
+            <ul class="dropdown-menu">
+                <li><a href="{% url 'search_skins' %}">Skins</a></li>
+                <li><a href="{% url 'players_page' %}">Bonk Players</a></li>
+                <li><a href="{% url 'flash_friends_page' %}">Flash Friends</a></li>
+            </ul>
+        </li>
+
+        {% if user.is_authenticated %}
+            <!-- <li><a href="{% url 'upload_skin' %}">Upload Skin</a></li> -->
+            <li><a href="{% url 'my_profile' %}" class="username-link">My Profile</a></li>
+            <li><a href="{% url 'logout' %}">Logout</a></li>
+        {% else %}
+            <li><a href="{% url 'login' %}">Login</a></li>
+        {% endif %}
+    </ul>
+</nav>

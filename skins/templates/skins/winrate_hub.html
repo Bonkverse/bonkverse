@@ -1,0 +1,87 @@
+{% extends "skins/base.html" %}
+
+{% block content %}
+<div class="leaderboard-container">
+  <h2 class="leaderboard-title">{{ title }}</h2>
+
+  <!-- Info Box -->
+  <div class="leaderboard-info">
+    Want to appear on these leaderboards?  
+    Install the <a href="https://greasyfork.org/en/scripts/551009-bonk-io-win-tracker-by-bonkverse" target="_blank">
+      🏆 Bonk.io Win/Loss Tracker userscript
+    </a> (Tampermonkey required).
+  </div>
+
+  <!-- Tabs -->
+  <div class="leaderboard-tabs">
+    <a href="{% url 'winrate_hub' 'today' %}" class="{% if period == 'today' %}active{% endif %}">Today</a>
+    <a href="{% url 'winrate_hub' 'week' %}" class="{% if period == 'week' %}active{% endif %}">This Week</a>
+    <a href="{% url 'winrate_hub' 'month' %}" class="{% if period == 'month' %}active{% endif %}">This Month</a>
+    <a href="{% url 'winrate_hub' 'all' %}" class="{% if period == 'all' %}active{% endif %}">All Time</a>
+  </div>
+
+  <!-- Leaderboard Table -->
+  <table class="leaderboard-table">
+    <thead>
+      <tr>
+        <th>Rank</th>
+        <th>Player</th>
+        <th>Wins</th>
+        <th>Losses</th>
+        <th>Win %</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in leaderboard %}
+      <tr>
+        <td>#{{ forloop.counter }}</td>
+        <td>{{ entry.username }}</td>
+        <td>{{ entry.wins }}</td>
+        <td>{{ entry.losses }}</td>
+        <td>{{ entry.winrate }}%</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5">No data recorded yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<style>
+.leaderboard-info {
+  margin: 10px 0 20px;
+  padding: 10px 14px;
+  background: rgba(0,0,0,0.6);
+  border-left: 4px solid #ffcc00;
+  color: #eee;
+  font-size: 14px;
+  border-radius: 6px;
+}
+.leaderboard-info a {
+  color: #00e6c3;
+  font-weight: bold;
+  text-decoration: none;
+}
+.leaderboard-info a:hover {
+  text-decoration: underline;
+}
+
+.leaderboard-tabs {
+  margin: 15px 0;
+  display: flex;
+  gap: 10px;
+}
+.leaderboard-tabs a {
+  padding: 6px 12px;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: bold;
+}
+.leaderboard-tabs a.active {
+  background: #ffcc00;
+  color: black;
+}
+</style>
+{% endblock %}

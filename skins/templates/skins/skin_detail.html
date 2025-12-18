@@ -1,0 +1,150 @@
+{% extends 'skins/base.html' %}
+
+{% block social_meta %}
+  <meta name="theme-color" content="#009688">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="{{ og.site_name }}">
+  <meta property="og:title" content="{{ og.title }}">
+  <meta property="og:description" content="{{ og.description }}">
+  <meta property="og:url" content="{{ og.url }}">
+  <meta property="og:image" content="{{ og.image }}">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{{ og.title }}">
+  <meta name="twitter:description" content="{{ og.description }}">
+  <meta name="twitter:image" content="{{ og.image }}">
+{% endblock %}
+
+{% block content %}
+<div class="skin-detail-container">
+
+  <!-- Top row: title, creator -->
+  <div class="skin-header">
+    <div class="text-group">
+      <h1 class="skin-title">{{ skin.name }}</h1>
+      <p class="skin-creator">By: <strong>{{ skin.creator }}</strong></p>
+      <a href="{{ skin.link }}" target="_blank" class="skin-bl-link"><strong>Bonkleagues Link</strong></a>
+    </div>
+
+    {% if user.is_authenticated %}
+      <!-- Wear controls -->
+      <div class="wear-inline">
+        <button class="wear-btn" onclick="startWear()" title="Wear this skin in bonk.io">Wear</button>
+        <span id="wear-msg" class="muted"></span>
+    </div>
+
+    {% endif %}
+  </div>
+
+  <!-- Big image -->
+  <div class="skin-image-wrapper">
+    <img src="{{ skin.image_url }}" alt="Skin image" class="skin-image-large">
+  </div>
+
+  <p><strong>Description</strong></p>
+  <div class="skin-description">
+    <p>{{ skin.description }}</p>
+  </div>
+
+  <p><strong>Tags</strong></p>
+  {% if skin.labels %}
+    <div class="tag-bubbles">
+      {% for key, value in skin.labels.items %}
+        {% for tag in value %}
+          <span class="tag-bubble">{{ tag }}</span>
+        {% endfor %}
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="skin-stats">
+    <p>👍 Upvotes: {{ skin.upvotes }}</p>
+    <p>👎 Downvotes: {{ skin.downvotes }}</p>
+    <p>⭐ Favorites: {{ skin.favorited_by.count }}</p>
+  </div>
+</div>
+
+{% if user.is_authenticated %}
+  <!-- Tiny login modal (shown only if token is missing/expired) -->
+  <dialog id="bonk-login-modal">
+    <form id="bonk-login-form" method="dialog" onsubmit="return doBonkLogin(event)">
+      <h3>Bonk.io Login</h3>
+      <p class="muted">Bonverse doesn't store your password. To verify and link your bonk.io, your bonk credentials are sent to Bonk.io to apply the skin.</p>
+      <label>Bonk.io Username</label>
+      <input name="bonk_username" required>
+      <label>Bonk.io Password</label>
+      <input name="bonk_password" type="password" required>
+      <div class="row">
+        <button type="submit">Login</button>
+        <button type="button" onclick="closeBonkLogin()">Cancel</button>
+      </div>
+      <p id="bonk-login-msg" class="muted"></p>
+    </form>
+  </dialog>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+{% if user.is_authenticated %}
+<script>
+function getCSRF(){const m=document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);return m?decodeURIComponent(m[1]):'';}
+const wearMsg = document.getElementById('wear-msg');
+const modal = document.getElementById('bonk-login-modal');
+
+async function postForm(url, data){
+  try {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCSRF(), 'X-Requested-With': 'XMLHttpRequest' },
+      body: data instanceof FormData ? data : new URLSearchParams(data)
+    });
+    const json = await r.json().catch(()=>({}));
+    return { ok: r.ok, json };
+  } catch (e) {
+    return { ok: false, json: { ok:false, error:'network_error' } };
+  }
+}
+
+async function tryWear(){
+  wearMsg.textContent = 'Applying…';
+  // No slot param — let the server pick remembered active slot or fallback to 3
+  const {ok, json} = await postForm("{% url 'wear_skin' skin.id %}", {});
+  if (ok && json.ok){
+    wearMsg.textContent = '✅ Applied! Select that slot in Bonk.io.';
+    return true;
+  }
+  if (json.need_login){
+    wearMsg.textContent = '';
+    openBonkLogin();
+    return false;
+  }
+  wearMsg.textContent = '❌ ' + (json.error || 'Failed.');
+  return false;
+}
+
+function startWear(){ tryWear(); }
+
+function openBonkLogin(){ if (typeof modal.showModal === 'function') modal.showModal(); else modal.style.display='block'; }
+function closeBonkLogin(){ if (modal.close) modal.close(); else modal.style.display='none'; }
+
+async function doBonkLogin(e){
+  e.preventDefault();
+  const form = e.target;
+  const fd = new FormData(form);
+  const msg = document.getElementById('bonk-login-msg');
+  msg.textContent = 'Logging in…';
+
+  const {ok, json} = await postForm("{% url 'bonk_login_for_wear' %}", fd);
+  if (!ok || !json.ok){ msg.textContent = '❌ ' + (json.error || 'Login failed'); return false; }
+
+  msg.textContent = '✅ Logged in!';
+  closeBonkLogin();
+  setTimeout(tryWear, 150);
+  return false;
+}
+</script>
+
+{% endif %}
+{% endblock %}

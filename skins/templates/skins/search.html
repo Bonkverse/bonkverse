@@ -1,0 +1,378 @@
+{% extends 'skins/base.html' %}
+
+{% block title %}Bonk.io Skin Search{% endblock %}
+
+{% block content %}
+
+  <h1>Bonk.io Skin Search</h1>
+  <h2>🔥 Skins uploaded today: {{ daily_skin_count }} 🔥 Total Skins: {{ total_skin_count }} 🔥</h2>
+
+  <div class="hero-inner">
+    <div class="search-row">
+      <form id="searchForm" method="GET" action="{% url 'search_skins' %}" class="hero-search">
+        <input type="text" name="q" value="{{ query }}" placeholder="Search skins...">
+        <button type="submit">Search</button>
+      </form>
+
+      <br><br>
+
+      {% if query %}
+        <!-- Controls sit OUTSIDE to the right -->
+        <div class="search-controls-inline">
+          <label>Search By:</label>
+          <select name="mode" form="searchForm">
+            <option value="relevance" {% if mode == "relevance" %}selected{% endif %}>Relevance</option>
+            <option value="name" {% if mode == "name" %}selected{% endif %}>Name</option>
+            <option value="creator" {% if mode == "creator" %}selected{% endif %}>Creator</option>
+            <option value="tags" {% if mode == "tags" %}selected{% endif %}>Tags</option>
+            <option value="description" {% if mode == "description" %}selected{% endif %}>Description</option>
+          </select>
+
+          <label>Sort By:</label>
+          <select name="sort" form="searchForm">
+            <option value="relevance" {% if sort == "relevance" %}selected{% endif %}>Relevance</option>
+            <option value="newest" {% if sort == "newest" %}selected{% endif %}>Newest</option>
+            <option value="favorites" {% if sort == "favorites" %}selected{% endif %}>Most Favorited</option>
+            <option value="upvotes" {% if sort == "upvotes" %}selected{% endif %}>Most Upvoted</option>
+          </select>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+
+  <div class="skins-container">
+    {% for skin in skins %}
+      <div class="skin-card" 
+     data-id="{{ skin.id }}"
+     data-vote="{{ skin.current_vote|default:'' }}"
+     data-favorited="{% if user.is_authenticated and user in skin.favorited_by.all %}1{% else %}0{% endif %}">
+
+
+
+        {% if user.is_authenticated %}
+          <button class="wear-card-btn" title="Wear this skin in Bonk.io">Wear</button>
+          <button class="fav-toggle" title="Favorite">
+            <span class="fav-icon">{% if user in skin.favorited_by.all %}⭐{% else %}☆{% endif %}</span>
+            <span class="fav-count">{{ skin.favorited_by.count }}</span>
+          </button>
+        {% else %}
+          <span class="fav-static" title="Favorite a skin (login required)">☆ {{ skin.favorited_by.count }}</span>
+        {% endif %}
+
+        <br><br>
+
+        <img crossorigin="anonymous"
+          src="{{ skin.image_url|default:'https://bonkleagues.io/api/avatar.svg?skinCode=DEFAULT' }}"
+          alt="{{ skin.name }}" width="100"
+          onclick="showImage(`{{ skin.image_url }}`)">
+
+        <br>
+        <strong title="{{ skin.name }}">{{ skin.name|truncatechars:20 }}</strong>
+        by <span title="{{ skin.creator }}">{{ skin.creator|truncatechars:20 }}</span>
+
+        <!-- One-line voting -->
+        <div class="vote-row">
+          <button class="vote-up" title="Upvote a skin (login required)">🔼</button>
+          <span class="up-count">{{ skin.upvotes }}</span>
+          <button class="vote-down" title="Downvote a skin (login required)">🔽</button>
+          <span class="down-count">{{ skin.downvotes }}</span>
+        </div>
+
+        <br>
+        {% if skin.id %}
+          <a href="{{ skin.get_absolute_url }}" class="view-btn">View Skin Details</a>
+        {% else %}
+          <span style="color: red;">⚠️ No ID</span>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- 🔹 Modal (Hidden by Default) -->
+  <div id="imageModal" class="modal" onclick="closeImage()">
+    <span class="close">&times;</span>
+    <img class="modal-content" id="zoomedImage">
+  </div>
+
+  {% if skins.has_other_pages %}
+    <div class="pagination">
+      {% if skins.has_previous %}
+        <a href="?q={{ query }}&page={{ skins.previous_page_number }}">Prev</a>
+      {% endif %}
+
+      <input id="pageJump" type="number"
+             min="1"
+             max="{{ skins.paginator.num_pages }}"
+             value="{{ skins.number }}"
+             style="width:60px; margin:0 5px;">
+
+      <span>/ {{ skins.paginator.num_pages }}</span>
+
+      {% if skins.has_next %}
+        <a href="?q={{ query }}&page={{ skins.next_page_number }}">Next</a>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if user.is_authenticated %}
+  <!-- Keep login modal inline -->
+  <dialog id="bonk-login-modal">
+    <form id="bonk-login-form" method="dialog" onsubmit="return doBonkLoginFromSearch(event)">
+      <h3>Bonk.io Login</h3>
+      <p class="muted">We don’t store your password. It’s sent to Bonk.io once to apply the skin.</p>
+      <label>Bonk.io Username</label>
+      <input name="bonk_username" required>
+      <label>Bonk.io Password</label>
+      <input name="bonk_password" type="password" required>
+      <div class="row">
+        <button type="submit">Login</button>
+        <button type="button" onclick="closeBonkLogin()">Cancel</button>
+      </div>
+      <p id="bonk-login-msg" class="muted"></p>
+    </form>
+  </dialog>
+  {% endif %}
+
+{% endblock %}
+
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+  const searchForm = document.getElementById("searchForm");
+
+  document.querySelectorAll('.search-controls-inline select').forEach(select => {
+    select.addEventListener("change", () => {
+      searchForm.submit();
+    });
+  });
+});
+
+  // ---- Keep user's tz offset in the query so "today" count matches their local day
+  (function ensureTzParam() {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.get('tz_offset')) {
+      const tzOffset = new Date().getTimezoneOffset();
+      url.searchParams.set('tz_offset', tzOffset);
+      window.history.replaceState({}, '', url.toString());
+    }
+  })();
+
+  // ---- Modal helpers
+  function showImage(src) {
+    const modal = document.getElementById('imageModal');
+    const img = document.getElementById('zoomedImage');
+    img.src = src;
+    modal.style.display = 'block';
+  }
+  function closeImage() {
+    const modal = document.getElementById('imageModal');
+    modal.style.display = 'none';
+  }
+
+  // ---- Page jump logic
+  document.addEventListener("DOMContentLoaded", () => {
+    const input = document.getElementById("pageJump");
+    if (!input) return;
+
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        const target = parseInt(input.value, 10);
+        const totalPages = parseInt("{{ skins.paginator.num_pages|default:0 }}", 10);
+        const query = "{{ query|escapejs }}";
+        if (!isNaN(target) && target >= 1 && target <= totalPages) {
+          window.location = `?q=${encodeURIComponent(query)}&page=${target}`;
+        }
+      }
+    });
+  });
+
+  // ---- CSRF + POST helper
+  function getCSRF() {
+    const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+  async function postForm(url, data) {
+    const body = new URLSearchParams(data || {});
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCSRF(), 'X-Requested-With': 'XMLHttpRequest' },
+      body
+    });
+    if (r.status === 401) {
+      const ret = encodeURIComponent(window.location.pathname + window.location.search);
+      window.location.href = `/login/?next=${ret}`;
+      return null;
+    }
+    if (!r.ok) throw new Error('Request failed');
+    return r.json();
+  }
+
+  // ---- Event delegation for all cards (vote/favorite)
+
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll('.skin-card').forEach(card => {
+      const vote = card.dataset.vote;
+      if (vote === 'up') {
+        card.querySelector('.vote-up').classList.add('active');
+      } else if (vote === 'down') {
+        card.querySelector('.vote-down').classList.add('active');
+      }
+    });
+  });
+
+
+  document.addEventListener('click', async (e) => {
+    const card = e.target.closest('.skin-card');
+    if (!card) return;
+    const id = card.dataset.id;
+
+    // Upvote
+    if (e.target.closest('.vote-up')) {
+      try {
+        const json = await postForm(`/api/skins/${id}/vote/`, { vote: 'up' });
+        if (!json) return;
+
+        // update counts
+        card.querySelector('.up-count').textContent   = json.upvotes;
+        card.querySelector('.down-count').textContent = json.downvotes;
+
+        // clear highlights
+        card.querySelector('.vote-up').classList.remove('active');
+        card.querySelector('.vote-down').classList.remove('active');
+
+        // apply highlight
+        if (json.current_vote === 'up') {
+          card.querySelector('.vote-up').classList.add('active');
+        } else if (json.current_vote === 'down') {
+          card.querySelector('.vote-down').classList.add('active');
+        }
+      } catch (err) { console.error(err); }
+      return;
+    }
+
+    // Downvote
+    if (e.target.closest('.vote-down')) {
+      try {
+        const json = await postForm(`/api/skins/${id}/vote/`, { vote: 'down' });
+        if (!json) return;
+
+        // update counts
+        card.querySelector('.up-count').textContent   = json.upvotes;
+        card.querySelector('.down-count').textContent = json.downvotes;
+
+        // clear highlights
+        card.querySelector('.vote-up').classList.remove('active');
+        card.querySelector('.vote-down').classList.remove('active');
+
+        // apply highlight
+        if (json.current_vote === 'up') {
+          card.querySelector('.vote-up').classList.add('active');
+        } else if (json.current_vote === 'down') {
+          card.querySelector('.vote-down').classList.add('active');
+        }
+      } catch (err) { console.error(err); }
+      return;
+    }
+
+    // Favorite toggle (if logged in)
+    if (e.target.closest('.fav-toggle')) {
+      try {
+        const json = await postForm(`/api/skins/${id}/favorite/`);
+        if (!json) return;
+        card.querySelector('.fav-count').textContent = json.favorites;
+        card.querySelector('.fav-icon').textContent  = json.favorited ? '⭐' : '☆';
+      } catch (err) { console.error(err); }
+      return;
+    }
+  });
+</script>
+
+<script>
+  // --- Special POST helper that DOESN'T redirect on 401 (we need the JSON: need_login)
+  async function postFormNoRedirect(url, data){
+    const body = new URLSearchParams(data || {});
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCSRF(), 'X-Requested-With': 'XMLHttpRequest' },
+      body
+    });
+    let json = {};
+    try { json = await r.json(); } catch(e) {}
+    return { ok: r.ok, status: r.status, json };
+  }
+
+  // --- Wear flow for cards
+  let pendingWearSkinId = null;   // set when we need to login first
+  const loginModal = document.getElementById('bonk-login-modal');
+
+  function openBonkLogin(){ if (loginModal?.showModal) loginModal.showModal(); else loginModal.style.display='block'; }
+  function closeBonkLogin(){ if (loginModal?.close) loginModal.close(); else loginModal.style.display='none'; }
+
+  async function tryWearCard(skinId, card){
+    card?.setAttribute('data-wearing', '1');
+    const { ok, status, json } = await postFormNoRedirect(`/api/skins/${skinId}/wear/`, {});
+    if (ok && json.ok){
+      toast('✅ Applied to your active slot.');
+      card?.removeAttribute('data-wearing');
+      return;
+    }
+    if (status === 401 && json && json.need_login){
+      pendingWearSkinId = skinId;
+      openBonkLogin();
+      card?.removeAttribute('data-wearing');
+      return;
+    }
+    console.error('Wear failed:', json);
+    toast('❌ Failed to apply skin.');
+    card?.removeAttribute('data-wearing');
+  }
+
+  async function doBonkLoginFromSearch(e){
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const msg = document.getElementById('bonk-login-msg');
+    msg.textContent = 'Logging in…';
+    const r = await fetch("{% url 'bonk_login_for_wear' %}", {
+      method:'POST',
+      headers:{ 'X-CSRFToken': getCSRF(), 'X-Requested-With':'XMLHttpRequest' },
+      body: fd
+    });
+    const json = await r.json().catch(()=>({}));
+    if (!r.ok || !json.ok){ msg.textContent = '❌ ' + (json.error || 'Login failed'); return false; }
+    msg.textContent = '✅ Logged in!';
+    closeBonkLogin();
+
+    if (pendingWearSkinId){
+      const id = pendingWearSkinId;
+      pendingWearSkinId = null;
+      const card = document.querySelector(`.skin-card[data-id="${id}"]`);
+      setTimeout(()=>tryWearCard(id, card), 120);
+    }
+    return false;
+  }
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.wear-card-btn');
+    if (!btn) return;
+    const card = e.target.closest('.skin-card');
+    if (!card) return;
+    const id = card.dataset.id;
+    tryWearCard(id, card);
+  });
+
+  function toast(text){
+    const t = document.createElement('div');
+    t.textContent = text;
+    t.style.position='fixed'; t.style.bottom='18px'; t.style.left='50%'; t.style.transform='translateX(-50%)';
+    t.style.background='rgba(0,0,0,.8)'; t.style.color='#fff'; t.style.padding='8px 12px'; t.style.borderRadius='10px';
+    t.style.zIndex=9999; t.style.fontSize='14px';
+    document.body.appendChild(t);
+    setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .3s'; }, 1400);
+    setTimeout(()=>t.remove(), 1800);
+  }
+
+
+</script>
+{% endblock %}

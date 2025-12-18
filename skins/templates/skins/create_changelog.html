@@ -1,0 +1,29 @@
+{% extends "skins/base.html" %}
+{% block title %}Add Changelog{% endblock %}
+
+{% block content %}
+<div class="changelog-form-container">
+  <h2 class="changelog-title">➕ Add Changelog</h2>
+
+  <form method="post" class="changelog-form">
+    {% csrf_token %}
+
+    <div class="form-group">
+      <label for="title">Title</label>
+      <input type="text" id="title" name="title" required>
+    </div>
+
+    <div class="form-group">
+      <label for="content">Content</label>
+      <textarea id="content" name="content" rows="8" placeholder="Write update details here..." required></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="version">Version (optional)</label>
+      <input type="text" id="version" name="version" placeholder="e.g. v1.2">
+    </div>
+
+    <button type="submit" class="submit-btn">💾 Save</button>
+  </form>
+</div>
+{% endblock %}

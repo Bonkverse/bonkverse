@@ -1,0 +1,83 @@
+{% extends "skins/base.html" %}
+
+{% block content %}
+
+<form id="match-form">
+  <label>Game Mode:</label>
+  <select name="gameMode">
+    <option value="classic">Classic</option>
+    <option value="arrows">Arrows</option>
+    <option value="deatharrows">Death Arrows</option>
+    <option value="grapple">Grapple</option>
+  </select>
+
+  <label>Rounds:</label>
+  <select name="rounds">
+    <option value="3">3</option>
+    <option value="5">5</option>
+    <option value="9">9</option>
+  </select>
+
+  <label>Match Type:</label>
+  <select name="type">
+    <option value="fun">Fun</option>
+    <option value="ranked">Ranked</option>
+  </select>
+
+  <br><br>
+  <button type="submit">Start 1v1 Match</button>
+</form>
+
+<div id="result" style="margin-top: 20px;"></div>
+
+<script>
+let polling = false;
+
+document.getElementById("match-form").onsubmit = function (e) {
+  e.preventDefault();
+
+  if (polling) return;
+
+  polling = true;
+  document.getElementById('result').innerHTML = `<p>Looking for an opponent...</p>`;
+
+  const form = new FormData(e.target);
+  const data = {
+    username: "Player" + Math.floor(Math.random() * 10000),  // Replace with actual user info later
+    gameMode: form.get("gameMode"),
+    rounds: form.get("rounds"),
+    type: form.get("type")
+  };
+
+  fetch('/api/join-matchmaking/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  .then(res => res.json())
+  .then(data => {
+    polling = false;
+    if (data.matchFound) {
+      document.getElementById('result').innerHTML =
+        `<p>Match found! Players: ${data.players.join(" vs ")}</p><a href="${data.roomLink}" target="_blank">${data.roomLink}</a>`;
+    } else {
+      document.getElementById('result').innerHTML = `<p>Waiting for another player...</p>`;
+    }
+  })
+  .catch(() => {
+    polling = false;
+    document.getElementById('result').innerHTML = `<p style="color: red;">Failed to connect. Try again later.</p>`;
+  });
+};
+</script>
+{% endblock %}
+
+
+{% extends "skins/base.html" %}
+
+{% block content %}
+
+<h1>Matchmaking Coming Soon!</h1>
+<h2>Skip the wait and queue up for some 1v1s (casual or ranked)</h2>
+
+{% endblock %}

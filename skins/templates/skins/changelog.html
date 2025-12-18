@@ -1,0 +1,24 @@
+{% extends "skins/base.html" %}
+{% block title %}Bonkverse Updates{% endblock %}
+
+{% block content %}
+<h1 class="changelog-header">Bonkverse Updates</h1>
+
+<div class="changelog-list">
+  {% for update in updates %}
+    <div class="changelog-card">
+      <h2>{{ update.title }}</h2>
+      <div class="meta">
+        <span>{{ update.created_at|date:"M d, Y" }}</span>
+        {% if update.version %}
+          <span class="version">v{{ update.version }}</span>
+        {% endif %}
+      </div>
+      <p>{{ update.content|linebreaks }}</p>
+    </div>
+  {% empty %}
+    <p>No updates yet.</p>
+  {% endfor %}
+</div>
+
+{% endblock %}
