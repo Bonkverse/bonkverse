@@ -13,8 +13,4 @@ from django.core.wsgi import get_wsgi_application
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bonk_skin_search.settings')
 
-<<<<<<< HEAD
 application = get_wsgi_application()
-=======
-application = get_wsgi_application()
->>>>>>> master
