@@ -5,9 +5,11 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Count
 from .models import BonkPlayer, FlashFriendship, BonkAccountLink
 from django.db.models import Q
+from django_ratelimit.decorators import ratelimit
 
 
 # @login_required
+@ratelimit(key="ip", rate="10/m", block=True)
 def players_page(request):
     """Render the search UI page."""
     total_players = BonkPlayer.objects.count()
@@ -15,6 +17,7 @@ def players_page(request):
 
 
 # @login_required
+@ratelimit(key="ip", rate="10/m", block=True)
 def search_players_view(request):
     q = (request.GET.get("q") or "").strip()
     page = int(request.GET.get("page", 1))

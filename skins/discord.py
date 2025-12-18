@@ -9,7 +9,9 @@ from django_celery_beat.models import PeriodicTask
 
 from .models import DiscordServer, DiscordTag
 
+from django_ratelimit.decorators import ratelimit
 
+@ratelimit(key="ip", rate="10/m", block=True)
 def server_list(request):
     q = request.GET.get("q", "").strip()
     tag_names = request.GET.getlist("tag")
@@ -48,6 +50,7 @@ def server_list(request):
 
 
 
+@ratelimit(key="ip", rate="10/m", block=True)
 def server_detail(request, server_id):
     server = get_object_or_404(
         DiscordServer,
@@ -63,6 +66,7 @@ def server_detail(request, server_id):
     })
 
 
+@ratelimit(key="ip", rate="10/m", block=True)
 def submit_server_page(request):
     tags = DiscordTag.objects.all().order_by("category", "name")
     return render(request, "skins/submit_server.html", {

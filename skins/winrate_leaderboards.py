@@ -5,8 +5,9 @@ from django.db.models.functions import Cast, Coalesce
 from django.utils import timezone
 from datetime import timedelta
 from .models import PlayerWin, PlayerLoss
+from django_ratelimit.decorators import ratelimit
 
-
+@ratelimit(key="ip", rate="10/m", block=True)
 def _get_queryset(period):
     now_utc = timezone.now()
 
@@ -62,7 +63,7 @@ def _get_queryset(period):
 
     return leaderboard[:50]
 
-
+@ratelimit(key="ip", rate="10/m", block=True)
 def winrate_hub(request, period="today"):
     leaderboard = _get_queryset(period)
     title_map = {

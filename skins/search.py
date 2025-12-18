@@ -161,9 +161,11 @@ from django.core.paginator import Paginator
 from skins.models import Skin, SkinVote   # import SkinVote
 from django.utils import timezone
 from datetime import timedelta
+from django_ratelimit.decorators import ratelimit
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank, TrigramSimilarity
 import random
 
+@ratelimit(key="ip", rate="10/m", block=True)
 def search_skins(request):
     query = request.GET.get("q", "").strip()
     mode = request.GET.get("mode", "relevance")

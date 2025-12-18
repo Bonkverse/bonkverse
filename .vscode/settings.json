@@ -11,5 +11,6 @@
             "password": "XWBnMoqTayWYSWMoGgCQMtkXGZLEvlDK",
             "connectionTimeout": 30
         }
-    ]
+    ],
+    "python-envs.pythonProjects": []
 }

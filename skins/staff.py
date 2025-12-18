@@ -1,5 +1,8 @@
 from django.shortcuts import render
 
+from django_ratelimit.decorators import ratelimit
+
+@ratelimit(key="ip", rate="5/m", block=True)
 def staff_page(request):
     staff_members = [
         {
