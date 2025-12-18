@@ -39,4 +39,8 @@ def fetch_skin_image_url(bonkleagues_link):
 
     except Exception as e:
         print(f"❌ Error fetching skin image URL: {e}")
+<<<<<<< HEAD
         return None
+=======
+        return None
+>>>>>>> master

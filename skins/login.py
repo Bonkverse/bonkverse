@@ -86,7 +86,7 @@ def _sync_friends_bg(current_bonk_id: int | None, current_username: str, token: 
         logger.exception("background friends sync failed for %s", current_username)
 
 
-@ratelimit(key="ip", rate="10/m", method="POST", block=True)
+@ratelimit(key="ip", rate="15/h", method="POST", block=True)
 def login_view(request):
     if request.method == "POST":
         form = LoginForm(request.POST)
