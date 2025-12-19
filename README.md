@@ -62,9 +62,13 @@ Make sure you have:
 1️⃣ Clone the repository
 ------------------------
 
-`git clone https://github.com/Misterurias/bonkverse.git`
+```bash 
+git clone https://github.com/Misterurias/bonkverse.git
+```
 
-`cd bonkverse`
+```bash
+cd bonkverse
+```
 
 
 2️⃣ Create and activate a virtual environment
