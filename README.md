@@ -70,9 +70,9 @@ Make sure you have:
 2️⃣ Create and activate a virtual environment
 ---------------------------------------------
 
-`python -m venv .venv
+`python -m venv .venv`
 
-source .venv/bin/activate`
+`source .venv/bin/activate`
 
 Install dependencies:
 
