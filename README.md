@@ -188,9 +188,9 @@ If search errors locally:
 🔁 Resetting the Local Database
 -------------------------------
 Equivalent to Rails `db:drop db:create db:migrate db:seed`:
-`python manage.py reset_db
-python manage.py migrate
-python manage.py populate_all`
+`python manage.py reset_db`
+`python manage.py migrate`
+`python manage.py populate_all`
 
 (`reset_db` is provided by `django-extensions`)
 
