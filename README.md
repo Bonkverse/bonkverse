@@ -71,13 +71,16 @@ cd bonkverse
 2️⃣ Create and activate a virtual environment
 ---------------------------------------------
 
-`python -m venv .venv`
-
-`source .venv/bin/activate`
+```bash 
+python -m venv .venv
+source .venv/bin/activate
+```
 
 Install dependencies:
 
-`pip install -r requirements.txt`
+```bash 
+pip install -r requirements.txt
+```
 
 
 3️⃣ Environment variables
@@ -85,12 +88,13 @@ Install dependencies:
 
 Create a local `.env` file (this is **not committed**):
 
-`ENV=local
+```bash 
+ENV=local
 DEBUG=true
-SECRET_KEY=dev-insecure-secret-key`
-
-`DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5433/bonkverse`
-`REDIS_URL=redis://localhost:6379/0`
+SECRET_KEY=dev-insecure-secret-key
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5433/bonkverse
+REDIS_URL=redis://localhost:6379/0
+```
 
 > ⚠️ Do **not** include quotes around values.
 A `.env.example` file is provided for reference.
@@ -101,7 +105,9 @@ A `.env.example` file is provided for reference.
 
 Bonkverse uses Docker for local databases.
 
-`docker compose up -d`
+```bash
+docker compose up -d
+```
 
 This starts:
 -   PostgreSQL (on port **5433**)
@@ -111,7 +117,9 @@ This starts:
 5️⃣ Run migrations
 ------------------
 
-`python manage.py migrate`
+```bash 
+python manage.py migrate
+```
 
 
 6️⃣ Install PostgreSQL extensions (required for search)
@@ -121,7 +129,9 @@ Bonkverse search relies on PostgreSQL extensions (`pg_trgm`, `unaccent`).
 
 They are installed automatically when seeding, or manually via:
 
-`python manage.py init_pg_extensions`
+```bash 
+python manage.py init_pg_extensions
+```
 
 
 7️⃣ Populate local development data
@@ -134,21 +144,19 @@ This will:
 -   Populate fake data for most models
 -   Populate sample skins for search & UI testing
 
-`python manage.py populate_all`
+```bash 
+python manage.py populate_all
+```
 
 > This **does not** use production data and is safe to run multiple times.
 
 
-8️⃣ Create a local admin user
------------------------------
-
-`python manage.py createsuperuser`
-
-
-9️⃣ Run the development server
+8️⃣ Run the development server
 ------------------------------
 
-`python manage.py runserver`
+```bash 
+python manage.py runserver
+````
 
 Open:
 
@@ -166,23 +174,31 @@ Admin panel:
 
 **Recommended daily tool**
 
-`python manage.py shell_plus`
+```bash 
+python manage.py shell_plus
+```
 
 Examples:
 
-`Skin.objects.count()
-Skin.objects.filter(name__icontains="dragon")[:10]
-BonkPlayer.objects.all()[:5]`
+`Skin.objects.count()`
+
+`Skin.objects.filter(name__icontains="dragon")[:10]`
+
+`BonkPlayer.objects.all()[:5]`
 
 
 ### 🟢 Database shell (psql)
 
-`python manage.py dbshell`
+```bash
+python manage.py dbshell
+```
 
 If `psql` is missing:
 
-`brew install libpq
-brew link --force libpq`
+```bash 
+brew install libpq
+brew link --force libpq
+```
 
 ### 🟢 Django Admin
 Use Admin for:
@@ -218,9 +234,11 @@ If search errors locally:
 
 🔁 Resetting the Local Database
 -------------------------------
-Equivalent to Rails `db:drop db:create db:migrate db:seed`:
+
 `python manage.py reset_db`
+
 `python manage.py migrate`
+
 `python manage.py populate_all`
 
 (`reset_db` is provided by `django-extensions`)
