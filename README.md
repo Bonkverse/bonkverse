@@ -198,7 +198,8 @@ python manage.py populate_all`
 -------------------------------------
 
 
-`bonkverse/
+```
+bonkverse/
 ├── skins/
 │   ├── models.py
 │   ├── views.py
@@ -212,7 +213,8 @@ python manage.py populate_all`
 ├── docker-compose.yml
 ├── manage.py
 ├── requirements.txt
-└── .env.example`
+└── .env.example
+```
 
 🛡 Production vs Local
 ----------------------
