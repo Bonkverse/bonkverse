@@ -5,7 +5,6 @@ Bonkverse
 
 This repository contains the Django backend that powers Bonkverse.
 
-* * * * *
 
 🧠 Tech Stack
 -------------
@@ -17,7 +16,6 @@ This repository contains the Django backend that powers Bonkverse.
 -   **Railway** (production)
 -   **Cloudflare** (production edge / protection)
 
-* * * * *
 
 🚀 Local Development Setup
 --------------------------
@@ -32,7 +30,6 @@ Make sure you have:
 -   Homebrew (macOS)
 -   Git
 
-* * * * *
 
 1️⃣ Clone the repository
 ------------------------
@@ -40,7 +37,6 @@ Make sure you have:
 `git clone https://github.com/<your-org>/bonkverse.git
 cd bonkverse`
 
-* * * * *
 
 2️⃣ Create and activate a virtual environment
 ---------------------------------------------
@@ -52,7 +48,6 @@ Install dependencies:
 
 `pip install -r requirements.txt`
 
-* * * * *
 
 3️⃣ Environment variables
 -------------------------
@@ -69,7 +64,6 @@ REDIS_URL=redis://localhost:6379/0`
 > ⚠️ Do **not** include quotes around values.
 A `.env.example` file is provided for reference.
 
-* * * * *
 
 4️⃣ Start local infrastructure (Postgres + Redis)
 -------------------------------------------------
@@ -82,14 +76,12 @@ This starts:
 -   PostgreSQL (on port **5433**)
 -   Redis (on port **6379**)
 
-* * * * *
 
 5️⃣ Run migrations
 ------------------
 
 `python manage.py migrate`
 
-* * * * *
 
 6️⃣ Install PostgreSQL extensions (required for search)
 -------------------------------------------------------
@@ -100,7 +92,6 @@ They are installed automatically when seeding, or manually via:
 
 `python manage.py init_pg_extensions`
 
-* * * * *
 
 7️⃣ Populate local development data
 -----------------------------------
@@ -116,14 +107,12 @@ This will:
 
 > This **does not** use production data and is safe to run multiple times.
 
-* * * * *
 
 8️⃣ Create a local admin user
 -----------------------------
 
 `python manage.py createsuperuser`
 
-* * * * *
 
 9️⃣ Run the development server
 ------------------------------
@@ -138,7 +127,6 @@ Admin panel:
 
 `http://localhost:8000/admin`
 
-* * * * *
 
 🧪 Working with the Database
 ----------------------------
@@ -155,7 +143,6 @@ Examples:
 Skin.objects.filter(name__icontains="dragon")[:10]
 BonkPlayer.objects.all()[:5]`
 
-* * * * *
 
 ### 🟢 Database shell (psql)
 
@@ -165,7 +152,6 @@ If `psql` is missing:
 
 `brew install libpq
 brew link --force libpq`
-* * * * *
 
 ### 🟢 Django Admin
 Use Admin for:
@@ -174,7 +160,6 @@ Use Admin for:
 -   Sanity checking relationships
 
 `http://localhost:8000/admin`
-* * * * *
 
 ### 🟢 GUI Database Tools (optional)
 
@@ -189,7 +174,6 @@ Port: 5433
 User: postgres
 Password: postgres
 Database: bonkverse`
-* * * * *
 
 🔍 Search Notes
 ---------------
@@ -200,7 +184,6 @@ Bonkverse search uses:
 If search errors locally:
 -   Make sure extensions are installed:
     `python manage.py init_pg_extensions`
-* * * * *
 
 🔁 Resetting the Local Database
 -------------------------------
@@ -210,10 +193,11 @@ python manage.py migrate
 python manage.py populate_all`
 
 (`reset_db` is provided by `django-extensions`)
-* * * * *
 
 🧩 Project Structure (relevant parts)
 -------------------------------------
+
+
 `bonkverse/
 ├── skins/
 │   ├── models.py
@@ -229,7 +213,6 @@ python manage.py populate_all`
 ├── manage.py
 ├── requirements.txt
 └── .env.example`
-* * * * *
 
 🛡 Production vs Local
 ----------------------
@@ -237,7 +220,6 @@ python manage.py populate_all`
 -   **Production** runs on Railway
 -   Never point local code at production databases
 -   Never commit `.env` files
-* * * * *
 
 🤝 Contributing
 ---------------
@@ -248,7 +230,6 @@ python manage.py populate_all`
 5.  Open a PR
 
 If something is unclear or broken locally, please open an issue.
-* * * * *
 
 ❤️ Acknowledgements
 -------------------
