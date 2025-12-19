@@ -13,6 +13,18 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import dj_database_url
 import os
+from dotenv import load_dotenv
+load_dotenv()
+
+ENV = os.getenv("ENV", "local")
+IS_PROD = ENV == "production"
+DEBUG = not IS_PROD
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY is not set")
+
 
 AUTH_USER_MODEL = 'skins.BonkUser'
 
@@ -31,20 +43,11 @@ CSRF_TRUSTED_ORIGINS = [
     "https://bonk.io",
 ]
 
-
-# DEFAULT STORAGE BACKEND (Using S3 Instead of Local Storage)
-# DEFAULT_FILE_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-yk9clj4v65h-g9k74n2j%gx=uwp*ar*q#%mcox1qv6k()#u9zq'
-
+# SECURITY WARNING: keep the secret key used in production secret
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = True
-DEBUG = False
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
 ALLOWED_HOSTS = ["bonkverse-production.up.railway.app", "bonkverse.io", "127.0.0.1", "localhost", "172.26.54.223"]
@@ -103,18 +106,6 @@ WSGI_APPLICATION = 'bonk_skin_search.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'bonk_skin_search',
-#         'USER': 'admin',
-#         'PASSWORD': 'Teamj#1234',
-#         'HOST': 'localhost',
-#         'PORT': '5432',
-#     }
-# }
-
 DATABASES = {
     'default': dj_database_url.config(default=os.getenv("DATABASE_URL"))
 }
@@ -152,23 +143,6 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# CACHES = {
-#     "default": {
-#         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-#         "LOCATION": "unique-skin-cache",
-#     }
-# }
-
-# CACHES = {
-#     "default": {
-#         "BACKEND": "django_redis.cache.RedisCache",
-#         "LOCATION": os.getenv("REDIS_URL"),
-#         "OPTIONS": {
-#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-#         }
-#     }
-# }
 
 REDIS_URL = os.getenv("REDIS_URL")  # e.g. redis://127.0.0.1:6379/1 or rediss://...
 print("Using REDIS_URL:", REDIS_URL)
