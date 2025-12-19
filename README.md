@@ -71,6 +71,7 @@ Make sure you have:
 ---------------------------------------------
 
 `python -m venv .venv
+
 source .venv/bin/activate`
 
 Install dependencies:
