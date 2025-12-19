@@ -11,7 +11,7 @@ If you just want Bonkverse running locally:
 
 ```bash
 # Clone repo
-git clone https://github.com/<your-org>/bonkverse.git
+git clone https://github.com/Misterurias/bonkverse.git
 cd bonkverse
 
 # Virtual env
@@ -62,8 +62,9 @@ Make sure you have:
 1️⃣ Clone the repository
 ------------------------
 
-`git clone https://github.com/<your-org>/bonkverse.git
-cd bonkverse`
+`git clone https://github.com/Misterurias/bonkverse.git`
+
+`cd bonkverse`
 
 
 2️⃣ Create and activate a virtual environment
