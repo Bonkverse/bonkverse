@@ -5,6 +5,34 @@ Bonkverse
 
 This repository contains the Django backend that powers Bonkverse.
 
+## ⚡ TL;DR — Quick Start (Local Dev)
+
+If you just want Bonkverse running locally:
+
+```bash
+# Clone repo
+git clone https://github.com/<your-org>/bonkverse.git
+cd bonkverse
+
+# Virtual env
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# Start databases
+docker compose up -d
+
+# Set up DB
+python manage.py migrate
+python manage.py populate_all
+
+# Create admin user (optional but recommended)
+python manage.py createsuperuser
+
+# Run server
+python manage.py runserver
+
+
 
 🧠 Tech Stack
 -------------
