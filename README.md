@@ -64,9 +64,6 @@ Make sure you have:
 
 ```bash 
 git clone https://github.com/Misterurias/bonkverse.git
-```
-
-```bash
 cd bonkverse
 ```
 
