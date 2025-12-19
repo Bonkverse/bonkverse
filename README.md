@@ -58,8 +58,8 @@ Create a local `.env` file (this is **not committed**):
 DEBUG=true
 SECRET_KEY=dev-insecure-secret-key`
 
-`DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5433/bonkverse
-REDIS_URL=redis://localhost:6379/0`
+`DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5433/bonkverse`
+`REDIS_URL=redis://localhost:6379/0`
 
 > ⚠️ Do **not** include quotes around values.
 A `.env.example` file is provided for reference.
