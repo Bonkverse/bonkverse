@@ -208,19 +208,6 @@ Use Admin for:
 
 `http://localhost:8000/admin`
 
-### 🟢 GUI Database Tools (optional)
-
-Recommended:
--   **TablePlus**
--   **DBeaver**
--   **pgAdmin**
-
-Connection info:
-`Host: 127.0.0.1
-Port: 5433
-User: postgres
-Password: postgres
-Database: bonkverse`
 
 🔍 Search Notes
 ---------------
