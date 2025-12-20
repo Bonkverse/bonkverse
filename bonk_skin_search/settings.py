@@ -146,6 +146,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REDIS_URL = os.getenv("REDIS_URL")  # e.g. redis://127.0.0.1:6379/1 or rediss://...
 print("Using REDIS_URL:", REDIS_URL)
+print("The current environment is: ", ENV)
 
 
 if REDIS_URL:
