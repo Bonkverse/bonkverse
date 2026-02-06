@@ -23,7 +23,11 @@ DEBUG = not IS_PROD
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 if not SECRET_KEY:
-    raise RuntimeError("SECRET_KEY is not set")
+    if os.getenv("DJANGO_ALLOW_DUMMY_SECRET") == "true":
+        SECRET_KEY = "build-time-secret-key"
+    else:
+        raise RuntimeError("SECRET_KEY is not set")
+
 
 
 AUTH_USER_MODEL = 'skins.BonkUser'
