@@ -1,6 +1,6 @@
 FROM python:3.10-slim
 
-# Install system-level Cairo deps
+# Install system deps
 RUN apt-get update && apt-get install -y \
     libcairo2 \
     libcairo2-dev \
@@ -14,7 +14,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    DJANGO_ALLOW_DUMMY_SECRET=true
 
 WORKDIR /app
 
