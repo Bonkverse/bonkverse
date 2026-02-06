@@ -2,8 +2,8 @@ body {
     font-family: "Oxanium", sans-serif;
     margin: 20px;
     text-align: center;
-    background-color: #1a2733;
-    color: #ddd;
+    background-color: #0f1b24;
+    color: #e6edf3;
 }
 
 #particles-js {
@@ -17,7 +17,7 @@ body {
   
 
 h1 {
-    color: #ddd;
+    color: #e6edf3;
     font-size: 28px;
 }
 
@@ -89,17 +89,17 @@ input {
 }
 
 input, select, textarea{
-    color: #ddd;
+    color: #e6edf3;
 }
 
 ::placeholder {
-    color: #ddd;
+    color: #e6edf3;
 }
 
 button {
     background-color: #795548;
     border-radius: 8px;
-    color: #ddd;
+    color: #e6edf3;
     padding: 10px;
     font-size: 16px;
     cursor: pointer;
@@ -188,7 +188,7 @@ button {
     border-radius: 8px;
     padding: 10px;
     text-align: center;
-    color: #ddd;
+    color: #e6edf3;
     background: hsla(212, 40%, 20%, 0.597);
     position: relative;
     overflow: hidden;
@@ -234,7 +234,7 @@ button {
     border-radius: 8px;
     margin-top: auto; 
     padding-bottom: 10px;
-    color: #ddd;
+    color: #e6edf3;
     transition: transform 0.2s ease-in-out;
 }
 
@@ -336,7 +336,7 @@ button {
     border: none;
     font-size: 18px;
     cursor: pointer;
-    color: #ddd;
+    color: #e6edf3;
     padding: 0;
     margin: 0;
     transition: transform 0.2s ease-in-out;
@@ -420,7 +420,7 @@ button {
     padding: 10px 15px;
     margin: 5px;
     text-decoration: none;
-    color: #ddd;
+    color: #e6edf3;
     background-color: #795548;
     text-align: center;
     border-radius: 8px;
@@ -428,7 +428,7 @@ button {
 
 .pagination a.active {
     font-weight: bold;
-    background-color: #ddd;
+    background-color: #e6edf3;
 }
 
 
@@ -553,7 +553,7 @@ button {
 .leaderboard-table td {
   padding: 14px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  color: #ddd;
+  color: #e6edf3;
   text-align: left;
 }
 
@@ -628,7 +628,7 @@ button {
   max-width: 960px;
   margin: 40px auto;
   padding: 20px;
-  color: #ddd;
+  color: #e6edf3;
 }
 
 /* Header: Title, Creator, Favorite */
@@ -899,7 +899,7 @@ button {
   font-size: 14px;
   margin-left: 10px;
   background: transparent;
-  color: #ddd;
+  color: #e6edf3;
 }
 
 #player-query::placeholder {
@@ -1244,7 +1244,7 @@ button {
   padding: 30px;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-  color: #ddd;
+  color: #e6edf3;
 }
 
 .changelog-title {
@@ -1281,7 +1281,7 @@ button {
   border: 1px solid #333;
   border-radius: 8px;
   padding: 12px;
-  color: #ddd;
+  color: #e6edf3;
   font-size: 15px;
   outline: none;
   transition: border 0.2s ease, box-shadow 0.2s ease;
@@ -1721,7 +1721,7 @@ form.filter-form {
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 18px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-  color: #ddd;
+  color: #e6edf3;
 }
 
 /* Header */
