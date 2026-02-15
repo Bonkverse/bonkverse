@@ -20,7 +20,13 @@ def players_page(request):
 @ratelimit(key="ip", rate="10/m", block=True)
 def search_players_view(request):
     q = (request.GET.get("q") or "").strip()
-    page = int(request.GET.get("page", 1))
+    try:
+        page = int(request.GET.get("page", 1))
+        if page < 1:
+            page = 1
+    except (TypeError, ValueError):
+        page = 1
+
     page_size = 50
     offset = (page - 1) * page_size
 
