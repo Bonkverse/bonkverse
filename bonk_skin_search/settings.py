@@ -53,11 +53,13 @@ CSRF_TRUSTED_ORIGINS = [
     "https://bonk.io",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    BONKVERSE_EDITOR_URL,
 ]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    BONKVERSE_EDITOR_URL,
 ]
 
 CORS_ALLOW_CREDENTIALS = True
