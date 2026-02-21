@@ -42,7 +42,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 BONKVERSE_EDITOR_URL = os.getenv(
     "BONKVERSE_EDITOR_URL",
     "http://localhost:5173",
-    "https://editor.bonkverse.io"
 )
 
 
