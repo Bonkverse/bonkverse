@@ -1,4 +1,12 @@
+# skins/context_processors.py
 from .models import Changelog
+from django.conf import settings
+
+def editor_urls(request):
+    return {
+        "BONKVERSE_EDITOR_URL": settings.BONKVERSE_EDITOR_URL
+    }
+
 
 def latest_update(request):
     try:

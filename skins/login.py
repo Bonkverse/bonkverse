@@ -164,7 +164,11 @@ def login_view(request):
                     messages.info(request, "Syncing your regular friends in the background…")
 
                 messages.success(request, "Logged in successfully!")
-                return redirect("my_profile")
+
+                # after messages.success(...)
+                next_url = request.POST.get("next") or request.GET.get("next")
+                return redirect(next_url or "my_profile")
+
 
             # Failed login
             detail = (data or {}).get("r") or (data or {}).get("error") or "unknown error"

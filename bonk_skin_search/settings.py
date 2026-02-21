@@ -39,13 +39,38 @@ STATIC_URL = "/static/"
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "skins/static")]
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
+BONKVERSE_EDITOR_URL = os.getenv(
+    "BONKVERSE_EDITOR_URL",
+    "http://localhost:5173"
+)
+
+
 CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:8000",
     "http://localhost:8000",
     "https://bonkverse.io",
     "https://www.bonkverse.io",
     "https://bonk.io",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
 ]
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "authorization",
+    "content-type",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -54,7 +79,7 @@ CSRF_TRUSTED_ORIGINS = [
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
-ALLOWED_HOSTS = ["bonkverse-production.up.railway.app", "bonkverse.io", "127.0.0.1", "localhost", "172.26.54.223"]
+ALLOWED_HOSTS = ["bonkverse-production.up.railway.app", "bonkverse.io", "127.0.0.1", "localhost", "172.26.54.223", "http://localhost:5173", "http://127.0.0.1:5173"]
 
 
 
@@ -72,9 +97,11 @@ INSTALLED_APPS = [
     'django_extensions',
     'django_ratelimit',
     "django_celery_beat",
+    "corsheaders",
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -99,6 +126,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'skins.context_processors.latest_update',
+                 "skins.context_processors.editor_urls",
             ],
         },
     },

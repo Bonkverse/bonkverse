@@ -42,6 +42,10 @@ from skins import winrate_leaderboards
 from skins import staff
 from skins import discord
 from skins import discord_views
+from skins.apis.index import index
+from skins.apis.publish_skin import publish_skin
+from skins.share_skin import share_skin
+from skins.apis.auth.who_am_i import me
 from django.views.static import serve
 
 
@@ -53,20 +57,24 @@ urlpatterns = [
     path("search/", search_skins, name="search_skins"),
     path("", home.home, name='home'),
     # path("", search_skins, name="home"),  # Home page is now the search page
-    path('upload/', upload_skin, name="upload_skin"),  # New Upload Page
+    path('api/publish-skin/', publish_skin, name="publish_skin"),
+    path("skins/share/<int:skin_id>/<uuid:uuid>/", share_skin, name="share_skin"),
     path('login/', login_view, name='login'),
+    path("api/me/", me, name="api_me"),
     path('logout/', logout_view, name='logout'),
     path('my-profile/', my_profile, name='my_profile'),
     path('skin/<int:skin_id>/delete/', delete_skin, name='delete_skin'),
     path('skin/<int:skin_id>/edit/', edit_skin, name='edit_skin'),
     path('matchmaking/', matchmaking_page, name='matchmaking'),
     # path('skins/<int:skin_id>/', skin_detail, name='skin_detail'),
-    path("skins/<int:skin_id>/<uuid:uuid>/", skin_detail, name="skin_detail"),
+    # path("skins/<int:skin_id>/<uuid:uuid>/", skin_detail, name="skin_detail"),
+    path("skins/detail/<int:skin_id>", skin_detail, name="skin_detail"),
     path("changelog/", changelog_view, name="changelog"),
     path("staff/", staff.staff_page, name="staff"),
 
 
     # NEW: AJAX/JSON endpoints used by search cards
+    path('api/', index, name="api_index"),
     path('api/skins/<int:skin_id>/vote/', vote_skin_api, name='api_vote_skin'),
     path('api/skins/<int:skin_id>/favorite/', toggle_favorite_api, name='api_toggle_favorite'),
     path("api/skins/<int:skin_id>/wear/", wear_skin, name="wear_skin"),

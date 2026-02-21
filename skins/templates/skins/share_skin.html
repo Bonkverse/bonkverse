@@ -1,0 +1,98 @@
+{% extends 'skins/base.html' %}
+
+{% block social_meta %}
+  <meta name="theme-color" content="#009688">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="{{ og.site_name }}">
+  <meta property="og:title" content="{{ og.title }}">
+  <meta property="og:description" content="{{ og.description }}">
+  <meta property="og:url" content="{{ og.url }}">
+  <meta property="og:image" content="{{ og.image }}">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{{ og.title }}">
+  <meta name="twitter:description" content="{{ og.description }}">
+  <meta name="twitter:image" content="{{ og.image }}">
+{% endblock %}
+
+{% block content %}
+<div class="skin-detail-container">
+
+  <!-- Top row: title + creator + actions -->
+  <div class="skin-header">
+    <div class="text-group">
+      <h1 class="skin-title">{{ skin.name }}</h1>
+      <p class="skin-creator">By: <strong>{{ skin.creator }}</strong></p>
+    </div>
+
+    {% if user.is_authenticated %}
+      <div class="wear-inline">
+        <button class="wear-btn" onclick="addToCollection()" title="Add this skin to your collection">
+          ⭐ Add to Collection
+        </button>
+      </div>
+    {% else %}
+      <div class="wear-inline muted">
+        <span>Log in to save this skin</span>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Big image -->
+  <div class="skin-image-wrapper">
+    <img src="{{ skin.image_url }}" alt="Skin image" class="skin-image-large" onclick="showImage(`{{ skin.image_url }}`)">
+  </div>
+
+  <!-- 🔹 Modal (Hidden by Default) -->
+  <div id="imageModal" class="modal" onclick="closeImage()">
+    <span class="close">&times;</span>
+    <img class="modal-content" id="zoomedImage">
+  </div>
+
+  <!-- Primary actions -->
+  <div class="skin-actions-row">
+    <a
+    href="{{ BONKVERSE_EDITOR_URL }}?skin={{ skin.skin_code|urlencode }}"
+    rel="noopener noreferrer"
+    class="open-editor-btn"
+    >
+    ✏️ Open in Editor
+    </a>
+
+  </div>
+
+  <!-- Optional description -->
+  {% if skin.description %}
+    <p><strong>Description</strong></p>
+    <div class="skin-description">
+      <p>{{ skin.description }}</p>
+    </div>
+  {% endif %}
+
+  <!-- Minimal stats -->
+  <div class="skin-stats">
+    <p>⭐ Favorites: {{ skin.favorited_by.count }}</p>
+  </div>
+
+</div>
+{% endblock %}
+
+
+{% block extra_scripts %}
+<script>
+  // ---- Modal helpers
+  function showImage(src) {
+    const modal = document.getElementById('imageModal');
+    const img = document.getElementById('zoomedImage');
+    img.src = src;
+    modal.style.display = 'block';
+  }
+  function closeImage() {
+    const modal = document.getElementById('imageModal');
+    modal.style.display = 'none';
+  }
+
+</script>
+{% endblock %}

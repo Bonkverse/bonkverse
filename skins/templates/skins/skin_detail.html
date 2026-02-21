@@ -25,7 +25,12 @@
     <div class="text-group">
       <h1 class="skin-title">{{ skin.name }}</h1>
       <p class="skin-creator">By: <strong>{{ skin.creator }}</strong></p>
-      <a href="{{ skin.link }}" target="_blank" class="skin-bl-link"><strong>Bonkleagues Link</strong></a>
+      <!-- <a href="{{ skin.link }}" target="_blank" class="skin-bl-link"><strong>Bonkleagues Link</strong></a> -->
+    
+      {% if user.is_authenticated %}
+        <a href="{{ share_url }}" rel="noopener noreferrer" class="skin-bl-link"><strong>Share This Skin!</strong></a>
+        <a href="{{ BONKVERSE_EDITOR_URL }}?skin={{ skin.skin_code|urlencode }}" rel="noopener noreferrer" class="skin-bl-link"><strong>✏️ Open in Editor</strong></a>
+      {% endif %}
     </div>
 
     {% if user.is_authenticated %}
@@ -34,8 +39,14 @@
         <button class="wear-btn" onclick="startWear()" title="Wear this skin in bonk.io">Wear</button>
         <span id="wear-msg" class="muted"></span>
     </div>
+    {% else %}
+      <div class="wear-inline muted">
+        <span>You must login to wear skins or view them in editor</span>
+        
+      </div>
 
     {% endif %}
+
   </div>
 
   <!-- Big image -->

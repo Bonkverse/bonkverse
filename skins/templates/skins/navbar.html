@@ -11,6 +11,11 @@
         <li><a href="{% url 'staff' %}">Our Team</a></li>
         <li><a href="{% url 'changelog' %}">Changelog</a></li>
         
+        {% if user.is_authenticated %}
+            <li><a href="{{ BONKVERSE_EDITOR_URL }}">Editor</a></li>
+        {% endif %}
+
+        
         <li class="nav-item">
             <a href="#" class="nav-link">Discord ▾</a>
             <ul class="dropdown-menu">
@@ -48,7 +53,6 @@
         </li>
 
         {% if user.is_authenticated %}
-            <!-- <li><a href="{% url 'upload_skin' %}">Upload Skin</a></li> -->
             <li><a href="{% url 'my_profile' %}" class="username-link">My Profile</a></li>
             <li><a href="{% url 'logout' %}">Logout</a></li>
         {% else %}

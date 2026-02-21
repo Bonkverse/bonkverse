@@ -1,0 +1,373 @@
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="-350 -350 700 700"
+  width="700"
+  height="700"
+>
+  <defs>
+    <clipPath id="playerClip">
+      <circle cx="0" cy="0" r="350" />
+    </clipPath>
+  </defs>
+
+  <!-- Player outline -->
+  <circle
+    cx="0"
+    cy="0"
+    r="352"
+    fill="none"
+    stroke="rgba(0,0,0,0.25)"
+    stroke-width="4"
+  />
+
+  <!-- Player base -->
+  <circle
+    cx="0"
+    cy="0"
+    r="350"
+    fill="#0077df"
+    stroke="#333"
+    stroke-width="3"
+  />
+
+  <!-- Shapes -->
+  <g clip-path="url(#playerClip)">
+    
+<g
+  transform="
+    translate(387 307.1428542137146)
+    rotate(-119)
+    scale(12.68499943614006 12.68499943614006)
+  "
+  style="color: #0020dc;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-50.01716232299805, -37.63874053955078)">
+      
+  <g xmlns="http://www.w3.org/2000/svg" transform="matrix(1.0, 0.0, 0.0, 1.0, 50.0, 37.6)">
+    <path d="M41.2 -3.2 L35.35 -2.65 29.5 -2.75 23.75 -2.7 18.15 -2.35 Q14.45 -2.65 12.2 -1.2 10.9 -0.35 9.8 1.25 L8.0 4.25 0.55 16.75 Q-3.8 23.85 -8.15 28.3 -13.8 34.2 -20.05 36.3 -26.3 38.3 -33.0 37.35 -41.65 35.95 -50.0 30.3 -40.25 33.0 -36.5 33.3 -28.55 34.0 -23.45 30.25 -18.65 26.75 -16.55 18.9 -14.9 12.85 -14.8 4.85 L-14.65 -2.25 Q-14.5 -6.35 -13.85 -9.25 -12.2 -16.3 -8.8 -21.65 -5.05 -27.55 0.7 -31.55 6.55 -35.6 13.35 -36.95 20.25 -38.3 27.35 -36.75 34.65 -35.2 40.2 -31.05 45.4 -27.2 48.15 -21.75 51.25 -15.55 49.25 -9.95 48.45 -7.75 46.75 -5.95 44.75 -3.85 41.2 -3.2" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+  </g>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(0 -94.60000205039978)
+    rotate(0)
+    scale(15.479999333620071 -15.479999333620071)
+  "
+  style="color: #be9aff;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-8.015909194946289, -5.300000190734863)">
+      
+  <g xmlns="http://www.w3.org/2000/svg" transform="matrix(1.0, 0.0, 0.0, 1.0, 8.0, 5.3)">
+    <path d="M-6.05 -5.3 L-4.0 -4.95 -0.3 -4.45 5.6 -4.95 Q8.0 -5.2 8.05 -2.4 8.05 0.4 5.65 2.8 3.2 5.3 0.1 5.3 -3.0 5.3 -5.4 2.8 -7.2 1.15 -7.8 -1.4 -8.4 -3.85 -7.35 -4.95 L-6.05 -5.3" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+  </g>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(0 -195.65000820159912)
+    rotate(90)
+    scale(5.375 5.375)
+  "
+  style="color: #0077df;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-10, -50)">
+      
+	<g xmlns="http://www.w3.org/2000/svg" transform="matrix(1,0,0,1,10,50)">
+		<path fill="currentColor" fill-rule="evenodd" stroke="none" stroke-width="1.33333" d="M -10,-50 L 10,-50 L 10,50 L -10,50 Z "/>
+	</g>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(52.22349786758423 -167.0764980316162)
+    rotate(0)
+    scale(0.42999999038875103 0.42999999038875103)
+  "
+  style="color: #bd9aff;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-50, -50)">
+      
+  <g xmlns="http://www.w3.org/2000/svg" transform="matrix(1.0, 0.0, 0.0, 1.0, 50.0, 50.0)">
+    <path d="M0.0 -50.0 L50.0 50.0 -50.0 50.0 0.0 -50.0" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+  </g>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(-52.22349786758423 -167.0764980316162)
+    rotate(0)
+    scale(0.42999999038875103 0.42999999038875103)
+  "
+  style="color: #bd9aff;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-50, -50)">
+      
+  <g xmlns="http://www.w3.org/2000/svg" transform="matrix(1.0, 0.0, 0.0, 1.0, 50.0, 50.0)">
+    <path d="M0.0 -50.0 L50.0 50.0 -50.0 50.0 0.0 -50.0" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+  </g>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(-4.300000064074993 66.64999794960022)
+    rotate(78)
+    scale(2.579999942332506 2.579999942332506)
+  "
+  style="color: #bd9aff;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-50, -30)">
+      
+  <g xmlns="http://www.w3.org/2000/svg" transform="matrix(1.0, 0.0, 0.0, 1.0, 50.0, 30.0)">
+    <path d="M42.85 -30.0 Q50.0 -30.0 50.0 -22.85 L50.0 22.85 Q50.0 30.0 42.85 30.0 L-42.85 30.0 Q-50.0 30.0 -50.0 22.85 L-50.0 -22.85 Q-50.0 -30.0 -42.85 -30.0 L42.85 -30.0" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+  </g>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(49.44999897480011 53.75)
+    rotate(78)
+    scale(2.579999942332506 2.579999942332506)
+  "
+  style="color: #bd9aff;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-50, -30)">
+      
+  <g xmlns="http://www.w3.org/2000/svg" transform="matrix(1.0, 0.0, 0.0, 1.0, 50.0, 30.0)">
+    <path d="M42.85 -30.0 Q50.0 -30.0 50.0 -22.85 L50.0 22.85 Q50.0 30.0 42.85 30.0 L-42.85 30.0 Q-50.0 30.0 -50.0 22.85 L-50.0 -22.85 Q-50.0 -30.0 -42.85 -30.0 L42.85 -30.0" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+  </g>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(-70.64900028705597 28.874501168727875)
+    rotate(0)
+    scale(3.547500140964985 3.547500140964985)
+  "
+  style="color: #bd9aff;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-15.5, -15.5)">
+      
+  <g xmlns="http://www.w3.org/2000/svg" transform="matrix(1.0, 0.0, 0.0, 1.0, 15.5, 15.5)">
+    <path d="M10.95 -10.95 Q15.5 -6.4 15.5 0.0 15.5 6.4 10.95 10.95 6.4 15.5 0.0 15.5 -6.4 15.5 -10.95 10.95 -15.5 6.4 -15.5 0.0 -15.5 -6.4 -10.95 -10.95 -6.4 -15.5 0.0 -15.5 6.4 -15.5 10.95 -10.95" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+  </g>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(-102.89899516105652 28.874501168727875)
+    rotate(-90)
+    scale(3.547500140964985 3.547500140964985)
+  "
+  style="color: #010101;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-14.322582244873047, -7.462500095367432)">
+      
+  <g xmlns="http://www.w3.org/2000/svg" transform="matrix(1.0, 0.0, 0.0, 1.0, 14.3, 7.45)">
+    <path d="M-6.35 -5.9 Q0.0 -9.0 6.5 -5.9 13.0 -2.8 14.1 3.85 14.65 7.15 13.65 7.45 12.65 7.75 11.9 4.45 10.9 0.1 7.45 -2.45 4.3 -4.8 0.2 -4.85 -3.9 -4.9 -7.0 -2.65 -10.4 -0.2 -11.2 4.2 -11.5 5.65 -12.05 6.55 -12.6 7.45 -13.2 7.45 -14.05 7.45 -14.25 6.85 L-14.05 4.7 Q-13.15 1.25 -11.1 -1.65 -8.95 -4.7 -6.35 -5.9" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+  </g>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(46.99285626411438 28.874501168727875)
+    rotate(-90)
+    scale(3.2250001281499863 3.2250001281499863)
+  "
+  style="color: #010101;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-14.322582244873047, -7.462500095367432)">
+      
+  <g xmlns="http://www.w3.org/2000/svg" transform="matrix(1.0, 0.0, 0.0, 1.0, 14.3, 7.45)">
+    <path d="M-6.35 -5.9 Q0.0 -9.0 6.5 -5.9 13.0 -2.8 14.1 3.85 14.65 7.15 13.65 7.45 12.65 7.75 11.9 4.45 10.9 0.1 7.45 -2.45 4.3 -4.8 0.2 -4.85 -3.9 -4.9 -7.0 -2.65 -10.4 -0.2 -11.2 4.2 -11.5 5.65 -12.05 6.55 -12.6 7.45 -13.2 7.45 -14.05 7.45 -14.25 6.85 L-14.05 4.7 Q-13.15 1.25 -11.1 -1.65 -8.95 -4.7 -6.35 -5.9" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+  </g>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(162.7857186794281 39.928570330142975)
+    rotate(0)
+    scale(1.7199999615550041 1.7199999615550041)
+  "
+  style="color: #bd9aff;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-49.99232864379883, -48.637542724609375)">
+      
+  <g xmlns="http://www.w3.org/2000/svg" transform="matrix(1.0, 0.0, 0.0, 1.0, 50.0, 48.65)">
+    <path d="M28.05 -48.45 Q32.45 -47.7 36.2 -45.05 43.55 -39.65 47.2 -29.25 50.95 -18.35 49.65 -7.85 48.7 1.65 43.75 10.85 39.25 19.35 31.9 26.55 25.25 33.15 15.05 38.3 5.9 43.15 -5.95 45.9 -15.05 47.95 -28.2 48.5 -40.45 49.05 -50.0 47.3 L-40.25 46.05 -30.55 44.3 Q-25.5 43.15 -21.1 41.3 -18.2 40.1 -12.8 37.1 -4.95 32.6 1.4 24.95 6.0 19.5 8.7 11.0 10.3 6.15 10.65 1.2 L10.5 -9.75 10.4 -20.2 Q10.4 -26.75 11.15 -31.05 12.15 -36.1 13.75 -39.45 16.35 -45.05 19.55 -46.95 23.2 -49.25 28.05 -48.45" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+  </g>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(-15.357143223285675 200.25713348388672)
+    rotate(0)
+    scale(2.579999942332506 2.579999942332506)
+  "
+  style="color: #bd9aff;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-15.5, -15.5)">
+      
+  <g xmlns="http://www.w3.org/2000/svg" transform="matrix(1.0, 0.0, 0.0, 1.0, 15.5, 15.5)">
+    <path d="M10.95 -10.95 Q15.5 -6.4 15.5 0.0 15.5 6.4 10.95 10.95 6.4 15.5 0.0 15.5 -6.4 15.5 -10.95 10.95 -15.5 6.4 -15.5 0.0 -15.5 -6.4 -10.95 -10.95 -6.4 -15.5 0.0 -15.5 6.4 -15.5 10.95 -10.95" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+  </g>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(112.41428542137146 168.62143325805664)
+    rotate(0)
+    scale(2.579999942332506 2.579999942332506)
+  "
+  style="color: #bd9aff;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-15.5, -15.5)">
+      
+  <g xmlns="http://www.w3.org/2000/svg" transform="matrix(1.0, 0.0, 0.0, 1.0, 15.5, 15.5)">
+    <path d="M10.95 -10.95 Q15.5 -6.4 15.5 0.0 15.5 6.4 10.95 10.95 6.4 15.5 0.0 15.5 -6.4 15.5 -10.95 10.95 -15.5 6.4 -15.5 0.0 -15.5 -6.4 -10.95 -10.95 -6.4 -15.5 0.0 -15.5 6.4 -15.5 10.95 -10.95" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+  </g>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(-47.6071457862854 -94.90100073814392)
+    rotate(11.25)
+    scale(1.3974999487400055 1.3974999487400055)
+  "
+  style="color: #010101;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-9.487693786621094, -17.812440872192383)">
+      
+  <g xmlns="http://www.w3.org/2000/svg" transform="matrix(1.0, 0.0, 0.0, 1.0, 9.5, 17.8)">
+    <path d="M-4.7 -15.0 Q-2.25 -17.65 -0.2 -17.8 1.85 -18.0 4.15 -15.85 9.5 -10.9 9.5 0.15 9.5 9.15 6.0 14.25 2.5 19.3 -2.2 17.25 -8.5 14.35 -9.4 2.7 -10.3 -9.0 -4.7 -15.0" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+  </g>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(32.25 -94.90100073814392)
+    rotate(11.25)
+    scale(1.3974999487400055 1.3974999487400055)
+  "
+  style="color: #010101;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-9.487693786621094, -17.812440872192383)">
+      
+  <g xmlns="http://www.w3.org/2000/svg" transform="matrix(1.0, 0.0, 0.0, 1.0, 9.5, 17.8)">
+    <path d="M-4.7 -15.0 Q-2.25 -17.65 -0.2 -17.8 1.85 -18.0 4.15 -15.85 9.5 -10.9 9.5 0.15 9.5 9.15 6.0 14.25 2.5 19.3 -2.2 17.25 -8.5 14.35 -9.4 2.7 -10.3 -9.0 -4.7 -15.0" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+  </g>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(-8.600000128149986 -77.70100176334381)
+    rotate(11.25)
+    scale(1.0750000160187483 1.0750000160187483)
+  "
+  style="color: #010101;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-22.93387794494629, -8)">
+      
+  <g xmlns="http://www.w3.org/2000/svg" transform="matrix(1.0, 0.0, 0.0, 1.0, 22.9, 8.0)">
+    <path d="M-20.25 -1.0 Q-20.95 -0.5 -21.55 -0.7 -24.3 -1.75 -21.4 -5.75 -20.1 -7.65 -17.7 -7.9 -15.25 -8.15 -13.7 -6.55 -13.1 -5.95 -12.45 -4.3 -11.85 -2.7 -11.55 -1.05 L-10.8 1.95 Q-10.25 3.35 -9.75 3.6 -8.6 4.3 -7.3 2.35 -5.95 0.45 -5.95 -1.9 -5.95 -4.7 -4.4 -6.35 -2.95 -7.85 -0.8 -7.9 4.35 -8.05 5.6 -2.2 6.7 2.9 8.05 3.15 9.45 3.4 10.6 -1.25 11.85 -5.95 12.7 -6.95 13.6 -8.0 16.55 -8.0 18.6 -8.0 19.6 -7.4 20.55 -6.8 21.55 -5.0 23.05 -2.15 22.95 -1.05 22.85 0.0 21.1 0.0 19.3 0.0 18.6 -2.5 18.0 -4.95 16.55 -4.9 15.05 -4.8 14.55 -2.25 13.55 2.45 12.7 4.05 11.8 5.75 9.8 6.45 7.15 7.45 5.2 5.7 3.25 3.9 2.55 -0.05 1.7 -4.1 0.95 -4.55 -0.35 -5.3 -1.65 -3.7 -2.95 -2.1 -2.95 0.25 -2.95 2.4 -5.1 5.2 -7.3 8.0 -8.95 8.0 -10.45 8.0 -12.7 5.25 -14.95 2.45 -14.95 0.6 -14.95 -3.6 -16.3 -4.65 -17.7 -5.65 -19.05 -2.55 -19.6 -1.5 -20.25 -1.0" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+  </g>
+    </g>
+  
+</g>
+
+  </g>
+</svg>

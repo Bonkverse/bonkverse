@@ -13,7 +13,11 @@ from django.core.exceptions import ValidationError
 
 class Skin(models.Model):
     name = models.CharField(max_length=1000, default="UnnamedSkin")
-    link = models.URLField(unique=True)
+    link = models.URLField(
+        blank=True,
+        null=True,
+        help_text="Legacy external source (e.g. Bonkleagues import)",
+    )
     creator = models.CharField(max_length=1000, blank=True, null=True, default="UnknownSkinCreator")
     image_url = models.URLField(max_length=4000, blank=True, null=True, default="https://bonkleagues.io/api/avatar.svg?skinCode=CgcDYQACCQkBCgcFYWwAAQBNPlt5PUI19d8%2FGMUDPsJvGgAAAAAAAAoFAAEATT5beT1CNfXfvvn8kL80i70BAAAAAAAKBQABAEs%2BgkonQjVq%2FL2vivk9L4r5AAAAzxsPCgUAAQANP1yl2D9VbKUAAAAAAAAAAAAAAM8bDwAAAAA%3D")  # Store the extracted image URL
     skin_code = models.TextField(blank=True, null=True)
@@ -30,7 +34,7 @@ class Skin(models.Model):
         return f"{self.name} ({self.link})"
     
     def get_absolute_url(self):
-        return reverse("skin_detail", kwargs={"skin_id": self.id, "uuid": self.uuid})
+        return reverse("skin_detail", kwargs={"skin_id": self.id})
 
 
 class BonkUserManager(BaseUserManager):

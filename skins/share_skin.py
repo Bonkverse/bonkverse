@@ -6,10 +6,9 @@ from .models import Skin
 from django.shortcuts import render, get_object_or_404
 from .models import Skin
 from django.conf import settings
-from django.urls import reverse
 
-def skin_detail(request, skin_id):
-    skin = get_object_or_404(Skin, id=skin_id)
+def share_skin(request, skin_id, uuid):
+    skin = get_object_or_404(Skin, id=skin_id, uuid=uuid)
 
     page_url = request.build_absolute_uri()  # absolute URL to this skin page
 
@@ -18,8 +17,6 @@ def skin_detail(request, skin_id):
     # image_url = skin.image_url
     # if image_url and not image_url.startswith('http'):
     #     image_url = request.build_absolute_uri(image_url)
-    editor_url = f"{settings.BONKVERSE_EDITOR_URL}?skin={skin.skin_code}"
-    
     png_path = f"{settings.MEDIA_URL}skins/{skin.id}.png"
     image_url = request.build_absolute_uri(png_path)
 
@@ -35,6 +32,4 @@ def skin_detail(request, skin_id):
         "site_name": "Bonkverse",
     }
 
-    share_url = request.build_absolute_uri(reverse( "share_skin", kwargs={"skin_id": skin_id, "uuid": skin.uuid},))
-
-    return render(request, "skins/skin_detail.html", {"skin": skin, "og": og, "editor_url": editor_url, "share_url": share_url})
+    return render(request, "skins/share_skin.html", {"skin": skin, "og": og})
