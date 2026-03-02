@@ -2,8 +2,8 @@ body {
     font-family: "Oxanium", sans-serif;
     margin: 20px;
     text-align: center;
-    background-color: #0f1b24;
-    color: #e6edf3;
+    background-color: #1a2733;
+    color: #ddd;
 }
 
 #particles-js {
@@ -17,7 +17,7 @@ body {
   
 
 h1 {
-    color: #e6edf3;
+    color: #ddd;
     font-size: 28px;
 }
 
@@ -89,17 +89,17 @@ input {
 }
 
 input, select, textarea{
-    color: #e6edf3;
+    color: #ddd;
 }
 
 ::placeholder {
-    color: #e6edf3;
+    color: #ddd;
 }
 
 button {
     background-color: #795548;
     border-radius: 8px;
-    color: #e6edf3;
+    color: #ddd;
     padding: 10px;
     font-size: 16px;
     cursor: pointer;
@@ -188,7 +188,7 @@ button {
     border-radius: 8px;
     padding: 10px;
     text-align: center;
-    color: #e6edf3;
+    color: #ddd;
     background: hsla(212, 40%, 20%, 0.597);
     position: relative;
     overflow: hidden;
@@ -234,7 +234,7 @@ button {
     border-radius: 8px;
     margin-top: auto; 
     padding-bottom: 10px;
-    color: #e6edf3;
+    color: #ddd;
     transition: transform 0.2s ease-in-out;
 }
 
@@ -336,7 +336,7 @@ button {
     border: none;
     font-size: 18px;
     cursor: pointer;
-    color: #e6edf3;
+    color: #ddd;
     padding: 0;
     margin: 0;
     transition: transform 0.2s ease-in-out;
@@ -420,7 +420,7 @@ button {
     padding: 10px 15px;
     margin: 5px;
     text-decoration: none;
-    color: #e6edf3;
+    color: #ddd;
     background-color: #795548;
     text-align: center;
     border-radius: 8px;
@@ -428,7 +428,7 @@ button {
 
 .pagination a.active {
     font-weight: bold;
-    background-color: #e6edf3;
+    background-color: #ddd;
 }
 
 
@@ -553,7 +553,7 @@ button {
 .leaderboard-table td {
   padding: 14px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  color: #e6edf3;
+  color: #ddd;
   text-align: left;
 }
 
@@ -628,7 +628,7 @@ button {
   max-width: 960px;
   margin: 40px auto;
   padding: 20px;
-  color: #e6edf3;
+  color: #ddd;
 }
 
 /* Header: Title, Creator, Favorite */
@@ -899,7 +899,7 @@ button {
   font-size: 14px;
   margin-left: 10px;
   background: transparent;
-  color: #e6edf3;
+  color: #ddd;
 }
 
 #player-query::placeholder {
@@ -1244,7 +1244,7 @@ button {
   padding: 30px;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-  color: #e6edf3;
+  color: #ddd;
 }
 
 .changelog-title {
@@ -1281,7 +1281,7 @@ button {
   border: 1px solid #333;
   border-radius: 8px;
   padding: 12px;
-  color: #e6edf3;
+  color: #ddd;
   font-size: 15px;
   outline: none;
   transition: border 0.2s ease, box-shadow 0.2s ease;
@@ -1721,7 +1721,7 @@ form.filter-form {
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 18px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-  color: #e6edf3;
+  color: #ddd;
 }
 
 /* Header */
@@ -1844,6 +1844,247 @@ form.filter-form {
   gap: 8px;
 }
 
+/* =========================
+   🛠️ Map Decoder Tool
+========================= */
+.tool-wrap {
+  max-width: 980px;
+  margin: 30px auto 80px;
+  padding: 0 16px;
+}
+
+.tool-head {
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.tool-title {
+  margin: 0 0 6px;
+  font-size: 2rem;
+  letter-spacing: .5px;
+  color: #fff;
+}
+
+.tool-sub {
+  margin: 0;
+  color: #a9b3c1;
+}
+
+.tool-card {
+  background: rgba(0,0,0,0.30);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+
+.field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.field-label {
+  font-weight: 700;
+  color: #dbe7ff;
+  text-align: left;
+}
+
+/* ✅ Single-line input (replaces textarea) */
+.tool-input {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 150, 136, 0.45);
+  background: rgba(0,0,0,0.55);
+  padding: 12px 12px;
+  outline: none;
+
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  line-height: 1.35;
+  color: #e8f7f5;
+
+  white-space: nowrap;     /* single line */
+  overflow-x: auto;        /* long strings scroll */
+  box-shadow: 0 0 18px rgba(0, 230, 195, 0.15);
+}
+
+.tool-input:focus {
+  border-color: rgba(0, 255, 204, 0.65);
+  box-shadow: 0 0 0 2px rgba(0,255,204,0.12), 0 0 18px rgba(0,255,204,0.18);
+}
+
+/* Optional small hint under input */
+.hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #9aa4b2;
+  text-align: left;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.spacer { flex: 1; }
+
+.btn {
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-weight: 700;
+  border: 1px solid rgba(255,255,255,0.12);
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: linear-gradient(180deg, rgba(121,85,72,0.95), rgba(121,85,72,0.75));
+  color: #fff;
+}
+
+.btn-ghost {
+  background: rgba(255,255,255,0.06);
+  color: #dbe7ff;
+}
+
+.status-pill {
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #d0d0d0;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.status-pill[data-variant="good"] {
+  border-color: rgba(0,255,204,0.35);
+  box-shadow: 0 0 14px rgba(0,255,204,0.12);
+}
+
+.status-pill[data-variant="bad"] {
+  border-color: rgba(255,77,77,0.35);
+  box-shadow: 0 0 14px rgba(255,77,77,0.12);
+}
+
+.status-pill[data-variant="wait"] {
+  border-color: rgba(255,193,7,0.35);
+  box-shadow: 0 0 14px rgba(255,193,7,0.10);
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  justify-content: center;
+}
+
+.summary-pill {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(0, 150, 136, 0.35);
+  color: #e8f7f5;
+  font-size: 12.5px;
+}
+
+.tool-error {
+  margin-top: 12px;
+  color: #ffb3b3;
+  font-weight: 700;
+  text-align: center;
+}
+
+.out-card {
+  margin-top: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.45);
+  overflow: hidden;
+}
+
+.out-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.out-title {
+  font-weight: 800;
+  color: #dbe7ff;
+}
+
+/* ✅ Scoped icon button styling for this tool (won't mess with global .icon-btn) */
+.out-head .icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: #dbe7ff;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+}
+
+.out-head .icon-btn:hover {
+  transform: translateY(-1px);
+  background: rgba(255,255,255,0.10);
+  border-color: rgba(0,255,204,0.25);
+}
+
+.out-head .icon-btn:active {
+  transform: translateY(0);
+}
+
+.out-head .icon-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Copy feedback state */
+.out-head .icon-btn .icon-copied { display: none; }
+.out-head .icon-btn.copied .icon-default { display: none; }
+.out-head .icon-btn.copied .icon-copied { display: inline-flex; }
+
+.out-head .icon-btn .copy-text {
+  font-weight: 800;
+  font-size: 13px;
+  color: #dbe7ff;
+}
+
+.out-head .icon-btn.copied .copy-text {
+  color: rgba(0,255,204,0.95);
+}
+
+/* ✅ Output: left aligned, dev-friendly */
+.out-pre {
+  margin: 0;
+  padding: 14px 14px;
+  max-height: 520px;
+  overflow: auto;
+
+  font-size: 13px;
+  line-height: 1.45;
+  color: #e8f7f5;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+
+  text-align: left;   /* key fix */
+  white-space: pre;   /* keep JSON formatting */
+}
 
 
 /* 🔹 Responsive Fixes */

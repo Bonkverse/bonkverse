@@ -46,6 +46,7 @@ from skins.apis.index import index
 from skins.apis.publish_skin import publish_skin
 from skins.share_skin import share_skin
 from skins.apis.auth.who_am_i import me
+from skins.utils.tools.map_decode import map_decode_page, api_map_decode
 from django.views.static import serve
 
 
@@ -119,6 +120,9 @@ urlpatterns = [
     path("<uuid:server_id>/", discord.server_detail, name="detail"),
     path("submit/", discord.submit_server_page, name="submit_server"),
     path("api/discords/submit/", discord_views.submit_server, name="api_submit_server"),
+
+    path("tools/map-decode/", map_decode_page, name="map_decode_page"),
+    path("api/tools/map-decode/", api_map_decode, name="api_map_decode"),
 
 
 

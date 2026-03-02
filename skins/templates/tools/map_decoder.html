@@ -1,0 +1,204 @@
+{% extends 'skins/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="tool-wrap">
+  <header class="tool-head">
+    <h1 class="tool-title">Map Decoder</h1>
+    <p class="tool-sub">Paste a Bonk map encoded string and decode it into JSON.</p>
+  </header>
+
+  <section class="tool-card">
+    <div class="field">
+      <div class="field-label-row">
+        <label class="field-label" for="encoded">Encoded Map String</label>
+        <button type="button" id="clearBtn" class="btn btn-ghost" title="Clear">Clear</button>
+      </div>
+
+      <!-- single-line input -->
+      <input
+        id="encoded"
+        class="tool-input"
+        type="text"
+        placeholder="Paste encoded map string here..."
+        spellcheck="false"
+        autocomplete="off"
+      />
+      <div class="hint">Tip: click inside the input and press ⌘A / Ctrl+A to select everything.</div>
+    </div>
+
+    <div class="actions">
+      <button id="decodeBtn" class="btn btn-primary" type="button">Decode</button>
+
+      <!-- optional: keep status for decode state only (not copy) -->
+      <span id="status" class="status-pill">Idle</span>
+
+      <div class="spacer"></div>
+      
+    </div>
+
+    <div id="summary" class="summary"></div>
+    <div id="err" class="tool-error" role="alert"></div>
+
+    <div class="out-card">
+      <div class="out-head">
+        <div class="out-title">Decoded Map JSON</div>
+
+        <!-- copy icon + feedback -->
+        <button id="copyIcon" class="icon-btn" type="button" disabled aria-label="Copy JSON">
+          <span class="icon-default" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M8 8V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-2"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M6 8h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2Z"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </span>
+
+          <span class="icon-copied" aria-hidden="true">
+            <!-- check icon -->
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+
+          <span class="copy-text">Copy</span>
+        </button>
+      </div>
+
+      <pre id="out" class="out-pre">{}</pre>
+    </div>
+  </section>
+</div>
+
+<script>
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+  }
+
+  const decodeBtn = document.getElementById("decodeBtn");
+  const clearBtn = document.getElementById("clearBtn");
+  const copyIcon = document.getElementById("copyIcon");
+  const statusEl = document.getElementById("status");
+  const encodedEl = document.getElementById("encoded");
+  const outEl = document.getElementById("out");
+  const errEl = document.getElementById("err");
+  const summaryEl = document.getElementById("summary");
+
+  function setStatus(text, variant) {
+    statusEl.textContent = text;
+    statusEl.dataset.variant = variant || "";
+  }
+
+  function pill(text) {
+    const span = document.createElement("span");
+    span.className = "summary-pill";
+    span.textContent = text;
+    return span;
+  }
+
+  function renderSummary(decoded) {
+    summaryEl.innerHTML = "";
+    try {
+      summaryEl.appendChild(pill(`v: ${decoded.v}`));
+      summaryEl.appendChild(pill(`name: ${decoded.m?.n ?? ""}`));
+      summaryEl.appendChild(pill(`author: ${decoded.m?.a ?? ""}`));
+      summaryEl.appendChild(pill(`ppm: ${decoded.physics?.ppm}`));
+      summaryEl.appendChild(pill(`shapes: ${decoded.physics?.shapes?.length ?? 0}`));
+      summaryEl.appendChild(pill(`fixtures: ${decoded.physics?.fixtures?.length ?? 0}`));
+      summaryEl.appendChild(pill(`bodies: ${decoded.physics?.bodies?.length ?? 0}`));
+      summaryEl.appendChild(pill(`joints: ${decoded.physics?.joints?.length ?? 0}`));
+      summaryEl.appendChild(pill(`spawns: ${decoded.spawns?.length ?? 0}`));
+      summaryEl.appendChild(pill(`capZones: ${decoded.capZones?.length ?? 0}`));
+    } catch {}
+  }
+
+  function setCopyEnabled(enabled) {
+    copyIcon.disabled = !enabled;
+  }
+
+  // Copy feedback: icon becomes check + label changes, then reverts
+  function setCopiedState(on) {
+    copyIcon.classList.toggle("copied", on);
+  }
+
+  async function copyOut() {
+    try {
+      await navigator.clipboard.writeText(outEl.textContent);
+      setCopiedState(true);
+      setTimeout(() => setCopiedState(false), 900);
+    } catch {
+      errEl.textContent = "Could not copy to clipboard.";
+    }
+  }
+
+  clearBtn.addEventListener("click", () => {
+    encodedEl.value = "";
+    outEl.textContent = "{}";
+    summaryEl.innerHTML = "";
+    errEl.textContent = "";
+    setCopyEnabled(false);
+    setCopiedState(false);
+    setStatus("Idle");
+    encodedEl.focus();
+  });
+
+  copyIcon.addEventListener("click", copyOut);
+
+  // nice UX: Enter decodes
+  encodedEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      decodeBtn.click();
+    }
+  });
+
+  decodeBtn.addEventListener("click", async () => {
+    errEl.textContent = "";
+    summaryEl.innerHTML = "";
+    setCopyEnabled(false);
+    setCopiedState(false);
+
+    const encoded = encodedEl.value.trim();
+    if (!encoded) {
+      errEl.textContent = "Paste an encoded map string first.";
+      return;
+    }
+
+    setStatus("Decoding...", "wait");
+
+    const form = new FormData();
+    form.append("encoded", encoded);
+
+    try {
+      const res = await fetch("{% url 'api_map_decode' %}", {
+        method: "POST",
+        body: form,
+        headers: { "X-CSRFToken": getCookie("csrftoken") },
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        setStatus("Error", "bad");
+        const msg = data?.error ? `${data.error}${data.details ? " — " + data.details : ""}` : "Decode failed.";
+        errEl.textContent = msg;
+        outEl.textContent = JSON.stringify(data ?? { error: msg }, null, 2);
+        return;
+      }
+
+      setStatus("Done", "good");
+      outEl.textContent = JSON.stringify(data, null, 2);
+      renderSummary(data);
+      setCopyEnabled(true);
+
+      document.querySelector(".out-card").scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (e) {
+      setStatus("Error", "bad");
+      errEl.textContent = `Request failed: ${String(e)}`;
+    }
+  });
+</script>
+{% endblock %}

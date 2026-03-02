@@ -18,12 +18,6 @@ def staff_page(request):
             "image": "images/bt55.png",
         },
         {
-            "name": "Black_Queen",
-            "role": "Lore Maker & Chaos Engineer",
-            "bio": "Hi hi! I'm Black Queen, lead Bonkverse lore maker and chaos engineer <3",
-            "image": "images/bq.png",
-        },
-        {
             "name": "Zorroloko CRZ",
             "role": "Moderator & Furry Specialist",
             "bio": '''The most og staff that still hasn't been promoted 🔥, and brazilian staph, creator of boykisser skin, pixel artist and photographer (not profissional), and person who makes the server's designs! And kids, always remember, Uncle Saucy needs you in our community! I also make skins btw.''',
