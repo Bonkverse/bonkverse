@@ -25,7 +25,7 @@
     <div class="text-group">
       <h1 class="skin-title">{{ skin.name }}</h1>
       <p class="skin-creator">By: <strong>{{ skin.creator }}</strong></p>
-      <!-- <a href="{{ skin.link }}" target="_blank" class="skin-bl-link"><strong>Bonkleagues Link</strong></a> -->
+      <a href="{{ skin.link }}" target="_blank" class="skin-bl-link"><strong>Bonkleagues Link</strong></a>
     
       {% if user.is_authenticated %}
         <a href="{{ share_url }}" rel="noopener noreferrer" class="skin-bl-link"><strong>Share This Skin!</strong></a>
