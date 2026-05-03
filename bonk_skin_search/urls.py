@@ -19,7 +19,6 @@ from django.http import HttpResponse
 from django.urls import path
 from skins.search import search_skins
 from skins.upload import upload_skin
-from skins.upload import upload_skin
 from django.conf import settings
 from django.conf.urls.static import static
 from skins.login import login_view, logout_view
@@ -64,6 +63,7 @@ urlpatterns = [
     path("api/me/", me, name="api_me"),
     path('logout/', logout_view, name='logout'),
     path('my-profile/', my_profile, name='my_profile'),
+    path('upload/', upload_skin, name='upload_skin'),
     path('skin/<int:skin_id>/delete/', delete_skin, name='delete_skin'),
     path('skin/<int:skin_id>/edit/', edit_skin, name='edit_skin'),
     path('matchmaking/', matchmaking_page, name='matchmaking'),

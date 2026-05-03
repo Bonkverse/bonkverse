@@ -44,6 +44,7 @@ BONKVERSE_EDITOR_URL = os.getenv(
     "http://localhost:5173",
 )
 
+BLSKIN_FETCHER_URL = os.getenv("BLSKIN_FETCHER_URL", "https://blskinfetcher-production.up.railway.app/api/getSkin")
 
 CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:8000",

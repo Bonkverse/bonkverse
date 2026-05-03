@@ -52,6 +52,10 @@
             </ul>
         </li>
 
+        {% if user.is_authenticated %}
+            <li><a href="{% url 'upload_skin' %}">Upload Skin</a></li>
+        {% endif %}
+
          <li class="nav-item">
             <a href="#" class="nav-link">Tools ▾</a>
             <ul class="dropdown-menu">
