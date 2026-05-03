@@ -215,6 +215,7 @@ def upload_skin(request):
             link=bonkleagues_link,
             image_url="",
             uuid=uuid.uuid4(),
+            skin_code=skin_code
         )
 
         skin_dir = os.path.join(settings.MEDIA_ROOT, "skins")
