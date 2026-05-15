@@ -1,6 +1,5 @@
 FROM python:3.10-slim
 
-# Install system deps
 RUN apt-get update && apt-get install -y \
     libcairo2 \
     libcairo2-dev \
@@ -24,7 +23,7 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 COPY . .
 
-RUN python manage.py collectstatic --noinput
+RUN rm -rf staticfiles && python manage.py collectstatic --noinput --clear
 
 EXPOSE 8080
 
