@@ -82,7 +82,10 @@ CORS_ALLOW_HEADERS = [
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
-ALLOWED_HOSTS = ["bonkverse-production.up.railway.app", "bonkverse.io", "127.0.0.1", "localhost", "172.26.54.223", "http://localhost:5173", "http://127.0.0.1:5173"]
+if IS_PROD:
+    ALLOWED_HOSTS = ["bonkverse-production.up.railway.app", "bonkverse.io", "127.0.0.1", "localhost", "172.26.54.223", "http://localhost:5173", "http://127.0.0.1:5173"]
+else:
+    ALLOWED_HOSTS = ["bonkverse-production.up.railway.app", "bonkverse.io", "127.0.0.1", "localhost", "172.26.54.223", "http://localhost:5173", "http://127.0.0.1:5173", "192.168.1.183"]
 
 
 

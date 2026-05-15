@@ -1,0 +1,123 @@
+/* =====================
+   Tablet (≤ 768px)
+   2-column grid, form fixes
+   ===================== */
+@media (max-width: 768px) {
+
+    /* Home logo + button */
+    .home-icon {
+        width: 50px;
+        margin-bottom: 10px;
+    }
+
+    .home-button {
+        position: static;
+        text-align: left;
+        margin-bottom: 10px;
+    }
+
+    /* Forms */
+    form {
+        width: 90%;
+        padding: 15px;
+    }
+
+    input[type="text"],
+    input[type="url"],
+    input[type="email"],
+    input,
+    textarea {
+        width: 90%;
+    }
+
+    input[type="text"] {
+        width: 90% !important;
+    }
+
+    /* Notifications */
+    .notification {
+        width: 85%;
+    }
+
+    /* Skin grid: 2 columns */
+    .skins-container {
+        grid-template-columns: repeat(2, 1fr);
+        padding: 0 16px;
+        gap: 14px;
+    }
+
+    .skin-card img {
+        width: 120px;
+        height: 120px;
+    }
+
+    .skin-card strong {
+        font-size: 1.2rem;
+    }
+
+    .skin-card span {
+        font-size: 0.9rem;
+    }
+}
+
+
+/* =====================
+   Mobile (≤ 540px)
+   1-column grid, smaller cards
+   ===================== */
+@media (max-width: 540px) {
+
+    .skins-container {
+        grid-template-columns: 1fr;
+        padding: 0 12px;
+        gap: 12px;
+    }
+
+    .skin-card {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .skin-card img {
+        width: 110px;
+        height: 110px;
+    }
+
+    .skin-card strong {
+        font-size: 1.1rem;
+    }
+
+    .skin-card span {
+        font-size: 0.85rem;
+    }
+
+    .vote-row {
+        justify-content: center;
+    }
+}
+
+
+/* =====================
+   Small phone (≤ 380px)
+   ===================== */
+@media (max-width: 380px) {
+
+    .skins-container {
+        padding: 0 10px;
+        gap: 10px;
+    }
+
+    .skin-card img {
+        width: 90px;
+        height: 90px;
+    }
+
+    .skin-card strong {
+        font-size: 1rem;
+    }
+
+    .notification {
+        width: 92%;
+    }
+}

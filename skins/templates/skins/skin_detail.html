@@ -10,7 +10,6 @@
   <meta property="og:image" content="{{ og.image }}">
   <meta property="og:image:width" content="512">
   <meta property="og:image:height" content="512">
-
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="{{ og.title }}">
   <meta name="twitter:description" content="{{ og.description }}">
@@ -20,47 +19,114 @@
 {% block content %}
 <div class="skin-detail-container">
 
-  <!-- Top row: title, creator -->
-  <div class="skin-header">
-    <div class="text-group">
-      <h1 class="skin-title">{{ skin.name }}</h1>
-      <p class="skin-creator">By: <strong>{{ skin.creator }}</strong></p>
-      <a href="{{ skin.link }}" target="_blank" class="skin-bl-link"><strong>Bonkleagues Link</strong></a>
-    
-      {% if user.is_authenticated %}
-        <a href="{{ share_url }}" rel="noopener noreferrer" class="skin-bl-link"><strong>Share This Skin!</strong></a>
-        <a href="{{ BONKVERSE_EDITOR_URL }}?skin={{ skin.skin_code|urlencode }}" rel="noopener noreferrer" class="skin-bl-link"><strong>✏️ Open in Editor</strong></a>
-      {% endif %}
+  <!-- Back link -->
+  <a href="{% url 'search_skins' %}" class="skin-back-link">
+    <i data-lucide="arrow-left"></i> Back to search
+  </a>
+
+  <!-- ── Hero: two-column ─────────────────────────────────── -->
+  <div class="skin-hero">
+
+    <!-- Left: image -->
+    <div class="skin-image-panel">
+      <img src="{{ skin.image_url }}" alt="{{ skin.name }}" class="skin-image-large">
     </div>
 
-    {% if user.is_authenticated %}
-      <!-- Wear controls -->
-      <div class="wear-inline">
-        <button class="wear-btn" onclick="startWear()" title="Wear this skin in bonk.io">Wear</button>
-        <span id="wear-msg" class="muted"></span>
-    </div>
-    {% else %}
-      <div class="wear-inline muted">
-        <span>You must login to wear skins or view them in editor</span>
-        
+    <!-- Right: all meta + actions -->
+    <div class="skin-meta-panel">
+
+      <!-- Name + creator -->
+      <div>
+        <h1 class="skin-title">{{ skin.name }}</h1>
+        <p class="skin-creator">by <strong>{{ skin.creator }}</strong></p>
       </div>
 
-    {% endif %}
+      <!-- Primary action: Wear -->
+      {% if user.is_authenticated %}
+        <button class="skin-wear-btn" id="wear-btn" onclick="startWear()">
+          <i data-lucide="shirt"></i>
+          Wear This Skin
+        </button>
+        <p id="wear-msg" class="skin-wear-msg"></p>
+      {% else %}
+        <a href="{% url 'login' %}?next={{ request.path }}" class="skin-wear-btn skin-wear-btn--login">
+          <i data-lucide="log-in"></i>
+          Login to Wear
+        </a>
+      {% endif %}
 
+      <!-- Favorite + votes in one compact row -->
+      {% if user.is_authenticated %}
+        <div class="skin-action-row">
+          <button class="skin-fav-btn {% if user in skin.favorited_by.all %}active{% endif %}"
+                  id="fav-btn" onclick="toggleFavorite()">
+            <i data-lucide="star"></i>
+            <span id="fav-label">{% if user in skin.favorited_by.all %}Favorited{% else %}Favorite{% endif %}</span>
+            <span class="skin-fav-count" id="fav-count">{{ skin.favorited_by.count }}</span>
+          </button>
+
+          <button class="skin-vote-btn vote-up {% if current_vote == 'up' %}active{% endif %}"
+                  id="btn-up" onclick="castVote('up')">
+            <i data-lucide="thumbs-up"></i>
+            <span id="up-count">{{ skin.upvotes }}</span>
+          </button>
+
+          <button class="skin-vote-btn vote-down {% if current_vote == 'down' %}active{% endif %}"
+                  id="btn-down" onclick="castVote('down')">
+            <i data-lucide="thumbs-down"></i>
+            <span id="down-count">{{ skin.downvotes }}</span>
+          </button>
+        </div>
+      {% else %}
+        <!-- Logged out: flat stat display -->
+        <div class="skin-action-row-static">
+          <span class="skin-vote-static">
+            <i data-lucide="star"></i> {{ skin.favorited_by.count }}
+          </span>
+          <span class="skin-vote-static">
+            <i data-lucide="thumbs-up"></i> {{ skin.upvotes }}
+          </span>
+          <span class="skin-vote-static">
+            <i data-lucide="thumbs-down"></i> {{ skin.downvotes }}
+          </span>
+        </div>
+      {% endif %}
+
+      <!-- Quick links -->
+      <div class="skin-links">
+        {% if skin.link %}
+          <a href="{{ skin.link }}" target="_blank" rel="noopener" class="skin-link-chip">
+            <i data-lucide="external-link"></i> Bonkleagues
+          </a>
+        {% endif %}
+        {% if user.is_authenticated %}
+          <a href="{{ BONKVERSE_EDITOR_URL }}?skin={{ skin.skin_code|urlencode }}" target="_blank" rel="noopener" class="skin-link-chip">
+            <i data-lucide="pencil"></i> Open in Editor
+          </a>
+          <a href="{{ share_url }}" class="skin-link-chip">
+            <i data-lucide="share-2"></i> Share
+          </a>
+        {% endif %}
+        <button class="skin-link-chip skin-link-chip--danger" onclick="openReportModal()">
+          <i data-lucide="flag"></i> Report
+        </button>
+      </div>
+
+    </div>
   </div>
 
-  <!-- Big image -->
-  <div class="skin-image-wrapper">
-    <img src="{{ skin.image_url }}" alt="Skin image" class="skin-image-large">
+  <!-- ── Description ──────────────────────────────────────── -->
+  {% if skin.description %}
+  <div class="skin-section">
+    <h2 class="skin-section-title">Description</h2>
+    <p class="skin-description-text">{{ skin.description }}</p>
   </div>
+  {% endif %}
 
-  <p><strong>Description</strong></p>
-  <div class="skin-description">
-    <p>{{ skin.description }}</p>
-  </div>
-
-  <p><strong>Tags</strong></p>
+  <!-- ── Tags ─────────────────────────────────────────────── -->
   {% if skin.labels %}
+  <div class="skin-section">
+    <h2 class="skin-section-title">Tags</h2>
     <div class="tag-bubbles">
       {% for key, value in skin.labels.items %}
         {% for tag in value %}
@@ -68,94 +134,166 @@
         {% endfor %}
       {% endfor %}
     </div>
+  </div>
   {% endif %}
 
-  <div class="skin-stats">
-    <p>👍 Upvotes: {{ skin.upvotes }}</p>
-    <p>👎 Downvotes: {{ skin.downvotes }}</p>
-    <p>⭐ Favorites: {{ skin.favorited_by.count }}</p>
+</div>
+
+<!-- ── Report Modal ──────────────────────────────────────── -->
+<div class="modal-overlay" id="report-modal">
+  <div class="modal-box" style="max-width: 480px;">
+    <div class="modal-header">
+      <h2 class="modal-title">Report Skin</h2>
+      <button class="modal-close-btn" onclick="closeReportModal()">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p style="color:#9aa4b2; font-size:0.9rem; margin-bottom:14px;">"{{ skin.name }}"</p>
+      <label class="modal-label" for="report-reason">Reason</label>
+      <select class="modal-select" id="report-reason">
+        <option value="">Select a reason…</option>
+        <option value="inappropriate">Inappropriate content</option>
+        <option value="stolen">Stolen / reposted without credit</option>
+        <option value="spam">Spam or low-effort</option>
+        <option value="broken">Broken / not loading</option>
+        <option value="other">Other</option>
+      </select>
+      <label class="modal-label" for="report-details">Additional details <span style="color:#6b7280;font-weight:400;">(optional)</span></label>
+      <textarea class="modal-textarea" id="report-details" placeholder="Describe the issue…" maxlength="1000"></textarea>
+      <p class="modal-feedback" id="report-feedback"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn modal-btn-ghost" onclick="closeReportModal()">Cancel</button>
+      <button class="modal-btn modal-btn-danger" onclick="submitReport()">Submit Report</button>
+    </div>
   </div>
 </div>
 
+<!-- ── Bonk login modal ──────────────────────────────────── -->
 {% if user.is_authenticated %}
-  <!-- Tiny login modal (shown only if token is missing/expired) -->
-  <dialog id="bonk-login-modal">
-    <form id="bonk-login-form" method="dialog" onsubmit="return doBonkLogin(event)">
-      <h3>Bonk.io Login</h3>
-      <p class="muted">Bonverse doesn't store your password. To verify and link your bonk.io, your bonk credentials are sent to Bonk.io to apply the skin.</p>
-      <label>Bonk.io Username</label>
-      <input name="bonk_username" required>
-      <label>Bonk.io Password</label>
-      <input name="bonk_password" type="password" required>
-      <div class="row">
-        <button type="submit">Login</button>
-        <button type="button" onclick="closeBonkLogin()">Cancel</button>
-      </div>
-      <p id="bonk-login-msg" class="muted"></p>
-    </form>
-  </dialog>
+<dialog id="bonk-login-modal">
+  <form id="bonk-login-form" method="dialog" onsubmit="return doBonkLogin(event)">
+    <h3>Bonk.io Login</h3>
+    <p class="muted">We don't store your password. It's sent to Bonk.io once to apply the skin.</p>
+    <label>Bonk.io Username</label>
+    <input name="bonk_username" required>
+    <label>Bonk.io Password</label>
+    <input name="bonk_password" type="password" required>
+    <div class="row">
+      <button type="submit">Login</button>
+      <button type="button" onclick="closeBonkLogin()">Cancel</button>
+    </div>
+    <p id="bonk-login-msg" class="muted"></p>
+  </form>
+</dialog>
 {% endif %}
+
 {% endblock %}
 
+
 {% block extra_scripts %}
-{% if user.is_authenticated %}
 <script>
-function getCSRF(){const m=document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);return m?decodeURIComponent(m[1]):'';}
-const wearMsg = document.getElementById('wear-msg');
-const modal = document.getElementById('bonk-login-modal');
-
-async function postForm(url, data){
-  try {
-    const r = await fetch(url, {
-      method: 'POST',
-      headers: { 'X-CSRFToken': getCSRF(), 'X-Requested-With': 'XMLHttpRequest' },
-      body: data instanceof FormData ? data : new URLSearchParams(data)
-    });
-    const json = await r.json().catch(()=>({}));
-    return { ok: r.ok, json };
-  } catch (e) {
-    return { ok: false, json: { ok:false, error:'network_error' } };
-  }
+function getCSRF() {
+  const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : '';
 }
 
-async function tryWear(){
+async function postForm(url, data) {
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCSRF(), 'X-Requested-With': 'XMLHttpRequest' },
+    body: data instanceof FormData ? data : new URLSearchParams(data || {})
+  });
+  const json = await r.json().catch(() => ({}));
+  return { ok: r.ok, status: r.status, json };
+}
+
+{% if user.is_authenticated %}
+// ── Wear ─────────────────────────────────────────────────────
+const wearMsg    = document.getElementById('wear-msg');
+const loginModal = document.getElementById('bonk-login-modal');
+
+async function startWear() {
   wearMsg.textContent = 'Applying…';
-  // No slot param — let the server pick remembered active slot or fallback to 3
-  const {ok, json} = await postForm("{% url 'wear_skin' skin.id %}", {});
-  if (ok && json.ok){
-    wearMsg.textContent = '✅ Applied! Select that slot in Bonk.io.';
-    return true;
-  }
-  if (json.need_login){
-    wearMsg.textContent = '';
-    openBonkLogin();
-    return false;
-  }
-  wearMsg.textContent = '❌ ' + (json.error || 'Failed.');
-  return false;
+  const { ok, json } = await postForm("{% url 'wear_skin' skin.id %}", {});
+  if (ok && json.ok) { wearMsg.textContent = '✅ Applied to your active slot!'; return; }
+  if (json.need_login) { wearMsg.textContent = ''; openBonkLogin(); return; }
+  wearMsg.textContent = '❌ ' + (json.error || 'Failed to apply.');
 }
 
-function startWear(){ tryWear(); }
+function openBonkLogin()  { if (loginModal?.showModal) loginModal.showModal(); else loginModal.style.display='block'; }
+function closeBonkLogin() { if (loginModal?.close) loginModal.close(); else loginModal.style.display='none'; }
 
-function openBonkLogin(){ if (typeof modal.showModal === 'function') modal.showModal(); else modal.style.display='block'; }
-function closeBonkLogin(){ if (modal.close) modal.close(); else modal.style.display='none'; }
-
-async function doBonkLogin(e){
+async function doBonkLogin(e) {
   e.preventDefault();
-  const form = e.target;
-  const fd = new FormData(form);
+  const fd  = new FormData(e.target);
   const msg = document.getElementById('bonk-login-msg');
   msg.textContent = 'Logging in…';
-
-  const {ok, json} = await postForm("{% url 'bonk_login_for_wear' %}", fd);
-  if (!ok || !json.ok){ msg.textContent = '❌ ' + (json.error || 'Login failed'); return false; }
-
+  const { ok, json } = await postForm("{% url 'bonk_login_for_wear' %}", fd);
+  if (!ok || !json.ok) { msg.textContent = '❌ ' + (json.error || 'Login failed'); return false; }
   msg.textContent = '✅ Logged in!';
   closeBonkLogin();
-  setTimeout(tryWear, 150);
+  setTimeout(startWear, 150);
   return false;
 }
-</script>
 
+// ── Favorite ──────────────────────────────────────────────────
+async function toggleFavorite() {
+  const { ok, json } = await postForm("/api/skins/{{ skin.id }}/favorite/", {});
+  if (!ok) return;
+  document.getElementById('fav-count').textContent = json.favorites;
+  document.getElementById('fav-label').textContent = json.favorited ? 'Favorited' : 'Favorite';
+  document.getElementById('fav-btn').classList.toggle('active', json.favorited);
+}
+
+// ── Vote ──────────────────────────────────────────────────────
+async function castVote(dir) {
+  const { ok, json } = await postForm("/api/skins/{{ skin.id }}/vote/", { vote: dir });
+  if (!ok) return;
+  document.getElementById('up-count').textContent   = json.upvotes;
+  document.getElementById('down-count').textContent = json.downvotes;
+  document.getElementById('btn-up').classList.toggle('active',   json.current_vote === 'up');
+  document.getElementById('btn-down').classList.toggle('active', json.current_vote === 'down');
+}
 {% endif %}
+
+// ── Report modal ──────────────────────────────────────────────
+const reportModal = document.getElementById('report-modal');
+
+function openReportModal() {
+  document.getElementById('report-reason').value  = '';
+  document.getElementById('report-details').value = '';
+  document.getElementById('report-feedback').textContent = '';
+  document.getElementById('report-feedback').className   = 'modal-feedback';
+  reportModal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeReportModal() {
+  reportModal.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+reportModal.addEventListener('click', e => { if (e.target === reportModal) closeReportModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeReportModal(); });
+
+async function submitReport() {
+  const reason  = document.getElementById('report-reason').value;
+  const details = document.getElementById('report-details').value.trim();
+  const fb      = document.getElementById('report-feedback');
+  if (!reason) { fb.textContent = 'Please select a reason.'; fb.className = 'modal-feedback error'; return; }
+  fb.textContent = 'Submitting…';
+  fb.className   = 'modal-feedback';
+  const { ok, status } = await postForm("/api/skins/{{ skin.id }}/report/", { reason, details });
+  if (ok) {
+    fb.textContent = '✓ Report submitted. Thank you!';
+    fb.className   = 'modal-feedback success';
+    setTimeout(closeReportModal, 1600);
+    return;
+  }
+  fb.textContent = status === 409 ? 'You have already reported this skin.' : 'Something went wrong. Please try again.';
+  fb.className   = 'modal-feedback error';
+}
+</script>
 {% endblock %}

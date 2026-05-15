@@ -1,0 +1,693 @@
+/* =============================
+   Changelog
+============================= */
+.changelog-header {
+    text-align: center;
+    font-size: 32px;
+    margin: 20px 0 30px;
+    color: #00ffcc;
+    text-shadow: 0 0 12px #00ffcc;
+}
+
+.changelog-list {
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.changelog-card {
+    background: #1a2733;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.changelog-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.7), 0 0 10px #00ffcc;
+}
+
+.changelog-card h2 {
+    margin: 0 0 8px;
+    color: #fff;
+}
+
+.changelog-card .meta {
+    font-size: 13px;
+    color: #aaa;
+    margin-bottom: 10px;
+    display: flex;
+    gap: 10px;
+}
+
+.changelog-card .version {
+    background: #00c3ff;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+}
+
+/* Changelog form */
+.changelog-form-container {
+    max-width: 600px;
+    margin: 40px auto;
+    background: #1a2733;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    color: #ddd;
+}
+
+.changelog-title {
+    text-align: center;
+    font-size: 26px;
+    margin-bottom: 20px;
+    color: #00ffcc;
+    text-shadow: 0 0 8px #00ffcc;
+}
+
+.changelog-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.changelog-form .form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.changelog-form label {
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.changelog-form input[type="text"],
+.changelog-form textarea {
+    width: 100%;
+    background: #0f1923;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 12px;
+    color: #ddd;
+    font-size: 15px;
+    outline: none;
+    transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.changelog-form textarea {
+    min-height: 160px;
+    resize: vertical;
+    line-height: 1.5;
+}
+
+.changelog-form input::placeholder,
+.changelog-form textarea::placeholder {
+    color: #888;
+    font-style: italic;
+}
+
+.changelog-form input:focus,
+.changelog-form textarea:focus {
+    border-color: #00ffcc;
+    box-shadow: 0 0 10px #00ffcc;
+}
+
+.submit-btn {
+    display: block;
+    background: linear-gradient(180deg, #00c3ff, #009688);
+    color: #fff;
+    font-weight: bold;
+    border: none;
+    padding: 12px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.submit-btn:hover {
+    background: #00ffcc;
+    transform: translateY(-2px);
+}
+
+/* =============================
+   Staff Page
+============================= */
+.staff-container {
+    text-align: center;
+    padding: 40px 20px;
+    font-family: 'Oxanium', sans-serif;
+}
+
+.staff-title {
+    font-size: 2.5rem;
+    margin-bottom: 40px;
+    color: #f5f5f5;
+    text-shadow: 0 0 10px #00bfff;
+}
+
+.staff-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 30px;
+    justify-items: center;
+    align-items: start;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.staff-card {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 20px;
+    width: 100%;
+    max-width: 260px;
+    height: 400px;
+    text-align: center;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.staff-card:hover {
+    transform: translateY(-6px) scale(1.03);
+    box-shadow: 0 0 25px rgba(255, 255, 255, 0.15);
+}
+
+.staff-photo {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 15px;
+    border: 3px solid #00bfff;
+}
+
+.role {
+    color: #00bfff;
+    font-weight: 600;
+    margin-bottom: 10px;
+    text-shadow: 0 0 6px #00bfff;
+}
+
+.bio {
+    color: #d0d0d0;
+    font-size: 0.9rem;
+}
+
+/* =============================
+   Discord Servers
+============================= */
+.server-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 18px;
+    padding: 20px 280px 60px;
+}
+
+.server-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    padding: 14px;
+    text-decoration: none;
+    color: white;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.server-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+}
+
+.server-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.server-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    background: #111;
+    object-fit: cover;
+}
+
+.server-icon.placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+}
+
+.server-title strong {
+    display: block;
+    font-size: 1.05rem;
+}
+
+.server-title .members {
+    font-size: 0.85rem;
+    color: #9aa4b2;
+}
+
+.server-card .description {
+    font-size: 0.9rem;
+    color: #c9d1d9;
+    margin: 8px 0 10px;
+}
+
+.server-card .tags {
+    max-height: 64px;
+    overflow: hidden;
+}
+
+.server-card .tag-bubble {
+    font-size: 0.72rem;
+    padding: 4px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.server-card .tag-more {
+    font-size: 0.75rem;
+    color: #9aa5ff;
+    background: rgba(255,255,255,0.08);
+    padding: 4px 8px;
+    border-radius: 999px;
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.server-card .tag-more:hover {
+    background: rgba(255,255,255,0.15);
+    color: #c6ccff;
+}
+
+.server-card .tags.empty { opacity: 0.6; }
+
+.server-card .tag-placeholder {
+    font-size: 0.75rem;
+    color: #9aa4b2;
+    font-style: italic;
+}
+
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #9aa4b2;
+    padding: 40px 0;
+}
+
+.discord-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 16px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    color: #ffffff;
+    background: linear-gradient(135deg, #5865F2, #4752C4);
+    border-radius: 999px;
+    border: none;
+    text-decoration: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(88, 101, 242, 0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.discord-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(88, 101, 242, 0.5);
+    filter: brightness(1.05);
+}
+
+.discord-button:active {
+    transform: translateY(0);
+    box-shadow: 0 3px 10px rgba(88, 101, 242, 0.3);
+}
+
+.server-actions { margin-top: 10px; }
+
+/* Server detail page */
+.back-link {
+    display: inline-block;
+    margin: 20px auto;
+    color: #9fb6ff;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.back-link:hover { text-decoration: underline; }
+
+.server-detail-container {
+    max-width: 900px;
+    margin: 30px auto 60px;
+    padding: 24px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    color: #ddd;
+}
+
+.server-detail-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.server-detail-icon {
+    width: 88px;
+    height: 88px;
+    border-radius: 18px;
+    object-fit: cover;
+    background: #111;
+    box-shadow: 0 0 18px rgba(88, 101, 242, 0.35);
+}
+
+.server-detail-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.server-detail-title {
+    font-size: 2rem;
+    margin: 0;
+    color: #fff;
+}
+
+.server-detail-stats {
+    font-size: 0.95rem;
+    color: #9aa4b2;
+}
+
+.server-detail-stats .dot { margin: 0 6px; }
+
+.server-detail-description {
+    margin: 20px 0 24px;
+    padding: 16px 18px;
+    background: rgba(255,255,255,0.04);
+    border-left: 4px solid #5865F2;
+    border-radius: 8px;
+    line-height: 1.6;
+    color: #c9d1d9;
+}
+
+.server-detail-actions {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 32px;
+    margin-top: 32px;
+}
+
+.server-growth h2 {
+    font-size: 1.3rem;
+    margin-bottom: 12px;
+    color: #fff;
+}
+
+.snapshot-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.snapshot-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    background: rgba(255,255,255,0.04);
+    font-size: 0.9rem;
+}
+
+.snapshot-list li:nth-child(even) { background: rgba(255,255,255,0.06); }
+
+.snapshot-date { color: #9aa4b2; }
+.snapshot-count { font-weight: 600; color: #fff; }
+
+.refresh-timer {
+    margin: 16px auto 24px;
+    text-align: center;
+    font-size: 13px;
+    opacity: 0.75;
+}
+
+.server-detail-tags { margin-top: 24px; }
+
+.server-detail-section-title {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.7;
+    margin-bottom: 10px;
+}
+
+.server-detail-tags .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* =============================
+   Map Decoder Tool
+============================= */
+.tool-wrap {
+    max-width: 980px;
+    margin: 30px auto 80px;
+    padding: 0 16px;
+}
+
+.tool-head {
+    text-align: center;
+    margin-bottom: 18px;
+}
+
+.tool-title {
+    margin: 0 0 6px;
+    font-size: 2rem;
+    letter-spacing: .5px;
+    color: #fff;
+}
+
+.tool-sub {
+    margin: 0;
+    color: #a9b3c1;
+}
+
+.tool-card {
+    background: rgba(0,0,0,0.30);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 18px;
+    padding: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+
+.field-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.field-label {
+    font-weight: 700;
+    color: #dbe7ff;
+    text-align: left;
+}
+
+.tool-input {
+    width: 100%;
+    border-radius: 14px;
+    border: 1px solid rgba(0, 150, 136, 0.45);
+    background: rgba(0,0,0,0.55);
+    padding: 12px 12px;
+    outline: none;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size: 13px;
+    line-height: 1.35;
+    color: #e8f7f5;
+    white-space: nowrap;
+    overflow-x: auto;
+    box-shadow: 0 0 18px rgba(0, 230, 195, 0.15);
+}
+
+.tool-input:focus {
+    border-color: rgba(0, 255, 204, 0.65);
+    box-shadow: 0 0 0 2px rgba(0,255,204,0.12), 0 0 18px rgba(0,255,204,0.18);
+}
+
+.hint {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #9aa4b2;
+    text-align: left;
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.spacer { flex: 1; }
+
+.btn {
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-weight: 700;
+    border: 1px solid rgba(255,255,255,0.12);
+    cursor: pointer;
+}
+
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.btn-primary {
+    background: linear-gradient(180deg, rgba(121,85,72,0.95), rgba(121,85,72,0.75));
+    color: #fff;
+}
+
+.btn-ghost {
+    background: rgba(255,255,255,0.06);
+    color: #dbe7ff;
+}
+
+.status-pill {
+    padding: 8px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #d0d0d0;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.status-pill[data-variant="good"] {
+    border-color: rgba(0,255,204,0.35);
+    box-shadow: 0 0 14px rgba(0,255,204,0.12);
+}
+
+.status-pill[data-variant="bad"] {
+    border-color: rgba(255,77,77,0.35);
+    box-shadow: 0 0 14px rgba(255,77,77,0.12);
+}
+
+.status-pill[data-variant="wait"] {
+    border-color: rgba(255,193,7,0.35);
+    box-shadow: 0 0 14px rgba(255,193,7,0.10);
+}
+
+.summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+    justify-content: center;
+}
+
+.summary-pill {
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(0, 150, 136, 0.35);
+    color: #e8f7f5;
+    font-size: 12.5px;
+}
+
+.tool-error {
+    margin-top: 12px;
+    color: #ffb3b3;
+    font-weight: 700;
+    text-align: center;
+}
+
+.out-card {
+    margin-top: 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: rgba(0,0,0,0.45);
+    overflow: hidden;
+}
+
+.out-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.out-title {
+    font-weight: 800;
+    color: #dbe7ff;
+}
+
+.out-head .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.06);
+    color: #dbe7ff;
+    cursor: pointer;
+    transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+}
+
+.out-head .icon-btn:hover {
+    transform: translateY(-1px);
+    background: rgba(255,255,255,0.10);
+    border-color: rgba(0,255,204,0.25);
+}
+
+.out-head .icon-btn:active { transform: translateY(0); }
+.out-head .icon-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.out-head .icon-btn .icon-copied { display: none; }
+.out-head .icon-btn.copied .icon-default { display: none; }
+.out-head .icon-btn.copied .icon-copied { display: inline-flex; }
+
+.out-head .icon-btn .copy-text {
+    font-weight: 800;
+    font-size: 13px;
+    color: #dbe7ff;
+}
+
+.out-head .icon-btn.copied .copy-text {
+    color: rgba(0,255,204,0.95);
+}
+
+.out-pre {
+    margin: 0;
+    padding: 14px 14px;
+    max-height: 520px;
+    overflow: auto;
+    font-size: 13px;
+    line-height: 1.45;
+    color: #e8f7f5;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    text-align: left;
+    white-space: pre;
+}

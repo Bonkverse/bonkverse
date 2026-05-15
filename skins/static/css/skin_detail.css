@@ -1,0 +1,379 @@
+/* =====================
+   Skin Detail Page
+   ===================== */
+
+.skin-detail-container {
+    max-width: 960px;
+    margin: 32px auto 60px;
+    padding: 0 24px;
+    color: #ddd;
+}
+
+/* Back link — left-aligned, not centered by body */
+.skin-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #9aa4b2;
+    text-decoration: none;
+    font-size: 0.9rem;
+    margin-bottom: 24px;
+    transition: color 0.15s ease;
+    text-align: left;
+    width: 100%;
+}
+
+.skin-back-link:hover {
+    color: #fff;
+}
+
+.skin-back-link i[data-lucide] {
+    width: 15px;
+    height: 15px;
+}
+
+/* ── Hero: two-column ── */
+.skin-hero {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 36px;
+    align-items: start;
+    margin-bottom: 32px;
+}
+
+/* Left: image panel */
+.skin-image-panel {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.skin-image-large {
+    width: 100%;
+    max-width: 260px;
+    height: auto;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 3px solid rgba(0, 150, 136, 0.5);
+    background-color: #000;
+}
+
+/* Right: meta panel */
+.skin-meta-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 4px;
+}
+
+/* Name + creator */
+.skin-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 4px;
+    line-height: 1.2;
+    text-align: left;
+}
+
+.skin-creator {
+    font-size: 1rem;
+    color: #8ecdfc;
+    margin: 0;
+    text-align: left;
+}
+
+/* Primary wear button */
+.skin-wear-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 13px 0;
+    background: #009688;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: "Oxanium", sans-serif;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s ease;
+}
+
+.skin-wear-btn:hover {
+    background: #00796b;
+}
+
+.skin-wear-btn--login {
+    background: rgba(0, 150, 136, 0.15);
+    border: 1px solid rgba(0, 150, 136, 0.35);
+    color: #009688;
+}
+
+.skin-wear-btn--login:hover {
+    background: rgba(0, 150, 136, 0.25);
+}
+
+.skin-wear-btn i[data-lucide] {
+    width: 18px;
+    height: 18px;
+}
+
+/* Wear status message */
+.skin-wear-msg {
+    font-size: 0.875rem;
+    color: #9aa4b2;
+    text-align: center;
+    min-height: 18px;
+    margin: -4px 0 0;
+}
+
+/* ── Action row: fav + vote grouped ── */
+.skin-action-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+/* Favorite button — sizes to content, not stretched */
+.skin-fav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+    padding: 10px 14px;
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    border-radius: 10px;
+    color: #c9a227;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: "Oxanium", sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.skin-fav-btn:hover {
+    background: rgba(255, 193, 7, 0.18);
+    border-color: rgba(255, 193, 7, 0.55);
+    color: #ffc107;
+}
+
+.skin-fav-btn.active {
+    background: rgba(255, 193, 7, 0.18);
+    border-color: rgba(255, 193, 7, 0.55);
+    color: #ffc107;
+}
+
+.skin-fav-btn.active i[data-lucide="star"] {
+    fill: #ffc107;
+    color: #ffc107;
+}
+
+.skin-fav-btn i[data-lucide] {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+}
+
+.skin-fav-count {
+    color: #9aa4b2;
+    font-size: 0.8rem;
+    margin-left: 2px;
+}
+
+/* Vote buttons */
+.skin-vote-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    color: #c9d1d9;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: "Oxanium", sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.skin-vote-btn i[data-lucide] {
+    width: 15px;
+    height: 15px;
+}
+
+.skin-vote-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+
+.skin-vote-btn.vote-up.active {
+    background: rgba(0, 150, 136, 0.2);
+    border-color: #009688;
+    color: #009688;
+}
+
+.skin-vote-btn.vote-up.active i {
+    fill: #009688;
+    color: #009688;
+}
+
+.skin-vote-btn.vote-down.active {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+.skin-vote-btn.vote-down.active i {
+    fill: #ef4444;
+    color: #ef4444;
+}
+
+/* Static actions (logged out) */
+.skin-action-row-static {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+}
+
+.skin-vote-static {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.skin-vote-static i[data-lucide] {
+    width: 14px;
+    height: 14px;
+}
+
+/* Quick links */
+.skin-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 2px;
+}
+
+.skin-link-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #c9d1d9;
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-family: "Oxanium", sans-serif;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.skin-link-chip:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.skin-link-chip i[data-lucide] {
+    width: 13px;
+    height: 13px;
+    opacity: 0.8;
+}
+
+.skin-link-chip--danger {
+    color: #ff6b6b;
+    border-color: rgba(255, 107, 107, 0.2);
+}
+
+.skin-link-chip--danger:hover {
+    background: rgba(255, 107, 107, 0.1);
+    color: #ff8f8f;
+    border-color: rgba(255, 107, 107, 0.35);
+}
+
+/* ── Content sections below hero ── */
+.skin-section {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+}
+
+.skin-section-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #009688;
+    font-weight: 700;
+    margin: 0 0 12px;
+}
+
+.skin-description-text {
+    font-size: 0.95rem;
+    line-height: 1.65;
+    color: #c9d1d9;
+    margin: 0;
+}
+
+/* Skin avatar (leaderboard) */
+.skin-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.skin-avatar:hover {
+    transform: scale(1.2);
+    transition: transform 0.2s ease-in-out;
+}
+
+.skin-link-text {
+    color: #6cf;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.skin-link-text:hover {
+    text-decoration: underline;
+    color: #00e6c3;
+}
+
+/* ── Responsive ── */
+@media (max-width: 720px) {
+    .skin-hero {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .skin-image-panel {
+        max-width: 280px;
+        margin: 0 auto;
+    }
+
+    .skin-title {
+        font-size: 1.6rem;
+    }
+
+    .skin-action-row {
+        flex-wrap: wrap;
+    }
+}

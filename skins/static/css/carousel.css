@@ -1,0 +1,121 @@
+/* Hero section */
+.hero {
+    position: relative;
+    padding: 80px 20px 40px;
+    text-align: center;
+}
+
+.hero-inner {
+    max-width: 980px;
+    margin: 0 auto;
+}
+
+.hero-logo {
+    width: 92px;
+    height: 92px;
+    border-radius: 50%;
+    box-shadow: 0 0 40px rgba(95,127,255,.35);
+    margin-bottom: 12px;
+}
+
+.hero-title {
+    font-family: "Oxanium", system-ui, sans-serif;
+    font-size: clamp(28px, 5vw, 44px);
+    letter-spacing: .5px;
+    margin: 6px 0;
+}
+
+.hero-sub {
+    color: #a9b3c1;
+    margin-bottom: 20px;
+}
+
+/* Carousel */
+.carousel-section {
+    margin: 32px auto;
+    max-width: 1200px;
+    padding: 0 16px;
+}
+
+.carousel-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.carousel-header h2 {
+    font-size: 20px;
+    letter-spacing: .3px;
+}
+
+.carousel-seeall {
+    color: #9fb6ff;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.carousel {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+}
+
+.carousel-track {
+    display: flex;
+    gap: 14px;
+    padding: 14px;
+    will-change: transform;
+    animation: marquee linear infinite;
+}
+
+@keyframes marquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+}
+
+.carousel:hover .carousel-track {
+    animation-play-state: paused;
+}
+
+.carousel-card {
+    flex: 0 0 180px;
+    text-decoration: none;
+    color: inherit;
+    background: rgba(0,0,0,.35);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+.carousel-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 28px rgba(0,0,0,.35);
+    border-color: rgba(123,183,255,.35);
+}
+
+.carousel-card img {
+    display: block;
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    background: #0e1720;
+}
+
+.carousel-meta {
+    padding: 8px 10px 10px;
+}
+
+.carousel-meta .name {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.carousel-meta .by {
+    opacity: .75;
+    font-size: 12px;
+    margin-top: 2px;
+}

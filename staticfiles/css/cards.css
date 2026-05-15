@@ -1,0 +1,309 @@
+/* Skins container */
+.skins-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* Skin Card */
+.skin-card {
+    justify-content: space-between;
+    width: 200px;
+    height: auto;
+    border: 4px solid #009688;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    color: #ddd;
+    background: hsla(212, 40%, 20%, 0.597);
+    position: relative;
+    overflow: hidden;
+}
+
+.skin-card img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    display: block;
+    margin: auto;
+    transition: transform 0.2s ease-in-out;
+}
+
+.skin-card img:hover {
+    transform: scale(1.1);
+}
+
+.skin-card strong {
+    min-height: 30px;
+}
+
+.skin-card span {
+    min-height: 20px;
+}
+
+.skin-card strong, .skin-card span {
+    display: block;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.skin-card a.view-btn {
+    background-color: #795548;
+    padding: 14px 25px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    border-radius: 8px;
+    margin-top: auto;
+    padding-bottom: 10px;
+    color: #ddd;
+    transition: transform 0.2s ease-in-out;
+}
+
+.skin-card a.view-btn:hover {
+    transform: scale(1.1);
+    color: #fcfbfb;
+}
+
+/* Favorite button */
+.skin-card .fav-toggle,
+.skin-card .fav-static {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0,0,0,0.4);
+    border: none;
+    color: #fff;
+    border-radius: 999px;
+    padding: 4px 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.skin-card .fav-toggle:hover {
+    background: rgba(65, 64, 64, 0.6);
+}
+
+/* Vote row */
+.vote-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.vote-row button {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px;
+    padding: 4px 6px;
+    cursor: pointer;
+}
+
+.vote-row button:hover {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.4);
+    transform: scale(1.1);
+    transition: transform 0.2s ease-in-out;
+}
+
+.vote-row span {
+    min-width: 20px;
+    text-align: center;
+}
+
+.vote-row .vote-up.active,
+.vote-row .vote-down.active {
+    border: 2px solid #009688 !important;
+    background-color: rgba(0,150,136,0.25) !important;
+}
+
+/* Icon actions (top-right edit/delete) */
+.icon-actions {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    display: flex;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.icon-actions form {
+    all: unset;
+    display: inline;
+}
+
+.icon-actions form {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+    display: inline;
+}
+
+.icon-btn {
+    background: none;
+    text-decoration: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #ddd;
+    padding: 0;
+    margin: 0;
+    transition: transform 0.2s ease-in-out;
+}
+
+.icon-btn:hover {
+    transform: scale(1.2);
+}
+
+.edit-icon { color: #7bb1ff; }
+.edit-icon:hover { color: #a6ceff; }
+
+.delete-icon { color: #ff4d4d; }
+.delete-icon:hover { color: #ff7777; }
+
+.edit-btn:hover { background-color: #777; }
+
+.delete-form { display: inline; }
+
+/* Wear card button */
+.wear-card-btn {
+    position: absolute; top: 8px; left: 8px;
+    padding: 4px 8px; border-radius: 10px; cursor: pointer;
+    background: linear-gradient(180deg, rgba(251,191,36,.18), rgba(251,191,36,.10));
+    border: 1px solid rgba(251,191,36,.35); color: #fff;
+    transition: border-color .15s, transform .05s;
+}
+.wear-card-btn:hover { border-color: rgba(251,191,36,.6); }
+.wear-card-btn:active { transform: translateY(1px) scale(.98); }
+
+.wear-inline { display: flex; gap: 8px; align-items: center; }
+
+.wear-btn {
+    padding: 6px 10px;
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(251,191,36,.18), rgba(251,191,36,.10));
+    border: 1px solid rgba(251,191,36,.35);
+    color: #fff;
+    cursor: pointer;
+    transition: border-color .15s ease, transform .05s ease;
+}
+.wear-btn:hover { border-color: rgba(251,191,36,.6); }
+.wear-btn:active { transform: translateY(1px) scale(.98); }
+
+.wear-slot { padding: 4px 6px; border-radius: 8px; }
+
+.muted { color: #9aa4b2; font-size: .9rem; }
+
+dialog {
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 12px;
+    padding: 16px;
+    background: #111;
+    color: #fff;
+}
+dialog form { display: flex; flex-direction: column; gap: 8px; min-width: 260px; }
+dialog .row { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* Player card */
+.player-card {
+    background: #22303f;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.player-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+}
+
+.player-card strong {
+    font-size: 16px;
+    color: #fff;
+}
+
+.player-card span {
+    font-size: 13px;
+    color: #9bb;
+}
+
+.player-card .view-btn {
+    margin-top: 8px;
+    align-self: flex-start;
+    background: #1e90ff;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.player-card .view-btn:hover {
+    background: #0d6efd;
+}
+
+/* Tag bubbles */
+.tag-bubbles {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin: 20px 0 30px 0;
+}
+
+.tag-bubble {
+    display: inline-block;
+    padding: 6px 18px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    background-color: #4a90e2;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: relative;
+}
+
+.tag-bubble::before {
+    content: "#";
+    margin-right: 4px;
+    color: white;
+}
+
+.selectable-tag {
+    cursor: pointer;
+    opacity: 0.7;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.selectable-tag:hover {
+    transform: scale(1.05);
+    opacity: 1;
+}
+
+.selectable-tag.active {
+    opacity: 1;
+    border: 1px solid #00ffcc;
+    box-shadow: 0 0 10px rgba(0,255,204,0.6);
+}

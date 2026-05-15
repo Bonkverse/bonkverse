@@ -1,54 +1,58 @@
 {% load static %}
 
 <nav class="navbar">
-    <a href="{% url 'home' %}" class="home-button">
-        <img src="{% static 'images/BonkverseLogo.png' %}" alt="Home" class="home-icon">
-    </a>
 
+    <!-- Top bar: always visible -->
+    <div class="navbar-topbar">
+        <a href="{% url 'home' %}" class="navbar-logo">
+            <img src="{% static 'images/BonkverseLogo.png' %}" alt="Bonkverse Home" class="home-icon">
+            <span class="navbar-brand-name">Bonkverse</span>
+        </a>
+        <button class="nav-hamburger" id="nav-toggle" aria-label="Toggle navigation">☰</button>
+    </div>
 
-    <ul class="nav-links">
-        <li><a href="{% url 'home' %}">Home</a></li>
-        <li><a href="{% url 'staff' %}">Our Team</a></li>
-        <li><a href="{% url 'changelog' %}">Changelog</a></li>
-        
-        {% if user.is_authenticated %}
-            <li><a href="{{ BONKVERSE_EDITOR_URL }}">Editor</a></li>
-        {% endif %}
+    <!-- Desktop: nav links row -->
+    <ul class="nav-links" id="nav-links">
 
-        
+        <!-- Search: core feature, direct link -->
+        <li><a href="{% url 'search_skins' %}">Search</a></li>
+
+        <!-- Leaderboards: merges Skin + Win/Loss -->
         <li class="nav-item">
-            <a href="#" class="nav-link">Discord ▾</a>
+            <a href="#" class="nav-link dropdown-trigger">Leaderboards ▾</a>
             <ul class="dropdown-menu">
-            <li><a href="{% url 'list' %}">Server Search</a></li>
-            <li><a href="{% url 'submit_server' %}">Submit Server</a></li>
-            </ul>
-        </li>
-        <!-- <li><a href="{% url 'matchmaking' %}">1v1 Matchmaking</a></li> -->
-
-        <li class="nav-item">
-            <a href="#" class="nav-link">Skin Leaderboards ▾</a>
-            <ul class="dropdown-menu">
-            <li><a href="{% url 'leaderboards_upvoted' %}">Most Upvoted</a></li>
-            <li><a href="{% url 'leaderboards_downvoted' %}">Most Downvoted</a></li>
-            <li><a href="{% url 'leaderboards_favorited' %}">Most Favorited</a></li>
-            </ul>
-        </li>
-
-        <li class="nav-item">
-            <a href="#" class="nav-link">Win/Loss Leaderboards ▾</a>
-            <ul class="dropdown-menu">
-            <li><a href="{% url 'wins_hub' 'today' %}">Wins</a></li>
-            <li><a href="{% url 'losses_hub' 'today' %}">Losses</a></li>
-            <li><a href="{% url 'winrate_hub' 'today' %}">Win/Loss % </a></li>
+                <li class="dropdown-group-label">Skins</li>
+                <li><a href="{% url 'leaderboards_upvoted' %}">Most Upvoted</a></li>
+                <li><a href="{% url 'leaderboards_downvoted' %}">Most Downvoted</a></li>
+                <li><a href="{% url 'leaderboards_favorited' %}">Most Favorited</a></li>
+                <li class="dropdown-divider"></li>
+                <li class="dropdown-group-label">Win/Loss</li>
+                <li><a href="{% url 'wins_hub' 'today' %}">Wins</a></li>
+                <li><a href="{% url 'losses_hub' 'today' %}">Losses</a></li>
+                <li><a href="{% url 'winrate_hub' 'today' %}">Win Rate</a></li>
             </ul>
         </li>
 
+        <!-- Discord -->
         <li class="nav-item">
-            <a href="#" class="nav-link">Search ▾</a>
+            <a href="#" class="nav-link dropdown-trigger">Discord ▾</a>
             <ul class="dropdown-menu">
-                <li><a href="{% url 'search_skins' %}">Skins</a></li>
+                <li><a href="{% url 'list' %}">Server Search</a></li>
+                <li><a href="{% url 'submit_server' %}">Submit Server</a></li>
+                <li><a href="https://discord.gg/2Zx7Cwhr4Z" target="_blank">Join Our Discord!</a></li>
+            </ul>
+        </li>
+
+        <!-- Community: low-traffic pages grouped -->
+        <li class="nav-item">
+            <a href="#" class="nav-link dropdown-trigger">Community ▾</a>
+            <ul class="dropdown-menu">
                 <li><a href="{% url 'players_page' %}">Bonk Players</a></li>
                 <li><a href="{% url 'flash_friends_page' %}">Flash Friends</a></li>
+                <li><a href="{% url 'map_decode_page' %}">Map Decoder</a></li>
+                <li><a href="{% url 'changelog' %}">Changelog</a></li>
+                <li><a href="{% url 'staff' %}">Our Team</a></li>
+                <li><a href="https://www.buymeacoffee.com/misterurias" target="_blank">Support Bonkverse!</a></li>
             </ul>
         </li>
 
@@ -56,18 +60,84 @@
             <li><a href="{% url 'upload_skin' %}">Upload Skin</a></li>
         {% endif %}
 
-         <li class="nav-item">
-            <a href="#" class="nav-link">Tools ▾</a>
-            <ul class="dropdown-menu">
-                <li><a href="{% url 'map_decode_page' %}">Map Decoder</a></li>
-            </ul>
-        </li>
+        <li class="nav-divider"></li>
 
         {% if user.is_authenticated %}
-            <li><a href="{% url 'my_profile' %}" class="username-link">My Profile</a></li>
-            <li><a href="{% url 'logout' %}">Logout</a></li>
+            <!-- Profile dropdown: groups auth actions -->
+            <li class="nav-item">
+                <a href="#" class="nav-link username-link dropdown-trigger">My Profile ▾</a>
+                <ul class="dropdown-menu dropdown-menu-right">
+                    <li><a href="{% url 'my_profile' %}">My Profile</a></li>
+                    <li><a href="{{ BONKVERSE_EDITOR_URL }}">Skin Editor</a></li>
+                    <li class="dropdown-divider"></li>
+                    <li><a href="{% url 'logout' %}" class="dropdown-logout">Logout</a></li>
+                </ul>
+            </li>
         {% else %}
-            <li><a href="{% url 'login' %}">Login</a></li>
+            <li><a href="{% url 'login' %}" class="nav-login">Login</a></li>
         {% endif %}
+
     </ul>
+
+    <!-- Mobile overlay -->
+    <div class="mobile-overlay" id="mobile-overlay">
+        <div class="mobile-overlay-inner">
+
+            <button class="mobile-close" id="mobile-close" aria-label="Close menu">✕</button>
+
+            <ul class="mobile-nav-links">
+
+                <li><a href="{% url 'search_skins' %}">Search Skins</a></li>
+
+                <li class="mobile-nav-item">
+                    <button class="mobile-dropdown-trigger">Leaderboards <span class="mobile-chevron">▾</span></button>
+                    <ul class="mobile-dropdown">
+                        <li class="mobile-group-label">Skins</li>
+                        <li><a href="{% url 'leaderboards_upvoted' %}">Most Upvoted</a></li>
+                        <li><a href="{% url 'leaderboards_downvoted' %}">Most Downvoted</a></li>
+                        <li><a href="{% url 'leaderboards_favorited' %}">Most Favorited</a></li>
+                        <li class="mobile-group-label">Win/Loss</li>
+                        <li><a href="{% url 'wins_hub' 'today' %}">Wins</a></li>
+                        <li><a href="{% url 'losses_hub' 'today' %}">Losses</a></li>
+                        <li><a href="{% url 'winrate_hub' 'today' %}">Win Rate</a></li>
+                    </ul>
+                </li>
+
+                <li class="mobile-nav-item">
+                    <button class="mobile-dropdown-trigger">Discord <span class="mobile-chevron">▾</span></button>
+                    <ul class="mobile-dropdown">
+                        <li><a href="{% url 'list' %}">Server Search</a></li>
+                        <li><a href="{% url 'submit_server' %}">Submit Server</a></li>
+                        <li><a href="https://discord.gg/2Zx7Cwhr4Z" target="_blank">Join Our Discord!</a></li>
+                    </ul>
+                </li>
+
+                <li class="mobile-nav-item">
+                    <button class="mobile-dropdown-trigger">Community <span class="mobile-chevron">▾</span></button>
+                    <ul class="mobile-dropdown">
+                        <li><a href="{% url 'players_page' %}">Bonk Players</a></li>
+                        <li><a href="{% url 'flash_friends_page' %}">Flash Friends</a></li>
+                        <li><a href="{% url 'map_decode_page' %}">Map Decoder</a></li>
+                        <li><a href="{% url 'changelog' %}">Changelog</a></li>
+                        <li><a href="{% url 'staff' %}">Our Team</a></li>
+                        <li><a href="https://www.buymeacoffee.com/misterurias" target="_blank">Support Bonkverse!</a></li>
+                    </ul>
+                </li>
+
+                {% if user.is_authenticated %}
+                    <li><a href="{% url 'upload_skin' %}">Upload Skin</a></li>
+                {% endif %}
+
+                {% if user.is_authenticated %}
+                    <li><a href="{% url 'my_profile' %}" class="mobile-profile-link">My Profile</a></li>
+                    <li><a href="{{ BONKVERSE_EDITOR_URL }}" >Skin Editor</a></li>
+                    <li><a href="{% url 'logout' %}" class="mobile-logout">Logout</a></li>
+                {% else %}
+                    <li><a href="{% url 'login' %}" class="mobile-login">Login</a></li>
+                {% endif %}
+
+            </ul>
+        </div>
+    </div>
+
 </nav>

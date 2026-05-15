@@ -310,3 +310,35 @@ class DiscordServerSnapshot(models.Model):
         indexes = [
             models.Index(fields=["server", "recorded_at"]),
         ]
+
+class SkinReport(models.Model):
+    REASON_CHOICES = [
+        ('inappropriate', 'Inappropriate content'),
+        ('stolen',        'Stolen / reposted without credit'),
+        ('spam',          'Spam or low-effort'),
+        ('broken',        'Broken / not loading'),
+        ('other',         'Other'),
+    ]
+
+    skin       = models.ForeignKey(Skin, on_delete=models.CASCADE, related_name='reports')
+    reporter   = models.ForeignKey(
+        'BonkUser', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='skin_reports'
+    )  # null = anonymous report
+    reason     = models.CharField(max_length=32, choices=REASON_CHOICES)
+    details    = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved   = models.BooleanField(default=False)
+
+    class Meta:
+        # One report per user per skin (authenticated users only)
+        constraints = [
+            models.UniqueConstraint(
+                fields=['skin', 'reporter'],
+                condition=models.Q(reporter__isnull=False),
+                name='one_report_per_user_per_skin'
+            )
+        ]
+
+    def __str__(self):
+        return f"Report on {self.skin.name} ({self.reason})"

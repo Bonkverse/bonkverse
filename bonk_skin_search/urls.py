@@ -45,6 +45,7 @@ from skins.apis.index import index
 from skins.apis.publish_skin import publish_skin
 from skins.share_skin import share_skin
 from skins.apis.auth.who_am_i import me
+from skins.report_skin import report_skin
 from skins.utils.tools.map_decode import map_decode_page, api_map_decode
 from django.views.static import serve
 
@@ -123,6 +124,8 @@ urlpatterns = [
 
     path("tools/map-decode/", map_decode_page, name="map_decode_page"),
     path("api/tools/map-decode/", api_map_decode, name="api_map_decode"),
+
+    path("api/skins/<int:skin_id>/report/", report_skin, name="report_skin"),
 
 
 

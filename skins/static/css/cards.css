@@ -1,0 +1,508 @@
+/* =====================
+   Layout: Skin Grid
+   4 columns max: 4×280 + 3×20 gap + 48 padding = 1228px
+   ===================== */
+.skins-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    max-width: 1228px;
+    gap: 20px;
+    padding: 0 24px;
+    margin: 0 auto;
+}
+
+
+/* =====================
+   Component: Skin Card
+   ===================== */
+
+.skin-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    border: 2px solid #009688;
+    border-radius: 12px;
+    padding: 14px;
+    padding-top: 36px;
+    background: hsla(212, 40%, 20%, 0.597);
+    position: relative;
+    color: #ddd;
+}
+
+.skin-card img {
+    width: 160px;
+    height: 160px;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out;
+}
+
+.skin-card img:hover {
+    transform: scale(1.05);
+}
+
+.skin-card strong {
+    font-size: 1.3rem;
+    color: #fff;
+    margin-top: 16px;
+}
+
+.skin-card span {
+    font-size: 0.95rem;
+    min-height: 20px;
+    color: #9aa4b2;
+}
+
+.skin-card strong, .skin-card span {
+    display: block;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── Top-left: star + ··· ── */
+.card-top-left {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* ── Top-right: reserved for future use ── */
+.card-top-right {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* ── Lucide icon base sizing ── */
+.skin-card i[data-lucide] {
+    width: 15px;
+    height: 15px;
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+/* Favorite toggle */
+.skin-card .fav-toggle{
+    background: rgba(0,0,0,0.35);
+    border: none;
+    color: #c9d1d9;
+    border-radius: 8px;
+    padding: 4px 7px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.skin-card .fav-toggle:hover {
+    background: rgba(255,255,255,0.12);
+    color: #ffc107;
+}
+
+/* Filled gold star when favorited */
+.skin-card .fav-toggle.active {
+    color: #ffc107;
+}
+
+.skin-card .fav-toggle.active i[data-lucide="star"] {
+    fill: #ffc107;
+    color: #ffc107;
+}
+
+/* ··· More menu */
+.card-more-menu {
+    position: relative;
+}
+
+.card-more-btn {
+    background: rgba(0,0,0,0.35);
+    border: none;
+    color: #c9d1d9;
+    border-radius: 8px;
+    padding: 5px 7px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.card-more-btn i[data-lucide] {
+    width: 16px;
+    height: 16px;
+}
+
+.card-more-btn:hover {
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+}
+
+/* Dropdown panel */
+.card-more-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    background: #1a2d40;
+    border: 1px solid rgba(0,150,136,0.35);
+    border-top: 2px solid #009688;
+    border-radius: 0 0 8px 8px;
+    min-width: 210px;
+    z-index: 500;
+    padding: 4px 0;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    list-style: none;
+    margin: 0;
+    text-align: left;
+}
+
+.card-more-dropdown.open {
+    display: block;
+}
+
+.card-more-dropdown li a,
+.card-more-dropdown li button {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    color: #c9d1d9;
+    font-size: 13px;
+    font-family: "Oxanium", sans-serif;
+    padding: 10px 14px;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s ease, color 0.15s ease;
+    box-sizing: border-box;
+}
+
+/* Icons inside dropdown */
+.card-more-dropdown i[data-lucide] {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    opacity: 0.75;
+}
+
+.card-more-dropdown li a:hover,
+.card-more-dropdown li button:hover {
+    background: rgba(0,150,136,0.15);
+    color: #fff;
+}
+
+.card-more-dropdown li a:hover i,
+.card-more-dropdown li button:hover i {
+    opacity: 1;
+}
+
+.card-report-link {
+    color: #ff6b6b !important;
+}
+
+.card-report-link:hover {
+    background: rgba(255,107,107,0.1) !important;
+    color: #ff8f8f !important;
+}
+
+.more-menu-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.08);
+    margin: 4px 0;
+    pointer-events: none;
+}
+
+/* Delete button inside ··· — red like report */
+.card-delete-btn {
+    color: #ff6b6b !important;
+}
+
+.card-delete-btn:hover {
+    background: rgba(255,107,107,0.1) !important;
+    color: #ff8f8f !important;
+}
+
+/* ── Bottom action button ── */
+.card-action-btn {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 11px 0;
+    text-align: center;
+    text-decoration: none;
+    display: block;
+    border-radius: 8px;
+    margin-top: auto;
+    background-color: #795548;
+    color: #ddd;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: "Oxanium", sans-serif;
+    transition: background-color 0.2s ease;
+}
+
+.card-action-btn:hover {
+    background-color: #a1704f;
+    color: #fff;
+}
+
+/* Vote row */
+.vote-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.vote-row button {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px;
+    padding: 5px 7px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.vote-row button i[data-lucide] {
+    width: 14px;
+    height: 14px;
+}
+
+.vote-row button:hover {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.4);
+    transform: scale(1.1);
+}
+
+.vote-row span {
+    min-width: 20px;
+    text-align: center;
+    font-size: 0.9rem;
+    color: #c9d1d9;
+}
+
+/* Favorite static (logged out) — no button appearance */
+.skin-card .fav-static {
+    background: none;
+    border: none;
+    color: #6b7280;
+    padding: 4px 7px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: default;
+}
+
+/* Vote static (logged out) — no button appearance */
+.vote-static {
+    background: none;
+    border: none;
+    padding: 5px 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    cursor: default;
+}
+
+.vote-static i[data-lucide] {
+    width: 14px;
+    height: 14px;
+}
+
+.vote-row .vote-up.active {
+    border: 2px solid #009688 !important;
+    background-color: rgba(0,150,136,0.25) !important;
+    color: #009688;
+}
+
+.vote-row .vote-up.active i {
+    fill: #009688;
+    color: #009688;
+}
+
+.vote-row .vote-down.active {
+    border: 2px solid #ef4444 !important;
+    background-color: rgba(239,68,68,0.15) !important;
+    color: #ef4444;
+}
+
+.vote-row .vote-down.active i {
+    fill: #ef4444;
+    color: #ef4444;
+}
+
+/* Icon actions (top-right edit/delete — profile/admin pages) */
+.icon-actions {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    display: flex;
+    gap: 6px;
+}
+
+.icon-actions form {
+    all: unset;
+    display: inline;
+}
+
+.icon-btn {
+    background: none;
+    text-decoration: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #ddd;
+    padding: 0;
+    margin: 0;
+    transition: transform 0.2s ease-in-out;
+}
+
+.icon-btn:hover    { transform: scale(1.2); }
+.edit-icon         { color: #7bb1ff; }
+.edit-icon:hover   { color: #a6ceff; }
+.delete-icon       { color: #ff4d4d; }
+.delete-icon:hover { color: #ff7777; }
+.edit-btn:hover    { background-color: #777; }
+.delete-form       { display: inline; }
+
+/* Wear inline (skin detail page) */
+.wear-inline { display: flex; gap: 8px; align-items: center; }
+
+.wear-btn {
+    padding: 6px 10px;
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(251,191,36,.18), rgba(251,191,36,.10));
+    border: 1px solid rgba(251,191,36,.35);
+    color: #fff;
+    cursor: pointer;
+    transition: border-color .15s ease, transform .05s ease;
+}
+.wear-btn:hover  { border-color: rgba(251,191,36,.6); }
+.wear-btn:active { transform: translateY(1px) scale(.98); }
+
+.wear-slot { padding: 4px 6px; border-radius: 8px; }
+
+.muted { color: #9aa4b2; font-size: .9rem; }
+
+dialog {
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 12px;
+    padding: 16px;
+    background: #111;
+    color: #fff;
+}
+dialog form { display: flex; flex-direction: column; gap: 8px; min-width: 260px; }
+dialog .row  { display: flex; gap: 8px; justify-content: flex-end; }
+
+
+/* =====================
+   Component: Player Card
+   ===================== */
+
+.player-card {
+    background: #22303f;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.player-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+}
+
+.player-card strong { font-size: 16px; color: #fff; }
+.player-card span   { font-size: 13px; color: #9bb; }
+
+.player-card .view-btn {
+    margin-top: 8px;
+    align-self: flex-start;
+    background: #1e90ff;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.player-card .view-btn:hover { background: #0d6efd; }
+
+
+/* =====================
+   Component: Tag Bubbles
+   ===================== */
+
+.tag-bubbles {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin: 20px 0 30px 0;
+}
+
+.tag-bubble {
+    display: inline-block;
+    padding: 6px 18px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    background-color: #4a90e2;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: relative;
+}
+
+.tag-bubble::before {
+    content: "#";
+    margin-right: 4px;
+    color: white;
+}
+
+.selectable-tag {
+    cursor: pointer;
+    opacity: 0.7;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.selectable-tag:hover {
+    transform: scale(1.05);
+    opacity: 1;
+}
+
+.selectable-tag.active {
+    opacity: 1;
+    border: 1px solid #00ffcc;
+    box-shadow: 0 0 10px rgba(0,255,204,0.6);
+}
