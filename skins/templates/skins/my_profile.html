@@ -18,11 +18,11 @@
              data-id="{{ skin.id }}"
              data-wear-url="{% if skin.id %}{% url 'wear_skin' skin.id %}{% endif %}">
 
-          <!-- Top-left: star (static — already favorited) + ··· -->
           <div class="card-top-left">
+            {# fav_count_val is pre-computed in the view — no DB hit here #}
             <span class="fav-static">
               <i data-lucide="star" style="fill:#ffc107;color:#ffc107;"></i>
-              {{ skin.favorited_by.count }}
+              {{ skin.fav_count_val }}
             </span>
 
             <div class="card-more-menu">
@@ -56,17 +56,19 @@
             </div>
           </div>
 
-          <!-- Top-right: empty, reserved -->
           <div class="card-top-right"></div>
 
           <strong title="{{ skin.name }}">{{ skin.name|truncatechars:20 }}</strong>
           <span title="{{ skin.creator }}">by {{ skin.creator|truncatechars:20 }}</span>
 
-          <img src="{{ skin.image_url|default:'https://bonkleagues.io/api/avatar.svg?skinCode=DEFAULT' }}"
-               alt="{{ skin.name }}" width="100"
-               onclick="showImage(`{{ skin.image_url }}`)">
+          <img src="{{ skin.image_url|default:'/static/images/default_skin.png' }}"
+               alt="{{ skin.name }}"
+               width="160" height="160"
+               loading="lazy"
+               decoding="async"
+               onerror="this.onerror=null; this.src='/static/images/default_skin.png';"
+               onclick="showImage(`{{ skin.image_url|default:'/static/images/default_skin.png' }}`)">
 
-          <!-- Vote counts (static — no voting on profile page) -->
           <div class="vote-row">
             <span class="vote-static"><i data-lucide="thumbs-up"></i></span>
             <span>{{ skin.upvotes }}</span>
@@ -95,7 +97,6 @@
              data-id="{{ skin.id }}"
              data-wear-url="{% if skin.id %}{% url 'wear_skin' skin.id %}{% endif %}">
 
-          <!-- Top-left: ··· with edit + delete + extras -->
           <div class="card-top-left">
             <div class="card-more-menu">
               <button class="card-more-btn" title="More options">
@@ -115,7 +116,6 @@
                   </button>
                 </li>
                 <li class="more-menu-divider"></li>
-                
                 {% if skin.link %}
                 <li>
                   <a href="{{ skin.link }}" target="_blank" rel="noopener">
@@ -142,17 +142,19 @@
             </div>
           </div>
 
-          <!-- Top-right: empty, reserved -->
           <div class="card-top-right"></div>
 
           <strong title="{{ skin.name }}">{{ skin.name|truncatechars:20 }}</strong>
           <span title="{{ skin.creator }}">by {{ skin.creator|truncatechars:20 }}</span>
 
-          <img src="{{ skin.image_url|default:'https://bonkleagues.io/api/avatar.svg?skinCode=DEFAULT' }}"
-               alt="{{ skin.name }}" width="100"
-               onclick="showImage(`{{ skin.image_url }}`)">
+          <img src="{{ skin.image_url|default:'/static/images/default_skin.png' }}"
+               alt="{{ skin.name }}"
+               width="160" height="160"
+               loading="lazy"
+               decoding="async"
+               onerror="this.onerror=null; this.src='/static/images/default_skin.png';"
+               onclick="showImage(`{{ skin.image_url|default:'/static/images/default_skin.png' }}`)">
 
-          <!-- Vote counts (static) -->
           <div class="vote-row">
             <span class="vote-static"><i data-lucide="thumbs-up"></i></span>
             <span>{{ skin.upvotes }}</span>
@@ -169,7 +171,6 @@
     </div>
   {% endif %}
 
-  <!-- Pagination -->
   {% if skins.has_other_pages %}
     <div class="pagination">
       {% if skins.has_previous %}
@@ -212,7 +213,7 @@
     </div>
   </div>
 
-  <!-- Bonk login modal (wear flow) -->
+  <!-- Bonk login modal -->
   <dialog id="bonk-login-modal">
     <form id="bonk-login-form" method="dialog" onsubmit="return doBonkLogin(event)">
       <h3>Bonk.io Login</h3>
@@ -234,7 +235,6 @@
 
 {% block extra_scripts %}
 <script>
-// ── Helpers ───────────────────────────────────────────────────
 function getCSRF() {
   const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
   return m ? decodeURIComponent(m[1]) : '';
@@ -272,7 +272,7 @@ async function postFormNoRedirect(url, data) {
   return { ok: r.ok, status: r.status, json };
 }
 
-// ── ··· More menu ─────────────────────────────────────────────
+// ··· More menu
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll('.card-more-btn').forEach(btn => {
     btn.addEventListener('click', function(e) {
@@ -284,7 +284,6 @@ document.addEventListener("DOMContentLoaded", () => {
       dropdown.classList.toggle('open');
     });
   });
-
   document.querySelectorAll('.card-more-dropdown').forEach(d => {
     d.addEventListener('click', e => e.stopPropagation());
   });
@@ -294,7 +293,7 @@ document.addEventListener('click', () => {
   document.querySelectorAll('.card-more-dropdown.open').forEach(d => d.classList.remove('open'));
 });
 
-// ── Delete modal ──────────────────────────────────────────────
+// Delete modal
 const deleteModal    = document.getElementById('delete-modal');
 const deleteForm     = document.getElementById('delete-form');
 const deleteSkinName = document.getElementById('delete-skin-name');
@@ -316,7 +315,6 @@ document.getElementById('delete-cancel-btn').addEventListener('click', closeDele
 deleteModal.addEventListener('click', e => { if (e.target === deleteModal) closeDeleteModal(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDeleteModal(); });
 
-// Wire up delete buttons inside ··· menus
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll('.card-delete-btn').forEach(btn => {
     btn.addEventListener('click', function(e) {
@@ -327,7 +325,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-// ── Wear flow ─────────────────────────────────────────────────
+// Wear flow
 let pendingWearCard = null;
 const loginModal = document.getElementById('bonk-login-modal');
 

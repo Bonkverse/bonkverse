@@ -19,29 +19,27 @@
 {% block content %}
 <div class="skin-detail-container">
 
-  <!-- Back link -->
   <a href="{% url 'search_skins' %}" class="skin-back-link">
     <i data-lucide="arrow-left"></i> Back to search
   </a>
 
-  <!-- ── Hero: two-column ─────────────────────────────────── -->
   <div class="skin-hero">
 
     <!-- Left: image -->
     <div class="skin-image-panel">
-      <img src="{{ skin.image_url }}" alt="{{ skin.name }}" class="skin-image-large">
+      <img src="{{ skin.image_url }}" alt="{{ skin.name }}" class="skin-image-large"
+           width="512" height="512"
+           onerror="this.onerror=null; this.src='/static/images/default_skin.png';">
     </div>
 
-    <!-- Right: all meta + actions -->
+    <!-- Right: meta + actions -->
     <div class="skin-meta-panel">
 
-      <!-- Name + creator -->
       <div>
         <h1 class="skin-title">{{ skin.name }}</h1>
         <p class="skin-creator">by <strong>{{ skin.creator }}</strong></p>
       </div>
 
-      <!-- Primary action: Wear -->
       {% if user.is_authenticated %}
         <button class="skin-wear-btn" id="wear-btn" onclick="startWear()">
           <i data-lucide="shirt"></i>
@@ -55,14 +53,14 @@
         </a>
       {% endif %}
 
-      <!-- Favorite + votes in one compact row -->
       {% if user.is_authenticated %}
+        {# is_favorited, fav_count, current_vote are all pre-computed in the view — no DB hits here #}
         <div class="skin-action-row">
-          <button class="skin-fav-btn {% if user in skin.favorited_by.all %}active{% endif %}"
+          <button class="skin-fav-btn {% if is_favorited %}active{% endif %}"
                   id="fav-btn" onclick="toggleFavorite()">
             <i data-lucide="star"></i>
-            <span id="fav-label">{% if user in skin.favorited_by.all %}Favorited{% else %}Favorite{% endif %}</span>
-            <span class="skin-fav-count" id="fav-count">{{ skin.favorited_by.count }}</span>
+            <span id="fav-label">{% if is_favorited %}Favorited{% else %}Favorite{% endif %}</span>
+            <span class="skin-fav-count" id="fav-count">{{ fav_count }}</span>
           </button>
 
           <button class="skin-vote-btn vote-up {% if current_vote == 'up' %}active{% endif %}"
@@ -78,21 +76,13 @@
           </button>
         </div>
       {% else %}
-        <!-- Logged out: flat stat display -->
         <div class="skin-action-row-static">
-          <span class="skin-vote-static">
-            <i data-lucide="star"></i> {{ skin.favorited_by.count }}
-          </span>
-          <span class="skin-vote-static">
-            <i data-lucide="thumbs-up"></i> {{ skin.upvotes }}
-          </span>
-          <span class="skin-vote-static">
-            <i data-lucide="thumbs-down"></i> {{ skin.downvotes }}
-          </span>
+          <span class="skin-vote-static"><i data-lucide="star"></i> {{ fav_count }}</span>
+          <span class="skin-vote-static"><i data-lucide="thumbs-up"></i> {{ skin.upvotes }}</span>
+          <span class="skin-vote-static"><i data-lucide="thumbs-down"></i> {{ skin.downvotes }}</span>
         </div>
       {% endif %}
 
-      <!-- Quick links -->
       <div class="skin-links">
         {% if skin.link %}
           <a href="{{ skin.link }}" target="_blank" rel="noopener" class="skin-link-chip">
@@ -100,7 +90,7 @@
           </a>
         {% endif %}
         {% if user.is_authenticated %}
-          <a href="{{ BONKVERSE_EDITOR_URL }}?skin={{ skin.skin_code|urlencode }}" target="_blank" rel="noopener" class="skin-link-chip">
+          <a href="{{ editor_url }}" target="_blank" rel="noopener" class="skin-link-chip">
             <i data-lucide="pencil"></i> Open in Editor
           </a>
           <a href="{{ share_url }}" class="skin-link-chip">
@@ -115,7 +105,6 @@
     </div>
   </div>
 
-  <!-- ── Description ──────────────────────────────────────── -->
   {% if skin.description %}
   <div class="skin-section">
     <h2 class="skin-section-title">Description</h2>
@@ -123,7 +112,6 @@
   </div>
   {% endif %}
 
-  <!-- ── Tags ─────────────────────────────────────────────── -->
   {% if skin.labels %}
   <div class="skin-section">
     <h2 class="skin-section-title">Tags</h2>
@@ -139,7 +127,7 @@
 
 </div>
 
-<!-- ── Report Modal ──────────────────────────────────────── -->
+<!-- Report Modal -->
 <div class="modal-overlay" id="report-modal">
   <div class="modal-box" style="max-width: 480px;">
     <div class="modal-header">
@@ -170,7 +158,6 @@
   </div>
 </div>
 
-<!-- ── Bonk login modal ──────────────────────────────────── -->
 {% if user.is_authenticated %}
 <dialog id="bonk-login-modal">
   <form id="bonk-login-form" method="dialog" onsubmit="return doBonkLogin(event)">
@@ -210,7 +197,6 @@ async function postForm(url, data) {
 }
 
 {% if user.is_authenticated %}
-// ── Wear ─────────────────────────────────────────────────────
 const wearMsg    = document.getElementById('wear-msg');
 const loginModal = document.getElementById('bonk-login-modal');
 
@@ -238,7 +224,6 @@ async function doBonkLogin(e) {
   return false;
 }
 
-// ── Favorite ──────────────────────────────────────────────────
 async function toggleFavorite() {
   const { ok, json } = await postForm("/api/skins/{{ skin.id }}/favorite/", {});
   if (!ok) return;
@@ -247,7 +232,6 @@ async function toggleFavorite() {
   document.getElementById('fav-btn').classList.toggle('active', json.favorited);
 }
 
-// ── Vote ──────────────────────────────────────────────────────
 async function castVote(dir) {
   const { ok, json } = await postForm("/api/skins/{{ skin.id }}/vote/", { vote: dir });
   if (!ok) return;
@@ -258,7 +242,6 @@ async function castVote(dir) {
 }
 {% endif %}
 
-// ── Report modal ──────────────────────────────────────────────
 const reportModal = document.getElementById('report-modal');
 
 function openReportModal() {
