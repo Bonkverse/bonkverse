@@ -4,78 +4,552 @@
 
 {% block content %}
 
-    <h1>Bonk.io Skin Search</h1>
-    <h2>🔥 Skins uploaded today: {{ daily_skin_count }} 🔥 Total Skins: {{total_skin_count}} 🔥</h2>
-    <form method="GET" action="{% url 'search_skins' %}">
-        <input type="text" name="q" placeholder="Search skins..." value="{{ query }}">
-        <br>
-        <br>
+  <h1>Bonk.io Skin Search</h1>
+  <h2>🔥 Skins uploaded today: {{ daily_skin_count }} 🔥 Total Skins: {{ total_skin_count }} 🔥</h2>
+
+  <div class="hero-inner">
+    <div class="search-row">
+      <form id="searchForm" method="GET" action="{% url 'search_skins' %}" class="hero-search">
+        <input type="text" name="q" value="{{ query }}" placeholder="Search skins...">
         <button type="submit">Search</button>
-    </form>
-    <br>
-    <br>
+      </form>
 
-    <div class="skins-container">
-        {% for skin in skins %}
-            <div class="skin-card">
-                <img crossorigin="anonymous" src="{{ skin.image_url|default:'https://bonkleagues.io/api/avatar.svg?skinCode=CgcDYQACCQkBCgcFYWwAAQBNPlt5PUI19d8%2FGMUDPsJvGgAAAAAAAAoFAAEATT5beT1CNfXfvvn8kL80i70BAAAAAAAKBQABAEs%2BgkonQjVq%2FL2vivk9L4r5AAAAzxsPCgUAAQANP1yl2D9VbKUAAAAAAAAAAAAAAM8bDwAAAAA%3D' }}"
-                    alt="{{ skin.name }}" width="100"
-                    onclick="showImage(`{{ skin.image_url}}`)">
+      <br><br>
 
-                
-                <br>
-                <strong title="{{ skin.name }}">
-                    {{ skin.name|truncatechars:20 }}
-                <br>
-                </strong> by 
-                <span title="{{ skin.creator }}">
-                    {{ skin.creator|truncatechars:20 }}
-                </span>
-                <br>
-                <span class="votes">🔼 {{ skin.upvotes }} 🔽 {{ skin.downvotes }}</span>
-                <br>
-                {% if skin.id %}
-                    <a href="{{ skin.get_absolute_url }}" class="view-btn">View Skin Details</a>
-                {% else %}
-                    <span style="color: red;">⚠️ No ID</span>
-                {% endif %}
-            </div>
-        {% endfor %}
+      {% if query %}
+        <div class="search-controls-inline">
+          <label>Search By:</label>
+          <select name="mode" form="searchForm">
+            <option value="relevance" {% if mode == "relevance" %}selected{% endif %}>Relevance</option>
+            <option value="name" {% if mode == "name" %}selected{% endif %}>Name</option>
+            <option value="creator" {% if mode == "creator" %}selected{% endif %}>Creator</option>
+            <option value="tags" {% if mode == "tags" %}selected{% endif %}>Tags</option>
+            <option value="description" {% if mode == "description" %}selected{% endif %}>Description</option>
+          </select>
+
+          <label>Sort By:</label>
+          <select name="sort" form="searchForm">
+            <option value="relevance" {% if sort == "relevance" %}selected{% endif %}>Relevance</option>
+            <option value="newest" {% if sort == "newest" %}selected{% endif %}>Newest</option>
+            <option value="favorites" {% if sort == "favorites" %}selected{% endif %}>Most Favorited</option>
+            <option value="upvotes" {% if sort == "upvotes" %}selected{% endif %}>Most Upvoted</option>
+          </select>
+        </div>
+      {% endif %}
     </div>
-    
-    <!-- 🔹 Modal (Hidden by Default) -->
-    <div id="imageModal" class="modal" onclick="closeImage()">
-        <span class="close">&times;</span>
-        <img class="modal-content" id="zoomedImage">
-    </div>    
+  </div>
 
-    {% if skins.has_other_pages %}
+
+  <div class="skins-container">
+    {% for skin in skins %}
+      <div class="skin-card"
+           data-id="{{ skin.id }}"
+           data-vote="{{ skin.current_vote|default:'' }}"
+           data-favorited="{% if user.is_authenticated and user in skin.favorited_by.all %}1{% else %}0{% endif %}">
+
+        <!-- Top-left: Star + ··· menu -->
+        <div class="card-top-left">
+          {% if user.is_authenticated %}
+            <button class="fav-toggle {% if user in skin.favorited_by.all %}active{% endif %}" title="Favorite">
+              <i data-lucide="star" class="fav-icon-svg"></i>
+              <span class="fav-count">{{ skin.favorited_by.count }}</span>
+            </button>
+          {% else %}
+            <span class="fav-static" title="Login to favorite">
+              <i data-lucide="star"></i>
+              {{ skin.favorited_by.count }}
+            </span>
+          {% endif %}
+
+          <!-- ··· More menu -->
+          <div class="card-more-menu">
+            <button class="card-more-btn" title="More options">
+              <i data-lucide="more-horizontal"></i>
+            </button>
+            <ul class="card-more-dropdown">
+              <li>
+                <a href="{{ skin.link }}" target="_blank" rel="noopener">
+                  <i data-lucide="external-link"></i> Open in Bonkleagues
+                </a>
+              </li>
+              {% if user.is_authenticated %}
+              <li>
+                <a href="{{ BONKVERSE_EDITOR_URL }}?skin={{ skin.skin_code }}" target="_blank" rel="noopener">
+                  <i data-lucide="pencil"></i> Open in Skin Editor
+                </a>
+              </li>
+              {% endif %}
+              
+              <li>
+                <a href="https://bonkverse.io/skins/share/{{ skin.id }}/{{ skin.uuid }}" target="_blank" rel="noopener">
+                  <i data-lucide="share-2"></i> Share Link
+                </a>
+              </li>
+              <li>
+                <a href="https://bonkverse.io/skins/detail/{{ skin.id }}">
+                  <i data-lucide="file-text"></i> View Skin Details
+                </a>
+              </li>
+              <li class="more-menu-divider"></li>
+              <li>
+                <!-- Report: opens modal, no page nav -->
+                <button class="card-report-btn card-report-link"
+                        data-skin-id="{{ skin.id }}"
+                        data-skin-name="{{ skin.name|escapejs }}">
+                  <i data-lucide="flag"></i> Report
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Top-right: reserved for future use -->
+        <div class="card-top-right"></div>
+
+        <!-- Skin name + creator -->
+        <strong title="{{ skin.name }}">{{ skin.name|truncatechars:20 }}</strong>
+        <span title="{{ skin.creator }}">by {{ skin.creator|truncatechars:20 }}</span>
+
+        <!-- Skin image -->
+        <img
+          src="{{ skin.image_url|default:'https://bonkleagues.io/api/avatar.svg?skinCode=DEFAULT' }}"
+          alt="{{ skin.name }}"
+          width="100"
+          onclick="showImage(`{{ skin.image_url }}`)">
+
+        <!-- Vote row -->
+        <div class="vote-row">
+          {% if user.is_authenticated %}
+            <button class="vote-up" title="Upvote">
+              <i data-lucide="thumbs-up"></i>
+            </button>
+            <span class="up-count">{{ skin.upvotes }}</span>
+            <button class="vote-down" title="Downvote">
+              <i data-lucide="thumbs-down"></i>
+            </button>
+            <span class="down-count">{{ skin.downvotes }}</span>
+          {% else %}
+            <span class="vote-static">
+              <i data-lucide="thumbs-up"></i>
+            </span>
+            <span class="up-count">{{ skin.upvotes }}</span>
+            <span class="vote-static">
+              <i data-lucide="thumbs-down"></i>
+            </span>
+            <span class="down-count">{{ skin.downvotes }}</span>
+          {% endif %}
+        </div>
+
+        <!-- Bottom action button -->
+        {% if skin.id %}
+          {% if user.is_authenticated %}
+            <button class="card-action-btn wear-card-action" data-id="{{ skin.id }}">Wear</button>
+          {% else %}
+            <a href="{{ skin.get_absolute_url }}" class="card-action-btn">View Details</a>
+          {% endif %}
+        {% else %}
+          <span style="color: red;">⚠️ No ID</span>
+        {% endif %}
+
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Image modal -->
+  <div id="imageModal" class="modal" onclick="closeImage()">
+    <span class="close">&times;</span>
+    <img class="modal-content" id="zoomedImage">
+  </div>
+
+  {% if skins.has_other_pages %}
     <div class="pagination">
-        {% if skins.has_previous %}
-            <a href="?q={{ query }}&page=1">&laquo; First</a>
-            <a href="?q={{ query }}&page={{ skins.previous_page_number }}">Prev</a>
-        {% endif %}
+      {% if skins.has_previous %}
+        <a href="?q={{ query }}&page={{ skins.previous_page_number }}">Prev</a>
+      {% endif %}
 
-        <span class="current-page">Page {{ skins.number }} of {{ skins.paginator.num_pages }}</span>
+      <input id="pageJump" type="number"
+             min="1"
+             max="{{ skins.paginator.num_pages }}"
+             value="{{ skins.number }}"
+             style="width:60px; margin:0 5px;">
 
-        {% if skins.has_next %}
-            <a href="?q={{ query }}&page={{ skins.next_page_number }}">Next</a>
-            <a href="?q={{ query }}&page={{ skins.paginator.num_pages }}">Last &raquo;</a>
-        {% endif %}
+      <span>/ {{ skins.paginator.num_pages }}</span>
+
+      {% if skins.has_next %}
+        <a href="?q={{ query }}&page={{ skins.next_page_number }}">Next</a>
+      {% endif %}
     </div>
-    {% endif %}
+  {% endif %}
+
+  <!-- ── Report Modal ─────────────────────────────────────── -->
+  <div class="modal-overlay" id="report-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title">Report Skin</h2>
+        <button class="modal-close-btn" id="report-modal-close">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p id="report-skin-name" style="color:#9aa4b2; margin:0 0 14px; font-size:0.9rem;"></p>
+
+        <label class="modal-label" for="report-reason">Reason</label>
+        <select class="modal-select" id="report-reason">
+          <option value="">Select a reason…</option>
+          <option value="inappropriate">Inappropriate content</option>
+          <option value="stolen">Stolen / reposted without credit</option>
+          <option value="spam">Spam or low-effort</option>
+          <option value="broken">Broken / not loading</option>
+          <option value="other">Other</option>
+        </select>
+
+        <label class="modal-label" for="report-details">Additional details <span style="color:#6b7280; font-weight:400;">(optional)</span></label>
+        <textarea class="modal-textarea" id="report-details" placeholder="Describe the issue…" maxlength="1000"></textarea>
+
+        <p class="modal-feedback" id="report-feedback"></p>
+      </div>
+
+      <div class="modal-footer">
+        <button class="modal-btn modal-btn-ghost" id="report-cancel-btn">Cancel</button>
+        <button class="modal-btn modal-btn-danger" id="report-submit-btn">Submit Report</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Bonk Login Modal (wear flow) ──────────────────────── -->
+  {% if user.is_authenticated %}
+  <dialog id="bonk-login-modal">
+    <form id="bonk-login-form" method="dialog" onsubmit="return doBonkLoginFromSearch(event)">
+      <h3>Bonk.io Login</h3>
+      <p class="muted">We don't store your password. It's sent to Bonk.io once to apply the skin.</p>
+      <label>Bonk.io Username</label>
+      <input name="bonk_username" required>
+      <label>Bonk.io Password</label>
+      <input name="bonk_password" type="password" required>
+      <div class="row">
+        <button type="submit">Login</button>
+        <button type="button" onclick="closeBonkLogin()">Cancel</button>
+      </div>
+      <p id="bonk-login-msg" class="muted"></p>
+    </form>
+  </dialog>
+  {% endif %}
+
 {% endblock %}
+
 
 {% block extra_scripts %}
 <script>
-    const url = new URL(window.location.href);
-  
-    if (!url.searchParams.get('tz_offset')) {
-      const tzOffset = new Date().getTimezoneOffset(); // e.g. -240 for EDT
-      url.searchParams.set('tz_offset', tzOffset);
-      window.history.replaceState({}, '', url.toString());
-    }
-  </script>
+// ── Auto-submit search filters ────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+  const searchForm = document.getElementById("searchForm");
+  document.querySelectorAll('.search-controls-inline select').forEach(select => {
+    select.addEventListener("change", () => searchForm.submit());
+  });
+});
 
-  
+// ── Keep tz offset in URL ─────────────────────────────────────
+(function ensureTzParam() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.get('tz_offset')) {
+    url.searchParams.set('tz_offset', new Date().getTimezoneOffset());
+    window.history.replaceState({}, '', url.toString());
+  }
+})();
+
+// ── Image modal ───────────────────────────────────────────────
+function showImage(src) {
+  document.getElementById('zoomedImage').src = src;
+  document.getElementById('imageModal').style.display = 'flex';
+}
+function closeImage() {
+  document.getElementById('imageModal').style.display = 'none';
+}
+
+// ── Page jump ─────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+  const input = document.getElementById("pageJump");
+  if (!input) return;
+  input.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    const target = parseInt(input.value, 10);
+    const total  = parseInt("{{ skins.paginator.num_pages|default:0 }}", 10);
+    const q      = "{{ query|escapejs }}";
+    if (!isNaN(target) && target >= 1 && target <= total) {
+      window.location = `?q=${encodeURIComponent(q)}&page=${target}`;
+    }
+  });
+});
+
+// ── CSRF + fetch helpers ──────────────────────────────────────
+function getCSRF() {
+  const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : '';
+}
+
+async function postForm(url, data) {
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCSRF(), 'X-Requested-With': 'XMLHttpRequest' },
+    body: new URLSearchParams(data || {})
+  });
+  if (r.status === 401) {
+    const ret = encodeURIComponent(window.location.pathname + window.location.search);
+    window.location.href = `/login/?next=${ret}`;
+    return null;
+  }
+  if (!r.ok) throw new Error('Request failed');
+  return r.json();
+}
+
+async function postFormNoRedirect(url, data) {
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCSRF(), 'X-Requested-With': 'XMLHttpRequest' },
+    body: new URLSearchParams(data || {})
+  });
+  let json = {};
+  try { json = await r.json(); } catch(e) {}
+  return { ok: r.ok, status: r.status, json };
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+function toast(text) {
+  const t = document.createElement('div');
+  t.textContent = text;
+  Object.assign(t.style, {
+    position: 'fixed', bottom: '18px', left: '50%',
+    transform: 'translateX(-50%)',
+    background: 'rgba(0,0,0,.85)', color: '#fff',
+    padding: '8px 14px', borderRadius: '10px',
+    zIndex: 9999, fontSize: '14px', pointerEvents: 'none'
+  });
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; }, 1400);
+  setTimeout(() => t.remove(), 1800);
+}
+
+// ── Restore vote state on load ────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll('.skin-card').forEach(card => {
+    const vote = card.dataset.vote;
+    if (vote === 'up')   card.querySelector('.vote-up')?.classList.add('active');
+    if (vote === 'down') card.querySelector('.vote-down')?.classList.add('active');
+  });
+});
+
+// ── ··· More menu ─────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+
+  document.querySelectorAll('.card-more-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const dropdown = this.closest('.card-more-menu').querySelector('.card-more-dropdown');
+      document.querySelectorAll('.card-more-dropdown.open').forEach(d => {
+        if (d !== dropdown) d.classList.remove('open');
+      });
+      dropdown.classList.toggle('open');
+    });
+  });
+
+  document.querySelectorAll('.card-more-dropdown').forEach(dropdown => {
+    dropdown.addEventListener('click', e => e.stopPropagation());
+  });
+
+});
+
+// Close all menus when clicking anywhere outside
+document.addEventListener('click', () => {
+  document.querySelectorAll('.card-more-dropdown.open').forEach(d => d.classList.remove('open'));
+});
+
+// ── Report modal ──────────────────────────────────────────────
+const reportModal    = document.getElementById('report-modal');
+const reportFeedback = document.getElementById('report-feedback');
+let   reportSkinId   = null;
+
+function openReportModal(skinId, skinName) {
+  reportSkinId = skinId;
+  document.getElementById('report-skin-name').textContent = `"${skinName}"`;
+  document.getElementById('report-reason').value  = '';
+  document.getElementById('report-details').value = '';
+  reportFeedback.textContent = '';
+  reportFeedback.className   = 'modal-feedback';
+  reportModal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeReportModal() {
+  reportModal.classList.remove('open');
+  document.body.style.overflow = '';
+  reportSkinId = null;
+}
+
+document.getElementById('report-modal-close').addEventListener('click', closeReportModal);
+document.getElementById('report-cancel-btn').addEventListener('click',  closeReportModal);
+
+// Close when clicking the dark overlay (outside the box)
+reportModal.addEventListener('click', function(e) {
+  if (e.target === reportModal) closeReportModal();
+});
+
+// Close on Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeReportModal();
+});
+
+// Submit report
+document.getElementById('report-submit-btn').addEventListener('click', async function() {
+  const reason  = document.getElementById('report-reason').value;
+  const details = document.getElementById('report-details').value.trim();
+
+  if (!reason) {
+    reportFeedback.textContent = 'Please select a reason.';
+    reportFeedback.className   = 'modal-feedback error';
+    return;
+  }
+
+  this.disabled = true;
+  reportFeedback.textContent = 'Submitting…';
+  reportFeedback.className   = 'modal-feedback';
+
+  const { ok, status, json } = await postFormNoRedirect(
+    `/api/skins/${reportSkinId}/report/`,
+    { reason, details }
+  );
+
+  this.disabled = false;
+
+  if (ok) {
+    reportFeedback.textContent = '✓ Report submitted. Thank you!';
+    reportFeedback.className   = 'modal-feedback success';
+    setTimeout(closeReportModal, 1200);
+    return;
+  }
+
+  if (status === 409) {
+    reportFeedback.textContent = 'You have already reported this skin.';
+  } else {
+    reportFeedback.textContent = 'Something went wrong. Please try again.';
+  }
+  reportFeedback.className = 'modal-feedback error';
+});
+
+// Open report modal from ··· button
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll('.card-report-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      // Close the ··· dropdown first
+      this.closest('.card-more-dropdown')?.classList.remove('open');
+      openReportModal(this.dataset.skinId, this.dataset.skinName);
+    });
+  });
+});
+
+// ── Event delegation: votes + favorites + wear ────────────────
+document.addEventListener('click', async (e) => {
+  const card = e.target.closest('.skin-card');
+  if (!card) return;
+  const id = card.dataset.id;
+
+  // Vote up
+  if (e.target.closest('.vote-up')) {
+    try {
+      const json = await postForm(`/api/skins/${id}/vote/`, { vote: 'up' });
+      if (!json) return;
+      card.querySelector('.up-count').textContent   = json.upvotes;
+      card.querySelector('.down-count').textContent = json.downvotes;
+      card.querySelector('.vote-up').classList.toggle('active', json.current_vote === 'up');
+      card.querySelector('.vote-down').classList.toggle('active', json.current_vote === 'down');
+    } catch(err) { console.error(err); }
+    return;
+  }
+
+  // Vote down
+  if (e.target.closest('.vote-down')) {
+    try {
+      const json = await postForm(`/api/skins/${id}/vote/`, { vote: 'down' });
+      if (!json) return;
+      card.querySelector('.up-count').textContent   = json.upvotes;
+      card.querySelector('.down-count').textContent = json.downvotes;
+      card.querySelector('.vote-up').classList.toggle('active', json.current_vote === 'up');
+      card.querySelector('.vote-down').classList.toggle('active', json.current_vote === 'down');
+    } catch(err) { console.error(err); }
+    return;
+  }
+
+  // Favorite
+  if (e.target.closest('.fav-toggle')) {
+    try {
+      const json = await postForm(`/api/skins/${id}/favorite/`);
+      if (!json) return;
+      card.querySelector('.fav-count').textContent = json.favorites;
+      const btn = card.querySelector('.fav-toggle');
+      btn.classList.toggle('active', json.favorited);
+    } catch(err) { console.error(err); }
+    return;
+  }
+
+  // Bottom wear button
+  if (e.target.closest('.wear-card-action')) {
+    tryWearCard(id, card);
+    return;
+  }
+});
+
+// ── Wear flow ─────────────────────────────────────────────────
+let pendingWearSkinId = null;
+const loginModal = document.getElementById('bonk-login-modal');
+
+function openBonkLogin()  {
+  if (loginModal?.showModal) loginModal.showModal();
+  else loginModal.style.display = 'block';
+}
+function closeBonkLogin() {
+  if (loginModal?.close) loginModal.close();
+  else loginModal.style.display = 'none';
+}
+
+async function tryWearCard(skinId, card) {
+  const { ok, status, json } = await postFormNoRedirect(`/api/skins/${skinId}/wear/`, {});
+  if (ok && json.ok) {
+    toast('✅ Applied to your active slot.');
+    return;
+  }
+  if (status === 401 && json?.need_login) {
+    pendingWearSkinId = skinId;
+    openBonkLogin();
+    return;
+  }
+  toast('❌ Failed to apply skin.');
+}
+
+async function doBonkLoginFromSearch(e) {
+  e.preventDefault();
+  const fd  = new FormData(e.target);
+  const msg = document.getElementById('bonk-login-msg');
+  msg.textContent = 'Logging in…';
+  const r = await fetch("{% url 'bonk_login_for_wear' %}", {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCSRF(), 'X-Requested-With': 'XMLHttpRequest' },
+    body: fd
+  });
+  const json = await r.json().catch(() => ({}));
+  if (!r.ok || !json.ok) {
+    msg.textContent = '❌ ' + (json.error || 'Login failed');
+    return false;
+  }
+  msg.textContent = '✅ Logged in!';
+  closeBonkLogin();
+  if (pendingWearSkinId) {
+    const id   = pendingWearSkinId;
+    pendingWearSkinId = null;
+    const card = document.querySelector(`.skin-card[data-id="${id}"]`);
+    setTimeout(() => tryWearCard(id, card), 120);
+  }
+  return false;
+}
+</script>
 {% endblock %}

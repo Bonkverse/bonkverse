@@ -1,0 +1,213 @@
+/* =====================
+   modal.css
+   Base styles for all modals.
+   Each modal adds its own scoped styles
+   on top of these — don't put page-specific
+   content styles here.
+   ===================== */
+
+/* Overlay */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(3px);
+    z-index: 8000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-overlay.open {
+    display: flex;
+}
+
+/* Modal box */
+.modal-box {
+    background: #1a2733;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 28px 28px 24px;
+    width: 90%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: modalFadeIn 0.2s ease;
+    text-align: left;
+    position: relative;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(-12px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+/* Header row */
+.modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    gap: 12px;
+}
+
+.modal-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.modal-close-btn {
+    background: none;
+    border: none;
+    color: #9aa4b2;
+    cursor: pointer;
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    border-radius: 6px;
+    transition: color 0.15s ease, background 0.15s ease;
+}
+
+.modal-close-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.modal-close-btn i[data-lucide] {
+    width: 20px;
+    height: 20px;
+}
+
+/* Body */
+.modal-body {
+    color: #c9d1d9;
+    font-size: 0.95rem;
+    line-height: 1.55;
+}
+
+/* Footer: action buttons */
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+/* Generic modal buttons */
+.modal-btn {
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: "Oxanium", sans-serif;
+    cursor: pointer;
+    border: none;
+    transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.modal-btn:active {
+    transform: translateY(1px);
+}
+
+.modal-btn-ghost {
+    background: rgba(255, 255, 255, 0.07);
+    color: #c9d1d9;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.modal-btn-ghost:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+
+.modal-btn-primary {
+    background: #009688;
+    color: #fff;
+}
+
+.modal-btn-primary:hover {
+    background: #00796b;
+}
+
+.modal-btn-danger {
+    background: #dc2626;
+    color: #fff;
+}
+
+.modal-btn-danger:hover {
+    background: #b91c1c;
+}
+
+/* Form elements inside modals */
+.modal-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #9aa4b2;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+    margin-top: 14px;
+}
+
+.modal-label:first-of-type {
+    margin-top: 0;
+}
+
+.modal-select,
+.modal-textarea,
+.modal-input {
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    color: #e6edf3;
+    font-family: "Oxanium", sans-serif;
+    font-size: 0.9rem;
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.modal-select:focus,
+.modal-textarea:focus,
+.modal-input:focus {
+    border-color: #009688;
+    box-shadow: 0 0 0 2px rgba(0, 150, 136, 0.2);
+}
+
+.modal-textarea {
+    resize: vertical;
+    min-height: 90px;
+    line-height: 1.5;
+}
+
+/* Status / feedback message */
+.modal-feedback {
+    margin-top: 12px;
+    font-size: 0.875rem;
+    text-align: center;
+    min-height: 20px;
+    color: #9aa4b2;
+}
+
+.modal-feedback.success { color: #34d399; }
+.modal-feedback.error   { color: #f87171; }
+
+/* Close on overlay click area */
+.modal-overlay > *:not(.modal-box) {
+    pointer-events: none;
+}
+
+.modal-footer form {
+    all: unset;
+    display: contents; /* makes the form invisible to the flex layout */
+}

@@ -1,0 +1,255 @@
+form {
+    width: 50%;
+    margin: auto;
+    padding: 20px;
+    border: 2px solid #009688;
+    border-radius: 10px;
+    background: hsla(212, 40%, 20%, 0.597);
+    box-shadow: 0px 0px 10px #009688;
+}
+
+label {
+    display: block;
+    margin-top: 10px;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+input[type="text"] {
+    width: 90%;
+    padding: 10px;
+    margin: 8px 0;
+    border: 2px solid #009688;
+    background: black;
+    color: white;
+    border-radius: 5px;
+    outline: none;
+}
+
+input {
+    padding: 10px;
+    border-radius: 8px;
+    background-color: #000;
+    border: 4px solid #009688;
+    width: 93%;
+    font-size: 16px;
+}
+
+input, select, textarea {
+    color: #ddd;
+}
+
+::placeholder {
+    color: #ddd;
+}
+
+button {
+    background-color: #795548;
+    border-radius: 8px;
+    color: #ddd;
+    padding: 10px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.suggestions {
+    list-style-type: none;
+    padding: 0;
+    margin: 5px 0;
+    margin-left: 30px;
+    background: black;
+    border: 2px solid #009688;
+    border-radius: 5px;
+    width: 93%;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.suggestion-label {
+    font-size: 14px;
+    font-style: italic;
+    color: #009688;
+    margin-top: 5px;
+    margin-left: 30px;
+    text-align: left;
+}
+
+.suggestions li {
+    padding: 10px;
+    cursor: pointer;
+    color: white;
+    border-bottom: 1px solid #009688;
+}
+
+.suggestions li:hover {
+    background-color: #009688;
+}
+
+/* Hero Search Bar */
+.hero-search {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid #009688;
+    border-radius: 14px;
+    box-shadow: 0px 0px 12px rgba(0, 230, 195, 0.6);
+    padding: 10px 14px;
+    backdrop-filter: blur(6px);
+    transition: box-shadow 0.25s ease-in-out, transform 0.15s ease-in-out;
+    flex: 1;
+}
+
+.hero-search:hover {
+    box-shadow: 0px 0px 18px rgba(0, 255, 204, 0.75);
+    transform: translateY(-1px);
+}
+
+.hero-search input {
+    all: unset;
+    flex: 1;
+    font-size: 1rem;
+    color: #fff;
+    background: transparent;
+    padding: 8px 10px;
+}
+
+.hero-search input::placeholder {
+    color: #aaa;
+}
+
+.hero-search button {
+    background: linear-gradient(180deg, #009688, #00796b);
+    border: none;
+    border-radius: 10px;
+    padding: 10px 16px;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.hero-search button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0 12px rgba(0, 255, 204, 0.6);
+}
+
+/* Search row + filter controls */
+.search-row {
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    margin: 0 auto;
+    max-width: 1100px;
+}
+
+.search-controls-inline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    border-radius: 10px;
+    padding: 8px 14px;
+}
+
+.search-controls-inline select {
+    background: #111;
+    border: 1px solid rgba(0,255,204,0.3);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.search-controls-inline select:hover,
+.search-controls-inline select:focus {
+    border-color: #00ffcc;
+    box-shadow: 0 0 8px rgba(0,255,204,0.6);
+}
+
+.search-controls-inline label {
+    font-size: 0.85rem;
+    color: #a9b3c1;
+}
+
+/* Filter tag controls */
+.filters {
+    text-align: center;
+}
+
+.filter-hint {
+    font-size: 0.85rem;
+    color: #9aa4b2;
+    margin-bottom: 8px;
+}
+
+form.filter-form {
+    all: unset;
+    width: 50%;
+    display: flex;
+    margin: auto;
+}
+
+/* Player search */
+#player-search-form {
+    margin: 20px auto;
+    text-align: center;
+}
+
+#player-query {
+    padding: 10px 14px;
+    border-radius: 6px;
+    border: none;
+    width: 280px;
+    font-size: 14px;
+    margin-left: 10px;
+    background: transparent;
+    color: #ddd;
+}
+
+#player-query::placeholder {
+    color: #888;
+}
+
+/* Select wrapper (for custom chevron) */
+.slot-select {
+    position: relative;
+    display: inline-block;
+}
+
+.slot-select.sm select { padding: 6px 28px 6px 10px; font-size: 0.95rem; }
+.slot-select.md select { padding: 8px 34px 8px 12px; }
+
+.slot-select select {
+    -webkit-appearance: none;
+    appearance: none;
+    background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 10px;
+    color: #e6f7f5;
+    outline: none;
+    cursor: pointer;
+    line-height: 1.2;
+    box-shadow: 0 1px 0 rgba(0,0,0,.25) inset;
+    transition: border-color .15s ease, box-shadow .15s ease, transform .05s ease;
+}
+
+.slot-select select:hover { border-color: rgba(94,234,212,.55); }
+.slot-select select:focus {
+    border-color: rgba(94,234,212,.75);
+    box-shadow: 0 0 0 2px rgba(94,234,212,.2);
+}
+
+.slot-select select:active { transform: translateY(1px); }
+
+.slot-select::after {
+    content: "▾";
+    position: absolute;
+    right: 9px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #cdebe8;
+    opacity: .85;
+    font-size: .9rem;
+}

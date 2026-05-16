@@ -21,18 +21,18 @@
           <label>Search By:</label>
           <select name="mode" form="searchForm">
             <option value="relevance" {% if mode == "relevance" %}selected{% endif %}>Relevance</option>
-            <option value="name" {% if mode == "name" %}selected{% endif %}>Name</option>
-            <option value="creator" {% if mode == "creator" %}selected{% endif %}>Creator</option>
-            <option value="tags" {% if mode == "tags" %}selected{% endif %}>Tags</option>
+            <option value="name"      {% if mode == "name"      %}selected{% endif %}>Name</option>
+            <option value="creator"   {% if mode == "creator"   %}selected{% endif %}>Creator</option>
+            <option value="tags"      {% if mode == "tags"      %}selected{% endif %}>Tags</option>
             <option value="description" {% if mode == "description" %}selected{% endif %}>Description</option>
           </select>
 
           <label>Sort By:</label>
           <select name="sort" form="searchForm">
             <option value="relevance" {% if sort == "relevance" %}selected{% endif %}>Relevance</option>
-            <option value="newest" {% if sort == "newest" %}selected{% endif %}>Newest</option>
+            <option value="newest"    {% if sort == "newest"    %}selected{% endif %}>Newest</option>
             <option value="favorites" {% if sort == "favorites" %}selected{% endif %}>Most Favorited</option>
-            <option value="upvotes" {% if sort == "upvotes" %}selected{% endif %}>Most Upvoted</option>
+            <option value="upvotes"   {% if sort == "upvotes"   %}selected{% endif %}>Most Upvoted</option>
           </select>
         </div>
       {% endif %}
@@ -41,23 +41,24 @@
 
 
   <div class="skins-container">
-    {% for skin in skins %}
+    {% for skin in skins_on_page %}
       <div class="skin-card"
            data-id="{{ skin.id }}"
            data-vote="{{ skin.current_vote|default:'' }}"
-           data-favorited="{% if user.is_authenticated and user in skin.favorited_by.all %}1{% else %}0{% endif %}">
+           data-favorited="{{ skin.is_favorited|yesno:'1,0' }}">
 
         <!-- Top-left: Star + ··· menu -->
         <div class="card-top-left">
           {% if user.is_authenticated %}
-            <button class="fav-toggle {% if user in skin.favorited_by.all %}active{% endif %}" title="Favorite">
+            {# is_favorited and fav_count_val are pre-computed in the view — no DB hit here #}
+            <button class="fav-toggle {% if skin.is_favorited %}active{% endif %}" title="Favorite">
               <i data-lucide="star" class="fav-icon-svg"></i>
-              <span class="fav-count">{{ skin.favorited_by.count }}</span>
+              <span class="fav-count">{{ skin.fav_count_val }}</span>
             </button>
           {% else %}
             <span class="fav-static" title="Login to favorite">
               <i data-lucide="star"></i>
-              {{ skin.favorited_by.count }}
+              {{ skin.fav_count_val }}
             </span>
           {% endif %}
 
@@ -79,7 +80,6 @@
                 </a>
               </li>
               {% endif %}
-              
               <li>
                 <a href="https://bonkverse.io/skins/share/{{ skin.id }}/{{ skin.uuid }}" target="_blank" rel="noopener">
                   <i data-lucide="share-2"></i> Share Link
@@ -92,7 +92,6 @@
               </li>
               <li class="more-menu-divider"></li>
               <li>
-                <!-- Report: opens modal, no page nav -->
                 <button class="card-report-btn card-report-link"
                         data-skin-id="{{ skin.id }}"
                         data-skin-name="{{ skin.name|escapejs }}">
@@ -103,19 +102,28 @@
           </div>
         </div>
 
-        <!-- Top-right: reserved for future use -->
+        <!-- Top-right: reserved -->
         <div class="card-top-right"></div>
 
         <!-- Skin name + creator -->
         <strong title="{{ skin.name }}">{{ skin.name|truncatechars:20 }}</strong>
         <span title="{{ skin.creator }}">by {{ skin.creator|truncatechars:20 }}</span>
 
-        <!-- Skin image -->
+        <!-- Skin image
+             loading="lazy"  — only loads images near the viewport, not all 50 at once
+             decoding="async" — image decoding doesn't block the main thread
+             width + height   — browser reserves space so the layout doesn't reflow as images arrive
+             onerror          — falls back to a local default if the image fails, never hits bonkleagues
+        -->
         <img
-          src="{{ skin.image_url|default:'https://bonkleagues.io/api/avatar.svg?skinCode=DEFAULT' }}"
+          src="{{ skin.image_url|default:'/static/images/default_skin.png' }}"
           alt="{{ skin.name }}"
-          width="100"
-          onclick="showImage(`{{ skin.image_url }}`)">
+          width="160"
+          height="160"
+          loading="lazy"
+          decoding="async"
+          onerror="this.onerror=null; this.src='/static/images/default_skin.png';"
+          onclick="showImage(`{{ skin.image_url|default:'/static/images/default_skin.png' }}`)">
 
         <!-- Vote row -->
         <div class="vote-row">
@@ -129,13 +137,9 @@
             </button>
             <span class="down-count">{{ skin.downvotes }}</span>
           {% else %}
-            <span class="vote-static">
-              <i data-lucide="thumbs-up"></i>
-            </span>
+            <span class="vote-static"><i data-lucide="thumbs-up"></i></span>
             <span class="up-count">{{ skin.upvotes }}</span>
-            <span class="vote-static">
-              <i data-lucide="thumbs-down"></i>
-            </span>
+            <span class="vote-static"><i data-lucide="thumbs-down"></i></span>
             <span class="down-count">{{ skin.downvotes }}</span>
           {% endif %}
         </div>
@@ -341,7 +345,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // ── ··· More menu ─────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
-
   document.querySelectorAll('.card-more-btn').forEach(btn => {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
@@ -356,7 +359,6 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll('.card-more-dropdown').forEach(dropdown => {
     dropdown.addEventListener('click', e => e.stopPropagation());
   });
-
 });
 
 // Close all menus when clicking anywhere outside
@@ -389,17 +391,14 @@ function closeReportModal() {
 document.getElementById('report-modal-close').addEventListener('click', closeReportModal);
 document.getElementById('report-cancel-btn').addEventListener('click',  closeReportModal);
 
-// Close when clicking the dark overlay (outside the box)
 reportModal.addEventListener('click', function(e) {
   if (e.target === reportModal) closeReportModal();
 });
 
-// Close on Escape
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeReportModal();
 });
 
-// Submit report
 document.getElementById('report-submit-btn').addEventListener('click', async function() {
   const reason  = document.getElementById('report-reason').value;
   const details = document.getElementById('report-details').value.trim();
@@ -428,20 +427,16 @@ document.getElementById('report-submit-btn').addEventListener('click', async fun
     return;
   }
 
-  if (status === 409) {
-    reportFeedback.textContent = 'You have already reported this skin.';
-  } else {
-    reportFeedback.textContent = 'Something went wrong. Please try again.';
-  }
+  reportFeedback.textContent = status === 409
+    ? 'You have already reported this skin.'
+    : 'Something went wrong. Please try again.';
   reportFeedback.className = 'modal-feedback error';
 });
 
-// Open report modal from ··· button
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll('.card-report-btn').forEach(btn => {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
-      // Close the ··· dropdown first
       this.closest('.card-more-dropdown')?.classList.remove('open');
       openReportModal(this.dataset.skinId, this.dataset.skinName);
     });
@@ -461,7 +456,7 @@ document.addEventListener('click', async (e) => {
       if (!json) return;
       card.querySelector('.up-count').textContent   = json.upvotes;
       card.querySelector('.down-count').textContent = json.downvotes;
-      card.querySelector('.vote-up').classList.toggle('active', json.current_vote === 'up');
+      card.querySelector('.vote-up').classList.toggle('active',   json.current_vote === 'up');
       card.querySelector('.vote-down').classList.toggle('active', json.current_vote === 'down');
     } catch(err) { console.error(err); }
     return;
@@ -474,7 +469,7 @@ document.addEventListener('click', async (e) => {
       if (!json) return;
       card.querySelector('.up-count').textContent   = json.upvotes;
       card.querySelector('.down-count').textContent = json.downvotes;
-      card.querySelector('.vote-up').classList.toggle('active', json.current_vote === 'up');
+      card.querySelector('.vote-up').classList.toggle('active',   json.current_vote === 'up');
       card.querySelector('.vote-down').classList.toggle('active', json.current_vote === 'down');
     } catch(err) { console.error(err); }
     return;
@@ -486,13 +481,12 @@ document.addEventListener('click', async (e) => {
       const json = await postForm(`/api/skins/${id}/favorite/`);
       if (!json) return;
       card.querySelector('.fav-count').textContent = json.favorites;
-      const btn = card.querySelector('.fav-toggle');
-      btn.classList.toggle('active', json.favorited);
+      card.querySelector('.fav-toggle').classList.toggle('active', json.favorited);
     } catch(err) { console.error(err); }
     return;
   }
 
-  // Bottom wear button
+  // Wear
   if (e.target.closest('.wear-card-action')) {
     tryWearCard(id, card);
     return;
