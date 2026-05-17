@@ -73,7 +73,6 @@ def social_stats(request):
         cursor.execute("""
             SELECT
                 CASE
-                    WHEN last_friend_count = 0   THEN '0'
                     WHEN last_friend_count < 5   THEN '1–4'
                     WHEN last_friend_count < 10   THEN '5–9'
                     WHEN last_friend_count < 50  THEN '10-49'
