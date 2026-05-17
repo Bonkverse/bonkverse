@@ -41,6 +41,7 @@ from skins import winrate_leaderboards
 from skins import staff
 from skins import discord
 from skins import discord_views
+from skins.social_stats import social_stats 
 from skins.apis.index import index
 from skins.apis.publish_skin import publish_skin
 from skins.share_skin import share_skin
@@ -126,6 +127,8 @@ urlpatterns = [
     path("api/tools/map-decode/", api_map_decode, name="api_map_decode"),
 
     path("api/skins/<int:skin_id>/report/", report_skin, name="report_skin"),
+    path("social-stats/", social_stats, name="social_stats"),
+    
 
 
 

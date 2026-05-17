@@ -47,6 +47,7 @@
         <li class="nav-item">
             <a href="#" class="nav-link dropdown-trigger">Community ▾</a>
             <ul class="dropdown-menu">
+                <li><a href="{% url 'social_stats' %}">Social Stats</a></li>
                 <li><a href="{% url 'players_page' %}">Bonk Players</a></li>
                 <li><a href="{% url 'flash_friends_page' %}">Flash Friends</a></li>
                 <li><a href="{% url 'map_decode_page' %}">Map Decoder</a></li>
@@ -115,6 +116,7 @@
                 <li class="mobile-nav-item">
                     <button class="mobile-dropdown-trigger">Community <span class="mobile-chevron">▾</span></button>
                     <ul class="mobile-dropdown">
+                        <li><a href="{% url 'social_stats' %}">Social Stats</a></li>
                         <li><a href="{% url 'players_page' %}">Bonk Players</a></li>
                         <li><a href="{% url 'flash_friends_page' %}">Flash Friends</a></li>
                         <li><a href="{% url 'map_decode_page' %}">Map Decoder</a></li>

@@ -1,0 +1,414 @@
+{% extends "skins/base.html" %}
+{% load static %}
+
+{% block title %}Bonkverse — Community Stats{% endblock %}
+
+{% block content %}
+<style>
+  .stats-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+    text-align: left;
+  }
+
+  .stats-hero {
+    text-align: center;
+    padding: 40px 0 32px;
+  }
+
+  .stats-hero h1 { font-size: 2rem; margin: 0 0 8px; color: #fff; }
+  .stats-hero p  { color: #9aa4b2; margin: 0; font-size: 1rem; }
+
+  /* ── Headline cards ── */
+  .stat-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+
+  .stat-card {
+    background: hsla(212, 40%, 20%, 0.6);
+    border: 1px solid rgba(0,150,136,0.3);
+    border-radius: 12px;
+    padding: 20px 16px;
+    text-align: center;
+  }
+
+  .stat-card .stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #00ffcc;
+    text-shadow: 0 0 12px rgba(0,255,204,0.4);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .stat-card .stat-label {
+    font-size: 0.82rem;
+    color: #9aa4b2;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── Section title ── */
+  .section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(0,150,136,0.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ── Grid layout ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+
+  @media (max-width: 720px) { .stats-grid { grid-template-columns: 1fr; } }
+
+  .stats-panel {
+    background: hsla(212, 40%, 18%, 0.7);
+    border: 1px solid rgba(0,150,136,0.2);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  /* ── Leaderboard rows ── */
+  .lb-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 0.87rem;
+  }
+
+  .lb-row:last-child { border-bottom: none; }
+
+  .lb-rank {
+    width: 22px;
+    text-align: right;
+    color: #6b7280;
+    font-size: 0.77rem;
+    flex-shrink: 0;
+  }
+
+  .lb-rank.gold   { color: #fbbf24; font-weight: 700; }
+  .lb-rank.silver { color: #9ca3af; font-weight: 700; }
+  .lb-rank.bronze { color: #b45309; font-weight: 700; }
+
+  .lb-name {
+    flex: 1;
+    color: #e2e8f0;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .lb-meta  { color: #6b7280; font-size: 0.78rem; white-space: nowrap; }
+  .lb-date  { color: #9aa4b2; font-size: 0.78rem; white-space: nowrap; }
+  .lb-value { color: #00ffcc; font-weight: 700; font-size: 0.9rem; white-space: nowrap; }
+
+  /* ── Bar charts ── */
+  .bar-wrap { display: flex; flex-direction: column; gap: 9px; }
+
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.83rem;
+  }
+
+  .bar-label {
+    width: 72px;
+    flex-shrink: 0;
+    color: #9aa4b2;
+    text-align: right;
+    font-size: 0.8rem;
+  }
+
+  .bar-outer {
+    flex: 1;
+    background: rgba(255,255,255,0.07);
+    border-radius: 4px;
+    height: 17px;
+    overflow: hidden;
+  }
+
+  .bar-inner {
+    height: 100%;
+    border-radius: 4px;
+    min-width: 2px;
+    transition: width 0.5s ease;
+  }
+
+  .bar-teal   { background: linear-gradient(90deg, #009688, #00ffcc); }
+  .bar-purple { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
+  .bar-blue   { background: linear-gradient(90deg, #1d4ed8, #60a5fa); }
+
+  .bar-count {
+    width: 52px;
+    text-align: right;
+    color: #e2e8f0;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+
+  /* ── Graph density ── */
+  .density-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #60a5fa;
+    margin-bottom: 4px;
+  }
+
+  .density-note {
+    font-size: 0.8rem;
+    color: #6b7280;
+    line-height: 1.6;
+    margin-top: 14px;
+  }
+
+  /* ── Flash chips ── */
+  .flash-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .flash-chip {
+    background: rgba(124,58,237,0.2);
+    border: 1px solid rgba(124,58,237,0.4);
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 0.82rem;
+    color: #c4b5fd;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .flash-chip .chip-count {
+    background: rgba(124,58,237,0.45);
+    border-radius: 999px;
+    padding: 1px 7px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  /* ── CTA ── */
+  .cta-strip {
+    margin-top: 36px;
+    background: linear-gradient(135deg, rgba(0,150,136,0.15), rgba(0,255,204,0.05));
+    border: 1px solid rgba(0,150,136,0.35);
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+  }
+
+  .cta-strip h3 { margin: 0 0 8px; color: #fff; font-size: 1.1rem; }
+  .cta-strip p  { margin: 0 0 16px; color: #9aa4b2; font-size: 0.9rem; }
+
+  .cta-btn {
+    display: inline-block;
+    background: #009688;
+    color: #fff;
+    padding: 10px 24px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.95rem;
+    transition: background 0.2s ease;
+  }
+
+  .cta-btn:hover { background: #00b39f; }
+
+  .subtext {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin: 0 0 12px;
+  }
+</style>
+
+<div class="stats-page">
+
+  <!-- Hero -->
+  <div class="stats-hero">
+    <h1>🌐 Bonk.io Community Graph</h1>
+    <p>Live stats built from friend lists collected when players log into Bonkverse.</p>
+  </div>
+
+  <!-- Headline cards -->
+  <div class="stat-cards">
+    <div class="stat-card">
+      <span class="stat-value">{{ total_players|floatformat:0 }}</span>
+      <span class="stat-label">Players discovered</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value">{{ total_edges|floatformat:0 }}</span>
+      <span class="stat-label">Friendship edges</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value">{{ synced_players|floatformat:0 }}</span>
+      <span class="stat-label">Players synced</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value">{{ total_flash|floatformat:0 }}</span>
+      <span class="stat-label">Flash-era friends</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value">{{ density_pct }}</span>
+      <span class="stat-label">Graph density %</span>
+    </div>
+  </div>
+
+  <!-- Row 1: Most connected + Oldest accounts -->
+  <div class="stats-grid">
+
+    <div class="stats-panel">
+      <div class="section-title"><i data-lucide="users"></i> Most Connected Players</div>
+      {% for p in most_connected %}
+      <div class="lb-row">
+        <span class="lb-rank {% if forloop.counter == 1 %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">{{ forloop.counter }}</span>
+        <span class="lb-name" title="{{ p.username }}">{{ p.username }}</span>
+        {% if p.est_date %}<span class="lb-date">{{ p.est_date }}</span>{% endif %}
+        <span class="lb-value">{{ p.last_friend_count }}</span>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="stats-panel">
+      <div class="section-title"><i data-lucide="clock"></i> Oldest Known Accounts</div>
+      <p class="subtext">Lower bonk_id = earlier registration. Dates are estimated.</p>
+      {% for p in oldest_accounts %}
+      <div class="lb-row">
+        <span class="lb-rank {% if forloop.counter == 1 %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">{{ forloop.counter }}</span>
+        <span class="lb-name" title="{{ p.username }}">{{ p.username }}</span>
+        {% if p.est_date %}<span class="lb-date">≈ {{ p.est_date }}</span>{% endif %}
+        <span class="lb-meta">#{{ p.bonk_id }}</span>
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
+
+  <!-- Row 2: Registration year chart + Friend distribution -->
+  <div class="stats-grid">
+
+    <div class="stats-panel">
+      <div class="section-title"><i data-lucide="bar-chart-2"></i> Players by Registration Year</div>
+      <p class="subtext">Estimated from bonk_id using known community-tracked creation dates.</p>
+      <div class="bar-wrap">
+        {% for row in year_distribution %}
+        <div class="bar-row">
+          <span class="bar-label">{{ row.year }}</span>
+          <div class="bar-outer">
+            <div class="bar-inner bar-teal"
+                 style="width: {% widthratio row.player_count year_max 100 %}%">
+            </div>
+          </div>
+          <span class="bar-count">{{ row.player_count }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="stats-panel">
+      <div class="section-title"><i data-lucide="pie-chart"></i> Friend Count Distribution</div>
+      <p class="subtext">How social is the bonk.io playerbase?</p>
+      <div class="bar-wrap">
+        {% for row in friend_distribution %}
+        <div class="bar-row">
+          <span class="bar-label">{{ row.bracket }}</span>
+          <div class="bar-outer">
+            <div class="bar-inner bar-purple"
+                 style="width: {% widthratio row.player_count friend_distribution.0.player_count 100 %}%">
+            </div>
+          </div>
+          <span class="bar-count">{{ row.player_count }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Row 3: Graph density + Biggest gains -->
+  <div class="stats-grid">
+
+    <div class="stats-panel">
+      <div class="section-title"><i data-lucide="activity"></i> Social Graph Density</div>
+      <p class="subtext">What % of all possible friendships are recorded?</p>
+      <div class="density-value">{{ density_pct }}%</div>
+      <div class="bar-outer" style="height:22px; margin-bottom:6px;">
+        <div class="bar-inner bar-blue"
+             style="width: {% widthratio density_pct 1 100 %}%">
+        </div>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#6b7280; margin-bottom:10px;">
+        <span>0%</span><span>0.5%</span><span>1%+</span>
+      </div>
+      <div class="density-note">
+        <strong style="color:#e2e8f0;">{{ total_edges|floatformat:0 }}</strong> edges recorded<br>
+        <strong style="color:#e2e8f0;">{{ possible_edges|floatformat:0 }}</strong> possible edges<br>
+        Real social networks are typically 0.1–1% dense.
+        The graph grows every time a player logs in.
+      </div>
+    </div>
+
+    <div class="stats-panel">
+      <div class="section-title"><i data-lucide="trending-up"></i> Biggest Friend Gains</div>
+      <p class="subtext">Largest single-session friend count increases</p>
+      {% for g in biggest_gains %}
+      <div class="lb-row">
+        <span class="lb-rank {% if forloop.counter == 1 %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">{{ forloop.counter }}</span>
+        <span class="lb-name" title="{{ g.username }}">{{ g.username }}</span>
+        <span class="lb-date">{{ g.captured_at|date:"M j" }}</span>
+        <span class="lb-value">+{{ g.gained }}</span>
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
+
+  <!-- Flash friends -->
+  <div class="stats-panel" style="margin-bottom:24px;">
+    <div class="section-title"><i data-lucide="zap"></i> Most Remembered Flash-Era Players</div>
+    <p class="subtext">
+      Names that appeared in multiple players' Flash friend lists —
+      the well-known players from before Flash died (~2020).
+    </p>
+    <div class="flash-chips">
+      {% for f in top_flash %}
+      <div class="flash-chip">
+        {{ f.name }}
+        <span class="chip-count">×{{ f.times_listed }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- CTA -->
+  {% if not user.is_authenticated %}
+  <div class="cta-strip">
+    <h3>Want to appear in the graph?</h3>
+    <p>Log in with your Bonk.io account to sync your friends list and see where you fit.</p>
+    <a href="{% url 'login' %}" class="cta-btn">Log in with Bonk.io</a>
+  </div>
+  {% else %}
+  <div class="cta-strip">
+    <h3>Your friends are in here somewhere.</h3>
+    <p>Search the player database to find people you know, or check if your Flash-era friends are still around.</p>
+    <a href="{% url 'players_page' %}" class="cta-btn">Search Players</a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
