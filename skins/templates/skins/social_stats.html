@@ -304,7 +304,7 @@
 
     <div class="stats-panel">
       <div class="section-title"><i data-lucide="bar-chart-2"></i> Players by Registration Year</div>
-      <p class="subtext">Estimated from bonk_id using known community-tracked creation dates.</p>
+      <p class="subtext">Estimated from bonk_id using community-tracked creation dates.</p>
       <div class="bar-wrap">
         {% for row in year_distribution %}
         <div class="bar-row">
@@ -323,13 +323,16 @@
     <div class="stats-panel">
       <div class="section-title"><i data-lucide="pie-chart"></i> Friend Count Distribution</div>
       <p class="subtext">How social is the bonk.io playerbase?</p>
+      <p style="font-size:0.75rem; color:#6b7280; margin:0 0 10px;">
+        Bar widths use a log scale so smaller groups are visible.
+      </p>
       <div class="bar-wrap">
         {% for row in friend_distribution %}
         <div class="bar-row">
           <span class="bar-label">{{ row.bracket }}</span>
           <div class="bar-outer">
             <div class="bar-inner bar-purple"
-                 style="width: {% widthratio row.player_count friend_distribution.0.player_count 100 %}%">
+                 style="width: {{ row.bar_width }}%">
             </div>
           </div>
           <span class="bar-count">{{ row.player_count }}</span>

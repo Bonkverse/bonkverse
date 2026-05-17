@@ -1,5 +1,6 @@
 # skins/social_stats.py
 
+import math
 from django.shortcuts import render
 from django.db.models import Count
 from django_ratelimit.decorators import ratelimit
@@ -45,10 +46,6 @@ def social_stats(request):
         p["est_date"] = format_registration(p["bonk_id"], fmt="%b %Y")
 
     # ── Year-by-year registration breakdown ───────────────────────
-    #
-    # Pull all bonk_ids and bucket them by estimated registration year.
-    # We fetch in chunks to avoid loading 50k rows into RAM all at once —
-    # but 50k integers is only ~400 KB so a single fetch is fine here.
     all_ids = list(
         BonkPlayer.objects
         .filter(bonk_id__gt=0)
@@ -68,16 +65,16 @@ def social_stats(request):
     year_max = max((r["player_count"] for r in year_distribution), default=1)
 
     # ── Friend count distribution ─────────────────────────────────
-    # with the friend count distribution some people can over 1000, lets adjust the buckets to be more readable and useful
     with connection.cursor() as cursor:
         cursor.execute("""
             SELECT
                 CASE
+                    WHEN last_friend_count = 0   THEN '0 (no friends)'
                     WHEN last_friend_count < 5   THEN '1–4'
-                    WHEN last_friend_count < 10   THEN '5–9'
-                    WHEN last_friend_count < 50  THEN '10-49'
-                    WHEN last_friend_count < 100  THEN '50–99'
-                    WHEN last_friend_count < 250  THEN '100–199'
+                    WHEN last_friend_count < 10  THEN '5–9'
+                    WHEN last_friend_count < 50  THEN '10–49'
+                    WHEN last_friend_count < 100 THEN '50–99'
+                    WHEN last_friend_count < 250 THEN '100–249'
                     WHEN last_friend_count < 500 THEN '250–499'
                     WHEN last_friend_count < 700 THEN '500–699'
                     WHEN last_friend_count < 1000 THEN '700–999'
@@ -90,8 +87,17 @@ def social_stats(request):
         """)
         dist_rows = cursor.fetchall()
 
+    # Log-scale bar widths — prevents the massive "0 friends" bucket from
+    # making every other bar invisible when using a linear scale.
+    max_count = max((row[1] for row in dist_rows), default=1)
+    max_log   = math.log10(max_count + 1)
+
     friend_distribution = [
-        {"bracket": row[0], "player_count": row[1]}
+        {
+            "bracket":      row[0],
+            "player_count": row[1],
+            "bar_width":    round(math.log10(row[1] + 1) / max_log * 100, 1),
+        }
         for row in dist_rows
     ]
 
