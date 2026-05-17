@@ -39,7 +39,7 @@ def social_stats(request):
         BonkPlayer.objects
         .filter(bonk_id__gt=0)
         .order_by("bonk_id")
-        .values("username", "bonk_id", "last_friend_count")[:10]
+        .values("username", "bonk_id", "last_friend_count")[:20]
     )
     for p in oldest_qs:
         p["est_date"] = format_registration(p["bonk_id"], fmt="%b %Y")
