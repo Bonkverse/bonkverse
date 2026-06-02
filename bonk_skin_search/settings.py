@@ -648,7 +648,7 @@ BLSKIN_FETCHER_URL = os.getenv(
 BONKVERSE_BASE_URL = os.getenv("BONKVERSE_BASE_URL", "https://bonkverse.io")
 
 CLOUDFLARE_ZONE_ID  = os.getenv("CLOUDFLARE_ZONE_ID", "")
-CLOUDFLARE_API_TOKEN = os.getenv("CLOUDFLARE_API_TOKEN", "")
+CLOUDFLARE_CACHE_API_TOKEN = os.getenv("CLOUDFLARE_CACHE_API_TOKEN", "")
 
 # =========================================================
 # Security / CORS

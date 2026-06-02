@@ -128,7 +128,7 @@ def staff_required(view_func):
 def purge_cloudflare_cache(paths: list):
     """Purge specific file paths from Cloudflare's edge cache."""
     zone_id   = getattr(settings, "CLOUDFLARE_ZONE_ID", "")
-    api_token = getattr(settings, "CLOUDFLARE_API_TOKEN", "")
+    api_token = getattr(settings, "CLOUDFLARE_CACHE_API_TOKEN", "")
 
     if not zone_id or not api_token:
         return  # not configured — skip silently
