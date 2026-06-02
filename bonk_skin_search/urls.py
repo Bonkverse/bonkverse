@@ -72,7 +72,7 @@ urlpatterns = [
     # path('skins/<int:skin_id>/', skin_detail, name='skin_detail'),
     # path("skins/<int:skin_id>/<uuid:uuid>/", skin_detail, name="skin_detail"),
     path("skins/detail/<int:skin_id>", skin_detail, name="skin_detail"),
-    path("changelog/", changelog_view, name="changelog"),
+    # path("changelog/", changelog_view, name="changelog"),
     path("staff/", staff.staff_page, name="staff"),
 
 
