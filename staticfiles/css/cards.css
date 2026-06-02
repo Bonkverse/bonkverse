@@ -239,6 +239,21 @@
     color: #ff8f8f !important;
 }
 
+/* Re-render button inside ··· — staff only, teal accent */
+.card-rerender-btn {
+    color: #2DD4BF !important;
+}
+ 
+.card-rerender-btn:hover {
+    background: rgba(45,212,191,0.1) !important;
+    color: #5eead4 !important;
+}
+ 
+.card-rerender-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* ── Bottom action button ── */
 .card-action-btn {
     width: 100%;

@@ -90,6 +90,15 @@
                   <i data-lucide="file-text"></i> View Skin Details
                 </a>
               </li>
+              {% if user.is_staff %}
+              <li class="more-menu-divider"></li>
+              <li>
+                <button class="card-rerender-btn"
+                        data-skin-id="{{ skin.id }}">
+                  <i data-lucide="refresh-cw"></i> Re-render Image
+                </button>
+              </li>
+              {% endif %}
               <li class="more-menu-divider"></li>
               <li>
                 <button class="card-report-btn card-report-link"
@@ -545,5 +554,44 @@ async function doBonkLoginFromSearch(e) {
   }
   return false;
 }
+
+// ── Re-render (staff only) ────────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll('.card-rerender-btn').forEach(btn => {
+    btn.addEventListener('click', async function(e) {
+      e.stopPropagation();
+      this.closest('.card-more-dropdown')?.classList.remove('open');
+
+      const skinId = this.dataset.skinId;
+      const card   = document.querySelector(`.skin-card[data-id="${skinId}"]`);
+      const img    = card?.querySelector('img');
+
+      this.disabled    = true;
+      this.textContent = 'Re-rendering…';
+
+      try {
+        const r = await fetch(`/skins/${skinId}/rerender/`, {
+          method:  'POST',
+          headers: { 'X-CSRFToken': getCSRF(), 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        const json = await r.json().catch(() => ({}));
+
+        if (r.ok && json.ok) {
+          if (img) img.src = json.image_url + '?t=' + Date.now();
+          toast('✅ Skin re-rendered.');
+        } else {
+          toast('❌ Re-render failed: ' + (json.error || 'unknown error'));
+        }
+      } catch (err) {
+        toast('❌ Re-render request failed.');
+        console.error(err);
+      }
+
+      this.disabled    = false;
+      this.innerHTML   = '<i data-lucide="refresh-cw"></i> Re-render Image';
+      if (window.lucide) lucide.createIcons({ nodes: [this] });
+    });
+  });
+});
 </script>
 {% endblock %}

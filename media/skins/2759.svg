@@ -1,0 +1,349 @@
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="-350 -350 700 700"
+  width="700"
+  height="700"
+>
+  <defs>
+    <clipPath id="playerClip">
+      <circle cx="0" cy="0" r="350" />
+    </clipPath>
+  </defs>
+
+  <!-- Player outline -->
+  <circle
+    cx="0"
+    cy="0"
+    r="352"
+    fill="none"
+    stroke="rgba(0,0,0,0.25)"
+    stroke-width="4"
+  />
+
+  <!-- Player base -->
+  <circle
+    cx="0"
+    cy="0"
+    r="350"
+    fill="#80deea"
+    stroke="#333"
+    stroke-width="3"
+  />
+
+  <!-- Shapes -->
+  <g clip-path="url(#playerClip)">
+    
+<g
+  transform="
+    translate(4.277056731283665 54.65329337120056)
+    rotate(246.68281555175776)
+    scale(4.705556966364384 4.705556966364384)
+  "
+  style="color: #80deea;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-47, -47)">
+      <svg xmlns:xlink="http://www.w3.org/1999/xlink" height="94.0px" width="94.0px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 94.0 94.0">
+  <g transform="matrix(1.0, 0.0, 0.0, 1.0, 50.0, 50.0)">
+    <path d="M44.0 -24.0 Q33.25 -30.0 20.0 -30.0 -0.7 -30.0 -15.35 -15.35 -30.0 -0.7 -30.0 20.0 -30.0 33.25 -24.0 44.0 -30.05 40.65 -35.35 35.35 -50.0 20.7 -50.0 0.0 -50.0 -20.7 -35.35 -35.35 -20.7 -50.0 0.0 -50.0 20.7 -50.0 35.35 -35.35 40.65 -30.05 44.0 -24.0" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+  </g></svg>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(106.98044919967651 188.62343168258667)
+    rotate(187.4985809326172)
+    scale(1.2885308917611837 1.2885308917611837)
+  "
+  style="color: #eeeeee;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-15, -50)">
+      <svg xmlns:xlink="http://www.w3.org/1999/xlink" height="100.0px" width="30.0px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30.0 100.0">
+  <g transform="matrix(1.0, 0.0, 0.0, 1.0, 15.0, 50.0)">
+    <path d="M0.0 -50.0 L15.0 50.0 -15.0 50.0 0.0 -50.0" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+  </g></svg>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(16.58764323592186 208.84795999526978)
+    rotate(182.33236694335938)
+    scale(1.1793741751462221 1.1793741751462221)
+  "
+  style="color: #eeeeee;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-15, -50)">
+      <svg xmlns:xlink="http://www.w3.org/1999/xlink" height="100.0px" width="30.0px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30.0 100.0">
+  <g transform="matrix(1.0, 0.0, 0.0, 1.0, 15.0, 50.0)">
+    <path d="M0.0 -50.0 L15.0 50.0 -15.0 50.0 0.0 -50.0" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+  </g></svg>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(-151.9060719013214 129.4760720729828)
+    rotate(187.4985809326172)
+    scale(1.2885308917611837 1.2885308917611837)
+  "
+  style="color: #eeeeee;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-15, -50)">
+      <svg xmlns:xlink="http://www.w3.org/1999/xlink" height="100.0px" width="30.0px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30.0 100.0">
+  <g transform="matrix(1.0, 0.0, 0.0, 1.0, 15.0, 50.0)">
+    <path d="M0.0 -50.0 L15.0 50.0 -15.0 50.0 0.0 -50.0" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+  </g></svg>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(204.93374681472778 151.33344650268555)
+    rotate(178.39657592773438)
+    scale(0.9081138130277395 0.9081138130277395)
+  "
+  style="color: #eeeeee;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-15, -50)">
+      <svg xmlns:xlink="http://www.w3.org/1999/xlink" height="100.0px" width="30.0px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30.0 100.0">
+  <g transform="matrix(1.0, 0.0, 0.0, 1.0, 15.0, 50.0)">
+    <path d="M0.0 -50.0 L15.0 50.0 -15.0 50.0 0.0 -50.0" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+  </g></svg>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(-68.01162230968475 192.77059078216553)
+    rotate(192.9058380126953)
+    scale(1.0767384506762028 1.0767384506762028)
+  "
+  style="color: #eeeeee;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-15, -50)">
+      <svg xmlns:xlink="http://www.w3.org/1999/xlink" height="100.0px" width="30.0px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30.0 100.0">
+  <g transform="matrix(1.0, 0.0, 0.0, 1.0, 15.0, 50.0)">
+    <path d="M0.0 -50.0 L15.0 50.0 -15.0 50.0 0.0 -50.0" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+  </g></svg>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(28.427567839622498 -21.966758131980896)
+    rotate(5.1186580657958975)
+    scale(14.84397941827774 14.84397941827774)
+  "
+  style="color: #80deea;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-15.5, -15.5)">
+      <svg xmlns:xlink="http://www.w3.org/1999/xlink" height="31.0px" width="31.0px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 31.0 31.0">
+  <g transform="matrix(1.0, 0.0, 0.0, 1.0, 15.5, 15.5)">
+    <path d="M10.95 -10.95 Q15.5 -6.4 15.5 0.0 15.5 6.4 10.95 10.95 6.4 15.5 0.0 15.5 -6.4 15.5 -10.95 10.95 -15.5 6.4 -15.5 0.0 -15.5 -6.4 -10.95 -10.95 -6.4 -15.5 0.0 -15.5 6.4 -15.5 10.95 -10.95" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+  </g></svg>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(13.192265778779984 -44.9556097984314)
+    rotate(110.41675567626953)
+    scale(2.057824470102787 2.057824470102787)
+  "
+  style="color: #4fc3f7;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-50, -50)">
+      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100">
+	<g transform="matrix(1.0, 0.0, 0.0, 1.0, 50, 50)">
+		<circle fill="currentColor" cx="0" cy="0" r="50" clip-path="url(#cut-off-bottom)" />
+		<clipPath id="cut-off-bottom">
+			<rect x="0" y="-50" width="50" height="100" />
+		</clipPath>
+	</g></svg>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(202.71019077301025 -44.03864538669586)
+    rotate(70)
+    scale(2.028317455202341 2.028317455202341)
+  "
+  style="color: #4fc3f7;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-50, -50)">
+      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100">
+	<g transform="matrix(1.0, 0.0, 0.0, 1.0, 50, 50)">
+		<circle fill="currentColor" cx="0" cy="0" r="50" clip-path="url(#cut-off-bottom)" />
+		<clipPath id="cut-off-bottom">
+			<rect x="0" y="-50" width="50" height="100" />
+		</clipPath>
+	</g></svg>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(13.567237764596939 -44.9556097984314)
+    rotate(110.5531234741211)
+    scale(1.090889573097229 1.090889573097229)
+  "
+  style="color: #03a9f4;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-50, -50)">
+      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100">
+	<g transform="matrix(1.0, 0.0, 0.0, 1.0, 50, 50)">
+		<circle fill="currentColor" cx="0" cy="0" r="50" clip-path="url(#cut-off-bottom)" />
+		<clipPath id="cut-off-bottom">
+			<rect x="0" y="-50" width="50" height="100" />
+		</clipPath>
+	</g></svg>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(13.192265778779984 -44.9556097984314)
+    rotate(110.52913665771484)
+    scale(0.8725569173693657 0.8725569173693657)
+  "
+  style="color: #4fc3f7;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-50, -50)">
+      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100">
+	<g transform="matrix(1.0, 0.0, 0.0, 1.0, 50, 50)">
+		<circle fill="currentColor" cx="0" cy="0" r="50" clip-path="url(#cut-off-bottom)" />
+		<clipPath id="cut-off-bottom">
+			<rect x="0" y="-50" width="50" height="100" />
+		</clipPath>
+	</g></svg>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(201.28118515014648 -43.25706887245178)
+    rotate(70.09774017333984)
+    scale(1.079828467220068 1.079828467220068)
+  "
+  style="color: #03a9f4;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-50, -50)">
+      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100">
+	<g transform="matrix(1.0, 0.0, 0.0, 1.0, 50, 50)">
+		<circle fill="currentColor" cx="0" cy="0" r="50" clip-path="url(#cut-off-bottom)" />
+		<clipPath id="cut-off-bottom">
+			<rect x="0" y="-50" width="50" height="100" />
+		</clipPath>
+	</g></svg>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(202.59237480163574 -44.062209606170654)
+    rotate(70.03978729248047)
+    scale(0.879508413374424 0.879508413374424)
+  "
+  style="color: #4fc3f7;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-50, -50)">
+      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100" height="100">
+	<g transform="matrix(1.0, 0.0, 0.0, 1.0, 50, 50)">
+		<circle fill="currentColor" cx="0" cy="0" r="50" clip-path="url(#cut-off-bottom)" />
+		<clipPath id="cut-off-bottom">
+			<rect x="0" y="-50" width="50" height="100" />
+		</clipPath>
+	</g></svg>
+    </g>
+  
+</g>
+
+
+<g
+  transform="
+    translate(111.60424423217773 39.52486199140549)
+    rotate(1.7933830022811892)
+    scale(3.010205052793026 3.010205052793026)
+  "
+  style="color: #000000;"
+  fill="currentColor"
+  stroke="currentColor"
+>
+  
+    <g transform="translate(-15.5, -15.5)">
+      <svg xmlns:xlink="http://www.w3.org/1999/xlink" height="31.0px" width="31.0px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 31.0 31.0">
+  <g transform="matrix(1.0, 0.0, 0.0, 1.0, 15.5, 15.5)">
+    <path d="M10.95 -10.95 Q15.5 -6.4 15.5 0.0 15.5 6.4 10.95 10.95 6.4 15.5 0.0 15.5 -6.4 15.5 -10.95 10.95 -15.5 6.4 -15.5 0.0 -15.5 -6.4 -10.95 -10.95 -6.4 -15.5 0.0 -15.5 6.4 -15.5 10.95 -10.95" fill="currentColor" fill-rule="evenodd" stroke="none"/>
+  </g></svg>
+    </g>
+  
+</g>
+
+  </g>
+</svg>

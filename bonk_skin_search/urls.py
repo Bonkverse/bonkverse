@@ -17,6 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.http import HttpResponse
 from django.urls import path
+from skins.rerender import rerender_skin
 from skins.search import search_skins
 from skins.upload import upload_skin
 from django.conf import settings
@@ -49,9 +50,7 @@ from skins.apis.auth.who_am_i import me
 from skins.report_skin import report_skin
 from skins.utils.tools.map_decode import map_decode_page, api_map_decode
 from django.views.static import serve
-
-
-
+from skins.report_skin import report_skin
 
 
 urlpatterns = [
@@ -128,6 +127,8 @@ urlpatterns = [
 
     path("api/skins/<int:skin_id>/report/", report_skin, name="report_skin"),
     path("social-stats/", social_stats, name="social_stats"),
+
+    path("skins/<int:skin_id>/rerender/", rerender_skin, name="rerender_skin"),
     
 
 
