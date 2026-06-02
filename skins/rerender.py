@@ -11,7 +11,7 @@ from skins.models import Skin, SkinImage
 
 SKIN_EDITOR_URL = getattr(
     settings,
-    "SKIN_EDITOR_URL",
+    "BONKVERSE_EDITOR_URL",
     "https://editor.bonkverse.io"  # set this in your Railway env vars
 )
 
