@@ -24,22 +24,10 @@ def staff_page(request):
             "image": "images/zorroloko.png",
         },
         {
-            "name": "Lolmsana",
-            "role": "Moderator & Map Maker",
-            "bio": "Listening to twenty øne piløts",
-            "image": "images/lolmsana.png",
-        },
-        {
             "name": "Green Ball",
             "role": "Moderator & Lore Writer",
             "bio": "Co-conspirator of the fall of Bonktown",
             "image": "images/greenball.png",
-        },
-        {
-            "name": "Madslolll",
-            "role": "Moderator & Minecraft Conoisseur",
-            "bio": "I couldn't think of a bio so I made Saucy make one for me :/",
-            "image": "images/maddy.png",
         },
         # add more staff members here
     ]
