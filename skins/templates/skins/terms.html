@@ -1,0 +1,566 @@
+{% extends "skins/base.html" %}
+{% load static %}
+
+{% block title %}Bonkverse — Terms of Service{% endblock %}
+
+{% block content %}
+<style>
+  .terms-page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+    text-align: left;
+  }
+
+  .terms-hero {
+    text-align: center;
+    padding: 48px 0 36px;
+  }
+
+  .terms-hero h1 {
+    font-size: 2rem;
+    margin: 0 0 8px;
+    color: #fff;
+    text-shadow: 0 0 20px rgba(0, 255, 204, 0.25);
+  }
+
+  .terms-hero p {
+    color: #9aa4b2;
+    margin: 0;
+    font-size: 0.9rem;
+  }
+
+  /* TOC */
+  .terms-toc {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 28px;
+  }
+
+  .terms-toc p {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #6b7280;
+    margin: 0 0 10px;
+  }
+
+  .terms-toc ol {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 20px;
+  }
+
+  .terms-toc li { font-size: 0.82rem; }
+
+  .terms-toc a {
+    color: #9aa4b2;
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+
+  .terms-toc a:hover { color: #00e6c3; }
+
+  @media (max-width: 540px) {
+    .terms-toc ol { grid-template-columns: 1fr; }
+  }
+
+  /* Sections */
+  .terms-section {
+    background: hsla(212, 40%, 20%, 0.597);
+    border: 1px solid rgba(0, 150, 136, 0.3);
+    border-radius: 12px;
+    padding: 22px 26px;
+    margin-bottom: 16px;
+  }
+
+  .terms-section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #00e6c3;
+    margin: 0 0 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0, 150, 136, 0.2);
+  }
+
+  .terms-section-title i[data-lucide] {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    opacity: 0.85;
+  }
+
+  .terms-section p,
+  .terms-section li {
+    color: #c9d1d9;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    margin: 0 0 8px;
+  }
+
+  .terms-section p:last-child { margin-bottom: 0; }
+
+  .terms-section ul,
+  .terms-section ol {
+    margin: 6px 0 8px 18px;
+    padding: 0;
+  }
+
+  .terms-section li { margin-bottom: 5px; }
+
+  /* Rule cards (allowed / not allowed) */
+  .rule-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .rule-card {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+
+  .rule-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .rule-tag {
+    display: inline-block;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+
+  .rule-tag.allowed {
+    background: rgba(0, 150, 136, 0.18);
+    border: 1px solid rgba(0, 150, 136, 0.4);
+    color: #00e6c3;
+  }
+
+  .rule-tag.prohibited {
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    color: #f87171;
+  }
+
+  .rule-tag.note {
+    background: rgba(251, 191, 36, 0.12);
+    border: 1px solid rgba(251, 191, 36, 0.35);
+    color: #fbbf24;
+  }
+
+  .rule-card-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #e2e8f0;
+  }
+
+  .rule-card p {
+    font-size: 0.85rem;
+    color: #9aa4b2;
+    margin: 0;
+    line-height: 1.6;
+  }
+
+  /* Contact box */
+  .terms-contact {
+    background: hsla(212, 40%, 20%, 0.597);
+    border: 1px solid rgba(0, 150, 136, 0.4);
+    border-radius: 12px;
+    padding: 22px 26px;
+    margin-top: 8px;
+  }
+
+  .terms-contact .terms-section-title { margin-bottom: 14px; }
+
+  .contact-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 0.875rem;
+    color: #c9d1d9;
+  }
+
+  .contact-row:last-child { border-bottom: none; }
+
+  .contact-row i[data-lucide] {
+    width: 15px;
+    height: 15px;
+    color: #009688;
+    flex-shrink: 0;
+  }
+
+  .contact-row a {
+    color: #00e6c3;
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+
+  .contact-row a:hover { color: #fff; }
+
+  /* Disclaimer banner */
+  .terms-disclaimer {
+    background: rgba(251, 191, 36, 0.07);
+    border: 1px solid rgba(251, 191, 36, 0.25);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .terms-disclaimer i[data-lucide] {
+    width: 16px;
+    height: 16px;
+    color: #fbbf24;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .terms-disclaimer p {
+    color: #d4b96a;
+    font-size: 0.85rem;
+    margin: 0;
+    line-height: 1.6;
+  }
+</style>
+
+<div class="terms-page">
+
+  <div class="terms-hero">
+    <h1>Terms of Service</h1>
+    <p>Last updated: June 5, 2026</p>
+  </div>
+
+  <!-- Disclaimer banner -->
+  <div class="terms-disclaimer">
+    <i data-lucide="alert-triangle"></i>
+    <p>
+      Bonkverse is an independent, fan-made platform. We are not affiliated with, endorsed by, or
+      connected to the creators of bonk.io in any way. By using Bonkverse, you agree to these terms.
+    </p>
+  </div>
+
+  <!-- TOC -->
+  <div class="terms-toc">
+    <p>Contents</p>
+    <ol>
+      <li><a href="#about">About Bonkverse</a></li>
+      <li><a href="#accounts">Accounts</a></li>
+      <li><a href="#content">Content & Uploads</a></li>
+      <li><a href="#skin-ownership">Skin Ownership</a></li>
+      <li><a href="#conduct">Community Conduct</a></li>
+      <li><a href="#api">API & Open Source</a></li>
+      <li><a href="#moderation">Moderation</a></li>
+      <li><a href="#disclaimer">Disclaimer & Liability</a></li>
+      <li><a href="#changes">Changes to Terms</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ol>
+  </div>
+
+  <!-- Intro -->
+  <div class="terms-section">
+    <p>
+      These Terms of Service govern your use of <strong style="color:#fff;">bonkverse.io</strong> and the
+      <strong style="color:#fff;">Bonkverse browser extension</strong> (collectively, "Bonkverse" or "the platform").
+      By accessing or using Bonkverse, you agree to be bound by these terms. If you do not agree, please do not use the platform.
+    </p>
+  </div>
+
+  <!-- 1 -->
+  <div class="terms-section" id="about">
+    <div class="terms-section-title">
+      <i data-lucide="info"></i> 1. About Bonkverse
+    </div>
+    <p>
+      Bonkverse is a fan-made community platform built for players of the browser game bonk.io. It is
+      independently developed and operated, and is not affiliated with or endorsed by the creators of bonk.io.
+      Bonkverse provides tools for discovering and sharing skins, tracking player stats, exploring community
+      data, and enhancing the bonk.io experience through the browser extension.
+    </p>
+    <p>
+      Bonkverse is open source. The codebase is publicly available at
+      <a href="https://github.com/orgs/Bonkverse/repositories" target="_blank" rel="noopener"
+         style="color:#00e6c3;">github.com/orgs/Bonkverse</a>.
+    </p>
+  </div>
+
+  <!-- 2 -->
+  <div class="terms-section" id="accounts">
+    <div class="terms-section-title">
+      <i data-lucide="user"></i> 2. Accounts
+    </div>
+    <p>
+      Bonkverse accounts are linked to your bonk.io account. Bonkverse facilitates authentication through
+      bonk.io's own endpoints to verify your identity — we do not store your bonk.io password and do not
+      own your bonk.io account. We are not responsible for unauthorized access to, theft of, or loss of
+      your bonk.io account.
+    </p>
+    <div class="rule-cards">
+      <div class="rule-card">
+        <div class="rule-card-header">
+          <span class="rule-tag allowed">Allowed</span>
+          <span class="rule-card-title">Alternate Accounts</span>
+        </div>
+        <p>You may use alternate bonk.io accounts ("alts") on Bonkverse. This helps us associate accounts that belong to the same player and improves the accuracy of our community data.</p>
+      </div>
+      <div class="rule-card">
+        <div class="rule-card-header">
+          <span class="rule-tag prohibited">Prohibited</span>
+          <span class="rule-card-title">Account Theft & Guest Accounts</span>
+        </div>
+        <p>You may not access, use, or impersonate another player's account without their explicit permission. bonk.io guest accounts are not permitted on Bonkverse.</p>
+      </div>
+      <div class="rule-card">
+        <div class="rule-card-header">
+          <span class="rule-tag prohibited">Prohibited</span>
+          <span class="rule-card-title">Impersonation</span>
+        </div>
+        <p>You may not impersonate another player, community figure, or Bonkverse staff member. Accounts found to be impersonating others may be removed.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3 -->
+  <div class="terms-section" id="content">
+    <div class="terms-section-title">
+      <i data-lucide="image"></i> 3. Content & Uploads
+    </div>
+    <p>
+      Bonkverse is open to players of all ages. We recognize that the bonk.io community includes young
+      teens and a broad, growing audience. We value freedom of expression and want Bonkverse to be a
+      creative, welcoming space — but we will not host public content that harms or endangers our community.
+    </p>
+    <div class="rule-cards">
+      <div class="rule-card">
+        <div class="rule-card-header">
+          <span class="rule-tag prohibited">Not Allowed</span>
+          <span class="rule-card-title">Harmful or Offensive Public Content</span>
+        </div>
+        <p>
+          Publicly visible content must not include: overtly NSFW or sexually explicit material, hate speech,
+          racism, sexism, discrimination against any group of people, content that sexualizes minors, or
+          content intended to harass, threaten, or harm any individual or group.
+        </p>
+      </div>
+      <div class="rule-card">
+        <div class="rule-card-header">
+          <span class="rule-tag note">Note</span>
+          <span class="rule-card-title">Community Standards Apply</span>
+        </div>
+        <p>
+          We want Bonkverse to feel safe and welcoming for everyone. Content that causes genuine discomfort
+          to community members — even if it falls in a grey area — may be reviewed and removed at staff
+          discretion. When in doubt, keep it appropriate for a general audience.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4 -->
+  <div class="terms-section" id="skin-ownership">
+    <div class="terms-section-title">
+      <i data-lucide="layers"></i> 4. Skin Ownership
+    </div>
+    <p>
+      Skins you create on Bonkverse belong to you. Bonkverse does not claim ownership over your creations.
+      As the creator, you have full control over what you do with your skin:
+    </p>
+    <div class="rule-cards">
+      <div class="rule-card">
+        <div class="rule-card-header">
+          <span class="rule-tag allowed">Your Rights</span>
+          <span class="rule-card-title">What You Can Do With Your Skins</span>
+        </div>
+        <p>
+          You are free to share, distribute, monetize, keep private, or collaborate on skins you create.
+          You may also grant or restrict permission for others to use or build on your work — that is entirely
+          your call as the creator.
+        </p>
+      </div>
+      <div class="rule-card">
+        <div class="rule-card-header">
+          <span class="rule-tag note">Platform License</span>
+          <span class="rule-card-title">Display on Bonkverse</span>
+        </div>
+        <p>
+          By uploading a skin to Bonkverse, you grant us a non-exclusive license to display, index, and
+          serve the skin on the platform. This does not transfer ownership and does not prevent you from
+          using or publishing your skin elsewhere.
+        </p>
+      </div>
+      <div class="rule-card">
+        <div class="rule-card-header">
+          <span class="rule-tag prohibited">Prohibited</span>
+          <span class="rule-card-title">Uploading Others' Work Without Credit</span>
+        </div>
+        <p>
+          Do not upload skins created by other players without giving proper credit. If you believe your
+          work has been posted without your permission, contact us via Discord and we will review it.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5 -->
+  <div class="terms-section" id="conduct">
+    <div class="terms-section-title">
+      <i data-lucide="users"></i> 5. Community Conduct
+    </div>
+    <p>
+      Bonkverse is a platform open to everyone. We expect all users to treat each other with respect.
+      The following behaviors are not tolerated:
+    </p>
+    <ul>
+      <li>Harassment, threats, or targeted abuse of any community member</li>
+      <li>Coordinated vote manipulation or abuse of the voting or favoriting system</li>
+      <li>Spam — including mass uploading low-effort or duplicate content</li>
+      <li>Any form of discrimination based on race, ethnicity, gender, sexual orientation, religion, nationality, disability, or age</li>
+      <li>Attempting to compromise other users' accounts or personal information</li>
+    </ul>
+    <p>
+      Bonkverse is meant to be a place where the bonk.io community can grow together. Behavior that
+      undermines that — whether or not it fits neatly into the list above — may result in moderation action.
+    </p>
+  </div>
+
+  <!-- 6 -->
+  <div class="terms-section" id="api">
+    <div class="terms-section-title">
+      <i data-lucide="code-2"></i> 6. API & Open Source
+    </div>
+    <p>
+      Bonkverse's source code is open source and publicly available. We welcome the community to learn from
+      it, contribute to it, or build on top of it. We also allow use of Bonkverse APIs for personal projects,
+      educational work, or additions that benefit the bonk.io community through Bonkverse.
+    </p>
+    <div class="rule-cards">
+      <div class="rule-card">
+        <div class="rule-card-header">
+          <span class="rule-tag note">Permission Required</span>
+          <span class="rule-card-title">Using Bonkverse Data or APIs</span>
+        </div>
+        <p>
+          Permission to use Bonkverse data or APIs beyond casual personal use remains with Bonkverse.
+          If you'd like to build something using our platform — whether a tool, project, or integration —
+          reach out to us first through our Discord server. We're generally open to it.
+        </p>
+      </div>
+      <div class="rule-card">
+        <div class="rule-card-header">
+          <span class="rule-tag prohibited">Prohibited</span>
+          <span class="rule-card-title">DDoS & Abuse</span>
+        </div>
+        <p>
+          Deliberately overloading, disrupting, or attempting to take down Bonkverse infrastructure is
+          strictly prohibited. This includes DDoS attacks, automated scraping at abusive rates, and any
+          other activity that degrades the platform for other users.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7 -->
+  <div class="terms-section" id="moderation">
+    <div class="terms-section-title">
+      <i data-lucide="shield"></i> 7. Moderation
+    </div>
+    <p>
+      Bonkverse staff and admins reserve the right to remove content or restrict access to any account
+      that harms, endangers, discriminates against, offends, or causes discomfort to members of our community —
+      at their discretion, with or without prior notice.
+    </p>
+    <p>
+      Moderation actions may include content removal, account suspension, or permanent bans. We aim to be
+      fair and consistent, but the safety and wellbeing of our community always takes priority.
+    </p>
+    <p>
+      If you believe a moderation action was made in error, you may appeal by contacting us through our
+      Discord server.
+    </p>
+  </div>
+
+  <!-- 8 -->
+  <div class="terms-section" id="disclaimer">
+    <div class="terms-section-title">
+      <i data-lucide="alert-circle"></i> 8. Disclaimer & Limitation of Liability
+    </div>
+    <p>
+      Bonkverse is a fan-made platform provided as-is. We are not affiliated with the creators of bonk.io
+      and make no claims of ownership over the bonk.io game, its assets, or trademarks.
+    </p>
+    <p>
+      We are not responsible for:
+    </p>
+    <ul>
+      <li>Loss or theft of your bonk.io account</li>
+      <li>Interruptions to the Bonkverse service due to outages, maintenance, or external factors</li>
+      <li>Content uploaded by users that violates these terms</li>
+      <li>Any changes to bonk.io that affect how Bonkverse functions</li>
+    </ul>
+    <p>
+      Bonkverse is built and maintained by a small team. We do our best to keep it running well, but
+      we cannot guarantee uninterrupted availability or data preservation in all circumstances.
+    </p>
+  </div>
+
+  <!-- 9 -->
+  <div class="terms-section" id="changes">
+    <div class="terms-section-title">
+      <i data-lucide="refresh-cw"></i> 9. Changes to These Terms
+    </div>
+    <p>
+      We may update these terms as the platform grows and evolves. When we do, the "Last updated" date
+      at the top of this page will change. Continued use of Bonkverse after an update constitutes
+      acceptance of the revised terms.
+    </p>
+  </div>
+
+  <!-- 10 -->
+  <div class="terms-contact" id="contact">
+    <div class="terms-section-title">
+      <i data-lucide="mail"></i> 10. Contact
+    </div>
+    <p style="color:#9aa4b2; font-size:0.875rem; margin-bottom:14px;">
+      Questions about these terms, moderation appeals, API access requests, or data inquiries:
+    </p>
+    <div class="contact-row">
+      <i data-lucide="message-circle"></i>
+      <span>Discord:</span>
+      <a href="https://discord.gg/2Zx7Cwhr4Z" target="_blank" rel="noopener">discord.gg/2Zx7Cwhr4Z</a>
+    </div>
+    <div class="contact-row">
+      <i data-lucide="github"></i>
+      <span>GitHub:</span>
+      <a href="https://github.com/orgs/Bonkverse/repositories" target="_blank" rel="noopener">github.com/orgs/Bonkverse</a>
+    </div>
+    <div class="contact-row">
+      <i data-lucide="globe"></i>
+      <span>Website:</span>
+      <a href="https://bonkverse.io">bonkverse.io</a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

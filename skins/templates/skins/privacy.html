@@ -1,0 +1,415 @@
+{% extends "skins/base.html" %}
+{% load static %}
+
+{% block title %}Bonkverse — Privacy Policy{% endblock %}
+
+{% block content %}
+<style>
+  .privacy-page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+    text-align: left;
+  }
+
+  .privacy-hero {
+    text-align: center;
+    padding: 48px 0 36px;
+  }
+
+  .privacy-hero h1 {
+    font-size: 2rem;
+    margin: 0 0 8px;
+    color: #fff;
+    text-shadow: 0 0 20px rgba(0, 255, 204, 0.25);
+  }
+
+  .privacy-hero p {
+    color: #9aa4b2;
+    margin: 0;
+    font-size: 0.9rem;
+  }
+
+  .privacy-section {
+    background: hsla(212, 40%, 20%, 0.597);
+    border: 1px solid rgba(0, 150, 136, 0.3);
+    border-radius: 12px;
+    padding: 22px 26px;
+    margin-bottom: 16px;
+  }
+
+  .privacy-section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #00e6c3;
+    margin: 0 0 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0, 150, 136, 0.2);
+  }
+
+  .privacy-section-title i[data-lucide] {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    opacity: 0.85;
+  }
+
+  .privacy-section p,
+  .privacy-section li {
+    color: #c9d1d9;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    margin: 0 0 8px;
+  }
+
+  .privacy-section p:last-child { margin-bottom: 0; }
+
+  .privacy-section ul {
+    margin: 6px 0 0 18px;
+    padding: 0;
+  }
+
+  .privacy-section li { margin-bottom: 5px; }
+
+  .data-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .data-card {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+
+  .data-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .data-tag {
+    display: inline-block;
+    background: rgba(0, 150, 136, 0.18);
+    border: 1px solid rgba(0, 150, 136, 0.4);
+    color: #00e6c3;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+
+  .data-tag.ext {
+    background: rgba(95, 127, 255, 0.15);
+    border-color: rgba(95, 127, 255, 0.4);
+    color: #9fb6ff;
+  }
+
+  .data-card-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #e2e8f0;
+  }
+
+  .data-card p {
+    font-size: 0.85rem;
+    color: #9aa4b2;
+    margin: 0;
+    line-height: 1.6;
+  }
+
+  .privacy-contact {
+    background: hsla(212, 40%, 20%, 0.597);
+    border: 1px solid rgba(0, 150, 136, 0.4);
+    border-radius: 12px;
+    padding: 22px 26px;
+    margin-top: 8px;
+  }
+
+  .privacy-contact .privacy-section-title {
+    margin-bottom: 14px;
+  }
+
+  .contact-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 0.875rem;
+    color: #c9d1d9;
+  }
+
+  .contact-row:last-child { border-bottom: none; }
+
+  .contact-row i[data-lucide] {
+    width: 15px;
+    height: 15px;
+    color: #009688;
+    flex-shrink: 0;
+  }
+
+  .contact-row a {
+    color: #00e6c3;
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+
+  .contact-row a:hover { color: #fff; }
+
+  .privacy-toc {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 28px;
+  }
+
+  .privacy-toc p {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #6b7280;
+    margin: 0 0 10px;
+  }
+
+  .privacy-toc ol {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 20px;
+  }
+
+  .privacy-toc li {
+    font-size: 0.82rem;
+  }
+
+  .privacy-toc a {
+    color: #9aa4b2;
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+
+  .privacy-toc a:hover { color: #00e6c3; }
+
+  @media (max-width: 540px) {
+    .privacy-toc ol { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="privacy-page">
+
+  <div class="privacy-hero">
+    <h1>Privacy Policy</h1>
+    <p>Last updated: June 5, 2026</p>
+  </div>
+
+  <div class="privacy-toc">
+    <p>Contents</p>
+    <ol>
+      <li><a href="#what-is-bonkverse">What Bonkverse Is</a></li>
+      <li><a href="#what-we-collect">What We Collect</a></li>
+      <li><a href="#how-we-use">How We Use Your Data</a></li>
+      <li><a href="#sharing">Data Sharing</a></li>
+      <li><a href="#retention">Data Retention</a></li>
+      <li><a href="#ai-tools">AI Tools</a></li>
+      <li><a href="#children">Children's Privacy</a></li>
+      <li><a href="#your-rights">Your Rights</a></li>
+      <li><a href="#changes">Changes to This Policy</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ol>
+  </div>
+
+  <div class="privacy-section">
+    <p>
+      Bonkverse ("we", "us", or "our") operates the website at <strong style="color:#fff;">bonkverse.io</strong>
+      and the <strong style="color:#fff;">Bonkverse browser extension</strong>. This policy explains what data
+      we collect, why we collect it, and how it is used. We are committed to transparency and only collect
+      what is necessary to provide our services.
+    </p>
+  </div>
+
+  <div class="privacy-section" id="what-is-bonkverse">
+    <div class="privacy-section-title">
+      <i data-lucide="info"></i> 1. What Bonkverse Is
+    </div>
+    <p>
+      Bonkverse is a community platform for the browser game <strong style="color:#fff;">bonk.io</strong>.
+      It provides a skin library where players can discover, upload, vote on, and apply skins; player profile
+      and stats tracking; win/loss leaderboards; a Discord server directory; social stats; and a replay archive.
+      The Bonkverse browser extension enhances the bonk.io game client with in-game overlays, kill tracking,
+      and stat submission.
+    </p>
+  </div>
+
+  <div class="privacy-section" id="what-we-collect">
+    <div class="privacy-section-title">
+      <i data-lucide="database"></i> 2. What We Collect
+    </div>
+    <div class="data-cards">
+
+      <div class="data-card">
+        <div class="data-card-header">
+          <span class="data-tag">Website</span>
+          <span class="data-card-title">Bonk.io Account Identity</span>
+        </div>
+        <p>When you log in to Bonkverse, we collect your bonk.io username and a session token used to verify your identity and apply skins to your in-game skin slots. We do not collect or store your bonk.io password.</p>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-header">
+          <span class="data-tag">Website</span>
+          <span class="data-card-title">Player & Social Data</span>
+        </div>
+        <p>We collect bonk.io player usernames, friends list relationships, and associated game history to build player profiles and our community database. This data comes from the bonk.io platform when players connect their accounts.</p>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-header">
+          <span class="data-tag">Website</span>
+          <span class="data-card-title">Skin Uploads</span>
+        </div>
+        <p>When you upload a skin, we store the skin image data and associate it with your username to give proper credit. Uploaded skins are publicly visible on Bonkverse by default.</p>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-header">
+          <span class="data-tag">Website</span>
+          <span class="data-card-title">Game Replays</span>
+        </div>
+        <p>We collect bonk.io game replay data to build a searchable replay archive. Replays may include player usernames, match outcomes, and room metadata from public bonk.io games.</p>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-header">
+          <span class="data-tag ext">Extension</span>
+          <span class="data-card-title">In-Game Activity</span>
+        </div>
+        <p>The Bonkverse browser extension tracks in-game events including kills, deaths, wins, losses, and match outcomes while you play bonk.io. This data is sent to Bonkverse to populate your player profile and contribute to leaderboards. The extension only operates on bonk.io and does not monitor any other sites.</p>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-header">
+          <span class="data-tag ext">Extension</span>
+          <span class="data-card-title">Authentication Token</span>
+        </div>
+        <p>The extension stores your Bonkverse authentication token locally in your browser to keep you logged in between sessions. This token is never shared with third parties.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="privacy-section" id="how-we-use">
+    <div class="privacy-section-title">
+      <i data-lucide="settings"></i> 3. How We Use Your Data
+    </div>
+    <ul>
+      <li>To display your player profile, stats, and skin library on Bonkverse</li>
+      <li>To populate win/loss and skin leaderboards</li>
+      <li>To apply skins to your bonk.io skin slots when requested</li>
+      <li>To build a community player and replay database for the bonk.io community</li>
+      <li>To power in-game overlays and stats shown by the Bonkverse extension</li>
+      <li>To detect and moderate content that violates our community guidelines</li>
+    </ul>
+  </div>
+
+  <div class="privacy-section" id="sharing">
+    <div class="privacy-section-title">
+      <i data-lucide="share-2"></i> 4. Data Sharing
+    </div>
+    <p>We do not sell your personal data. We do not share your data with third parties except:</p>
+    <ul>
+      <li><strong style="color:#fff;">Service providers</strong> — hosting infrastructure (Railway) and CDN/security services (Cloudflare) necessary to operate Bonkverse. These providers process data only as needed to deliver our service.</li>
+      <li><strong style="color:#fff;">Legal requirements</strong> — if required by law or to protect the safety of our community.</li>
+    </ul>
+  </div>
+
+  <div class="privacy-section" id="retention">
+    <div class="privacy-section-title">
+      <i data-lucide="clock"></i> 5. Data Retention
+    </div>
+    <p>
+      Player profile data, game stats, and uploaded skins are retained as long as your account is active
+      or as long as they are useful for the community platform. You may request deletion of your data at
+      any time by contacting us. Replay data collected from public games may be retained for archival purposes.
+    </p>
+  </div>
+
+  <div class="privacy-section" id="ai-tools">
+    <div class="privacy-section-title">
+      <i data-lucide="cpu"></i> 6. AI Tools
+    </div>
+    <p>
+      We use AI tools including Claude (Anthropic) and ChatGPT (OpenAI) to assist in building and improving
+      the Bonkverse platform. We do not share identifiable user data with these tools. Their use is limited
+      to development assistance only.
+    </p>
+  </div>
+
+  <div class="privacy-section" id="children">
+    <div class="privacy-section-title">
+      <i data-lucide="shield"></i> 7. Children's Privacy
+    </div>
+    <p>
+      Bonkverse is not directed at children under 13. We do not knowingly collect personal information from
+      children under 13. If you believe a child has provided us with personal information, please contact us
+      and we will delete it promptly.
+    </p>
+  </div>
+
+  <div class="privacy-section" id="your-rights">
+    <div class="privacy-section-title">
+      <i data-lucide="user-check"></i> 8. Your Rights
+    </div>
+    <p>You have the right to:</p>
+    <ul>
+      <li>Request access to the data we hold about you</li>
+      <li>Request correction of inaccurate data</li>
+      <li>Request deletion of your account and associated data</li>
+      <li>Opt out of game stat submission by disabling the Bonkverse extension</li>
+    </ul>
+  </div>
+
+  <div class="privacy-section" id="changes">
+    <div class="privacy-section-title">
+      <i data-lucide="refresh-cw"></i> 9. Changes to This Policy
+    </div>
+    <p>
+      We may update this policy as Bonkverse grows and new features are added. When we do, the
+      "Last updated" date at the top of this page will change. Continued use of Bonkverse after
+      changes constitutes acceptance of the updated policy.
+    </p>
+  </div>
+
+  <div class="privacy-contact" id="contact">
+    <div class="privacy-section-title">
+      <i data-lucide="mail"></i> 10. Contact
+    </div>
+    <p style="color:#9aa4b2; font-size:0.875rem; margin-bottom:14px;">
+      For privacy-related questions or data deletion requests, reach us through:
+    </p>
+    <div class="contact-row">
+      <i data-lucide="message-circle"></i>
+      <span>Discord:</span>
+      <a href="https://discord.gg/2Zx7Cwhr4Z" target="_blank" rel="noopener">discord.gg/2Zx7Cwhr4Z</a>
+    </div>
+    <div class="contact-row">
+      <i data-lucide="globe"></i>
+      <span>Website:</span>
+      <a href="https://bonkverse.io">bonkverse.io</a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
