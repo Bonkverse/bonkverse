@@ -31,7 +31,7 @@ from skins.wear_skin import wear_skin, bonk_login_for_wear
 from skins.players import search_players_view, players_page
 from skins.create_changelog import add_changelog
 from skins.changelog import changelog_view
-from skins import flash_friends, terms
+from skins import flash_friends
 from skins import leaderboards
 from skins import players
 from skins import home
@@ -52,6 +52,7 @@ from skins.utils.tools.map_decode import map_decode_page, api_map_decode
 from django.views.static import serve
 from skins.report_skin import report_skin
 from skins.privacy import privacy
+from skins.terms import terms
 
 
 urlpatterns = [
