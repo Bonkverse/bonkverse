@@ -29,9 +29,10 @@
 <div class="skins-container">
   {% for skin in page_obj %}
     <a class="skin-card browse-card" href="{{ skin.get_absolute_url }}" title="{{ skin.name }}">
-      <img loading="lazy" src="{{ skin.image_url }}" alt="{{ skin.name }}">
-      <strong>{{ skin.name|truncatechars:24 }}</strong>
-      <span>by {{ skin.creator|truncatechars:18 }}</span>
+        <img loading="lazy" src="{{ skin.image_url }}" alt="{{ skin.name }}">
+        <strong>{{ skin.name|truncatechars:24 }}</strong>
+        <span>by {{ skin.creator|truncatechars:18 }}</span>
+        <span class="browse-date">{{ skin.created_at|date:"M j, Y" }}</span>
     </a>
   {% empty %}
     <p class="browse-empty">No skins here yet.</p>

@@ -90,9 +90,14 @@ def _kw_q(keywords, include_description=False):
 # Hide flagged content from browse surfaces by default.
 NSFW_Q = _kw_q(["nsfw", "explicit", "nude"], include_description=True)
 
-
+# Hide flagged content in a NULL-safe way: positively match nsfw skins,
+# then exclude those ids. Writing .exclude(NSFW_Q) directly would also drop
+# skins whose labels/description are NULL (NOT NULL = NULL in SQL) — i.e.
+# every brand-new, not-yet-labeled upload. We also no longer require labels
+# at all here, so New Releases shows fresh uploads immediately.
 def _base_queryset():
-    return Skin.objects.exclude(labels__isnull=True).exclude(NSFW_Q)
+    nsfw_ids = Skin.objects.filter(NSFW_Q).values("id")
+    return Skin.objects.exclude(id__in=nsfw_ids)
 
 
 def _apply_sort(qs, sort):
