@@ -25,8 +25,8 @@
 {% include 'skins/partials/carousel.html' with title="Random Picks" skins=random_strip %}
 {# no seeall_url → falls back to search, which is the right behavior for a random strip #}
 
-{% url 'search_skins' as search_url %}
-{% include 'skins/partials/carousel.html' with title="Most Favorited" skins=top_favs seeall_url=search_url|add:'?sort=favorites' %}
+{% url 'leaderboards_favorited' as favs_url %}
+{% include 'skins/partials/carousel.html' with title="Most Favorited" skins=top_favs seeall_url=favs_url %}
 
 
 {% endblock %}
