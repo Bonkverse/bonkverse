@@ -3,7 +3,10 @@
 <section class="carousel-section">
   <div class="carousel-header">
     <h2>{{ title }}</h2>
-    <a class="carousel-seeall" href="{% url 'search_skins' %}?q=">See all →</a>
+    <a class="carousel-seeall"
+       href="{% if seeall_url %}{{ seeall_url }}{% else %}{% url 'search_skins' %}?q={% endif %}">
+      See all →
+    </a>
   </div>
 
   <div class="carousel" data-speed="{{ speed|default:20 }}">

@@ -19,9 +19,14 @@
 </section>
 
 <!-- Animated carousels -->
- {% include "skins/partials/carousel.html" with title="🆕 Recently Uploaded" skins=recent speed=18 %}
- {% include "skins/partials/carousel.html" with title="🎲 Random Picks" skins=random_strip speed=25 %}
- {% include "skins/partials/carousel.html" with title="⭐ Most Favorited" skins=top_favs speed=22 %}
+{% url 'new_releases' as recent_url %}
+{% include 'skins/partials/carousel.html' with title="Recently Uploaded" skins=recent seeall_url=recent_url %}
+
+{% include 'skins/partials/carousel.html' with title="Random Picks" skins=random_strip %}
+{# no seeall_url → falls back to search, which is the right behavior for a random strip #}
+
+{% url 'search_skins' as search_url %}
+{% include 'skins/partials/carousel.html' with title="Most Favorited" skins=top_favs seeall_url=search_url|add:'?sort=favorites' %}
 
 
 {% endblock %}

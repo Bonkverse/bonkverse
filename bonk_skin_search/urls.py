@@ -53,6 +53,7 @@ from django.views.static import serve
 from skins.report_skin import report_skin
 from skins.privacy import privacy
 from skins.terms import terms
+from skins import categories
 
 
 urlpatterns = [
@@ -86,6 +87,11 @@ urlpatterns = [
     path("api/players/search/", players.search_players_view, name="players_search"),
     path("api/flash-friends/search/", flash_friends.search_flash_friends_view, name="flash_friends_search"),
     path('api/join-matchmaking/', join_matchmaking),
+
+
+    path("new/", categories.new_releases, name="new_releases"),
+    path("categories/", categories.category_index, name="category_index"),
+    path("category/<slug:slug>/", categories.category_detail, name="category_detail"),
 
 
     # Leaderboards

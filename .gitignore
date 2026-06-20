@@ -15,3 +15,7 @@ venv/
 
 # Folders
 debug_dumps/
+
+# Utils
+analyze_labels.sql
+label_vocab.csv

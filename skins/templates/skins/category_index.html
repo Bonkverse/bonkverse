@@ -1,0 +1,67 @@
+{% extends 'skins/base.html' %}
+
+{% block title %}Browse Skins by Category{% endblock %}
+
+{% block content %}
+<div class="browse-header">
+  <h1>Browse by Category</h1>
+  <p class="browse-blurb">Not sure what to search for? Jump in by vibe.</p>
+</div>
+
+<div class="category-grid">
+  {% for c in categories %}
+  <a class="category-tile" href="{% url 'category_detail' c.slug %}" title="{{ c.label }}">
+    {% if c.cover %}
+      <img class="category-tile-img" loading="lazy" src="{{ c.cover }}" alt="{{ c.label }}">
+    {% else %}
+      <div class="category-tile-img category-tile-img--empty"></div>
+    {% endif %}
+    <div class="category-tile-meta">
+      <strong>{{ c.label }}</strong>
+      <span>{{ c.count }} skins</span>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+
+<style>
+  .browse-header { text-align: center; margin: 24px auto 28px; }
+  .browse-header h1 { margin: 0 0 6px; }
+  .browse-blurb { color: #9fb3c8; margin: 0; }
+
+  .category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+    padding: 0 20px 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .category-tile {
+    display: block;
+    text-decoration: none;
+    color: #fff;
+    background: #0f1923;
+    border: 1px solid rgba(0,150,136,0.35);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform .12s ease, border-color .12s ease;
+  }
+  .category-tile:hover { transform: translateY(-3px); border-color: #009688; }
+  .category-tile-img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    background: #000;
+    display: block;
+  }
+  .category-tile-img--empty { background: #11202b; }
+  .category-tile-meta { padding: 10px 12px; }
+  .category-tile-meta strong { display: block; font-size: 1.05rem; }
+  .category-tile-meta span { color: #7f93a6; font-size: .85rem; }
+
+  @media (max-width: 540px) {
+    .category-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 12px 32px; }
+  }
+</style>
+{% endblock %}

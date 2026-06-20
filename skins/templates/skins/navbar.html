@@ -17,6 +17,20 @@
         <!-- Search: core feature, direct link -->
         <li><a href="{% url 'search_skins' %}">Search</a></li>
 
+        <!-- Browse: skin discovery -->
+        <li class="nav-item">
+            <a href="#" class="nav-link dropdown-trigger">Browse ▾</a>
+            <ul class="dropdown-menu">
+                <li><a href="{% url 'new_releases' %}">New Releases</a></li>
+                <li><a href="{% url 'category_index' %}">Categories</a></li>
+                <li class="dropdown-divider"></li>
+                <li class="dropdown-group-label">Popular</li>
+                <li><a href="{% url 'category_detail' 'minimalist' %}">Minimalist</a></li>
+                <li><a href="{% url 'category_detail' 'cartoon' %}">Cartoon</a></li>
+                <li><a href="{% url 'category_detail' 'nature' %}">Nature</a></li>
+            </ul>
+        </li>
+
         <!-- Leaderboards: merges Skin + Win/Loss -->
         <li class="nav-item">
             <a href="#" class="nav-link dropdown-trigger">Leaderboards ▾</a>
@@ -90,6 +104,18 @@
             <ul class="mobile-nav-links">
 
                 <li><a href="{% url 'search_skins' %}">Search Skins</a></li>
+
+                <li class="mobile-nav-item">
+                    <button class="mobile-dropdown-trigger">Browse <span class="mobile-chevron">▾</span></button>
+                    <ul class="mobile-dropdown">
+                        <li><a href="{% url 'new_releases' %}">New Releases</a></li>
+                        <li><a href="{% url 'category_index' %}">Categories</a></li>
+                        <li class="mobile-group-label">Popular</li>
+                        <li><a href="{% url 'category_detail' 'minimalist' %}">Minimalist</a></li>
+                        <li><a href="{% url 'category_detail' 'cartoon' %}">Cartoon</a></li>
+                        <li><a href="{% url 'category_detail' 'nature' %}">Nature</a></li>
+                    </ul>
+                </li>
 
                 <li class="mobile-nav-item">
                     <button class="mobile-dropdown-trigger">Leaderboards <span class="mobile-chevron">▾</span></button>

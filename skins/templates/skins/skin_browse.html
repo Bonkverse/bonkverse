@@ -1,0 +1,97 @@
+{% extends 'skins/base.html' %}
+
+{% block title %}{{ heading }}{% endblock %}
+
+{% block content %}
+<div class="browse-header">
+  <h1>{{ heading }}</h1>
+  {% if blurb %}<p class="browse-blurb">{{ blurb }}</p>{% endif %}
+
+  {# Category pages: sort controls #}
+  {% if slug %}
+  <div class="browse-controls">
+    <a href="?sort=favorites" class="{% if sort == 'favorites' %}active{% endif %}">Most Favorited</a>
+    <a href="?sort=upvotes"   class="{% if sort == 'upvotes' %}active{% endif %}">Top Voted</a>
+    <a href="?sort=newest"    class="{% if sort == 'newest' %}active{% endif %}">Newest</a>
+  </div>
+  {% endif %}
+
+  {# New Releases: time-window controls #}
+  {% if period %}
+  <div class="browse-controls">
+    <a href="?period=today" class="{% if period == 'today' %}active{% endif %}">Today</a>
+    <a href="?period=week"  class="{% if period == 'week' %}active{% endif %}">This Week</a>
+    <a href="?period=all"   class="{% if period == 'all' %}active{% endif %}">All Time</a>
+  </div>
+  {% endif %}
+</div>
+
+<div class="skins-container">
+  {% for skin in page_obj %}
+    <a class="skin-card browse-card" href="{{ skin.get_absolute_url }}" title="{{ skin.name }}">
+      <img loading="lazy" src="{{ skin.image_url }}" alt="{{ skin.name }}">
+      <strong>{{ skin.name|truncatechars:24 }}</strong>
+      <span>by {{ skin.creator|truncatechars:18 }}</span>
+    </a>
+  {% empty %}
+    <p class="browse-empty">No skins here yet.</p>
+  {% endfor %}
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="browse-pagination">
+  {% if page_obj.has_previous %}
+    <a href="?{% if slug %}sort={{ sort }}&{% endif %}{% if period %}period={{ period }}&{% endif %}page={{ page_obj.previous_page_number }}">← Prev</a>
+  {% endif %}
+  <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}
+    <a href="?{% if slug %}sort={{ sort }}&{% endif %}{% if period %}period={{ period }}&{% endif %}page={{ page_obj.next_page_number }}">Next →</a>
+  {% endif %}
+</div>
+{% endif %}
+
+<style>
+  .browse-header { text-align: center; margin: 24px auto 20px; }
+  .browse-header h1 { margin: 0 0 6px; }
+  .browse-blurb { color: #9fb3c8; margin: 0 0 14px; }
+
+  .browse-controls { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .browse-controls a {
+    padding: 6px 14px;
+    border-radius: 999px;
+    text-decoration: none;
+    color: #cfe3ee;
+    border: 1px solid rgba(0,150,136,0.4);
+    font-size: .9rem;
+  }
+  .browse-controls a.active { background: #009688; color: #fff; border-color: #009688; }
+
+  .browse-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    text-decoration: none;
+    color: #fff;
+    gap: 6px;
+  }
+  .browse-card img {
+    width: 150px; height: 150px;
+    object-fit: cover;
+    border-radius: 50%;
+    background: #000;
+    border: 2px solid rgba(0,150,136,0.4);
+  }
+  .browse-card:hover img { border-color: #009688; }
+  .browse-card strong { font-size: 1.05rem; }
+  .browse-card span { color: #7f93a6; font-size: .85rem; }
+
+  .browse-empty { text-align: center; color: #7f93a6; padding: 40px; }
+
+  .browse-pagination {
+    display: flex; gap: 16px; align-items: center; justify-content: center;
+    margin: 28px 0 48px; color: #9fb3c8;
+  }
+  .browse-pagination a { color: #009688; text-decoration: none; font-weight: bold; }
+</style>
+{% endblock %}
