@@ -111,7 +111,7 @@ def category_index(request):
         items = []
         for slug, meta in CATEGORIES.items():
             qs = _base_queryset().filter(_kw_q(meta["keywords"]))
-            cover = qs.order_by("-created_at").values_list("image_url", flat=True).first()
+            cover = qs.order_by("-upvotes").values_list("image_url", flat=True).first()
             items.append({
                 "slug":  slug,
                 "label": meta["label"],
