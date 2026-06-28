@@ -144,13 +144,10 @@ def wear_skin_code(request):
 
 
 # ── Existing gallery "wear by id" — unchanged ────────────────────────────────
-@login_required
+@bonk_token_required
 @require_POST
 def wear_skin(request, skin_id: int):
-    token = _get_session_token(request)
-    if not token:
-        return JsonResponse({"ok": False, "need_login": True}, status=401)
-
+    token = _get_session_token(request)  # guaranteed present by decorator
     slot = _resolve_slot(request)
     skin = get_object_or_404(Skin, id=skin_id)
     skin_code = skin.skin_code
@@ -159,7 +156,7 @@ def wear_skin(request, skin_id: int):
 
     ok, err = _bonk_update_avatar(token, slot, skin_code)
     if not ok:
-        return JsonResponse({"ok": False, "need_login": True, "error": err or "update_failed"}, status=401)
+        return JsonResponse({"ok": False, "auth": "bonk", "error": err or "update_failed"}, status=401)
 
     _save_session_token(request, token)
     return JsonResponse({"ok": True, "slot": slot})
