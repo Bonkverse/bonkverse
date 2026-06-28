@@ -337,7 +337,7 @@ async function tryWear(card) {
   if (!url) { toast('❌ This skin can\'t be worn.'); return; }
   const { ok, status, json } = await postFormNoRedirect(url, {});
   if (ok && json.ok) { toast('✅ Applied to your active slot.'); return; }
-  if (status === 401 && json?.need_login) { pendingWearCard = card; openBonkLogin(); return; }
+  if (status === 401 && (json?.auth === 'bonk' || json?.need_login)) { pendingWearCard = card; openBonkLogin(); return; }
   toast('❌ Failed to apply skin.');
 }
 

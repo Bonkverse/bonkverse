@@ -521,7 +521,7 @@ async function tryWearCard(skinId, card) {
     toast('✅ Applied to your active slot.');
     return;
   }
-  if (status === 401 && json?.need_login) {
+  if (status === 401 && (json?.auth === 'bonk' || json?.need_login)) {
     pendingWearSkinId = skinId;
     openBonkLogin();
     return;

@@ -202,9 +202,9 @@ const loginModal = document.getElementById('bonk-login-modal');
 
 async function startWear() {
   wearMsg.textContent = 'Applying…';
-  const { ok, json } = await postForm("{% url 'wear_skin' skin.id %}", {});
+  const { ok, status, json } = await postForm("{% url 'wear_skin' skin.id %}", {});
   if (ok && json.ok) { wearMsg.textContent = '✅ Applied to your active slot!'; return; }
-  if (json.need_login) { wearMsg.textContent = ''; openBonkLogin(); return; }
+  if (status === 401 && (json.auth === 'bonk' || json.need_login)) { wearMsg.textContent = ''; openBonkLogin(); return; }
   wearMsg.textContent = '❌ ' + (json.error || 'Failed to apply.');
 }
 
