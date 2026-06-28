@@ -699,6 +699,27 @@ CORS_ALLOW_HEADERS = [
     "user-agent", "x-csrftoken", "x-requested-with",
 ]
 
+DEBUG_PROPAGATE_EXCEPTIONS = True
+
+if IS_PROD:
+    ALLOWED_HOSTS = [
+        "bonkverse-production.up.railway.app",
+        "bonkverse.io",
+        "www.bonkverse.io",
+        "editor.bonkverse.io",   # add this — the editor subdomain hits Django too
+        "127.0.0.1",
+        "localhost",
+    ]
+else:
+    ALLOWED_HOSTS = [
+        "bonkverse-production.up.railway.app",
+        "bonkverse.io",
+        "www.bonkverse.io",
+        "127.0.0.1",
+        "localhost",
+        "192.168.1.183",
+    ]
+
 # =========================================================
 # Installed Apps
 # =========================================================
