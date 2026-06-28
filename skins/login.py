@@ -121,6 +121,7 @@ def login_view(request):
                 # Session (no password stored)
                 request.session["bonk_token"] = token
                 request.session["bonk_token_expires"] = time.time() + (14 * 24 * 60 * 60)  # 14 days, matches TOKEN_TTL in wear_skin.py
+                # request.session["bonk_token_expires"] = time.time() + 30  # 30 seconds for testing
                 request.session["bonk_username"] = bonk_username
                 request.session["bonk_user_id"] = bonk_user_id
 
@@ -193,7 +194,7 @@ def login_view(request):
 
 @ratelimit(key="ip", rate="10/m", block=True)
 def logout_view(request):
-    for k in ("bonk_token", "bonk_username", "bonk_user_id"):
+    for k in ("bonk_token", "bonk_token_expires", "bonk_active_slot", "bonk_username", "bonk_user_id"):
         request.session.pop(k, None)
     logout(request)
     messages.success(request, "Logged out!")

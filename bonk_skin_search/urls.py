@@ -27,7 +27,7 @@ from skins.my_profile import my_profile, edit_skin, delete_skin
 from skins.bonkbot import matchmaking_page, join_matchmaking
 from skins.skin_detail import skin_detail
 from skins.skin_votes import vote_skin_api, toggle_favorite_api
-from skins.wear_skin import wear_skin, bonk_login_for_wear
+from skins.wear_skin import wear_skin, bonk_login_for_wear, wear_skin_code
 from skins.players import search_players_view, players_page
 from skins.create_changelog import add_changelog
 from skins.changelog import changelog_view
@@ -83,6 +83,7 @@ urlpatterns = [
     path('api/skins/<int:skin_id>/vote/', vote_skin_api, name='api_vote_skin'),
     path('api/skins/<int:skin_id>/favorite/', toggle_favorite_api, name='api_toggle_favorite'),
     path("api/skins/<int:skin_id>/wear/", wear_skin, name="wear_skin"),
+    path("api/skins/wear-code/", wear_skin_code, name="wear_skin_code"),
     path("api/bonk/login/", bonk_login_for_wear, name="bonk_login_for_wear"),
     path("api/players/search/", players.search_players_view, name="players_search"),
     path("api/flash-friends/search/", flash_friends.search_flash_friends_view, name="flash_friends_search"),

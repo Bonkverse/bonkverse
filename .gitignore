@@ -15,6 +15,7 @@ venv/
 
 # Folders
 debug_dumps/
+media/
 
 # Utils
 analyze_labels.sql

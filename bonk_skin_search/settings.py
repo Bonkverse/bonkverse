@@ -651,56 +651,53 @@ CLOUDFLARE_ZONE_ID  = os.getenv("CLOUDFLARE_ZONE_ID", "")
 CLOUDFLARE_CACHE_API_TOKEN = os.getenv("CLOUDFLARE_CACHE_API_TOKEN", "")
 
 # =========================================================
-# Security / CORS
+# Security / CORS / Cookies
 # =========================================================
 
+# Prod: share session + CSRF cookies across *.bonkverse.io so editor.bonkverse.io
+# is authenticated by the same login as bonkverse.io. Lax is sufficient because
+# subdomains of one registrable domain are same-site.
+if IS_PROD:
+    SESSION_COOKIE_DOMAIN = ".bonkverse.io"
+    CSRF_COOKIE_DOMAIN = ".bonkverse.io"
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SAMESITE = "Lax"
+    CSRF_COOKIE_SAMESITE = "Lax"
+else:
+    # localhost:5173 ↔ localhost:8000: cookies are shared by host (port-agnostic),
+    # so no domain needed; just don't require HTTPS.
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SAMESITE = "Lax"
+    CSRF_COOKIE_SAMESITE = "Lax"
+
+# Editor JS must read the CSRF cookie to echo it as X-CSRFToken → not HttpOnly.
+CSRF_COOKIE_HTTPONLY = False
+
 CSRF_TRUSTED_ORIGINS = [
-    "http://127.0.0.1:8000",
-    "http://localhost:8000",
     "https://bonkverse.io",
     "https://www.bonkverse.io",
-    "https://bonk.io",
+    "https://editor.bonkverse.io",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    BONKVERSE_EDITOR_URL,
 ]
 
 CORS_ALLOWED_ORIGINS = [
+    "https://editor.bonkverse.io",
+    "https://bonkverse.io",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    BONKVERSE_EDITOR_URL,
 ]
 
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOW_HEADERS = [
-    "accept",
-    "authorization",
-    "content-type",
-    "user-agent",
-    "x-csrftoken",
-    "x-requested-with",
+    "accept", "authorization", "content-type",
+    "user-agent", "x-csrftoken", "x-requested-with",
 ]
-
-DEBUG_PROPAGATE_EXCEPTIONS = True
-
-if IS_PROD:
-    ALLOWED_HOSTS = [
-        "bonkverse-production.up.railway.app",
-        "bonkverse.io",
-        "www.bonkverse.io",
-        "127.0.0.1",
-        "localhost",
-    ]
-else:
-    ALLOWED_HOSTS = [
-        "bonkverse-production.up.railway.app",
-        "bonkverse.io",
-        "www.bonkverse.io",
-        "127.0.0.1",
-        "localhost",
-        "192.168.1.183",
-    ]
 
 # =========================================================
 # Installed Apps
