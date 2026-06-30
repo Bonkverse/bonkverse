@@ -102,6 +102,13 @@ def login_view(request):
                     headers=BROWSER_HEADERS,
                     timeout=REQ_TIMEOUT,
                 )
+
+                logger.warning(
+                    "[bonkverse] prod bonk login response | status=%s | content_type=%s | body=%s",
+                    resp.status_code,
+                    resp.headers.get("content-type"),
+                    resp.text[:500].replace("\n", " "),
+                )
             except RequestException as e:
                 messages.error(request, f"Network error talking to Bonk.io: {e}")
                 return render(request, "skins/login.html", {"form": form})
@@ -184,7 +191,13 @@ def login_view(request):
 
 
             # Failed login
-            detail = (data or {}).get("r") or (data or {}).get("error") or "unknown error"
+            detail = (
+                (data or {}).get("error")
+                or (data or {}).get("message")
+                or (data or {}).get("reason")
+                or (data or {}).get("r")
+                or "unknown error"
+            )
             messages.error(request, f"Bonk.io login failed: {detail}. Check your credentials.")
 
     else:
