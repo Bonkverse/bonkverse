@@ -176,7 +176,7 @@
       const res = await fetch("{% url 'api_map_decode' %}", {
         method: "POST",
         body: form,
-        headers: { "X-CSRFToken": getCookie("csrftoken") },
+        headers: { "X-CSRFToken": getCookie("bv_csrftoken") },
       });
 
       const data = await res.json().catch(() => null);

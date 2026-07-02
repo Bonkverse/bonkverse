@@ -297,7 +297,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // ── CSRF + fetch helpers ──────────────────────────────────────
 function getCSRF() {
-  const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+  const m = document.cookie.match(/(?:^|;\s*)bv_csrftoken=([^;]+)/);
   return m ? decodeURIComponent(m[1]) : '';
 }
 

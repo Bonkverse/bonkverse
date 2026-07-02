@@ -236,7 +236,7 @@
 {% block extra_scripts %}
 <script>
 function getCSRF() {
-  const m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+  const m = document.cookie.match(/(?:^|;\s*)bv_csrftoken=([^;]+)/);
   return m ? decodeURIComponent(m[1]) : '';
 }
 
