@@ -101,6 +101,8 @@ if IS_PROD:
     # Session is shared across *.bonkverse.io so the editor subdomain is
     # authenticated by the same login as the apex.
     SESSION_COOKIE_DOMAIN = ".bonkverse.io"
+    CSRF_COOKIE_DOMAIN = ".bonkverse.io"
+    CSRF_COOKIE_NAME = "bv_csrftoken"
 
     # CSRF cookie stays HOST-scoped (no dot). Each origin reads/echoes its own
     # token, and a host cookie OVERWRITES any stale pre-change cookie instead of
