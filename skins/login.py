@@ -5,6 +5,7 @@ from django.contrib.auth import login, logout
 from django.contrib import messages
 from django_ratelimit.decorators import ratelimit
 from django.core import signing
+from django.utils.http import url_has_allowed_host_and_scheme
 
 from .models import BonkUser, BonkPlayer, BonkAccountLink
 from .forms import LoginForm
@@ -187,7 +188,9 @@ def login_view(request):
 
                 # after messages.success(...)
                 next_url = request.POST.get("next") or request.GET.get("next")
-                return redirect(next_url or "my_profile")
+                if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+                    return redirect(next_url)
+                return redirect("my_profile")
 
 
             # Failed login

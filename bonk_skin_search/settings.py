@@ -10,6 +10,7 @@ import os
 import logging
 from dotenv import load_dotenv
 from datetime import timezone as dt_timezone
+import sentry_sdk
 
 load_dotenv()
 
@@ -20,6 +21,14 @@ load_dotenv()
 ENV = os.getenv("ENV", "local")
 IS_PROD = ENV == "production"
 DEBUG = not IS_PROD
+
+sentry_sdk.init(
+    dsn=os.getenv("SENTRY_DSN"),
+    environment=ENV,
+    send_default_pii=False,
+    enable_logs=True,
+    traces_sample_rate=0.1,
+)
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 
