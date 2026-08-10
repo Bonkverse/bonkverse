@@ -20,3 +20,18 @@ media/
 # Utils
 analyze_labels.sql
 label_vocab.csv
+
+# Editors
+.vscode/
+.idea/
+*.code-workspace
+
+# Secrets & credentials
+*.pem
+*.key
+*.sqlite3
+*.db
+
+# Local backups / dumps
+backups/
+*.dump
