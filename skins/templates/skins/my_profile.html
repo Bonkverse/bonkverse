@@ -4,6 +4,40 @@
 
 {% block content %}
 
+  {% if show_friend_sync_toast %}
+  <script>
+  (function () {
+    var handle = BVToast.show("Syncing your friends\u2026", { type: "info", spinner: true, sticky: true });
+    var attempts = 0;
+    function poll() {
+      attempts++;
+      fetch("/api/friends-sync-status/", { headers: { "X-Requested-With": "XMLHttpRequest" } })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.status === "done") {
+            var friendsText = "Synced " + data.friends_now + " friends";
+            var extras = [];
+            if (data.added_edges > 0) extras.push(data.added_edges + " new");
+            if (data.removed_edges > 0) extras.push(data.removed_edges + " removed");
+            if (extras.length) friendsText += " : " + extras.join(", ");
+            handle.update(friendsText, { type: "success" });
+            return;
+          }
+          if (attempts < 10) {
+            setTimeout(poll, 1200);
+          } else {
+            handle.update("Friend sync is taking longer than usual", { type: "info" });
+          }
+        })
+        .catch(function () {
+          handle.dismiss();
+        });
+    }
+    setTimeout(poll, 1200);
+  })();
+  </script>
+  {% endif %}
+
   <h1>{{ user.username }}'s Skins</h1>
 
   <!-- ── Your Favorite Skins ─────────────────────────────── -->
@@ -240,19 +274,6 @@ function getCSRF() {
   return m ? decodeURIComponent(m[1]) : '';
 }
 
-function toast(text) {
-  const t = document.createElement('div');
-  t.textContent = text;
-  Object.assign(t.style, {
-    position:'fixed', bottom:'18px', left:'50%', transform:'translateX(-50%)',
-    background:'rgba(0,0,0,.85)', color:'#fff', padding:'8px 14px',
-    borderRadius:'10px', zIndex:9999, fontSize:'14px', pointerEvents:'none'
-  });
-  document.body.appendChild(t);
-  setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; }, 1400);
-  setTimeout(() => t.remove(), 1800);
-}
-
 function showImage(src) {
   document.getElementById('zoomedImage').src = src;
   document.getElementById('imageModal').style.display = 'flex';
@@ -334,11 +355,11 @@ function closeBonkLogin() { if (loginModal?.close) loginModal.close(); else logi
 
 async function tryWear(card) {
   const url = card.dataset.wearUrl;
-  if (!url) { toast('❌ This skin can\'t be worn.'); return; }
+  if (!url) { BVToast.show("This skin can't be worn.", { type: "error" }); return; }
   const { ok, status, json } = await postFormNoRedirect(url, {});
-  if (ok && json.ok) { toast('✅ Applied to your active slot.'); return; }
+  if (ok && json.ok) { BVToast.show("Applied to your active slot.", { type: "success" }); return; }
   if (status === 401 && (json?.auth === 'bonk' || json?.need_login)) { pendingWearCard = card; openBonkLogin(); return; }
-  toast('❌ Failed to apply skin.');
+  BVToast.show("Failed to apply skin.", { type: "error" });
 }
 
 document.addEventListener('click', e => {

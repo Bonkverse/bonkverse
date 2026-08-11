@@ -24,11 +24,6 @@ h1, .leaderboard-title, .changelog-header {
   50% { text-shadow: 0 0 20px #ffcc33; }
 }
 
-/* --- NOTIFICATIONS --- */
-.notification.success { background-color: #00a84b; }
-.notification.error { background-color: #c0392b; }
-.notification.info { background-color: #ffb347; color: #2b1300; }
-
 /* --- FORM --- */
 form {
   border: 2px solid #ff7b00;

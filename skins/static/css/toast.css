@@ -1,0 +1,89 @@
+:root {
+  --bv-toast-bg: #24333f;
+  --bv-toast-border: #3a4d5c;
+  --bv-toast-text: #f0f0f0;
+  --bv-toast-success: #009688;
+  --bv-toast-warning: #ffc107;
+  --bv-toast-error: #c0392b;
+  --bv-toast-info: #5a7a94;
+}
+
+#bv-toast-stack {
+  position: fixed;
+  top: 84px;
+  right: 20px;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.bv-toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bv-toast-bg);
+  border: 1px solid var(--bv-toast-border);
+  border-left: 4px solid var(--bv-toast-info);
+  border-radius: 8px;
+  padding: 12px 16px;
+  min-width: 260px;
+  max-width: 340px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+  color: var(--bv-toast-text);
+  font-size: 13px;
+  line-height: 1.4;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: auto;
+}
+
+.bv-toast.bv-toast-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.bv-toast.bv-toast-success { border-left-color: var(--bv-toast-success); }
+.bv-toast.bv-toast-warning { border-left-color: var(--bv-toast-warning); }
+.bv-toast.bv-toast-error   { border-left-color: var(--bv-toast-error); }
+.bv-toast.bv-toast-info    { border-left-color: var(--bv-toast-info); }
+
+.bv-toast-icon {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bv-toast-icon svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.5;
+}
+
+.bv-toast-success .bv-toast-icon { color: var(--bv-toast-success); }
+.bv-toast-warning .bv-toast-icon { color: var(--bv-toast-warning); }
+.bv-toast-error   .bv-toast-icon { color: var(--bv-toast-error); }
+.bv-toast-info    .bv-toast-icon { color: var(--bv-toast-info); }
+
+.bv-toast-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--bv-toast-border);
+  border-top-color: var(--bv-toast-info);
+  border-radius: 50%;
+  animation: bv-toast-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes bv-toast-spin {
+  to { transform: rotate(360deg); }
+}
+
+.bv-toast-text {
+  flex: 1;
+}

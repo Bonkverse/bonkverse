@@ -107,6 +107,7 @@ from django.views.decorators.http import require_POST
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 
+from skins.events import log_event
 from skins.models import Skin, SkinImage
 
 SKIN_EDITOR_URL = getattr(
@@ -234,6 +235,8 @@ def rerender_skin(request, skin_id):
         f"/media/{png_rel}",
         f"/media/{thumb_rel}",
     ])
+
+    log_event(request.user, "skin_rerendered", skin=skin)
 
     return JsonResponse({
         "ok": True,

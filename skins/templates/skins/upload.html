@@ -5,15 +5,6 @@
 {% block content %}
   <h1>Upload a Bonk.io Skin</h1>
 
-  <!-- Django flash messages -->
-  {% if messages %}
-    <ul class="messages">
-      {% for message in messages %}
-        <li class="{{ message.tags }}">{{ message }}</li>
-      {% endfor %}
-    </ul>
-  {% endif %}
-
   <!-- Who is submitting -->
   <p class="muted">You’re uploading as: <strong>{{ user.username }}</strong></p>
 

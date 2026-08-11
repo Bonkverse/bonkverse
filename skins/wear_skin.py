@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404
 from urllib.parse import urlparse, parse_qs
 from .models import Skin
 from .auth_guards import api_login_required, bonk_token_required
+from .events import log_event
 
 BONK_LOGIN_URL = "https://bonk2.io/scripts/login_legacy.php"
 BONK_AVATAR_UPDATE_URL = "https://bonk2.io/scripts/avatar_update.php"
@@ -140,6 +141,7 @@ def wear_skin_code(request):
         return JsonResponse({"ok": False, "auth": "bonk", "error": err or "update_failed"}, status=401)
 
     _save_session_token(request, token)  # sliding TTL
+    log_event(request.user, "skin_worn", metadata={"source": "editor_unsaved"})
     return JsonResponse({"ok": True, "slot": slot})
 
 
@@ -159,4 +161,5 @@ def wear_skin(request, skin_id: int):
         return JsonResponse({"ok": False, "auth": "bonk", "error": err or "update_failed"}, status=401)
 
     _save_session_token(request, token)
+    log_event(request.user, "skin_worn", skin=skin)
     return JsonResponse({"ok": True, "slot": slot})

@@ -112,6 +112,7 @@ urlpatterns = [
     path("api/loss-leaderboard/<str:period>/", api.loss_leaderboard, name="api_loss_leaderboard"),
     path("api/heartbeat/", api.heartbeat, name="heartbeat"),
     path("api/stop_tracking/", api.stop_tracking, name="stop_tracking"),
+    path("api/friends-sync-status/", api.friends_sync_status, name="friends_sync_status"),
 
     # Verification
     path("api/request_verification/", api.request_verification, name="request_verification"),

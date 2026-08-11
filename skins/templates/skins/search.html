@@ -327,22 +327,6 @@ async function postFormNoRedirect(url, data) {
   return { ok: r.ok, status: r.status, json };
 }
 
-// ── Toast ─────────────────────────────────────────────────────
-function toast(text) {
-  const t = document.createElement('div');
-  t.textContent = text;
-  Object.assign(t.style, {
-    position: 'fixed', bottom: '18px', left: '50%',
-    transform: 'translateX(-50%)',
-    background: 'rgba(0,0,0,.85)', color: '#fff',
-    padding: '8px 14px', borderRadius: '10px',
-    zIndex: 9999, fontSize: '14px', pointerEvents: 'none'
-  });
-  document.body.appendChild(t);
-  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; }, 1400);
-  setTimeout(() => t.remove(), 1800);
-}
-
 // ── Restore vote state on load ────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll('.skin-card').forEach(card => {
@@ -518,7 +502,7 @@ function closeBonkLogin() {
 async function tryWearCard(skinId, card) {
   const { ok, status, json } = await postFormNoRedirect(`/api/skins/${skinId}/wear/`, {});
   if (ok && json.ok) {
-    toast('✅ Applied to your active slot.');
+    BVToast.show('Applied to your active slot.', { type: 'success' });
     return;
   }
   if (status === 401 && (json?.auth === 'bonk' || json?.need_login)) {
@@ -526,7 +510,7 @@ async function tryWearCard(skinId, card) {
     openBonkLogin();
     return;
   }
-  toast('❌ Failed to apply skin.');
+  BVToast.show('Failed to apply skin.', { type: 'error' });
 }
 
 async function doBonkLoginFromSearch(e) {
@@ -578,12 +562,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (r.ok && json.ok) {
           if (img) img.src = json.image_url + '?t=' + Date.now();
-          toast('✅ Skin re-rendered.');
+          BVToast.show('Skin re-rendered.', { type: 'success' });
         } else {
-          toast('❌ Re-render failed: ' + (json.error || 'unknown error'));
+          BVToast.show('Re-render failed: ' + (json.error || 'unknown error'), { type: 'error' });
         }
       } catch (err) {
-        toast('❌ Re-render request failed.');
+        BVToast.show('Re-render request failed.', { type: 'error' });
         console.error(err);
       }
 

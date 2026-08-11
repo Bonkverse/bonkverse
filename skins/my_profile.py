@@ -50,10 +50,16 @@ def my_profile(request):
     for skin in favorite_list:
         skin.fav_count_val = fav_counts.get(skin.id, 0)
 
+    # Popped (not just read) so the toast only fires once, right after
+    # the login redirect that set it — not on every subsequent profile
+    # page load or refresh.
+    show_friend_sync_toast = request.session.pop("show_friend_sync_toast", False)
+
     return render(request, "skins/my_profile.html", {
-        "skins":         page_obj,
-        "favorites":     favorite_list,
-        "user":          user,
+        "skins":                   page_obj,
+        "favorites":               favorite_list,
+        "user":                    user,
+        "show_friend_sync_toast":  show_friend_sync_toast,
     })
 
 

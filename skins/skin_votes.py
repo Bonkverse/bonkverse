@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django_ratelimit.decorators import ratelimit
 from .models import Skin, SkinVote
+from .events import log_event
 import json
 
 
@@ -56,6 +57,9 @@ def vote_skin_api(request, skin_id):
 
     skin.save(update_fields=["upvotes", "downvotes"])
 
+    if current_vote:
+        log_event(request.user, "skin_voted", skin=skin, direction=current_vote)
+
     # Don't call skin.favorited_by.count() here — the vote API response
     # doesn't use it on the frontend, so it's a free wasted query.
     return JsonResponse({
@@ -84,6 +88,8 @@ def toggle_favorite_api(request, skin_id):
 
     # One COUNT(*) here is fine — the favorite count IS used in the response
     favorites = skin.favorited_by.count()
+
+    log_event(request.user, "skin_favorited" if favorited else "skin_unfavorited", skin=skin)
 
     return JsonResponse({
         "favorited":  favorited,

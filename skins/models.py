@@ -343,3 +343,16 @@ class SkinReport(models.Model):
 
     def __str__(self):
         return f"Report on {self.skin.name} ({self.reason})"
+
+class UserEvent(models.Model):
+    user = models.ForeignKey("BonkUser", on_delete=models.SET_NULL, null=True, blank=True, related_name="events")
+    event_type = models.CharField(max_length=50, db_index=True)
+    skin = models.ForeignKey("Skin", on_delete=models.SET_NULL, null=True, blank=True)
+    metadata = models.JSONField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["event_type", "created_at"])]
+
+    def __str__(self):
+        return f"{self.event_type} by {self.user_id} at {self.created_at}"

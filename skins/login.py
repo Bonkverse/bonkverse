@@ -7,6 +7,8 @@ from django_ratelimit.decorators import ratelimit
 from django.core import signing
 from django.utils.http import url_has_allowed_host_and_scheme
 
+from skins.events import log_event
+
 from .models import BonkUser, BonkPlayer, BonkAccountLink
 from .forms import LoginForm
 from .friends_sync import sync_friends_for_player
@@ -61,7 +63,7 @@ def _fetch_friends(token: str) -> dict:
         return {"r": "error", "error": "Non-JSON response from friends.php"}
 
 
-def _sync_friends_bg(current_bonk_id: int | None, current_username: str, token: str) -> None:
+def _sync_friends_bg(user, current_bonk_id: int | None, current_username: str, token: str) -> None:
     """
     Background sync for regular friends only (from friends.php).
     Flash friends are synced immediately during login.
@@ -82,6 +84,7 @@ def _sync_friends_bg(current_bonk_id: int | None, current_username: str, token: 
 
         logger.info("regular friends synced for %s: %s (%.2fs)",
                     current_username, stats, time.monotonic() - t0)
+        log_event(user, "friends_synced", **stats)
 
     except Exception:
         logger.exception("background friends sync failed for %s", current_username)
@@ -147,6 +150,7 @@ def login_view(request):
                 # Site account
                 user, _ = BonkUser.objects.get_or_create(username=bonk_username)
                 login(request, user)
+                log_event(user, "user_logged_in")
 
                 # BonkPlayer + AccountLink
                 if bonk_user_id:
@@ -172,17 +176,22 @@ def login_view(request):
                 try:
                     flash_stats = sync_flash_friends_for_user(user=user, friends_json=data)
                     logger.info("flash friends synced at login for %s: %s", bonk_username, flash_stats)
+                    log_event(user, "flash_friends_synced", **flash_stats)
                 except Exception:
                     logger.exception("flash friends immediate sync failed for %s", bonk_username)
 
-                # 🔹 Async regular friends sync
+                # 🔹 Async regular friends sync — flag the toast to appear on the
+                # next page render instead of sending a static Django message.
+                # my_profile view pops this flag and passes it to the template,
+                # where a small script polls /api/friends-sync-status/ and
+                # updates the toast in place once the sync actually finishes.
                 if SYNC_FRIENDS_ON_LOGIN:
                     threading.Thread(
                         target=_sync_friends_bg,
-                        args=(bonk_user_id, bonk_username, token),
+                        args=(user, bonk_user_id, bonk_username, token),
                         daemon=True,
                     ).start()
-                    messages.info(request, "Syncing your regular friends in the background…")
+                    request.session["show_friend_sync_toast"] = True
 
                 messages.success(request, "Logged in successfully!")
 

@@ -34,11 +34,6 @@
         width: 90% !important;
     }
 
-    /* Notifications */
-    .notification {
-        width: 85%;
-    }
-
     /* Skin grid: 2 columns */
     .skins-container {
         grid-template-columns: repeat(2, 1fr);
@@ -115,9 +110,5 @@
 
     .skin-card strong {
         font-size: 1rem;
-    }
-
-    .notification {
-        width: 92%;
     }
 }

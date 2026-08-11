@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
 from .models import Skin, SkinReport
+from .events import log_event
 
 
 @require_POST
@@ -29,4 +30,5 @@ def report_skin(request, skin_id: int):
         details=details[:1000],  # cap to avoid abuse
     )
 
+    log_event(request.user, "skin_reported", skin=skin, reason=reason)
     return JsonResponse({'ok': True})

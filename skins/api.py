@@ -9,6 +9,31 @@ import json, secrets, requests
 from .models import PlayerWin, PlayerSession, PlayerLoss, validate_username
 from django.core.exceptions import ValidationError
 
+from django.utils import timezone
+from .models import UserEvent
+
+def friends_sync_status(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"ok": False}, status=401)
+
+    cutoff = timezone.now() - timedelta(minutes=2)
+    event = (
+        UserEvent.objects
+        .filter(user=request.user, event_type="friends_synced", created_at__gte=cutoff)
+        .order_by("-created_at")
+        .first()
+    )
+
+    if not event:
+        return JsonResponse({"status": "pending"})
+
+    return JsonResponse({
+        "status": "done",
+        "friends_now": event.metadata.get("friends_now", 0),
+        "added_edges": event.metadata.get("added_edges", 0),
+        "removed_edges": event.metadata.get("removed_edges", 0),
+    })
+
 # ==========================
 # Config
 # ==========================

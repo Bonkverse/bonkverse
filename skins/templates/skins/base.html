@@ -30,17 +30,22 @@
     <link rel="icon" type="image/png" href="{% static 'images/BonkverseLogo.png' %}">
     {% block social_meta %}{% endblock %}
 
+    <link rel="stylesheet" href="{% static 'css/toast.css' %}">
+    <script src="{% static 'js/toast.js' %}"></script>
+
 </head>
 <body>
 
     {% include 'skins/navbar.html' %}
 
     {% if messages %}
-        {% for message in messages %}
-            <div class="notification {% if message.tags %}{{ message.tags }}{% endif %}">
-                {{ message }}
-            </div>
-        {% endfor %}
+    <script>
+      {% for message in messages %}
+        BVToast.show("{{ message.message|escapejs }}", {
+          type: "{% if message.tags == 'error' %}error{% elif message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}info{% endif %}"
+        });
+      {% endfor %}
+    </script>
     {% endif %}
 
     <div id="particles-js"></div>

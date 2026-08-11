@@ -102,6 +102,7 @@ CLOUDFLARE_CACHE_API_TOKEN = os.getenv("CLOUDFLARE_CACHE_API_TOKEN", "")
 # Prod: share session + CSRF cookies across *.bonkverse.io so editor.bonkverse.io
 # is authenticated by the same login as bonkverse.io. Lax is sufficient because
 # subdomains of one registrable domain are same-site.
+CSRF_COOKIE_NAME = "bv_csrftoken"
 if IS_PROD:
     # Cloudflare/Railway terminate TLS upstream; tell Django the original scheme
     # was HTTPS so secure-cookie + CSRF Origin/Referer checks evaluate correctly.
@@ -111,7 +112,6 @@ if IS_PROD:
     # authenticated by the same login as the apex.
     SESSION_COOKIE_DOMAIN = ".bonkverse.io"
     CSRF_COOKIE_DOMAIN = ".bonkverse.io"
-    CSRF_COOKIE_NAME = "bv_csrftoken"
 
     # CSRF cookie stays HOST-scoped (no dot). Each origin reads/echoes its own
     # token, and a host cookie OVERWRITES any stale pre-change cookie instead of

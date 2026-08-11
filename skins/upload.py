@@ -11,6 +11,7 @@ from django.conf import settings
 from django.urls import reverse
 from django.contrib import messages
 
+from skins.events import log_event
 from skins.models import Skin, SkinImage
 
 
@@ -162,6 +163,7 @@ def upload_skin(request):
             return render(request, "skins/upload.html")
 
         messages.success(request, "✅ Skin uploaded successfully!")
+        log_event(request.user, "skin_uploaded", skin=skin, source="bonkleagues")
         return redirect(reverse("search_skins") + f"?q={skin_name}")
 
     return render(request, "skins/upload.html")

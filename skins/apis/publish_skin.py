@@ -7,6 +7,7 @@ from django.http import JsonResponse, HttpResponseBadRequest
 from django.urls import reverse
 from django.conf import settings
 
+from skins.events import log_event
 from skins.models import Skin, SkinImage
 from skins.auth_guards import api_login_required
 
@@ -87,6 +88,8 @@ def publish_skin(request):
     share_url = request.build_absolute_uri(
         reverse("share_skin", kwargs={"skin_id": skin.id, "uuid": skin.uuid})
     )
+
+    log_event(request.user, "skin_uploaded", skin=skin, source="editor")
     return JsonResponse(
         {
             "success": True,
