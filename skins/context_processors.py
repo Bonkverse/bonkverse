@@ -4,7 +4,8 @@ from django.conf import settings
 
 def editor_urls(request):
     return {
-        "BONKVERSE_EDITOR_URL": settings.BONKVERSE_EDITOR_URL
+        "BONKVERSE_EDITOR_URL": settings.BONKVERSE_EDITOR_URL,
+        "BONKVERSE_REPLAYS_URL": settings.BONKVERSE_REPLAYS_URL,
     }
 
 
