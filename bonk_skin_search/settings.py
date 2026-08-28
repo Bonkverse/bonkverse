@@ -85,6 +85,11 @@ BONKVERSE_EDITOR_URL = os.getenv(
     "http://localhost:5173",
 )
 
+BONKVERSE_REPLAYS_URL = os.getenv(
+    "BONKVERSE_REPLAYS_URL",
+    "http://localhost:5173",
+)
+
 BLSKIN_FETCHER_URL = os.getenv(
     "BLSKIN_FETCHER_URL",
     "https://blskinfetcher-production.up.railway.app/api/getSkin"
