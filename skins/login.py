@@ -95,7 +95,7 @@ def login_view(request):
     if request.method == "POST":
         form = LoginForm(request.POST)
         if form.is_valid():
-            typed_username = form.cleaned_data["username"].strip()
+            typed_username = form.cleaned_data["username"]
             password = form.cleaned_data["password"]
 
             s = requests.Session()
