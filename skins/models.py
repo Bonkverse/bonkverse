@@ -156,7 +156,27 @@ class FlashFriend(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ("name", "bonk_player")  # prevent dupes
+        constraints = [
+            # Covers the resolved case (bonk_player set): two rows can't
+            # share the same (name, bonk_player) pair.
+            models.UniqueConstraint(
+                fields=["name", "bonk_player"],
+                condition=models.Q(bonk_player__isnull=False),
+                name="uniq_flashfriend_name_player_resolved",
+            ),
+            # Covers the far more common unresolved case. Postgres treats
+            # every NULL as distinct from every other NULL, so a plain
+            # unique_together on (name, bonk_player) silently allows
+            # unlimited duplicate names as long as bonk_player is NULL —
+            # which is true for almost every FlashFriend row. This partial
+            # index enforces one row per name specifically when
+            # bonk_player is unresolved.
+            models.UniqueConstraint(
+                fields=["name"],
+                condition=models.Q(bonk_player__isnull=True),
+                name="uniq_flashfriend_name_unresolved",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.name} (linked to {self.bonk_player_id or '—'})"

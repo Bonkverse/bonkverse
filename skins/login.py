@@ -15,6 +15,7 @@ from .friends_sync import sync_friends_for_player
 from .flash_friends_sync import sync_flash_friends_for_user
 
 import os
+import re
 import time
 import threading
 import logging
@@ -26,6 +27,16 @@ logger = logging.getLogger(__name__)
 
 BONK_LOGIN_URL   = "https://bonk2.io/scripts/login_legacy.php"
 BONK_FRIENDS_URL = "https://bonk2.io/scripts/friends.php"
+
+# Matches "token":"<anything up to the next quote>" so we can redact it
+# from logged response bodies without needing a full JSON parse (the
+# body may be truncated to 500 chars before this runs).
+_TOKEN_LOG_PATTERN = re.compile(r'("token"\s*:\s*")[^"]*(")')
+
+
+def _redact_token(text: str) -> str:
+    """Redact a bonk.io session token from a snippet before it hits the logs."""
+    return _TOKEN_LOG_PATTERN.sub(r"\1***REDACTED***\2", text)
 
 # Configurable timeouts
 CONNECT_TIMEOUT = float(os.getenv("BONK_CONNECT_TIMEOUT", "4"))
@@ -111,7 +122,7 @@ def login_view(request):
                     "[bonkverse] prod bonk login response | status=%s | content_type=%s | body=%s",
                     resp.status_code,
                     resp.headers.get("content-type"),
-                    resp.text[:500].replace("\n", " "),
+                    _redact_token(resp.text[:500].replace("\n", " ")),
                 )
             except RequestException as e:
                 messages.error(request, f"Network error talking to Bonk.io: {e}")
@@ -121,7 +132,7 @@ def login_view(request):
             try:
                 data = resp.json()
             except JSONDecodeError:
-                snippet = resp.text[:400].replace("\n", " ")
+                snippet = _redact_token(resp.text[:400].replace("\n", " "))
                 logger.warning("[bonkverse] Non-JSON login response (%s): %s", resp.status_code, snippet)
 
             if data and data.get("r") == "success" and data.get("token"):
@@ -155,10 +166,21 @@ def login_view(request):
                 # BonkPlayer + AccountLink
                 if bonk_user_id:
                     try:
-                        player, _ = BonkPlayer.objects.update_or_create(
+                        player, created = BonkPlayer.objects.get_or_create(
                             bonk_id=int(bonk_user_id),
                             defaults={"username": bonk_username},
                         )
+                        if not created and player.username != bonk_username:
+                            # Bonk.io usernames are unique and permanent, so this
+                            # should never happen in steady state. Flag it instead
+                            # of silently relabeling the record.
+                            logger.warning(
+                                "[bonkverse] BonkPlayer username mismatch for bonk_id=%s: "
+                                "stored=%r, login_response=%r",
+                                bonk_user_id, player.username, bonk_username,
+                            )
+                            player.username = bonk_username
+                            player.save(update_fields=["username", "updated_at"])
                         signed_token = signing.dumps({"t": token}, salt="bonk_token")
                         BonkAccountLink.objects.update_or_create(
                             user=user,
