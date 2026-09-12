@@ -39,17 +39,7 @@
   {% endfor %}
 </div>
 
-{% if page_obj.has_other_pages %}
-<div class="browse-pagination">
-  {% if page_obj.has_previous %}
-    <a href="?{% if slug %}sort={{ sort }}&{% endif %}{% if period %}period={{ period }}&{% endif %}page={{ page_obj.previous_page_number }}">← Prev</a>
-  {% endif %}
-  <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-  {% if page_obj.has_next %}
-    <a href="?{% if slug %}sort={{ sort }}&{% endif %}{% if period %}period={{ period }}&{% endif %}page={{ page_obj.next_page_number }}">Next →</a>
-  {% endif %}
-</div>
-{% endif %}
+{% include 'skins/partials/pagination.html' with page_obj=page_obj elided_range=elided_range base_qs=base_qs %}
 
 <style>
   .browse-header { text-align: center; margin: 24px auto 20px; }
@@ -88,11 +78,5 @@
   .browse-card span { color: #7f93a6; font-size: .85rem; }
 
   .browse-empty { text-align: center; color: #7f93a6; padding: 40px; }
-
-  .browse-pagination {
-    display: flex; gap: 16px; align-items: center; justify-content: center;
-    margin: 28px 0 48px; color: #9fb3c8;
-  }
-  .browse-pagination a { color: #009688; text-decoration: none; font-weight: bold; }
 </style>
 {% endblock %}

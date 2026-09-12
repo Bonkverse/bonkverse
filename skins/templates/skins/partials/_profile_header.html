@@ -1,0 +1,25 @@
+<div class="profile-page">
+  <div class="profile-header">
+    <div class="profile-avatar">{{ user.username|slice:":1"|upper }}</div>
+    <div>
+      <h1 class="profile-name">{{ user.username }}</h1>
+      <div class="profile-joined">Member since {{ user.date_joined|date:"F Y" }}</div>
+      <div class="profile-stats">
+        <div class="profile-stat"><span class="val" id="stat-total-skins">{{ total_skins }}</span><span class="lbl">Skins created</span></div>
+        <div class="profile-stat"><span class="val">{{ total_favorites }}</span><span class="lbl">Favorites</span></div>
+        <div class="profile-stat"><span class="val">{{ total_upvotes }}</span><span class="lbl">Upvotes received</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="profile-tabs">
+    <button class="profile-tab active" data-tab="skins">
+      My Skins <span class="tab-count" id="tab-count-skins">{{ total_skins }}</span>
+      <span class="tab-indicator"></span>
+    </button>
+    <button class="profile-tab" data-tab="favorites">
+      Favorites <span class="tab-count">{{ total_favorites }}</span>
+      <span class="tab-indicator"></span>
+    </button>
+  </div>
+</div>

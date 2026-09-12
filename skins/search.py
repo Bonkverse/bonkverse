@@ -6,6 +6,8 @@ from django.utils import timezone
 from datetime import timedelta
 from django_ratelimit.decorators import ratelimit
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank, TrigramSimilarity
+from urllib.parse import urlencode
+from .pagination_utils import elided_page_range
 
 @ratelimit(key="ip", rate="10/m", block=True)
 def search_skins(request):
@@ -128,6 +130,18 @@ def search_skins(request):
     ).count()
     total_skin_count = Skin.objects.count()
 
+    # ── Pagination querystring ─────────────────────────────────────
+    # Preserves q/mode/sort/tz_offset across page links so navigating
+    # to page 2 doesn't silently reset the user's search or filters.
+    base_qs = urlencode({
+        k: v for k, v in {
+            "q": query,
+            "mode": mode if query else None,   # mode/sort are only meaningful with a query
+            "sort": sort,
+            "tz_offset": request.GET.get("tz_offset"),
+        }.items() if v
+    })
+
     return render(request, "skins/search.html", {
         "skins":            page_obj,
         "skins_on_page":    skins_on_page,   # pre-evaluated list used in template
@@ -136,4 +150,6 @@ def search_skins(request):
         "sort":             sort,
         "daily_skin_count": daily_skin_count,
         "total_skin_count": total_skin_count,
+        "base_qs":          base_qs,
+        "elided_range":     elided_page_range(page_obj),
     })

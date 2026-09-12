@@ -1,6 +1,11 @@
 {% extends 'skins/base.html' %}
+{% load static %}
 
-{% block title %}My Skins - {{ user.username }}{% endblock %}
+{% block title %}My Profile - {{ user.username }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/my_profile.css' %}">
+{% endblock %}
 
 {% block content %}
 
@@ -38,186 +43,34 @@
   </script>
   {% endif %}
 
-  <h1>{{ user.username }}'s Skins</h1>
+  {# Route data for my_profile.js, which can't use the url tag directly #}
+  <div id="profile-routes"
+       data-skins-partial-url="{% url 'my_skins_partial' %}"
+       data-bulk-delete-url="{% url 'bulk_delete_skins' %}"
+       data-bonk-login-url="{% url 'bonk_login_for_wear' %}"
+       style="display:none"></div>
 
-  <!-- ── Your Favorite Skins ─────────────────────────────── -->
-  <h2>Your Favorite Skins</h2>
+  {% include 'skins/partials/_profile_header.html' %}
 
-  {% if favorites|length == 0 %}
-    <p style="color: #9aa4b2; margin: 12px 0 32px;">You haven't favorited any skins yet.</p>
-  {% else %}
-    <div class="skins-container">
-      {% for skin in favorites %}
-        <div class="skin-card"
-             data-id="{{ skin.id }}"
-             data-wear-url="{% if skin.id %}{% url 'wear_skin' skin.id %}{% endif %}">
+  <!-- ── My Skins panel ─────────────────────────────────── -->
+  <div class="profile-panel active" id="panel-skins">
 
-          <div class="card-top-left">
-            {# fav_count_val is pre-computed in the view — no DB hit here #}
-            <span class="fav-static">
-              <i data-lucide="star" style="fill:#ffc107;color:#ffc107;"></i>
-              {{ skin.fav_count_val }}
-            </span>
-
-            <div class="card-more-menu">
-              <button class="card-more-btn" title="More options">
-                <i data-lucide="more-horizontal"></i>
-              </button>
-              <ul class="card-more-dropdown">
-                {% if skin.link %}
-                <li>
-                  <a href="{{ skin.link }}" target="_blank" rel="noopener">
-                    <i data-lucide="external-link"></i> Open in Bonkleagues
-                  </a>
-                </li>
-                {% endif %}
-                <li>
-                  <a href="{{ BONKVERSE_EDITOR_URL }}?skin={{ skin.skin_code }}" target="_blank" rel="noopener">
-                    <i data-lucide="pencil"></i> Open in Skin Editor
-                  </a>
-                </li>
-                <li>
-                  <a href="https://bonkverse.io/skins/share/{{ skin.id }}/{{ skin.uuid }}" target="_blank" rel="noopener">
-                    <i data-lucide="share-2"></i> Share Link
-                  </a>
-                </li>
-                <li>
-                  <a href="https://bonkverse.io/skins/detail/{{ skin.id }}">
-                    <i data-lucide="file-text"></i> View Skin Details
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div class="card-top-right"></div>
-
-          <strong title="{{ skin.name }}">{{ skin.name|truncatechars:20 }}</strong>
-          <span title="{{ skin.creator }}">by {{ skin.creator|truncatechars:20 }}</span>
-
-          <img src="{{ skin.image_url|default:'/static/images/default_skin.png' }}"
-               alt="{{ skin.name }}"
-               width="160" height="160"
-               loading="lazy"
-               decoding="async"
-               onerror="this.onerror=null; this.src='/static/images/default_skin.png';"
-               onclick="showImage(`{{ skin.image_url|default:'/static/images/default_skin.png' }}`)">
-
-          <div class="vote-row">
-            <span class="vote-static"><i data-lucide="thumbs-up"></i></span>
-            <span>{{ skin.upvotes }}</span>
-            <span class="vote-static"><i data-lucide="thumbs-down"></i></span>
-            <span>{{ skin.downvotes }}</span>
-          </div>
-
-          {% if skin.id %}
-            <button class="card-action-btn wear-card-btn-profile">Wear</button>
-          {% endif %}
-
-        </div>
-      {% endfor %}
-    </div>
-  {% endif %}
-
-  <!-- ── Skins Made By You ───────────────────────────────── -->
-  <h2 style="margin-top: 40px;">Skins Made By You</h2>
-
-  {% if skins|length == 0 %}
-    <p style="color: #9aa4b2; margin: 12px 0 32px;">You haven't uploaded any skins yet.</p>
-  {% else %}
-    <div class="skins-container">
-      {% for skin in skins %}
-        <div class="skin-card"
-             data-id="{{ skin.id }}"
-             data-wear-url="{% if skin.id %}{% url 'wear_skin' skin.id %}{% endif %}">
-
-          <div class="card-top-left">
-            <div class="card-more-menu">
-              <button class="card-more-btn" title="More options">
-                <i data-lucide="more-horizontal"></i>
-              </button>
-              <ul class="card-more-dropdown">
-                <li>
-                  <a href="{% url 'edit_skin' skin.id %}">
-                    <i data-lucide="pencil"></i> Edit Skin
-                  </a>
-                </li>
-                <li>
-                  <button class="card-delete-btn"
-                          data-action="{% url 'delete_skin' skin.id %}"
-                          data-name="{{ skin.name|escapejs }}">
-                    <i data-lucide="trash-2"></i> Delete Skin
-                  </button>
-                </li>
-                <li class="more-menu-divider"></li>
-                {% if skin.link %}
-                <li>
-                  <a href="{{ skin.link }}" target="_blank" rel="noopener">
-                    <i data-lucide="external-link"></i> Open in Bonkleagues
-                  </a>
-                </li>
-                {% endif %}
-                <li>
-                  <a href="{{ BONKVERSE_EDITOR_URL }}?skin={{ skin.skin_code }}" target="_blank" rel="noopener">
-                    <i data-lucide="pencil"></i> Open in Skin Editor
-                  </a>
-                </li>
-                <li>
-                  <a href="https://bonkverse.io/skins/share/{{ skin.id }}/{{ skin.uuid }}" target="_blank" rel="noopener">
-                    <i data-lucide="share-2"></i> Share Link
-                  </a>
-                </li>
-                <li>
-                  <a href="https://bonkverse.io/skins/detail/{{ skin.id }}">
-                    <i data-lucide="file-text"></i> View Skin Details
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div class="card-top-right"></div>
-
-          <strong title="{{ skin.name }}">{{ skin.name|truncatechars:20 }}</strong>
-          <span title="{{ skin.creator }}">by {{ skin.creator|truncatechars:20 }}</span>
-
-          <img src="{{ skin.image_url|default:'/static/images/default_skin.png' }}"
-               alt="{{ skin.name }}"
-               width="160" height="160"
-               loading="lazy"
-               decoding="async"
-               onerror="this.onerror=null; this.src='/static/images/default_skin.png';"
-               onclick="showImage(`{{ skin.image_url|default:'/static/images/default_skin.png' }}`)">
-
-          <div class="vote-row">
-            <span class="vote-static"><i data-lucide="thumbs-up"></i></span>
-            <span>{{ skin.upvotes }}</span>
-            <span class="vote-static"><i data-lucide="thumbs-down"></i></span>
-            <span>{{ skin.downvotes }}</span>
-          </div>
-
-          {% if skin.id %}
-            <button class="card-action-btn wear-card-btn-profile">Wear</button>
-          {% endif %}
-
-        </div>
-      {% endfor %}
-    </div>
-  {% endif %}
-
-  {% if skins.has_other_pages %}
-    <div class="pagination">
-      {% if skins.has_previous %}
-        <a href="?page=1">&laquo; First</a>
-        <a href="?page={{ skins.previous_page_number }}">Prev</a>
-      {% endif %}
-      <span style="color:#ddd; padding: 0 8px;">Page {{ skins.number }} of {{ skins.paginator.num_pages }}</span>
-      {% if skins.has_next %}
-        <a href="?page={{ skins.next_page_number }}">Next</a>
-        <a href="?page={{ skins.paginator.num_pages }}">Last &raquo;</a>
+    <div class="skins-toolbar">
+      <h2>My Skins</h2>
+      {% if skins|length > 0 %}
+        <button class="select-toggle-btn" id="select-toggle-btn">Select</button>
       {% endif %}
     </div>
-  {% endif %}
+
+    <div id="skins-panel-wrap" class="skins-panel-wrap">
+      <div id="skins-panel-body">
+        {% include 'skins/partials/_my_skins_cards.html' %}
+      </div>
+    </div>
+  </div>
+
+  {% include 'skins/partials/_favorites_panel.html' %}
+  {% include 'skins/partials/_bulk_bar.html' %}
 
   <!-- Image modal -->
   <div id="imageModal" class="modal" onclick="closeImage()">
@@ -225,169 +78,13 @@
     <img class="modal-content" id="zoomedImage">
   </div>
 
-  <!-- Delete confirmation modal -->
-  <div class="modal-overlay" id="delete-modal">
-    <div class="modal-box" style="max-width: 400px;">
-      <div class="modal-header">
-        <h2 class="modal-title">Delete Skin</h2>
-        <button class="modal-close-btn" id="delete-modal-close">
-          <i data-lucide="x"></i>
-        </button>
-      </div>
-      <div class="modal-body">
-        <p>Are you sure you want to delete <strong id="delete-skin-name" style="color:#fff;"></strong>? This cannot be undone.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="modal-btn modal-btn-ghost" id="delete-cancel-btn">Cancel</button>
-        <form id="delete-form" method="POST" style="margin:0;">
-          {% csrf_token %}
-          <button type="submit" class="modal-btn modal-btn-danger">Delete</button>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Bonk login modal -->
-  <dialog id="bonk-login-modal">
-    <form id="bonk-login-form" method="dialog" onsubmit="return doBonkLogin(event)">
-      <h3>Bonk.io Login</h3>
-      <p class="muted">We don't store your password. It's sent to Bonk.io once to apply the skin.</p>
-      <label>Bonk.io Username</label>
-      <input name="bonk_username" required>
-      <label>Bonk.io Password</label>
-      <input name="bonk_password" type="password" required>
-      <div class="row">
-        <button type="submit">Login</button>
-        <button type="button" onclick="closeBonkLogin()">Cancel</button>
-      </div>
-      <p id="bonk-login-msg" class="muted"></p>
-    </form>
-  </dialog>
+  {% include 'skins/partials/_delete_skin_modal.html' %}
+  {% include 'skins/partials/_edit_skin_modal.html' %}
+  {% include 'skins/partials/_bonk_login_modal.html' %}
 
 {% endblock %}
 
 
 {% block extra_scripts %}
-<script>
-function getCSRF() {
-  const m = document.cookie.match(/(?:^|;\s*)bv_csrftoken=([^;]+)/);
-  return m ? decodeURIComponent(m[1]) : '';
-}
-
-function showImage(src) {
-  document.getElementById('zoomedImage').src = src;
-  document.getElementById('imageModal').style.display = 'flex';
-}
-function closeImage() {
-  document.getElementById('imageModal').style.display = 'none';
-}
-
-async function postFormNoRedirect(url, data) {
-  const r = await fetch(url, {
-    method: 'POST',
-    headers: { 'X-CSRFToken': getCSRF(), 'X-Requested-With': 'XMLHttpRequest' },
-    body: new URLSearchParams(data || {})
-  });
-  let json = {};
-  try { json = await r.json(); } catch(e) {}
-  return { ok: r.ok, status: r.status, json };
-}
-
-// ··· More menu
-document.addEventListener("DOMContentLoaded", () => {
-  document.querySelectorAll('.card-more-btn').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      const dropdown = this.closest('.card-more-menu').querySelector('.card-more-dropdown');
-      document.querySelectorAll('.card-more-dropdown.open').forEach(d => {
-        if (d !== dropdown) d.classList.remove('open');
-      });
-      dropdown.classList.toggle('open');
-    });
-  });
-  document.querySelectorAll('.card-more-dropdown').forEach(d => {
-    d.addEventListener('click', e => e.stopPropagation());
-  });
-});
-
-document.addEventListener('click', () => {
-  document.querySelectorAll('.card-more-dropdown.open').forEach(d => d.classList.remove('open'));
-});
-
-// Delete modal
-const deleteModal    = document.getElementById('delete-modal');
-const deleteForm     = document.getElementById('delete-form');
-const deleteSkinName = document.getElementById('delete-skin-name');
-
-function openDeleteModal(action, name) {
-  deleteSkinName.textContent = `"${name}"`;
-  deleteForm.action = action;
-  deleteModal.classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeDeleteModal() {
-  deleteModal.classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-document.getElementById('delete-modal-close').addEventListener('click', closeDeleteModal);
-document.getElementById('delete-cancel-btn').addEventListener('click', closeDeleteModal);
-deleteModal.addEventListener('click', e => { if (e.target === deleteModal) closeDeleteModal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDeleteModal(); });
-
-document.addEventListener("DOMContentLoaded", () => {
-  document.querySelectorAll('.card-delete-btn').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      this.closest('.card-more-dropdown')?.classList.remove('open');
-      openDeleteModal(this.dataset.action, this.dataset.name);
-    });
-  });
-});
-
-// Wear flow
-let pendingWearCard = null;
-const loginModal = document.getElementById('bonk-login-modal');
-
-function openBonkLogin()  { if (loginModal?.showModal) loginModal.showModal(); else loginModal.style.display='block'; }
-function closeBonkLogin() { if (loginModal?.close) loginModal.close(); else loginModal.style.display='none'; }
-
-async function tryWear(card) {
-  const url = card.dataset.wearUrl;
-  if (!url) { BVToast.show("This skin can't be worn.", { type: "error" }); return; }
-  const { ok, status, json } = await postFormNoRedirect(url, {});
-  if (ok && json.ok) { BVToast.show("Applied to your active slot.", { type: "success" }); return; }
-  if (status === 401 && (json?.auth === 'bonk' || json?.need_login)) { pendingWearCard = card; openBonkLogin(); return; }
-  BVToast.show("Failed to apply skin.", { type: "error" });
-}
-
-document.addEventListener('click', e => {
-  const btn = e.target.closest('.wear-card-btn-profile');
-  if (!btn) return;
-  tryWear(btn.closest('.skin-card'));
-});
-
-async function doBonkLogin(e) {
-  e.preventDefault();
-  const fd  = new FormData(e.target);
-  const msg = document.getElementById('bonk-login-msg');
-  msg.textContent = 'Logging in…';
-  const r = await fetch("{% url 'bonk_login_for_wear' %}", {
-    method: 'POST',
-    headers: { 'X-CSRFToken': getCSRF(), 'X-Requested-With': 'XMLHttpRequest' },
-    body: fd
-  });
-  const json = await r.json().catch(() => ({}));
-  if (!r.ok || !json.ok) { msg.textContent = '❌ ' + (json.error || 'Login failed'); return false; }
-  msg.textContent = '✅ Logged in!';
-  closeBonkLogin();
-  if (pendingWearCard) {
-    const card = pendingWearCard;
-    pendingWearCard = null;
-    setTimeout(() => tryWear(card), 120);
-  }
-  return false;
-}
-</script>
+<script src="{% static 'js/my_profile.js' %}"></script>
 {% endblock %}

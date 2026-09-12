@@ -23,7 +23,7 @@ from skins.upload import upload_skin
 from django.conf import settings
 from django.conf.urls.static import static
 from skins.login import login_view, logout_view
-from skins.my_profile import my_profile, edit_skin, delete_skin
+from skins.my_profile import my_profile, edit_skin, delete_skin, bulk_delete_skins, my_skins_partial
 from skins.bonkbot import matchmaking_page, join_matchmaking
 from skins.skin_detail import skin_detail
 from skins.skin_votes import vote_skin_api, toggle_favorite_api
@@ -69,6 +69,8 @@ urlpatterns = [
     path('my-profile/', my_profile, name='my_profile'),
     path('upload/', upload_skin, name='upload_skin'),
     path('skin/<int:skin_id>/delete/', delete_skin, name='delete_skin'),
+    path("skins/bulk-delete/", bulk_delete_skins, name="bulk_delete_skins"),
+    path("my-profile/skins-partial/", my_skins_partial, name="my_skins_partial"),
     path('skin/<int:skin_id>/edit/', edit_skin, name='edit_skin'),
     path('matchmaking/', matchmaking_page, name='matchmaking'),
     # path('skins/<int:skin_id>/', skin_detail, name='skin_detail'),

@@ -1,0 +1,16 @@
+<!-- Bonk login modal -->
+<dialog id="bonk-login-modal">
+  <form id="bonk-login-form" method="dialog" onsubmit="return doBonkLogin(event)">
+    <h3>Bonk.io Login</h3>
+    <p class="muted">We don't store your password. It's sent to Bonk.io once to apply the skin.</p>
+    <label>Bonk.io Username</label>
+    <input name="bonk_username" required>
+    <label>Bonk.io Password</label>
+    <input name="bonk_password" type="password" required>
+    <div class="row">
+      <button type="submit">Login</button>
+      <button type="button" onclick="closeBonkLogin()">Cancel</button>
+    </div>
+    <p id="bonk-login-msg" class="muted"></p>
+  </form>
+</dialog>

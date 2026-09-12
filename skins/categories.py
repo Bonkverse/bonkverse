@@ -24,6 +24,7 @@ from django.utils import timezone
 from django_ratelimit.decorators import ratelimit
 
 from skins.models import Skin
+from .pagination_utils import elided_page_range
 
 # slug -> display metadata + keyword set
 CATEGORIES = {
@@ -140,11 +141,13 @@ def category_detail(request, slug):
 
     page_obj = Paginator(qs, 60).get_page(request.GET.get("page", 1))
     return render(request, "skins/skin_browse.html", {
-        "page_obj": page_obj,
-        "heading":  meta["label"],
-        "blurb":    meta["blurb"],
-        "sort":     sort,
-        "slug":     slug,
+        "page_obj":      page_obj,
+        "heading":       meta["label"],
+        "blurb":         meta["blurb"],
+        "sort":          sort,
+        "slug":          slug,
+        "base_qs":       f"sort={sort}",
+        "elided_range":  elided_page_range(page_obj),
     })
 
 
@@ -163,8 +166,10 @@ def new_releases(request):
 
     page_obj = Paginator(qs, 60).get_page(request.GET.get("page", 1))
     return render(request, "skins/skin_browse.html", {
-        "page_obj": page_obj,
-        "heading":  "New Releases",
-        "blurb":    "Fresh uploads, newest first.",
-        "period":   period,
+        "page_obj":      page_obj,
+        "heading":       "New Releases",
+        "blurb":         "Fresh uploads, newest first.",
+        "period":        period,
+        "base_qs":       f"period={period}",
+        "elided_range":  elided_page_range(page_obj),
     })

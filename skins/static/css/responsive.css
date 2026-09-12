@@ -112,3 +112,110 @@
         font-size: 1rem;
     }
 }
+
+
+/* =====================
+   Profile page (my_profile.html)
+   ===================== */
+@media (max-width: 640px) {
+  .profile-header {
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+    gap: 12px;
+  }
+  .profile-stats {
+    justify-content: center;
+  }
+  .profile-tabs {
+    gap: 18px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+  .skins-toolbar {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 420px) {
+  .profile-name { font-size: 1.3rem; }
+  .profile-avatar { width: 60px; height: 60px; font-size: 24px; }
+  .profile-stats { gap: 16px; row-gap: 10px; }
+  .profile-stat .val { font-size: 1rem; }
+}
+
+/* =====================
+   Bulk selection action bar
+   Stacks on narrow screens and respects the device's own bottom
+   safe area (home indicator / browser chrome), instead of pinning
+   flush to the physical edge where it can get clipped or overlapped.
+   ===================== */
+@media (max-width: 560px) {
+  .bulk-bar-inner {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+  .bulk-bar-inner > span {
+    width: 100%;
+    text-align: center;
+  }
+  .bulk-bar-actions {
+    width: 100%;
+  }
+  .bulk-bar-actions button {
+    flex: 1;
+  }
+}
+
+/* =====================
+   Shared pagination component
+   ===================== */
+@media (max-width: 480px) {
+  .bv-pagination {
+    gap: 4px;
+  }
+  .bv-pagination .page-btn,
+  .bv-pagination .page-nav {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 6px;
+    font-size: 0.8rem;
+  }
+  .page-jump-label {
+    display: none; /* "Go to" label drops; the number input alone is enough at this width */
+  }
+  .page-jump-form {
+    margin-left: 0;
+  }
+}
+
+/* =====================
+   Category / New Releases browse controls
+   ===================== */
+@media (max-width: 480px) {
+  .browse-controls {
+    gap: 6px;
+  }
+  .browse-controls a {
+    padding: 5px 10px;
+    font-size: 0.8rem;
+  }
+}
+
+/* =====================
+   Search hero + filter controls (search.html)
+   ===================== */
+@media (max-width: 480px) {
+  .hero-search {
+    flex-wrap: wrap;
+  }
+  .search-controls-inline {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+}

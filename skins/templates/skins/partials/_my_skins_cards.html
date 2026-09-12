@@ -1,0 +1,92 @@
+{% if skins|length == 0 %}
+  <p style="color: #9aa4b2; margin: 12px 24px 32px;">You haven't uploaded any skins yet.</p>
+{% else %}
+  <div class="skins-container" id="skins-grid">
+    {% for skin in skins %}
+      <div class="skin-card"
+           data-id="{{ skin.id }}"
+           data-wear-url="{% if skin.id %}{% url 'wear_skin' skin.id %}{% endif %}">
+
+        <div class="select-check"><i data-lucide="check"></i></div>
+
+        <div class="card-top-left">
+          <div class="card-more-menu">
+            <button class="card-more-btn" title="More options">
+              <i data-lucide="more-horizontal"></i>
+            </button>
+            <ul class="card-more-dropdown">
+              <li>
+                <button type="button"
+                        class="edit-skin-trigger"
+                        data-skin-id="{{ skin.id }}"
+                        data-name="{{ skin.name }}"
+                        data-description="{{ skin.description|default:'' }}"
+                        data-style="{{ skin.labels.style|default:'' }}"
+                        data-labels="{{ skin.labels_json }}"
+                        data-image="{{ skin.image_url|default:'/static/images/default_skin.png' }}"
+                        data-action="{% url 'edit_skin' skin.id %}">
+                  <i data-lucide="pencil"></i> Edit Skin
+                </button>
+              </li>
+              <li>
+                <button class="card-delete-btn"
+                        data-action="{% url 'delete_skin' skin.id %}"
+                        data-name="{{ skin.name|escapejs }}">
+                  <i data-lucide="trash-2"></i> Delete Skin
+                </button>
+              </li>
+              <li class="more-menu-divider"></li>
+              {% if skin.link %}
+              <li>
+                <a href="{{ skin.link }}" target="_blank" rel="noopener">
+                  <i data-lucide="external-link"></i> Open in Bonkleagues
+                </a>
+              </li>
+              {% endif %}
+              <li>
+                <a href="{{ BONKVERSE_EDITOR_URL }}?skin={{ skin.skin_code }}" target="_blank" rel="noopener">
+                  <i data-lucide="pencil"></i> Open in Skin Editor
+                </a>
+              </li>
+              <li>
+                <a href="https://bonkverse.io/skins/share/{{ skin.id }}/{{ skin.uuid }}" target="_blank" rel="noopener">
+                  <i data-lucide="share-2"></i> Share Link
+                </a>
+              </li>
+              <li>
+                <a href="https://bonkverse.io/skins/detail/{{ skin.id }}">
+                  <i data-lucide="file-text"></i> View Skin Details
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <strong title="{{ skin.name }}">{{ skin.name|truncatechars:20 }}</strong>
+        <span title="{{ skin.creator }}">by {{ skin.creator|truncatechars:20 }}</span>
+
+        <img src="{{ skin.image_url|default:'/static/images/default_skin.png' }}"
+             alt="{{ skin.name }}"
+             width="160" height="160"
+             loading="lazy"
+             decoding="async"
+             onerror="this.onerror=null; this.src='/static/images/default_skin.png';"
+             onclick="handleCardImageClick(event, this)">
+
+        <div class="vote-row">
+          <span class="vote-static"><i data-lucide="thumbs-up"></i></span>
+          <span>{{ skin.upvotes }}</span>
+          <span class="vote-static"><i data-lucide="thumbs-down"></i></span>
+          <span>{{ skin.downvotes }}</span>
+        </div>
+
+        {% if skin.id %}
+          <button class="card-action-btn wear-card-btn-profile">Wear</button>
+        {% endif %}
+
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+{% include 'skins/partials/pagination.html' with page_obj=skins elided_range=elided_range base_qs=base_qs ajax=True %}

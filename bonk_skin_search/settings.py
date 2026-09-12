@@ -169,6 +169,7 @@ if IS_PROD:
         "editor.bonkverse.io",   # add this — the editor subdomain hits Django too
         "127.0.0.1",
         "localhost",
+        "http://172.26.90.66",
     ]
 else:
     ALLOWED_HOSTS = [
@@ -178,6 +179,7 @@ else:
         "127.0.0.1",
         "localhost",
         "192.168.1.183",
+        "172.26.90.66",
     ]
 
 # =========================================================

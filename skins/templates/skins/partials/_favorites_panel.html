@@ -1,0 +1,76 @@
+<div class="profile-panel" id="panel-favorites">
+  <div class="skins-toolbar"><h2>Favorites</h2></div>
+
+  {% if favorites|length == 0 %}
+    <p style="color: #9aa4b2; margin: 12px 24px 32px;">You haven't favorited any skins yet.</p>
+  {% else %}
+    <div class="skins-container">
+      {% for skin in favorites %}
+        <div class="skin-card"
+             data-id="{{ skin.id }}"
+             data-wear-url="{% if skin.id %}{% url 'wear_skin' skin.id %}{% endif %}">
+
+          <div class="card-top-left">
+            <span class="fav-static">
+              <i data-lucide="star" style="fill:#ffc107;color:#ffc107;"></i>
+              {{ skin.fav_count_val }}
+            </span>
+
+            <div class="card-more-menu">
+              <button class="card-more-btn" title="More options">
+                <i data-lucide="more-horizontal"></i>
+              </button>
+              <ul class="card-more-dropdown">
+                {% if skin.link %}
+                <li>
+                  <a href="{{ skin.link }}" target="_blank" rel="noopener">
+                    <i data-lucide="external-link"></i> Open in Bonkleagues
+                  </a>
+                </li>
+                {% endif %}
+                <li>
+                  <a href="{{ BONKVERSE_EDITOR_URL }}?skin={{ skin.skin_code }}" target="_blank" rel="noopener">
+                    <i data-lucide="pencil"></i> Open in Skin Editor
+                  </a>
+                </li>
+                <li>
+                  <a href="https://bonkverse.io/skins/share/{{ skin.id }}/{{ skin.uuid }}" target="_blank" rel="noopener">
+                    <i data-lucide="share-2"></i> Share Link
+                  </a>
+                </li>
+                <li>
+                  <a href="https://bonkverse.io/skins/detail/{{ skin.id }}">
+                    <i data-lucide="file-text"></i> View Skin Details
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <strong title="{{ skin.name }}">{{ skin.name|truncatechars:20 }}</strong>
+          <span title="{{ skin.creator }}">by {{ skin.creator|truncatechars:20 }}</span>
+
+          <img src="{{ skin.image_url|default:'/static/images/default_skin.png' }}"
+               alt="{{ skin.name }}"
+               width="160" height="160"
+               loading="lazy"
+               decoding="async"
+               onerror="this.onerror=null; this.src='/static/images/default_skin.png';"
+               onclick="handleCardImageClick(event, this)">
+
+          <div class="vote-row">
+            <span class="vote-static"><i data-lucide="thumbs-up"></i></span>
+            <span>{{ skin.upvotes }}</span>
+            <span class="vote-static"><i data-lucide="thumbs-down"></i></span>
+            <span>{{ skin.downvotes }}</span>
+          </div>
+
+          {% if skin.id %}
+            <button class="card-action-btn wear-card-btn-profile">Wear</button>
+          {% endif %}
+
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>

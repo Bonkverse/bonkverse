@@ -1,0 +1,252 @@
+/* my_profile.css — styles for the My Profile page (my_profile.html) */
+
+.profile-page { max-width: 1228px; margin: 0 auto; padding: 0 24px; text-align: left; }
+
+.profile-header {
+  display: flex; align-items: center; gap: 20px;
+  padding: 28px 0 22px;
+}
+.profile-avatar {
+  width: 76px; height: 76px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, #009688, #00695c);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px; font-weight: 700; color: #fff;
+  border: 2px solid rgba(0,150,136,0.5);
+}
+.profile-name { font-size: 1.6rem; color: #fff; margin: 0; }
+.profile-joined { color: #9aa4b2; font-size: 0.85rem; margin-top: 2px; }
+.profile-stats { display: flex; gap: 26px; margin-top: 12px; flex-wrap: wrap; }
+.profile-stat { display: flex; flex-direction: column; }
+.profile-stat .val { font-size: 1.1rem; font-weight: 700; color: #00ffcc; }
+.profile-stat .lbl { font-size: 0.78rem; color: #9aa4b2; }
+
+/* Tabs */
+.profile-tabs {
+  display: flex; gap: 26px;
+  border-bottom: 1px solid rgba(0,150,136,0.3);
+  margin-bottom: 24px;
+}
+.profile-tab {
+  background: none; border: none; color: #9aa4b2;
+  font-family: "Oxanium", sans-serif; font-size: 1rem; font-weight: 600;
+  padding: 10px 2px 12px; cursor: pointer; position: relative;
+}
+.profile-tab.active { color: #fff; }
+.profile-tab .tab-indicator {
+  position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+  background: #009688; transform: scaleX(0); transition: transform .18s ease;
+}
+.profile-tab.active .tab-indicator { transform: scaleX(1); }
+.profile-tab .tab-count { color: #6b7280; font-weight: 400; font-size: 0.85rem; }
+.profile-tab.active .tab-count { color: #5eead4; }
+
+.profile-panel { display: none; }
+.profile-panel.active { display: block; }
+
+/* Select mode toolbar */
+.skins-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  max-width: 1228px; margin: 0 auto 14px; padding: 0 24px;
+}
+.skins-toolbar h2 { margin: 0; }
+.select-toggle-btn {
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15);
+  color: #ddd; border-radius: 8px; padding: 7px 14px; font-size: 0.85rem;
+  font-family: "Oxanium", sans-serif; cursor: pointer;
+}
+.select-toggle-btn:hover { border-color: #009688; color: #fff; }
+.select-toggle-btn.active { background: rgba(0,150,136,0.25); border-color: #009688; color: #fff; }
+
+/* Checkbox overlay + selected state, select mode only */
+.skins-container.select-mode .skin-card { cursor: pointer; }
+.skins-container.select-mode .card-more-menu,
+.skins-container.select-mode .wear-card-btn-profile {
+  pointer-events: none; opacity: 0.4;
+}
+.select-check {
+  display: none;
+  position: absolute; top: 8px; right: 8px;
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.35);
+  background: rgba(0,0,0,0.35);
+  align-items: center; justify-content: center;
+}
+.skins-container.select-mode .select-check { display: flex; }
+.skin-card.selected { border-color: #00ffcc; background: hsla(174, 60%, 20%, 0.35); }
+.skin-card.selected .select-check { background: #009688; border-color: #009688; }
+.select-check i[data-lucide] { width: 13px; height: 13px; color: #fff; display: none; }
+.skin-card.selected .select-check i[data-lucide] { display: block; }
+
+/* ── Bulk action bar ──────────────────────────────────
+   Full-width bar pinned to the true bottom of the viewport
+   (not a floating pill), with a solid background so it never
+   looks like it's overlapping card content underneath it.
+   visibility (not just the transform) is toggled explicitly so
+   the bar can't be left visible by a restored bfcache page or
+   any state that skips re-running JS. */
+.bulk-bar {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  transform: translateY(100%);
+  visibility: hidden;
+  pointer-events: none;
+  background: #16212b;
+  border-top: 1px solid rgba(0,150,136,0.4);
+  box-shadow: 0 -8px 24px rgba(0,0,0,0.45);
+  z-index: 900;
+  transition: transform 0.2s ease, visibility 0s linear 0.2s;
+}
+.bulk-bar.open {
+  transform: translateY(0);
+  visibility: visible;
+  pointer-events: auto;
+  transition: transform 0.2s ease, visibility 0s linear 0s;
+}
+.bulk-bar-inner {
+  max-width: 1228px; margin: 0 auto;
+  padding: 14px 24px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+}
+.bulk-bar-inner span { color: #ddd; font-size: 0.9rem; white-space: nowrap; }
+.bulk-bar-actions { display: flex; gap: 10px; }
+.bulk-bar-actions button { font-family: "Oxanium", sans-serif; font-size: 0.85rem; }
+
+/* Reserve space at the bottom of the page while the bar is open,
+   so it never sits on top of the last row of cards — the page
+   gains a bit of scroll room instead of the bar covering content. */
+body.bulk-bar-open { padding-bottom: 76px; }
+
+@media (max-width: 560px) {
+  /* The bulk bar wraps to two rows on mobile and adds
+     safe-area padding, so it's taller here than on desktop —
+     reserve more room accordingly. */
+  body.bulk-bar-open { padding-bottom: 130px; }
+}
+
+/* ── Edit Skin modal ──────────────────────────────────────
+   Thumbnail + name as a combined header, and each tag category
+   as one continuous bordered "chip input" box (chips + the entry
+   field living inside the same visual container) instead of
+   chips floating above bare, borderless placeholder text. */
+#edit-modal .modal-box { max-width: 560px; }
+
+#edit-modal .edit-preview-header {
+  display: flex; align-items: center; gap: 16px;
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+#edit-modal .edit-preview-thumb {
+  width: 64px; height: 64px; border-radius: 50%;
+  object-fit: cover; flex-shrink: 0;
+  background: #0f1923;
+  border: 2px solid rgba(0,150,136,0.4);
+}
+#edit-modal .edit-preview-fields { flex: 1; min-width: 0; }
+#edit-modal .edit-name-input {
+  width: 100%; box-sizing: border-box;
+  background: transparent; border: none;
+  color: #fff; font-family: "Oxanium", sans-serif;
+  font-size: 1.15rem; font-weight: 700;
+  padding: 4px 0;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s ease;
+}
+#edit-modal .edit-name-input:focus {
+  outline: none;
+  border-bottom-color: #009688;
+}
+#edit-modal .edit-preview-hint {
+  display: block;
+  font-size: 0.78rem; color: #6b7280;
+  margin-top: 2px;
+}
+
+#edit-modal .edit-field { margin-bottom: 18px; }
+#edit-modal .edit-field:last-of-type { margin-bottom: 0; }
+
+#edit-modal .edit-tags-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 480px) {
+  #edit-modal .edit-tags-grid { grid-template-columns: 1fr; }
+}
+
+/* The chip-input box: a single bordered container holding both
+   existing chips and the trailing text entry, so it reads as one
+   field — the same visual language as a tag/multi-select input
+   anywhere else in modern UI, rather than decoration above text. */
+#edit-modal .tag-input-box {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 6px 8px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+#edit-modal .tag-input-box:focus-within {
+  border-color: #009688;
+  box-shadow: 0 0 0 2px rgba(0,150,136,0.2);
+}
+#edit-modal .tag-input-box input {
+  flex: 1; min-width: 70px;
+  background: transparent; border: none;
+  color: #ddd; font-size: 0.85rem;
+  padding: 4px 2px;
+}
+#edit-modal .tag-input-box input::placeholder { color: #6b7280; }
+#edit-modal .tag-input-box .tag-bubble {
+  margin: 0; /* box's own gap handles spacing now */
+}
+
+/* Edit-skin modal tag bubbles — the remove "×" buttons are plain
+   <button> elements with no styling of their own, so without this
+   they inherit the global button rule from forms.css (brown
+   background, heavy padding), which renders as an ugly box behind
+   the × instead of a plain inline glyph. */
+#edit-modal .tag-bubble {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+#edit-modal .tag-bubble button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #fff;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+#edit-modal .tag-bubble button:hover {
+  color: rgba(255,255,255,0.7);
+}
+
+/* My Skins page-swap loading overlay */
+.skins-panel-wrap { position: relative; min-height: 160px; }
+.skins-loading-overlay {
+  position: absolute; inset: 0;
+  background: rgba(26,39,51,0.55);
+  z-index: 50; border-radius: 8px;
+}
+/* Positioning and rotation are split across two elements —
+   an animation's transform overwrites any transform already on
+   that element, so a single node can't both be translated to
+   center itself AND rotated via animation without one clobbering
+   the other every frame. */
+.skins-loading-overlay .spinner-pos {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+}
+.skins-loading-overlay .spinner-lg {
+  width: 32px; height: 32px;
+  border: 3px solid rgba(255,255,255,0.15);
+  border-top-color: #009688;
+  border-radius: 50%;
+  animation: skins-spin 0.7s linear infinite;
+}
+@keyframes skins-spin { to { transform: rotate(360deg); } }

@@ -7,6 +7,7 @@
     <title>{% block title %}Bonk.io Skin Search{% endblock %}</title>
     <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/pagination.css' %}">
     <link rel="stylesheet" href="{% static 'css/forms.css' %}">
     <link rel="stylesheet" href="{% static 'css/navbar.css' %}">
     <link rel="stylesheet" href="{% static 'css/cards.css' %}">
@@ -16,6 +17,7 @@
     <link rel="stylesheet" href="{% static 'css/pages.css' %}">
     <link rel="stylesheet" href="{% static 'css/modal.css' %}">
     <link rel="stylesheet" href="{% static 'css/responsive.css' %}">
+    {% block extra_head %}{% endblock %}
 
     {% now "m" as current_month %}
     {% if current_month == "10" %}
@@ -26,6 +28,7 @@
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 
     <script src="{% static 'js/scripts.js' %}" defer></script>
+    <script src="{% static 'js/pagination.js' %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
     <link rel="icon" type="image/png" href="{% static 'images/BonkverseLogo.png' %}">
     {% block social_meta %}{% endblock %}

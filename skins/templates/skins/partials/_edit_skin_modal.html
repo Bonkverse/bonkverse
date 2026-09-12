@@ -1,0 +1,56 @@
+<!-- Edit skin modal -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 class="modal-title">Edit Skin</h2>
+      <button class="modal-close-btn" id="edit-modal-close">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+
+      <div class="edit-preview-header">
+        <img class="edit-preview-thumb" id="edit-preview-img" src="" alt="">
+        <div class="edit-preview-fields">
+          <input class="edit-name-input" id="edit-name" maxlength="1000" placeholder="Skin name">
+          <span class="edit-preview-hint">This is how it appears across Bonkverse</span>
+        </div>
+      </div>
+
+      <div class="edit-field">
+        <label class="modal-label" for="edit-description">Description</label>
+        <textarea class="modal-textarea" id="edit-description" placeholder="What's this skin about?"></textarea>
+      </div>
+
+      <div class="edit-field">
+        <label class="modal-label" for="edit-style">Style</label>
+        <input class="modal-input" id="edit-style" placeholder="e.g. Minimalist">
+      </div>
+
+      <div class="edit-field edit-tags-grid">
+        <div>
+          <label class="modal-label">Colors</label>
+          <div class="tag-input-box tags-container" data-name="colors"></div>
+        </div>
+        <div>
+          <label class="modal-label">Objects</label>
+          <div class="tag-input-box tags-container" data-name="objects"></div>
+        </div>
+        <div>
+          <label class="modal-label">Themes</label>
+          <div class="tag-input-box tags-container" data-name="themes"></div>
+        </div>
+        <div>
+          <label class="modal-label">References</label>
+          <div class="tag-input-box tags-container" data-name="references"></div>
+        </div>
+      </div>
+
+      <p class="modal-feedback" id="edit-feedback"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn modal-btn-ghost" id="edit-cancel-btn">Cancel</button>
+      <button class="modal-btn modal-btn-primary" id="edit-save-btn">Save Changes</button>
+    </div>
+  </div>
+</div>

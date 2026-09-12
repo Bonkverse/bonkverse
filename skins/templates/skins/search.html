@@ -174,25 +174,7 @@
     <img class="modal-content" id="zoomedImage">
   </div>
 
-  {% if skins.has_other_pages %}
-    <div class="pagination">
-      {% if skins.has_previous %}
-        <a href="?q={{ query }}&page={{ skins.previous_page_number }}">Prev</a>
-      {% endif %}
-
-      <input id="pageJump" type="number"
-             min="1"
-             max="{{ skins.paginator.num_pages }}"
-             value="{{ skins.number }}"
-             style="width:60px; margin:0 5px;">
-
-      <span>/ {{ skins.paginator.num_pages }}</span>
-
-      {% if skins.has_next %}
-        <a href="?q={{ query }}&page={{ skins.next_page_number }}">Next</a>
-      {% endif %}
-    </div>
-  {% endif %}
+  {% include 'skins/partials/pagination.html' with page_obj=skins elided_range=elided_range base_qs=base_qs %}
 
   <!-- ── Report Modal ─────────────────────────────────────── -->
   <div class="modal-overlay" id="report-modal">
@@ -279,21 +261,6 @@ function showImage(src) {
 function closeImage() {
   document.getElementById('imageModal').style.display = 'none';
 }
-
-// ── Page jump ─────────────────────────────────────────────────
-document.addEventListener("DOMContentLoaded", () => {
-  const input = document.getElementById("pageJump");
-  if (!input) return;
-  input.addEventListener("keydown", (e) => {
-    if (e.key !== "Enter") return;
-    const target = parseInt(input.value, 10);
-    const total  = parseInt("{{ skins.paginator.num_pages|default:0 }}", 10);
-    const q      = "{{ query|escapejs }}";
-    if (!isNaN(target) && target >= 1 && target <= total) {
-      window.location = `?q=${encodeURIComponent(q)}&page=${target}`;
-    }
-  });
-});
 
 // ── CSRF + fetch helpers ──────────────────────────────────────
 function getCSRF() {
