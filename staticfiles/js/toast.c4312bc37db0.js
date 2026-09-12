@@ -40,7 +40,9 @@
       ? '<span class="bv-toast-spinner"></span>'
       : '<span class="bv-toast-icon">' + (ICONS[type] || ICONS.info) + '</span>';
 
-    el.innerHTML = iconHTML + '<span class="bv-toast-text"></span>';
+    var closeHTML = '<button type="button" class="bv-toast-close" aria-label="Dismiss">&times;</button>';
+
+    el.innerHTML = iconHTML + '<span class="bv-toast-text"></span>' + closeHTML;
     el.querySelector(".bv-toast-text").textContent = text;
 
     getStack().appendChild(el);
@@ -55,6 +57,10 @@
       el.classList.remove("bv-toast-visible");
       setTimeout(function () { el.remove(); }, 300);
     }
+
+    // Manual close button — the only way to dismiss a sticky (duration:
+    // null) toast, since scheduleDismiss never fires one for it.
+    el.querySelector(".bv-toast-close").addEventListener("click", dismiss);
 
     function scheduleDismiss(ms) {
       if (dismissTimer) clearTimeout(dismissTimer);
@@ -71,8 +77,9 @@
       var newIconHTML = newOpts.spinner
         ? '<span class="bv-toast-spinner"></span>'
         : '<span class="bv-toast-icon">' + (ICONS[newType] || ICONS.info) + '</span>';
-      el.innerHTML = newIconHTML + '<span class="bv-toast-text"></span>';
+      el.innerHTML = newIconHTML + '<span class="bv-toast-text"></span>' + closeHTML;
       el.querySelector(".bv-toast-text").textContent = newText;
+      el.querySelector(".bv-toast-close").addEventListener("click", dismiss);
 
       scheduleDismiss(newOpts.sticky ? null : (newOpts.duration || 3200));
     }
