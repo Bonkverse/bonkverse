@@ -25,7 +25,21 @@
             if (data.added_edges > 0) extras.push(data.added_edges + " new");
             if (data.removed_edges > 0) extras.push(data.removed_edges + " removed");
             if (extras.length) friendsText += " : " + extras.join(", ");
-            handle.update(friendsText, { type: "success" });
+
+            if (data.corrected_count > 0) {
+              // Only this case stays up until the user closes it — every
+              // other toast on the page keeps its normal auto-dismiss.
+              var fixes = data.corrected_usernames.map(function (c) {
+                return '"' + c.old_username + '" → "' + c.new_username + '"';
+              });
+              handle.update(
+                friendsText + ". Also fixed " + data.corrected_count +
+                " outdated username(s) from before a data cleanup: " + fixes.join(", "),
+                { type: "success", sticky: true }
+              );
+            } else {
+              handle.update(friendsText, { type: "success" });
+            }
             return;
           }
           if (attempts < 10) {

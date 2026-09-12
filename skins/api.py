@@ -32,6 +32,8 @@ def friends_sync_status(request):
         "friends_now": event.metadata.get("friends_now", 0),
         "added_edges": event.metadata.get("added_edges", 0),
         "removed_edges": event.metadata.get("removed_edges", 0),
+        "corrected_usernames": event.metadata.get("corrected_usernames", []),
+        "corrected_count": event.metadata.get("corrected_count", 0),
     })
 
 # ==========================

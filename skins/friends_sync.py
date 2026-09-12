@@ -1,6 +1,6 @@
 # skins/friends_sync.py
 
-from typing import Dict, Any, Iterable, Tuple, Set
+from typing import Dict, Any, Iterable, List, Tuple, Set
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -40,9 +40,21 @@ def sync_friends_for_player(
 
     Optimized to use a fixed, small number of database round-trips
     regardless of friend-list size, instead of one round-trip per
-    friend. Bonk.io usernames are unique and permanent, so existing
-    BonkPlayer rows never need a username update — only brand-new
-    players are ever written.
+    friend.
+
+    Bonk.io usernames ARE unique and permanent on Bonk.io's side, but a
+    pre-fix bug on our side (since removed — see f9de5d9) used to strip
+    leading/trailing whitespace before storing a BonkPlayer's username,
+    so some existing rows may still hold a stale, stripped value from
+    before that fix landed. Every sync now compares this payload's live
+    username against whatever's already stored for that bonk_id and
+    self-heals the stored value on a mismatch — this is the same
+    self-healing login.py already does for the *current* player, just
+    generalized to every friend/request in the payload. Since bonk_id is
+    the real unique identity and BonkPlayer is the single row every
+    Friendship FK points to, correcting it here fixes the name
+    everywhere it's displayed (search, other users' friend lists, etc.)
+    with nothing else to update.
 
     Names are preserved exactly as bonk.io sends them — no trimming —
     and a friend/request entry with a missing or blank name is skipped
@@ -116,25 +128,35 @@ def sync_friends_for_player(
             defaults={"username": current_username},
         )
         if current_username and current.username != current_username:
-            # Bonk.io usernames are unique and permanent, so this should
-            # never happen in steady state. Flag it instead of silently
-            # relabeling the record.
+            # Bonk.io usernames are unique and permanent, so a mismatch
+            # here means OUR stored value is stale (e.g. a pre-fix
+            # whitespace-stripped row) rather than a real rename.
+            # Self-heal it rather than just logging it.
             logger.warning(
                 "[bonkverse] BonkPlayer username mismatch for bonk_id=%s (current player): "
-                "stored=%r, login_response=%r",
+                "stored=%r, live=%r — correcting stored value",
                 current_bonk_id, current.username, current_username,
             )
             current.username = current_username
             current.save(update_fields=["username", "updated_at"])
 
-    # --------- Batch upsert: which players already exist? ----------
-    # Usernames are unique+permanent on Bonk.io, so an existing BonkPlayer
-    # never needs its username updated — we only ever need to know
-    # WHICH ids exist, not fetch full rows to compare against.
-    existing_ids: Set[int] = set(
-        BonkPlayer.objects.filter(bonk_id__in=combined_by_id.keys())
-        .values_list("bonk_id", flat=True)
-    )
+    # --------- Batch upsert: which players already exist, and are their ----------
+    # --------- stored usernames still accurate? (single query, no added ----------
+    # --------- round trip vs. the old existing-ids-only lookup) ----------
+    #
+    # bonk_id is the real, permanent identity. username can still be wrong
+    # on OUR side for a row written before the whitespace-strip fix — so
+    # unlike the old comment here, an existing row's username IS worth
+    # comparing against this sync's live value. Pulling (pk, bonk_id,
+    # username) instead of bonk_id alone costs nothing extra: it's the
+    # same rows, one more column, same single query.
+    existing_map: dict[int, tuple[int, str]] = {
+        bonk_id: (pk, username)
+        for pk, bonk_id, username in BonkPlayer.objects.filter(
+            bonk_id__in=combined_by_id.keys()
+        ).values_list("pk", "bonk_id", "username")
+    }
+    existing_ids: Set[int] = set(existing_map.keys())
 
     to_create = [
         BonkPlayer(bonk_id=pid, username=pname)
@@ -145,6 +167,32 @@ def sync_friends_for_player(
 
     if to_create:
         BonkPlayer.objects.bulk_create(to_create, ignore_conflicts=True)
+
+    # --------- Detect + self-heal stale usernames on existing rows ----------
+    # Only runs a query when there's actually something to fix — in
+    # steady state (everything already correct) this list is empty and
+    # no extra round trip happens at all.
+    corrections: List[Dict[str, str]] = []
+    to_update = []
+    for bonk_id, live_name in combined_by_id.items():
+        hit = existing_map.get(bonk_id)
+        if hit is None:
+            continue
+        pk, stored_name = hit
+        if stored_name != live_name:
+            logger.warning(
+                "[bonkverse] correcting stale username for bonk_id=%s: stored=%r live=%r",
+                bonk_id, stored_name, live_name,
+            )
+            to_update.append(BonkPlayer(pk=pk, username=live_name))
+            corrections.append({
+                "bonk_id": bonk_id,
+                "old_username": stored_name,
+                "new_username": live_name,
+            })
+
+    if to_update:
+        BonkPlayer.objects.bulk_update(to_update, ["username"], batch_size=200)
 
     # --------- Fetch PKs for everyone (existing + just-created) ----------
     friend_pks_by_bonkid: dict[int, int] = dict(
@@ -251,4 +299,6 @@ def sync_friends_for_player(
         "edges_touched": touched_edges,
         "skipped_names": skipped_names,
         "suspicious_drop": suspicious_drop,
+        "corrected_usernames": corrections,   # e.g. [{"bonk_id": 1834575, "old_username": "Motionless in white", "new_username": " Motionless in white"}]
+        "corrected_count": len(corrections),
     }
