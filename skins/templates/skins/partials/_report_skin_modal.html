@@ -1,0 +1,35 @@
+<!-- ── Report Modal ─────────────────────────────────────── -->
+<div class="modal-overlay" id="report-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 class="modal-title">Report Skin</h2>
+      <button class="modal-close-btn" id="report-modal-close">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <p id="report-skin-name" style="color:#9aa4b2; margin:0 0 14px; font-size:0.9rem;"></p>
+
+      <label class="modal-label" for="report-reason">Reason</label>
+      <select class="modal-select" id="report-reason">
+        <option value="">Select a reason…</option>
+        <option value="inappropriate">Inappropriate content</option>
+        <option value="stolen">Stolen / reposted without credit</option>
+        <option value="spam">Spam or low-effort</option>
+        <option value="broken">Broken / not loading</option>
+        <option value="other">Other</option>
+      </select>
+
+      <label class="modal-label" for="report-details">Additional details <span style="color:#6b7280; font-weight:400;">(optional)</span></label>
+      <textarea class="modal-textarea" id="report-details" placeholder="Describe the issue…" maxlength="1000"></textarea>
+
+      <p class="modal-feedback" id="report-feedback"></p>
+    </div>
+
+    <div class="modal-footer">
+      <button class="modal-btn modal-btn-ghost" id="report-cancel-btn">Cancel</button>
+      <button class="modal-btn modal-btn-danger" id="report-submit-btn">Submit Report</button>
+    </div>
+  </div>
+</div>

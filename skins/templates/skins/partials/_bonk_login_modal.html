@@ -1,16 +1,32 @@
-<!-- Bonk login modal -->
-<dialog id="bonk-login-modal">
-  <form id="bonk-login-form" method="dialog" onsubmit="return doBonkLogin(event)">
-    <h3>Bonk.io Login</h3>
-    <p class="muted">We don't store your password. It's sent to Bonk.io once to apply the skin.</p>
-    <label>Bonk.io Username</label>
-    <input name="bonk_username" required>
-    <label>Bonk.io Password</label>
-    <input name="bonk_password" type="password" required>
-    <div class="row">
-      <button type="submit">Login</button>
-      <button type="button" onclick="closeBonkLogin()">Cancel</button>
+<!-- ── Bonk.io Login Modal (wear flow) ───────────────────── -->
+<div class="modal-overlay" id="bonk-login-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 class="modal-title">Bonk.io Login</h2>
+      <button class="modal-close-btn" id="bonk-login-modal-close">
+        <i data-lucide="x"></i>
+      </button>
     </div>
-    <p id="bonk-login-msg" class="muted"></p>
-  </form>
-</dialog>
+
+    <div class="modal-body">
+      <p style="color:#9aa4b2; margin:0 0 14px; font-size:0.9rem;">
+        We don't store your password. It's sent to Bonk.io once to apply the skin.
+      </p>
+
+      <form id="bonk-login-form">
+        <label class="modal-label" for="bonk-username">Bonk.io Username</label>
+        <input class="modal-input" id="bonk-username" name="bonk_username" required>
+
+        <label class="modal-label" for="bonk-password">Bonk.io Password</label>
+        <input class="modal-input" id="bonk-password" name="bonk_password" type="password" required>
+
+        <p class="modal-feedback" id="bonk-login-msg"></p>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <button class="modal-btn modal-btn-ghost" id="bonk-login-cancel-btn" type="button">Cancel</button>
+      <button class="modal-btn modal-btn-primary" type="submit" form="bonk-login-form">Login</button>
+    </div>
+  </div>
+</div>

@@ -1,11 +1,11 @@
 form {
     width: 50%;
     margin: auto;
-    padding: 20px;
-    border: 2px solid #009688;
-    border-radius: 10px;
-    background: hsla(212, 40%, 20%, 0.597);
-    box-shadow: 0px 0px 10px #009688;
+    padding: 28px 28px 24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    background: #1a2733;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
 label {
@@ -15,32 +15,47 @@ label {
     font-weight: bold;
 }
 
-input[type="text"] {
-    width: 90%;
-    padding: 10px;
+/* Unified, modal-matching treatment for every plain input/select/textarea
+   on the site — dark translucent background, thin border, focus ring
+   instead of a permanent glow. Replaces the old split between a bare
+   `input` rule (4px border, black background) and a separate
+   `input[type="text"]` rule (2px border, different width), which made
+   inputs on the same form visibly inconsistent depending on their
+   `type` attribute. */
+input,
+select,
+textarea {
+    width: 100%;
+    box-sizing: border-box;
     margin: 8px 0;
-    border: 2px solid #009688;
-    background: black;
-    color: white;
-    border-radius: 5px;
-    outline: none;
-}
-
-input {
-    padding: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 8px;
-    background-color: #000;
-    border: 4px solid #009688;
-    width: 93%;
+    color: #e6edf3;
+    font-family: "Oxanium", sans-serif;
     font-size: 16px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    -webkit-appearance: none;
+    appearance: none;
 }
 
-input, select, textarea {
-    color: #ddd;
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: #009688;
+    box-shadow: 0 0 0 2px rgba(0, 150, 136, 0.2);
+}
+
+textarea {
+    resize: vertical;
+    min-height: 90px;
+    line-height: 1.5;
 }
 
 ::placeholder {
-    color: #ddd;
+    color: #9aa4b2;
 }
 
 button {
@@ -85,24 +100,27 @@ button {
     background-color: #009688;
 }
 
-/* Hero Search Bar */
+/* Hero Search Bar — same modal-matching language as plain inputs:
+   dark translucent background, thin border, a focus ring instead of
+   a permanent neon glow. Keeps the pill shape and blur, drops the
+   always-on box-shadow so it stops reading as a separate design
+   language from every other search/input on the site. */
 .hero-search {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: rgba(0, 0, 0, 0.4);
-    border: 2px solid #009688;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 14px;
-    box-shadow: 0px 0px 12px rgba(0, 230, 195, 0.6);
     padding: 10px 14px;
     backdrop-filter: blur(6px);
-    transition: box-shadow 0.25s ease-in-out, transform 0.15s ease-in-out;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
     flex: 1;
 }
 
-.hero-search:hover {
-    box-shadow: 0px 0px 18px rgba(0, 255, 204, 0.75);
-    transform: translateY(-1px);
+.hero-search:focus-within {
+    border-color: #009688;
+    box-shadow: 0 0 0 2px rgba(0, 150, 136, 0.2);
 }
 
 .hero-search input {
@@ -115,7 +133,7 @@ button {
 }
 
 .hero-search input::placeholder {
-    color: #aaa;
+    color: #9aa4b2;
 }
 
 .hero-search button {
@@ -153,6 +171,8 @@ button {
 }
 
 .search-controls-inline select {
+    width: auto;
+    margin: 0;
     background: #111;
     border: 1px solid rgba(0,255,204,0.3);
     color: #fff;
@@ -221,6 +241,8 @@ form.filter-form {
 .slot-select.md select { padding: 8px 34px 8px 12px; }
 
 .slot-select select {
+    width: auto;
+    margin: 0;
     -webkit-appearance: none;
     appearance: none;
     background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));

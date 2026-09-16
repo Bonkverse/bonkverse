@@ -251,7 +251,7 @@ function closeDeleteModal() {
 document.getElementById('delete-modal-close').addEventListener('click', closeDeleteModal);
 document.getElementById('delete-cancel-btn').addEventListener('click', closeDeleteModal);
 deleteModal.addEventListener('click', e => { if (e.target === deleteModal) closeDeleteModal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDeleteModal(); closeEditModal(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDeleteModal(); closeEditModal(); closeBonkLogin(); } });
 
 // Delegated (not bound at page load) so it works on cards added by
 // AJAX paging, not just the ones present on the very first render.
@@ -451,10 +451,31 @@ document.getElementById('edit-save-btn').addEventListener('click', saveEditSkin)
 
 // ── Wear flow ───────────────────────────────────────────────
 let pendingWearCard = null;
-const loginModal = document.getElementById('bonk-login-modal');
+const loginModal    = document.getElementById('bonk-login-modal');
+const bonkLoginForm = document.getElementById('bonk-login-form');
+const bonkLoginMsg  = document.getElementById('bonk-login-msg');
 
-function openBonkLogin()  { if (loginModal?.showModal) loginModal.showModal(); else loginModal.style.display='block'; }
-function closeBonkLogin() { if (loginModal?.close) loginModal.close(); else loginModal.style.display='none'; }
+function openBonkLogin() {
+  if (!loginModal) return;
+  bonkLoginMsg.textContent = '';
+  bonkLoginMsg.className   = 'modal-feedback';
+  loginModal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeBonkLogin() {
+  if (!loginModal) return;
+  loginModal.classList.remove('open');
+  document.body.style.overflow = '';
+  bonkLoginForm.reset();
+}
+
+if (loginModal) {
+  document.getElementById('bonk-login-modal-close').addEventListener('click', closeBonkLogin);
+  document.getElementById('bonk-login-cancel-btn').addEventListener('click', closeBonkLogin);
+  loginModal.addEventListener('click', e => { if (e.target === loginModal) closeBonkLogin(); });
+  bonkLoginForm.addEventListener('submit', doBonkLogin);
+}
 
 async function tryWear(card) {
   const url = card.dataset.wearUrl;
@@ -474,22 +495,28 @@ document.addEventListener('click', e => {
 
 async function doBonkLogin(e) {
   e.preventDefault();
-  const fd  = new FormData(e.target);
-  const msg = document.getElementById('bonk-login-msg');
-  msg.textContent = 'Logging in…';
+  const fd = new FormData(bonkLoginForm);
+  bonkLoginMsg.textContent = 'Logging in…';
+  bonkLoginMsg.className   = 'modal-feedback';
   const r = await fetch(ROUTES.bonkLogin, {
     method: 'POST',
     headers: { 'X-CSRFToken': getCSRF(), 'X-Requested-With': 'XMLHttpRequest' },
     body: fd
   });
   const json = await r.json().catch(() => ({}));
-  if (!r.ok || !json.ok) { msg.textContent = '❌ ' + (json.error || 'Login failed'); return false; }
-  msg.textContent = '✅ Logged in!';
-  closeBonkLogin();
-  if (pendingWearCard) {
-    const card = pendingWearCard;
-    pendingWearCard = null;
-    setTimeout(() => tryWear(card), 120);
+  if (!r.ok || !json.ok) {
+    bonkLoginMsg.textContent = '❌ ' + (json.error || 'Login failed');
+    bonkLoginMsg.className   = 'modal-feedback error';
+    return;
   }
-  return false;
+  bonkLoginMsg.textContent = '✅ Logged in!';
+  bonkLoginMsg.className   = 'modal-feedback success';
+  setTimeout(() => {
+    closeBonkLogin();
+    if (pendingWearCard) {
+      const card = pendingWearCard;
+      pendingWearCard = null;
+      tryWear(card);
+    }
+  }, 400);
 }
