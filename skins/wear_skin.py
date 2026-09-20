@@ -277,6 +277,12 @@ def _bonk_update_avatar(token: str, slot: int, skin_code: str):
         )
         r.raise_for_status()
         data = r.json()
+        if data.get("r") != "success":
+            # Token is never in the response; safe to log.
+            logger.warning(
+                "[wear-debug] avatar_update non-success | http=%s | body=%s | skin_code_len=%s | slot=%s",
+                r.status_code, r.text[:500], len(skin_code or ""), slot,
+            )
         return (data.get("r") == "success", data.get("error"))
     except Exception as e:
         logger.warning("[wear-debug] avatar_update exception: %r", e)
