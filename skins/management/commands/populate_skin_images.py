@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from skins.models import Skin, SkinImage
 
+
 class Command(BaseCommand):
     help = "Populate skin_images table with svg/png/thumbnail rows for all skins"
 

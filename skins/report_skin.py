@@ -8,20 +8,20 @@ from .events import log_event
 
 @require_POST
 def report_skin(request, skin_id: int):
-    skin   = get_object_or_404(Skin, id=skin_id)
-    reason  = request.POST.get('reason', '').strip()
-    details = request.POST.get('details', '').strip()
+    skin = get_object_or_404(Skin, id=skin_id)
+    reason = request.POST.get("reason", "").strip()
+    details = request.POST.get("details", "").strip()
 
     valid_reasons = {r[0] for r in SkinReport.REASON_CHOICES}
     if reason not in valid_reasons:
-        return JsonResponse({'ok': False, 'error': 'invalid_reason'}, status=400)
+        return JsonResponse({"ok": False, "error": "invalid_reason"}, status=400)
 
     reporter = request.user if request.user.is_authenticated else None
 
     # Prevent duplicate reports from the same authenticated user
     if reporter:
         if SkinReport.objects.filter(skin=skin, reporter=reporter).exists():
-            return JsonResponse({'ok': False, 'error': 'already_reported'}, status=409)
+            return JsonResponse({"ok": False, "error": "already_reported"}, status=409)
 
     SkinReport.objects.create(
         skin=skin,
@@ -31,4 +31,4 @@ def report_skin(request, skin_id: int):
     )
 
     log_event(request.user, "skin_reported", skin=skin, reason=reason)
-    return JsonResponse({'ok': True})
+    return JsonResponse({"ok": True})

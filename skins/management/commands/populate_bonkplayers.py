@@ -3,6 +3,7 @@ from django.utils import timezone
 from skins.models import BonkPlayer, FriendCountHistory
 import random
 
+
 class Command(BaseCommand):
     help = "Populate BonkPlayer and FriendCountHistory"
 

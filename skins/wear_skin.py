@@ -272,8 +272,12 @@ def _bonk_update_avatar(token: str, slot: int, skin_code: str):
     try:
         r = requests.post(
             BONK_AVATAR_UPDATE_URL,
-            data={"task": "updateavatar", "token": token,
-                  "newavatarslot": str(slot), "newavatar": skin_code},
+            data={
+                "task": "updateavatar",
+                "token": token,
+                "newavatarslot": str(slot),
+                "newavatar": skin_code,
+            },
             timeout=TIMEOUT,
         )
         r.raise_for_status()
@@ -282,7 +286,10 @@ def _bonk_update_avatar(token: str, slot: int, skin_code: str):
             # Token is never in the response; safe to log.
             logger.warning(
                 "[wear-debug] avatar_update non-success | http=%s | body=%s | skin_code_len=%s | slot=%s",
-                r.status_code, r.text[:500], len(skin_code or ""), slot,
+                r.status_code,
+                r.text[:500],
+                len(skin_code or ""),
+                slot,
             )
         return (data.get("r") == "success", data.get("error"))
     except Exception as e:
@@ -337,7 +344,9 @@ def wear_skin_code(request):
     if not ok:
         _debug_wear(request, "wear_code: bonk rejected update", err=err, slot=slot)
         # Token went stale at bonk's side — ask for a fresh bonk login.
-        return JsonResponse({"ok": False, "auth": "bonk", "error": err or "update_failed"}, status=401)
+        return JsonResponse(
+            {"ok": False, "auth": "bonk", "error": err or "update_failed"}, status=401
+        )
 
     _save_session_token(request, token)  # sliding TTL
     log_event(request.user, "skin_worn", metadata={"source": "editor_unsaved"})
@@ -359,7 +368,9 @@ def wear_skin(request, skin_id: int):
     ok, err = _bonk_update_avatar(token, slot, skin_code)
     if not ok:
         _debug_wear(request, "wear: bonk rejected update", err=err, slot=slot, skin_id=skin_id)
-        return JsonResponse({"ok": False, "auth": "bonk", "error": err or "update_failed"}, status=401)
+        return JsonResponse(
+            {"ok": False, "auth": "bonk", "error": err or "update_failed"}, status=401
+        )
 
     _save_session_token(request, token)
     log_event(request.user, "skin_worn", skin=skin)

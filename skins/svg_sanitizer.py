@@ -15,9 +15,21 @@ MAX_SVG_BYTES = 2_000_000
 # Elements that can execute or smuggle script. <image> is intentionally
 # NOT here — raster image references are fine.
 BLOCKED_ELEMENTS = {
-    "script", "foreignobject", "animate", "set", "handler", "listener",
-    "iframe", "embed", "object", "applet", "frame", "frameset",
-    "base", "meta", "link",
+    "script",
+    "foreignobject",
+    "animate",
+    "set",
+    "handler",
+    "listener",
+    "iframe",
+    "embed",
+    "object",
+    "applet",
+    "frame",
+    "frameset",
+    "base",
+    "meta",
+    "link",
 }
 
 # Attributes whose value is a URI and must be scheme-checked.
@@ -29,13 +41,19 @@ RASTER_DATA_RE = re.compile(r"^data:image/(png|jpe?g|gif|webp|bmp|avif);")
 # Raw-text checks, applied before parsing (defense in depth; also catches
 # <script> hidden in comments/CDATA, which the parser would not see).
 RAW_BLOCKED_RES = [
-    re.compile(r"<\s*script\b", re.IGNORECASE),          # any <script ...>
+    re.compile(r"<\s*script\b", re.IGNORECASE),  # any <script ...>
     re.compile(r"<!\s*(doctype|entity)\b", re.IGNORECASE),  # XXE / billion laughs
-    re.compile(r"<\?\s*xml-stylesheet\b", re.IGNORECASE),   # PI CSS injection
+    re.compile(r"<\?\s*xml-stylesheet\b", re.IGNORECASE),  # PI CSS injection
 ]
 
-CSS_BLOCKED_TOKENS = ("javascript:", "vbscript:", "expression(", "@import",
-                      "-moz-binding", "behavior:")
+CSS_BLOCKED_TOKENS = (
+    "javascript:",
+    "vbscript:",
+    "expression(",
+    "@import",
+    "-moz-binding",
+    "behavior:",
+)
 
 
 class UnsafeSVGError(ValueError):
@@ -91,7 +109,9 @@ def validate_svg_upload(content):
 
     for rx in RAW_BLOCKED_RES:
         if rx.search(text):
-            raise UnsafeSVGError("SVG contains a blocked construct (<script>, DOCTYPE/ENTITY, or xml-stylesheet)")
+            raise UnsafeSVGError(
+                "SVG contains a blocked construct (<script>, DOCTYPE/ENTITY, or xml-stylesheet)"
+            )
 
     try:
         root = ET.fromstring(text)

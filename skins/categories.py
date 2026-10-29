@@ -28,45 +28,121 @@ from .pagination_utils import elided_page_range
 
 # slug -> display metadata + keyword set
 CATEGORIES = {
-    "minimalist":   {"label": "Minimalist",          "blurb": "Clean lines and lots of negative space.",
-                     "keywords": ["minimal", "flat design", "flat", "simplicity"]},
-    "cartoon":      {"label": "Cartoon",             "blurb": "Cartoonish and comic-style art.",
-                     "keywords": ["cartoon", "comic"]},
-    "faces":        {"label": "Faces & Characters",  "blurb": "Faces, expressions, and characters.",
-                     "keywords": ["face", "character", "smiley", "smile", "eyes"]},
-    "nature":       {"label": "Nature",              "blurb": "Plants, water, sky, and the outdoors.",
-                     "keywords": ["nature", "natural", "tree", "plant", "flower", "leaf",
-                                  "ocean", "wave", "landscape", "mountain"]},
-    "flags":        {"label": "Flags & Countries",   "blurb": "National flags and country pride.",
-                     "keywords": ["flag", "national identity", "national pride", "patriot", "country"]},
-    "space":        {"label": "Space & Cosmic",      "blurb": "Stars, planets, and the cosmos.",
-                     "keywords": ["space", "cosmic", "galaxy", "planet", "moon", "star", "astronom", "celestial"]},
-    "sports":       {"label": "Sports",              "blurb": "Jerseys, teams, and athletics.",
-                     "keywords": ["sport", "soccer", "football", "jersey", "nike", "adidas", "basketball"]},
-    "logos":        {"label": "Logos & Text",        "blurb": "Logos, emblems, letters, and numbers.",
-                     "keywords": ["logo", "emblem", "letter", "typography", "text", "number", "symbol"]},
-    "fire":         {"label": "Fire & Energy",       "blurb": "Flames, sparks, and raw energy.",
-                     "keywords": ["fire", "flame", "energy", "lava", "spark"]},
-    "gaming":       {"label": "Gaming",              "blurb": "Video games and gaming culture.",
-                     "keywords": ["gaming", "video game", "among us", "minecraft", "undertale", "kirby"]},
-    "anime":        {"label": "Anime & Manga",       "blurb": "Anime, manga, and related references.",
-                     "keywords": ["anime", "manga", "naruto", "pokémon", "pokemon", "ninja"]},
-    "spooky":       {"label": "Spooky & Dark",       "blurb": "Skulls, horror, and shadowy themes.",
-                     "keywords": ["horror", "skull", "spooky", "creepy", "stealth", "death", "mystery"]},
-    "geometric":    {"label": "Geometric",           "blurb": "Shapes, symmetry, and structure.",
-                     "keywords": ["geometric", "geometry"]},
-    "memes":        {"label": "Memes & Internet",    "blurb": "Memes, emoji, and internet culture.",
-                     "keywords": ["meme", "internet culture", "discord", "emoji"]},
-    "cute":         {"label": "Cute",                "blurb": "Adorable, soft, and whimsical.",
-                     "keywords": ["cute", "kawaii", "adorable", "whimsy", "whimsical"]},
-    "animals":      {"label": "Animals",             "blurb": "Creatures big and small.",
-                     "keywords": ["animal", "cat", "dog", "bird", "fish", "wolf", "fox"]},
-    "food":         {"label": "Food",                "blurb": "Snacks, fruit, and meals.",
-                     "keywords": ["food", "fruit", "pizza", "burger", "candy"]},
-    "silhouette":   {"label": "Silhouette",          "blurb": "Bold shapes against a backdrop.",
-                     "keywords": ["silhouette"]},
-    "pixel":        {"label": "Pixel Art",           "blurb": "Retro pixel and 8-bit style.",
-                     "keywords": ["pixel", "8-bit", "8 bit"]},
+    "minimalist": {
+        "label": "Minimalist",
+        "blurb": "Clean lines and lots of negative space.",
+        "keywords": ["minimal", "flat design", "flat", "simplicity"],
+    },
+    "cartoon": {
+        "label": "Cartoon",
+        "blurb": "Cartoonish and comic-style art.",
+        "keywords": ["cartoon", "comic"],
+    },
+    "faces": {
+        "label": "Faces & Characters",
+        "blurb": "Faces, expressions, and characters.",
+        "keywords": ["face", "character", "smiley", "smile", "eyes"],
+    },
+    "nature": {
+        "label": "Nature",
+        "blurb": "Plants, water, sky, and the outdoors.",
+        "keywords": [
+            "nature",
+            "natural",
+            "tree",
+            "plant",
+            "flower",
+            "leaf",
+            "ocean",
+            "wave",
+            "landscape",
+            "mountain",
+        ],
+    },
+    "flags": {
+        "label": "Flags & Countries",
+        "blurb": "National flags and country pride.",
+        "keywords": ["flag", "national identity", "national pride", "patriot", "country"],
+    },
+    "space": {
+        "label": "Space & Cosmic",
+        "blurb": "Stars, planets, and the cosmos.",
+        "keywords": [
+            "space",
+            "cosmic",
+            "galaxy",
+            "planet",
+            "moon",
+            "star",
+            "astronom",
+            "celestial",
+        ],
+    },
+    "sports": {
+        "label": "Sports",
+        "blurb": "Jerseys, teams, and athletics.",
+        "keywords": ["sport", "soccer", "football", "jersey", "nike", "adidas", "basketball"],
+    },
+    "logos": {
+        "label": "Logos & Text",
+        "blurb": "Logos, emblems, letters, and numbers.",
+        "keywords": ["logo", "emblem", "letter", "typography", "text", "number", "symbol"],
+    },
+    "fire": {
+        "label": "Fire & Energy",
+        "blurb": "Flames, sparks, and raw energy.",
+        "keywords": ["fire", "flame", "energy", "lava", "spark"],
+    },
+    "gaming": {
+        "label": "Gaming",
+        "blurb": "Video games and gaming culture.",
+        "keywords": ["gaming", "video game", "among us", "minecraft", "undertale", "kirby"],
+    },
+    "anime": {
+        "label": "Anime & Manga",
+        "blurb": "Anime, manga, and related references.",
+        "keywords": ["anime", "manga", "naruto", "pokémon", "pokemon", "ninja"],
+    },
+    "spooky": {
+        "label": "Spooky & Dark",
+        "blurb": "Skulls, horror, and shadowy themes.",
+        "keywords": ["horror", "skull", "spooky", "creepy", "stealth", "death", "mystery"],
+    },
+    "geometric": {
+        "label": "Geometric",
+        "blurb": "Shapes, symmetry, and structure.",
+        "keywords": ["geometric", "geometry"],
+    },
+    "memes": {
+        "label": "Memes & Internet",
+        "blurb": "Memes, emoji, and internet culture.",
+        "keywords": ["meme", "internet culture", "discord", "emoji"],
+    },
+    "cute": {
+        "label": "Cute",
+        "blurb": "Adorable, soft, and whimsical.",
+        "keywords": ["cute", "kawaii", "adorable", "whimsy", "whimsical"],
+    },
+    "animals": {
+        "label": "Animals",
+        "blurb": "Creatures big and small.",
+        "keywords": ["animal", "cat", "dog", "bird", "fish", "wolf", "fox"],
+    },
+    "food": {
+        "label": "Food",
+        "blurb": "Snacks, fruit, and meals.",
+        "keywords": ["food", "fruit", "pizza", "burger", "candy"],
+    },
+    "silhouette": {
+        "label": "Silhouette",
+        "blurb": "Bold shapes against a backdrop.",
+        "keywords": ["silhouette"],
+    },
+    "pixel": {
+        "label": "Pixel Art",
+        "blurb": "Retro pixel and 8-bit style.",
+        "keywords": ["pixel", "8-bit", "8 bit"],
+    },
     # "abstract" is the labeler's fallback bucket (huge + low signal).
     # Uncomment if you want it browsable.
     # "abstract":   {"label": "Abstract / Other",    "blurb": "Non-representational designs.",
@@ -91,6 +167,7 @@ def _kw_q(keywords, include_description=False):
 # Hide flagged content from browse surfaces by default.
 NSFW_Q = _kw_q(["nsfw", "explicit", "nude"], include_description=True)
 
+
 # Hide flagged content in a NULL-safe way: positively match nsfw skins,
 # then exclude those ids. Writing .exclude(NSFW_Q) directly would also drop
 # skins whose labels/description are NULL (NOT NULL = NULL in SQL) — i.e.
@@ -105,8 +182,12 @@ def _apply_sort(qs, sort):
     if sort == "newest":
         return qs.order_by("-created_at"), "newest"
     if sort == "upvotes":
-        return qs.annotate(score=F("upvotes") - F("downvotes")).order_by("-score", "-created_at"), "upvotes"
-    return qs.annotate(fav_count=Count("favorited_by")).order_by("-fav_count", "-upvotes"), "favorites"
+        return qs.annotate(score=F("upvotes") - F("downvotes")).order_by(
+            "-score", "-created_at"
+        ), "upvotes"
+    return qs.annotate(fav_count=Count("favorited_by")).order_by(
+        "-fav_count", "-upvotes"
+    ), "favorites"
 
 
 @ratelimit(key="ip", rate="30/m", block=True)
@@ -118,13 +199,15 @@ def category_index(request):
         for slug, meta in CATEGORIES.items():
             qs = _base_queryset().filter(_kw_q(meta["keywords"]))
             cover = qs.order_by("-upvotes").values_list("image_url", flat=True).first()
-            items.append({
-                "slug":  slug,
-                "label": meta["label"],
-                "blurb": meta["blurb"],
-                "count": qs.count(),
-                "cover": cover,
-            })
+            items.append(
+                {
+                    "slug": slug,
+                    "label": meta["label"],
+                    "blurb": meta["blurb"],
+                    "count": qs.count(),
+                    "cover": cover,
+                }
+            )
         items.sort(key=lambda x: -x["count"])
         cache.set("category_index_v1", items, 60 * 60)  # 1 hour
     return render(request, "skins/category_index.html", {"categories": items})
@@ -140,15 +223,19 @@ def category_detail(request, slug):
     qs, sort = _apply_sort(qs, request.GET.get("sort", "favorites"))
 
     page_obj = Paginator(qs, 60).get_page(request.GET.get("page", 1))
-    return render(request, "skins/skin_browse.html", {
-        "page_obj":      page_obj,
-        "heading":       meta["label"],
-        "blurb":         meta["blurb"],
-        "sort":          sort,
-        "slug":          slug,
-        "base_qs":       f"sort={sort}",
-        "elided_range":  elided_page_range(page_obj),
-    })
+    return render(
+        request,
+        "skins/skin_browse.html",
+        {
+            "page_obj": page_obj,
+            "heading": meta["label"],
+            "blurb": meta["blurb"],
+            "sort": sort,
+            "slug": slug,
+            "base_qs": f"sort={sort}",
+            "elided_range": elided_page_range(page_obj),
+        },
+    )
 
 
 @ratelimit(key="ip", rate="30/m", block=True)
@@ -165,11 +252,15 @@ def new_releases(request):
         period = "all"
 
     page_obj = Paginator(qs, 60).get_page(request.GET.get("page", 1))
-    return render(request, "skins/skin_browse.html", {
-        "page_obj":      page_obj,
-        "heading":       "New Releases",
-        "blurb":         "Fresh uploads, newest first.",
-        "period":        period,
-        "base_qs":       f"period={period}",
-        "elided_range":  elided_page_range(page_obj),
-    })
+    return render(
+        request,
+        "skins/skin_browse.html",
+        {
+            "page_obj": page_obj,
+            "heading": "New Releases",
+            "blurb": "Fresh uploads, newest first.",
+            "period": period,
+            "base_qs": f"period={period}",
+            "elided_range": elided_page_range(page_obj),
+        },
+    )

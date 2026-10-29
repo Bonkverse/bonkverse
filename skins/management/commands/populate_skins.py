@@ -3,6 +3,7 @@ from skins.models import Skin
 import random
 import uuid
 
+
 class Command(BaseCommand):
     help = "Populate fake skins for local search"
 

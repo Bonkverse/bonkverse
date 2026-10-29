@@ -1,10 +1,7 @@
 import os
 from celery import Celery
 
-os.environ.setdefault(
-    "DJANGO_SETTINGS_MODULE",
-    "bonk_skin_search.settings"
-)
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "bonk_skin_search.settings")
 
 app = Celery("bonk_skin_search")
 app.config_from_object("django.conf:settings", namespace="CELERY")

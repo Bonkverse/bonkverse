@@ -54,6 +54,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 
 IMAGE_DIR = os.path.join(settings.MEDIA_ROOT, "skins")
 
+
 def convert_svg(svg_file):
     """Worker: convert a single SVG into PNG + thumbnail."""
     skin_id = os.path.splitext(svg_file)[0]
@@ -65,16 +66,14 @@ def convert_svg(svg_file):
     try:
         # Full PNG (512x512)
         if not os.path.exists(png_path):
-            cairosvg.svg2png(url=svg_path, write_to=png_path,
-                             output_width=512, output_height=512)
+            cairosvg.svg2png(url=svg_path, write_to=png_path, output_width=512, output_height=512)
             results.append(f"✔ PNG for {skin_id}")
         else:
             results.append(f"⚠ PNG exists {skin_id}")
 
         # Thumbnail (128x128)
         if not os.path.exists(thumb_path):
-            cairosvg.svg2png(url=svg_path, write_to=thumb_path,
-                             output_width=128, output_height=128)
+            cairosvg.svg2png(url=svg_path, write_to=thumb_path, output_width=128, output_height=128)
             results.append(f"✔ Thumb for {skin_id}")
         else:
             results.append(f"⚠ Thumb exists {skin_id}")

@@ -48,14 +48,12 @@ def search_players_view(request):
     else:  # mode == "username"
         qs = BonkPlayer.objects.filter(username__icontains=q).order_by("bonk_id")
 
-
     total = qs.count()
-    qs = qs[offset:offset + page_size]
+    qs = qs[offset : offset + page_size]
 
     # 🔹 Map BonkPlayer → BonkUser (if linked)
     account_links = dict(
-        BonkAccountLink.objects.filter(bonk_player__in=qs)
-        .values_list("bonk_player_id", "user_id")
+        BonkAccountLink.objects.filter(bonk_player__in=qs).values_list("bonk_player_id", "user_id")
     )
 
     # 🔹 Count flash friendships for all relevant users
@@ -66,19 +64,21 @@ def search_players_view(request):
         .values_list("user_id", "c")
     )
 
-    return JsonResponse({
-        "results": [
-            {
-                "bonk_id": p.bonk_id,
-                "username": p.username,
-                "last_friend_count": p.last_friend_count,
-                "last_seen": p.last_seen.isoformat() if getattr(p, "last_seen", None) else None,
-                # ✅ Look up the BonkUser via account_links, then flash friend count
-                "flash_friend_count": flash_counts.get(account_links.get(p.id), 0),
-            }
-            for p in qs
-        ],
-        "total": total,
-        "page": page,
-        "page_size": page_size,
-    })
+    return JsonResponse(
+        {
+            "results": [
+                {
+                    "bonk_id": p.bonk_id,
+                    "username": p.username,
+                    "last_friend_count": p.last_friend_count,
+                    "last_seen": p.last_seen.isoformat() if getattr(p, "last_seen", None) else None,
+                    # ✅ Look up the BonkUser via account_links, then flash friend count
+                    "flash_friend_count": flash_counts.get(account_links.get(p.id), 0),
+                }
+                for p in qs
+            ],
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+        }
+    )

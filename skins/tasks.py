@@ -4,7 +4,10 @@ from django.utils import timezone
 from skins.models import DiscordServer, DiscordServerSnapshot
 from skins.discord_invite import fetch_invite, parse_invite_payload
 
-@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=30, retry_kwargs={"max_retries": 3})
+
+@shared_task(
+    bind=True, autoretry_for=(Exception,), retry_backoff=30, retry_kwargs={"max_retries": 3}
+)
 def refresh_discord_servers(self):
     servers = DiscordServer.objects.filter(status=DiscordServer.Status.ACTIVE)
 

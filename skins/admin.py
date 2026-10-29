@@ -7,7 +7,7 @@ from django.shortcuts import render
 
 @admin.action(description="Update creator to specified name")
 def bulk_update_creator(modeladmin, request, queryset):
-    if 'apply' in request.POST:
+    if "apply" in request.POST:
         form = BulkUpdateCreatorForm(request.POST)
         if form.is_valid():
             new_creator = form.cleaned_data["new_creator"]
@@ -15,14 +15,21 @@ def bulk_update_creator(modeladmin, request, queryset):
             modeladmin.message_user(request, f"Updated {count} skins.")
             return None
     else:
-        form = BulkUpdateCreatorForm(initial={'_selected_action': request.POST.getlist(admin.ACTION_CHECKBOX_NAME)})
+        form = BulkUpdateCreatorForm(
+            initial={"_selected_action": request.POST.getlist(admin.ACTION_CHECKBOX_NAME)}
+        )
 
-    return render(request, 'admin/bulk_update_creator.html', {
-        'skins': queryset,
-        'form': form,
-        'title': 'Update Creator Name',
-        'action': 'bulk_update_creator'
-    })
+    return render(
+        request,
+        "admin/bulk_update_creator.html",
+        {
+            "skins": queryset,
+            "form": form,
+            "title": "Update Creator Name",
+            "action": "bulk_update_creator",
+        },
+    )
+
 
 class SkinAdmin(admin.ModelAdmin):
     actions = [bulk_update_creator]

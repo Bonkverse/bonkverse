@@ -3,8 +3,9 @@ from django.shortcuts import render
 from django.db.models import Count
 from django.utils import timezone
 from datetime import timedelta
-from .models import PlayerLoss   # 👈 new model for losses
+from .models import PlayerLoss  # 👈 new model for losses
 from django_ratelimit.decorators import ratelimit
+
 
 @ratelimit(key="ip", rate="20/m", block=True)
 def _get_queryset(period):
@@ -34,11 +35,8 @@ def _get_queryset(period):
             end = start.replace(month=start.month + 1)
         qs = qs.filter(created_at__gte=start, created_at__lt=end)
 
-    return (
-        qs.values("username")
-          .annotate(total=Count("id"))
-          .order_by("-total")[:50]
-    )
+    return qs.values("username").annotate(total=Count("id")).order_by("-total")[:50]
+
 
 @ratelimit(key="ip", rate="20/m", block=True)
 def losses_hub(request, period="today"):
@@ -49,8 +47,12 @@ def losses_hub(request, period="today"):
         "month": "Monthly Losses Leaderboard",
         "all": "All-Time Losses Leaderboard",
     }
-    return render(request, "skins/losses_hub.html", {
-        "leaderboard": leaderboard,
-        "period": period,
-        "title": title_map.get(period, "Losses Leaderboard"),
-    })
+    return render(
+        request,
+        "skins/losses_hub.html",
+        {
+            "leaderboard": leaderboard,
+            "period": period,
+            "title": title_map.get(period, "Losses Leaderboard"),
+        },
+    )

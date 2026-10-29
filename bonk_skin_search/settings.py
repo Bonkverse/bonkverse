@@ -91,13 +91,12 @@ BONKVERSE_REPLAYS_URL = os.getenv(
 )
 
 BLSKIN_FETCHER_URL = os.getenv(
-    "BLSKIN_FETCHER_URL",
-    "https://blskinfetcher-production.up.railway.app/api/getSkin"
+    "BLSKIN_FETCHER_URL", "https://blskinfetcher-production.up.railway.app/api/getSkin"
 )
 
 BONKVERSE_BASE_URL = os.getenv("BONKVERSE_BASE_URL", "https://bonkverse.io")
 
-CLOUDFLARE_ZONE_ID  = os.getenv("CLOUDFLARE_ZONE_ID", "")
+CLOUDFLARE_ZONE_ID = os.getenv("CLOUDFLARE_ZONE_ID", "")
 CLOUDFLARE_CACHE_API_TOKEN = os.getenv("CLOUDFLARE_CACHE_API_TOKEN", "")
 
 # =========================================================
@@ -155,8 +154,12 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOW_HEADERS = [
-    "accept", "authorization", "content-type",
-    "user-agent", "x-csrftoken", "x-requested-with",
+    "accept",
+    "authorization",
+    "content-type",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
 ]
 
 DEBUG_PROPAGATE_EXCEPTIONS = True
@@ -166,7 +169,7 @@ if IS_PROD:
         "bonkverse-production.up.railway.app",
         "bonkverse.io",
         "www.bonkverse.io",
-        "editor.bonkverse.io",   # add this — the editor subdomain hits Django too
+        "editor.bonkverse.io",  # add this — the editor subdomain hits Django too
         "127.0.0.1",
         "localhost",
         "http://172.26.90.66",
@@ -190,7 +193,6 @@ else:
 INSTALLED_APPS = [
     # WhiteNoise
     "whitenoise.runserver_nostatic",
-
     # Django
     "django.contrib.admin",
     "django.contrib.auth",
@@ -198,13 +200,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-
     # Third-party
     "django_extensions",
     "django_ratelimit",
     "django_celery_beat",
     "corsheaders",
-
     # Local apps
     "skins",
 ]
@@ -215,12 +215,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
-
     "django.middleware.security.SecurityMiddleware",
-
     # WhiteNoise should come directly after SecurityMiddleware
     "whitenoise.middleware.WhiteNoiseMiddleware",
-
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -259,11 +256,7 @@ WSGI_APPLICATION = "bonk_skin_search.wsgi.application"
 # Database
 # =========================================================
 
-DATABASES = {
-    "default": dj_database_url.config(
-        default=os.getenv("DATABASE_URL")
-    )
-}
+DATABASES = {"default": dj_database_url.config(default=os.getenv("DATABASE_URL"))}
 
 # =========================================================
 # Password Validation
@@ -301,13 +294,13 @@ USE_TZ = True
 
 try:
     from zoneinfo import ZoneInfo
+
     ZoneInfo(TIME_ZONE)
 except Exception as e:
-    logging.warning(
-        f"ZoneInfo not found for {TIME_ZONE}: {e}. Using UTC fallback."
-    )
+    logging.warning(f"ZoneInfo not found for {TIME_ZONE}: {e}. Using UTC fallback.")
 
     from django.utils import timezone as django_tz
+
     django_tz.get_default_timezone = lambda: dt_timezone.utc
 
 # =========================================================

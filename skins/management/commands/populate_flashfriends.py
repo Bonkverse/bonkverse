@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from skins.models import FlashFriend, FlashFriendship, BonkUser
 import random
 
+
 class Command(BaseCommand):
     help = "Populate Flash friends (requires at least one BonkUser)"
 

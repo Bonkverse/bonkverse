@@ -14,14 +14,16 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from .models import UserEvent
 
+
 def friends_sync_status(request):
     if not request.user.is_authenticated:
         return JsonResponse({"ok": False}, status=401)
 
     cutoff = timezone.now() - timedelta(minutes=2)
     event = (
-        UserEvent.objects
-        .filter(user=request.user, event_type="friends_synced", created_at__gte=cutoff)
+        UserEvent.objects.filter(
+            user=request.user, event_type="friends_synced", created_at__gte=cutoff
+        )
         .order_by("-created_at")
         .first()
     )
@@ -29,21 +31,26 @@ def friends_sync_status(request):
     if not event:
         return JsonResponse({"status": "pending"})
 
-    return JsonResponse({
-        "status": "done",
-        "friends_now": event.metadata.get("friends_now", 0),
-        "added_edges": event.metadata.get("added_edges", 0),
-        "removed_edges": event.metadata.get("removed_edges", 0),
-        "corrected_usernames": event.metadata.get("corrected_usernames", []),
-        "corrected_count": event.metadata.get("corrected_count", 0),
-    })
+    return JsonResponse(
+        {
+            "status": "done",
+            "friends_now": event.metadata.get("friends_now", 0),
+            "added_edges": event.metadata.get("added_edges", 0),
+            "removed_edges": event.metadata.get("removed_edges", 0),
+            "corrected_usernames": event.metadata.get("corrected_usernames", []),
+            "corrected_count": event.metadata.get("corrected_count", 0),
+        }
+    )
+
 
 # ==========================
 # Config
 # ==========================
 BLACKLISTED_KEYWORDS = ["xp", "farm"]
 SESSION_DEFAULT_MINUTES = 30  # default lifetime for session tokens
-BONKBOT_API_BASE = "https://bonkversebonkbotapi-production.up.railway.app"  # 🔑 replace with your Railway URL
+BONKBOT_API_BASE = (
+    "https://bonkversebonkbotapi-production.up.railway.app"  # 🔑 replace with your Railway URL
+)
 
 
 # ==========================
@@ -64,19 +71,27 @@ def add_cors_headers(response):
 def request_verification(request):
     """Ask BonkBot service to create a verification room."""
     if request.method != "POST":
-        return add_cors_headers(JsonResponse({"success": False, "reason": "Invalid method"}, status=405))
+        return add_cors_headers(
+            JsonResponse({"success": False, "reason": "Invalid method"}, status=405)
+        )
 
     try:
         resp = requests.post(f"{BONKBOT_API_BASE}/create_verification", timeout=10)
         data = resp.json()
         if not data.get("success"):
-            return add_cors_headers(JsonResponse({"success": False, "reason": "Failed to create room"}, status=500))
+            return add_cors_headers(
+                JsonResponse({"success": False, "reason": "Failed to create room"}, status=500)
+            )
 
-        return add_cors_headers(JsonResponse({
-            "success": True,
-            "verification_id": data["verification_id"],
-            "room_url": data["room_url"],
-        }))
+        return add_cors_headers(
+            JsonResponse(
+                {
+                    "success": True,
+                    "verification_id": data["verification_id"],
+                    "room_url": data["room_url"],
+                }
+            )
+        )
     except Exception as e:
         return add_cors_headers(JsonResponse({"success": False, "reason": str(e)}, status=500))
 
@@ -87,15 +102,19 @@ def complete_verification(request):
     """Poll BonkBot service for verification result, issue session token if verified."""
     if request.method == "OPTIONS":
         return add_cors_headers(JsonResponse({"success": True}))  # 👈 handle preflight
-    
+
     if request.method != "POST":
-        return add_cors_headers(JsonResponse({"success": False, "reason": "Invalid method"}, status=405))
+        return add_cors_headers(
+            JsonResponse({"success": False, "reason": "Invalid method"}, status=405)
+        )
 
     try:
         body = json.loads(request.body)
         verification_id = body.get("verification_id")
         if not verification_id:
-            return add_cors_headers(JsonResponse({"success": False, "reason": "Missing verification_id"}, status=400))
+            return add_cors_headers(
+                JsonResponse({"success": False, "reason": "Missing verification_id"}, status=400)
+            )
 
         # Poll BonkBot service
         resp = requests.get(f"{BONKBOT_API_BASE}/status/{verification_id}", timeout=10)
@@ -103,28 +122,32 @@ def complete_verification(request):
         status = data.get("status")
 
         if status == "failed":
-            return add_cors_headers(JsonResponse({
-                "success": False,
-                "reason": "Verification failed (guest or invalid)"
-            }, status=400))
+            return add_cors_headers(
+                JsonResponse(
+                    {"success": False, "reason": "Verification failed (guest or invalid)"},
+                    status=400,
+                )
+            )
 
         if status == "pending":
-            return add_cors_headers(JsonResponse({
-                "success": False,
-                "reason": "Not verified yet"
-            }, status=400))
+            return add_cors_headers(
+                JsonResponse({"success": False, "reason": "Not verified yet"}, status=400)
+            )
 
         if status == "expired":
-            return add_cors_headers(JsonResponse({
-                "success": False,
-                "reason": "Verification expired (room closed)"
-            }, status=400))
+            return add_cors_headers(
+                JsonResponse(
+                    {"success": False, "reason": "Verification expired (room closed)"}, status=400
+                )
+            )
 
         if status != "verified":
-            return add_cors_headers(JsonResponse({
-                "success": False,
-                "reason": f"Unknown verification state: {status}"
-            }, status=400))
+            return add_cors_headers(
+                JsonResponse(
+                    {"success": False, "reason": f"Unknown verification state: {status}"},
+                    status=400,
+                )
+            )
 
         # ✅ At this point, verified
         username = data.get("username")
@@ -144,12 +167,16 @@ def complete_verification(request):
             expires_at=now() + timedelta(minutes=SESSION_DEFAULT_MINUTES),
         )
 
-        return add_cors_headers(JsonResponse({
-            "success": True,
-            "username": username,
-            "token": token,
-            "expires_in": SESSION_DEFAULT_MINUTES * 60,
-        }))
+        return add_cors_headers(
+            JsonResponse(
+                {
+                    "success": True,
+                    "username": username,
+                    "token": token,
+                    "expires_in": SESSION_DEFAULT_MINUTES * 60,
+                }
+            )
+        )
     except Exception as e:
         return add_cors_headers(JsonResponse({"success": False, "reason": str(e)}, status=500))
 
@@ -164,7 +191,9 @@ def heartbeat(request):
     token = request.headers.get("Authorization", "").replace("Bearer ", "")
     session = PlayerSession.objects.filter(token=token).first()
     if not session:
-        return add_cors_headers(JsonResponse({"success": False, "reason": "Invalid session"}, status=403))
+        return add_cors_headers(
+            JsonResponse({"success": False, "reason": "Invalid session"}, status=403)
+        )
     session.last_seen = now()
     session.save(update_fields=["last_seen"])
     return add_cors_headers(JsonResponse({"success": True}))
@@ -230,6 +259,7 @@ def stop_tracking(request):
 #         traceback.print_exc()
 #         return add_cors_headers(JsonResponse({"success": False, "reason": str(e)}, status=500))
 
+
 @csrf_exempt
 @ratelimit(key="ip", rate="10/m", block=False)
 def record_win(request):
@@ -237,17 +267,27 @@ def record_win(request):
         if request.method == "OPTIONS":
             return add_cors_headers(JsonResponse({"success": True}))
         if request.method != "POST":
-            return add_cors_headers(JsonResponse({"success": False, "reason": "Invalid method"}, status=405))
+            return add_cors_headers(
+                JsonResponse({"success": False, "reason": "Invalid method"}, status=405)
+            )
 
         token = request.headers.get("Authorization", "").replace("Bearer ", "")
         session = PlayerSession.objects.filter(token=token).first()
         if not session or not session.is_active():
-            return add_cors_headers(JsonResponse({"success": False, "reason": "Invalid or expired session"}, status=403))
+            return add_cors_headers(
+                JsonResponse({"success": False, "reason": "Invalid or expired session"}, status=403)
+            )
 
         if getattr(request, "limited", False):
-            return add_cors_headers(JsonResponse(
-                {"success": False, "reason": "You're being rate limited: Too many wins per minute"}, status=429
-            ))
+            return add_cors_headers(
+                JsonResponse(
+                    {
+                        "success": False,
+                        "reason": "You're being rate limited: Too many wins per minute",
+                    },
+                    status=429,
+                )
+            )
 
         data = json.loads(request.body)
         username = data.get("username")
@@ -260,10 +300,16 @@ def record_win(request):
             return add_cors_headers(JsonResponse({"success": False, "reason": str(e)}, status=400))
 
         if username != session.username:
-            return add_cors_headers(JsonResponse({"success": False, "reason": "Username mismatch"}, status=403))
+            return add_cors_headers(
+                JsonResponse({"success": False, "reason": "Username mismatch"}, status=403)
+            )
 
         if any(bad in map_name.lower() for bad in BLACKLISTED_KEYWORDS):
-            return add_cors_headers(JsonResponse({"success": False, "reason": "XP farming maps not allowed"}, status=400))
+            return add_cors_headers(
+                JsonResponse(
+                    {"success": False, "reason": "XP farming maps not allowed"}, status=400
+                )
+            )
 
         # --- Compute match length ---
         last_win = PlayerWin.objects.filter(username=username).order_by("-created_at").first()
@@ -276,28 +322,33 @@ def record_win(request):
             actual_match_length = time_since_last - transition_delay
 
             if actual_match_length < 5:
-                return add_cors_headers(JsonResponse({
-                    "success": False,
-                    "reason": f"Suspicious win: match ended too fast ({actual_match_length:.2f}s)",
-                    "match_length": actual_match_length
-                }, status=400))
+                return add_cors_headers(
+                    JsonResponse(
+                        {
+                            "success": False,
+                            "reason": f"Suspicious win: match ended too fast ({actual_match_length:.2f}s)",
+                            "match_length": actual_match_length,
+                        },
+                        status=400,
+                    )
+                )
 
             # optional: also block impossible rapid sequences
             if time_since_last < 4.8:  # physically impossible window
-                return add_cors_headers(JsonResponse({
-                    "success": False,
-                    "reason": "Impossible timing (transition not complete)"
-                }, status=400))
+                return add_cors_headers(
+                    JsonResponse(
+                        {"success": False, "reason": "Impossible timing (transition not complete)"},
+                        status=400,
+                    )
+                )
 
         # --- Passed all checks → log win ---
         win = PlayerWin.objects.create(username=username)
-        return add_cors_headers(JsonResponse({
-            "success": True,
-            "id": win.id
-        }))
+        return add_cors_headers(JsonResponse({"success": True, "id": win.id}))
 
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         return add_cors_headers(JsonResponse({"success": False, "reason": str(e)}, status=500))
 
@@ -309,12 +360,16 @@ def record_loss(request):
         if request.method == "OPTIONS":
             return add_cors_headers(JsonResponse({"success": True}))
         if request.method != "POST":
-            return add_cors_headers(JsonResponse({"success": False, "reason": "Invalid method"}, status=405))
+            return add_cors_headers(
+                JsonResponse({"success": False, "reason": "Invalid method"}, status=405)
+            )
 
         token = request.headers.get("Authorization", "").replace("Bearer ", "")
         session = PlayerSession.objects.filter(token=token).first()
         if not session or not session.is_active():
-            return add_cors_headers(JsonResponse({"success": False, "reason": "Invalid or expired session"}, status=403))
+            return add_cors_headers(
+                JsonResponse({"success": False, "reason": "Invalid or expired session"}, status=403)
+            )
 
         data = json.loads(request.body)
         username = data.get("username")
@@ -326,23 +381,33 @@ def record_loss(request):
             return add_cors_headers(JsonResponse({"success": False, "reason": str(e)}, status=400))
 
         if username != session.username:
-            return add_cors_headers(JsonResponse({"success": False, "reason": "Username mismatch"}, status=403))
+            return add_cors_headers(
+                JsonResponse({"success": False, "reason": "Username mismatch"}, status=403)
+            )
 
         if any(bad in map_name.lower() for bad in BLACKLISTED_KEYWORDS):
-            return add_cors_headers(JsonResponse({"success": False, "reason": "XP farming maps not allowed"}, status=400))
+            return add_cors_headers(
+                JsonResponse(
+                    {"success": False, "reason": "XP farming maps not allowed"}, status=400
+                )
+            )
 
         # Optional: prevent spammy losses like with wins
         last_loss = PlayerLoss.objects.filter(username=username).order_by("-created_at").first()
         if last_loss and (now() - last_loss.created_at).total_seconds() < 5:
-            return add_cors_headers(JsonResponse(
-                {"success": False, "reason": "Suspicious loss: Too soon after previous loss"}, status=400
-            ))
+            return add_cors_headers(
+                JsonResponse(
+                    {"success": False, "reason": "Suspicious loss: Too soon after previous loss"},
+                    status=400,
+                )
+            )
 
         loss = PlayerLoss.objects.create(username=username)
         return add_cors_headers(JsonResponse({"success": True, "id": loss.id}))
 
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         return add_cors_headers(JsonResponse({"success": False, "reason": str(e)}, status=500))
 
@@ -366,12 +431,9 @@ def leaderboard(request, period="all"):
     elif period == "month":
         qs = qs.filter(created_at__year=now_ts.year, created_at__month=now_ts.month)
 
-    leaderboard_data = (
-        qs.values("username")
-          .annotate(total=Count("id"))
-          .order_by("-total")[:20]
-    )
+    leaderboard_data = qs.values("username").annotate(total=Count("id")).order_by("-total")[:20]
     return JsonResponse(list(leaderboard_data), safe=False)
+
 
 def loss_leaderboard(request, period="all"):
     """Return top players by losses (today, week, month, all)."""
@@ -389,9 +451,5 @@ def loss_leaderboard(request, period="all"):
     elif period == "month":
         qs = qs.filter(created_at__year=now_ts.year, created_at__month=now_ts.month)
 
-    leaderboard_data = (
-        qs.values("username")
-          .annotate(total=Count("id"))
-          .order_by("-total")[:20]
-    )
+    leaderboard_data = qs.values("username").annotate(total=Count("id")).order_by("-total")[:20]
     return JsonResponse(list(leaderboard_data), safe=False)

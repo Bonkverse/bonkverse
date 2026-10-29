@@ -57,18 +57,19 @@ cursor.execute(
       AND (description IS NULL OR labels IS NULL)
     ORDER BY id
     """,
-    (skin_ids,)
+    (skin_ids,),
 )
 
 skins = cursor.fetchall()
 
 if args.limit:
-    skins = skins[:args.limit]
+    skins = skins[: args.limit]
 
 print(f"🎯 Skins queued for labeling: {len(skins)}")
 
 if args.dry_run:
     print("🧪 DRY RUN MODE — no database writes will occur")
+
 
 # --------------------
 # OpenAI call
@@ -85,43 +86,41 @@ def get_description_and_labels(image_url, skin_name):
                     "Do NOT include markdown. Do NOT say 'Sure' or 'Here you go'. "
                     "Output ONLY valid JSON in this structure:\n\n"
                     "{\n"
-                    "  \"description\": \"Describe this skin in detail. Then, provide tags for color palette, "
+                    '  "description": "Describe this skin in detail. Then, provide tags for color palette, '
                     "artistic style, recognizable objects, themes, references to media and culture "
-                    "(memes, movies, shows, etc. if applicable), and overall impression.\",\n"
-                    "  \"labels\": {\n"
-                    "    \"colors\": [],\n"
-                    "    \"style\": \"\",\n"
-                    "    \"objects\": [],\n"
-                    "    \"themes\": [],\n"
-                    "    \"references\": []\n"
+                    '(memes, movies, shows, etc. if applicable), and overall impression.",\n'
+                    '  "labels": {\n'
+                    '    "colors": [],\n'
+                    '    "style": "",\n'
+                    '    "objects": [],\n'
+                    '    "themes": [],\n'
+                    '    "references": []\n'
                     "  }\n"
                     "}\n\n"
                     "If no specific references are identifiable, describe shapes, colors, layout, and style. "
                     "You may add generic labels such as 'logo', 'abstract', or 'nsfw'. "
                     "Do NOT say you cannot identify it."
-                )
+                ),
             },
             {
                 "role": "user",
                 "content": [
                     {"type": "text", "text": f"Skin name: {skin_name}"},
-                    {"type": "image_url", "image_url": {"url": image_url}}
-                ]
-            }
+                    {"type": "image_url", "image_url": {"url": image_url}},
+                ],
+            },
         ],
         max_tokens=700,
     )
 
     return response.choices[0].message.content
 
+
 # --------------------
 # Processing loop
 # --------------------
 for index, (skin_id, image_url, name) in enumerate(skins, start=1):
-    full_image_url = (
-        image_url if image_url.startswith("http")
-        else f"{MEDIA_BASE}{image_url}"
-    )
+    full_image_url = image_url if image_url.startswith("http") else f"{MEDIA_BASE}{image_url}"
 
     print(f"🔍 [{index}/{len(skins)}] Labeling skin {skin_id} — {name}")
 
@@ -150,7 +149,7 @@ for index, (skin_id, image_url, name) in enumerate(skins, start=1):
                         labeled_at = %s
                     WHERE id = %s
                     """,
-                    (description, json.dumps(labels), now, skin_id)
+                    (description, json.dumps(labels), now, skin_id),
                 )
                 conn.commit()
                 print(f"✅ Updated skin {skin_id}")

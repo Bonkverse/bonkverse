@@ -75,13 +75,8 @@ def submit_server(request):
         )
 
         if not created:
-            messages.warning(
-                request,
-                "⚠️ This Discord server has already been submitted."
-            )
-            return redirect(
-                reverse("detail", kwargs={"server_id": server.id})
-            )
+            messages.warning(request, "⚠️ This Discord server has already been submitted.")
+            return redirect(reverse("detail", kwargs={"server_id": server.id}))
 
         # Attach tags (only existing, controlled list)
         existing_tags = DiscordTag.objects.filter(name__in=tags)
@@ -94,11 +89,6 @@ def submit_server(request):
             online_count=server.online_count,
         )
 
-    messages.success(
-        request,
-        "✅ Discord server submitted successfully!"
-    )
+    messages.success(request, "✅ Discord server submitted successfully!")
 
-    return redirect(
-        reverse("detail", kwargs={"server_id": server.id})
-    )
+    return redirect(reverse("detail", kwargs={"server_id": server.id}))

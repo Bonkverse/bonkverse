@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from .models import Changelog
 
+
 @login_required
 def add_changelog(request):
     # ✅ Only allow "The Saucy Tulip" to access
@@ -14,11 +15,7 @@ def add_changelog(request):
         content = request.POST.get("content")
         version = request.POST.get("version")
 
-        Changelog.objects.create(
-            title=title,
-            content=content,
-            version=version
-        )
+        Changelog.objects.create(title=title, content=content, version=version)
         return redirect("changelog")  # redirect to changelog list
 
     return render(request, "skins/create_changelog.html")

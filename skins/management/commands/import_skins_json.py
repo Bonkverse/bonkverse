@@ -10,16 +10,14 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 SKIN_DIR = "/Users/papijorge/Desktop/Projects/BonkDownloads/MrGrass55kSkins/SkinOutputs"
 SKIP_FILE = "Bonk Links Batch 100.json"
 
+
 class Command(BaseCommand):
     help = "Imports all JSON skin files from a directory into the database, including image URLs."
 
     def handle(self, *args, **options):
         logging.info(f"🔍 Scanning directory: {SKIN_DIR}")
 
-        files = sorted([
-            f for f in os.listdir(SKIN_DIR)
-            if f.endswith(".json") and f != SKIP_FILE
-        ])
+        files = sorted([f for f in os.listdir(SKIN_DIR) if f.endswith(".json") and f != SKIP_FILE])
 
         if not files:
             logging.info("❌ No files found to import.")
@@ -52,8 +50,7 @@ class Command(BaseCommand):
                     continue
 
                 skin, created = Skin.objects.get_or_create(
-                    link=link,
-                    defaults={"name": name, "creator": creator, "image_url": image_url}
+                    link=link, defaults={"name": name, "creator": creator, "image_url": image_url}
                 )
 
                 updated = False

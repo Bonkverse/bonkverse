@@ -25,11 +25,13 @@ def search_flash_friends_view(request):
         qs = qs.filter(name__icontains=q)
 
     total = qs.count()
-    qs = qs.order_by("name")[offset:offset + page_size]
+    qs = qs.order_by("name")[offset : offset + page_size]
 
-    return JsonResponse({
-        "results": [{"name": f.name, "bonk_player_id": f.bonk_player_id} for f in qs],
-        "total": total,
-        "page": page,
-        "page_size": page_size,
-    })
+    return JsonResponse(
+        {
+            "results": [{"name": f.name, "bonk_player_id": f.bonk_player_id} for f in qs],
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+        }
+    )

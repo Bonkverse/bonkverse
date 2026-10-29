@@ -7,20 +7,20 @@ from django.urls import reverse
 def skin_detail(request, skin_id):
     skin = get_object_or_404(Skin, id=skin_id)
 
-    page_url   = request.build_absolute_uri()
+    page_url = request.build_absolute_uri()
     editor_url = f"{settings.BONKVERSE_EDITOR_URL}?skin={skin.skin_code}"
-    png_path   = f"{settings.MEDIA_URL}skins/{skin.id}.png"
-    image_url  = request.build_absolute_uri(png_path)
+    png_path = f"{settings.MEDIA_URL}skins/{skin.id}.png"
+    image_url = request.build_absolute_uri(png_path)
 
-    desc = (skin.description or f"{skin.name} by {skin.creator} on Bonkverse.")
+    desc = skin.description or f"{skin.name} by {skin.creator} on Bonkverse."
     desc = desc.strip()[:200]
 
     og = {
-        "title":       f"{skin.name} by {skin.creator} — Bonkverse",
+        "title": f"{skin.name} by {skin.creator} — Bonkverse",
         "description": desc,
-        "url":         page_url,
-        "image":       image_url,
-        "site_name":   "Bonkverse",
+        "url": page_url,
+        "image": image_url,
+        "site_name": "Bonkverse",
     }
 
     share_url = request.build_absolute_uri(
@@ -33,7 +33,7 @@ def skin_detail(request, skin_id):
     # skin.favorited_by.count once — 3 separate queries for one page.
     # We do it here in 2 queries and pass the results as plain variables.
 
-    fav_count    = skin.favorited_by.count()   # 1 query: COUNT(*)
+    fav_count = skin.favorited_by.count()  # 1 query: COUNT(*)
     is_favorited = False
     current_vote = None
 
@@ -44,12 +44,16 @@ def skin_detail(request, skin_id):
         vote = SkinVote.objects.filter(user=request.user, skin=skin).first()
         current_vote = vote.vote if vote else None
 
-    return render(request, "skins/skin_detail.html", {
-        "skin":         skin,
-        "og":           og,
-        "editor_url":   editor_url,
-        "share_url":    share_url,
-        "fav_count":    fav_count,
-        "is_favorited": is_favorited,
-        "current_vote": current_vote,
-    })
+    return render(
+        request,
+        "skins/skin_detail.html",
+        {
+            "skin": skin,
+            "og": og,
+            "editor_url": editor_url,
+            "share_url": share_url,
+            "fav_count": fav_count,
+            "is_favorited": is_favorited,
+            "current_vote": current_vote,
+        },
+    )

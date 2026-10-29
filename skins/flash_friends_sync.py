@@ -40,7 +40,8 @@ def sync_flash_friends_for_user(*, user: BonkUser, friends_json: Dict[str, Any])
     if dropped_empty:
         logger.warning(
             "[bonkverse] dropped %s empty legacyFriends segment(s) for user %s",
-            dropped_empty, user.username,
+            dropped_empty,
+            user.username,
         )
 
     return {"flash_added": added, "flash_skipped": skipped, "flash_total": len(names)}

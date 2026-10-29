@@ -9,22 +9,23 @@ from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from urllib.parse import urlencode
 from .pagination_utils import elided_page_range
 
+
 @ratelimit(key="ip", rate="10/m", block=True)
 def search_skins(request):
-    query         = request.GET.get("q", "").strip()
-    mode          = request.GET.get("mode", "relevance")
-    sort          = request.GET.get("sort", "relevance")
-    page_number   = request.GET.get("page", 1)
-    per_page      = 50
+    query = request.GET.get("q", "").strip()
+    mode = request.GET.get("mode", "relevance")
+    sort = request.GET.get("sort", "relevance")
+    page_number = request.GET.get("page", 1)
+    per_page = 50
 
     skins = Skin.objects.all()
 
     if query:
         vector = (
-            SearchVector("labels",      weight="A") +
-            SearchVector("description", weight="A") +
-            SearchVector("name",        weight="B") +
-            SearchVector("creator",     weight="C")
+            SearchVector("labels", weight="A")
+            + SearchVector("description", weight="A")
+            + SearchVector("name", weight="B")
+            + SearchVector("creator", weight="C")
         )
         search_query = SearchQuery(query)
 
@@ -37,14 +38,10 @@ def search_skins(request):
         elif mode == "description":
             skins = skins.filter(description__icontains=query)
         else:  # relevance
-            skins = (
-                skins
-                .annotate(
-                    rank=SearchRank(vector, search_query),
-                    similarity=TrigramSimilarity("name", query),
-                )
-                .filter(Q(rank__gte=0.1) | Q(similarity__gt=0.2))
-            )
+            skins = skins.annotate(
+                rank=SearchRank(vector, search_query),
+                similarity=TrigramSimilarity("name", query),
+            ).filter(Q(rank__gte=0.1) | Q(similarity__gt=0.2))
     else:
         # DB-level random sample — never pulls the whole table into Python
         skins = Skin.objects.order_by("?")[:50]
@@ -64,10 +61,10 @@ def search_skins(request):
         # else: random order already applied above
 
     # ── Pagination ────────────────────────────────────────────────
-    paginator    = Paginator(skins, per_page)
-    page_obj     = paginator.get_page(page_number)
+    paginator = Paginator(skins, per_page)
+    page_obj = paginator.get_page(page_number)
     skins_on_page = list(page_obj)  # evaluate once; reused below
-    skin_ids      = [s.id for s in skins_on_page]
+    skin_ids = [s.id for s in skins_on_page]
 
     # ── Prefetch votes + favorites in bulk (3 queries total) ──────
     #
@@ -79,8 +76,7 @@ def search_skins(request):
     fav_counts = {
         row["id"]: row["fav_count"]
         for row in (
-            Skin.objects
-            .filter(id__in=skin_ids)
+            Skin.objects.filter(id__in=skin_ids)
             .annotate(fav_count=Count("favorited_by"))
             .values("id", "fav_count")
         )
@@ -89,27 +85,22 @@ def search_skins(request):
     if request.user.is_authenticated:
         # Which of this page's skins has the user voted on?
         vote_map = {
-            v.skin_id: v.vote
-            for v in SkinVote.objects.filter(
-                user=request.user, skin__in=skin_ids
-            )
+            v.skin_id: v.vote for v in SkinVote.objects.filter(user=request.user, skin__in=skin_ids)
         }
 
         # Which of this page's skins has the user favorited?
         fav_ids = set(
-            request.user.favorite_skins
-            .filter(id__in=skin_ids)
-            .values_list("id", flat=True)
+            request.user.favorite_skins.filter(id__in=skin_ids).values_list("id", flat=True)
         )
 
         for skin in skins_on_page:
-            skin.current_vote  = vote_map.get(skin.id)
-            skin.is_favorited  = skin.id in fav_ids
+            skin.current_vote = vote_map.get(skin.id)
+            skin.is_favorited = skin.id in fav_ids
             skin.fav_count_val = fav_counts.get(skin.id, 0)
     else:
         for skin in skins_on_page:
-            skin.current_vote  = None
-            skin.is_favorited  = False
+            skin.current_vote = None
+            skin.is_favorited = False
             skin.fav_count_val = fav_counts.get(skin.id, 0)
 
     # ── Daily / total counts for the header ───────────────────────
@@ -119,11 +110,11 @@ def search_skins(request):
     except ValueError:
         tz_offset_minutes = 0
 
-    user_now             = now_utc - timedelta(minutes=tz_offset_minutes)
-    user_today_start     = user_now.replace(hour=0, minute=0, second=0, microsecond=0)
-    user_today_end       = user_today_start + timedelta(days=1)
+    user_now = now_utc - timedelta(minutes=tz_offset_minutes)
+    user_today_start = user_now.replace(hour=0, minute=0, second=0, microsecond=0)
+    user_today_end = user_today_start + timedelta(days=1)
     user_today_start_utc = user_today_start + timedelta(minutes=tz_offset_minutes)
-    user_today_end_utc   = user_today_end   + timedelta(minutes=tz_offset_minutes)
+    user_today_end_utc = user_today_end + timedelta(minutes=tz_offset_minutes)
 
     daily_skin_count = Skin.objects.filter(
         created_at__range=(user_today_start_utc, user_today_end_utc)
@@ -133,23 +124,31 @@ def search_skins(request):
     # ── Pagination querystring ─────────────────────────────────────
     # Preserves q/mode/sort/tz_offset across page links so navigating
     # to page 2 doesn't silently reset the user's search or filters.
-    base_qs = urlencode({
-        k: v for k, v in {
-            "q": query,
-            "mode": mode if query else None,   # mode/sort are only meaningful with a query
-            "sort": sort,
-            "tz_offset": request.GET.get("tz_offset"),
-        }.items() if v
-    })
+    base_qs = urlencode(
+        {
+            k: v
+            for k, v in {
+                "q": query,
+                "mode": mode if query else None,  # mode/sort are only meaningful with a query
+                "sort": sort,
+                "tz_offset": request.GET.get("tz_offset"),
+            }.items()
+            if v
+        }
+    )
 
-    return render(request, "skins/search.html", {
-        "skins":            page_obj,
-        "skins_on_page":    skins_on_page,   # pre-evaluated list used in template
-        "query":            query,
-        "mode":             mode,
-        "sort":             sort,
-        "daily_skin_count": daily_skin_count,
-        "total_skin_count": total_skin_count,
-        "base_qs":          base_qs,
-        "elided_range":     elided_page_range(page_obj),
-    })
+    return render(
+        request,
+        "skins/search.html",
+        {
+            "skins": page_obj,
+            "skins_on_page": skins_on_page,  # pre-evaluated list used in template
+            "query": query,
+            "mode": mode,
+            "sort": sort,
+            "daily_skin_count": daily_skin_count,
+            "total_skin_count": total_skin_count,
+            "base_qs": base_qs,
+            "elided_range": elided_page_range(page_obj),
+        },
+    )

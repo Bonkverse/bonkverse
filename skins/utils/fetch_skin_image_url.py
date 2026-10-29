@@ -3,13 +3,15 @@ import urllib.parse
 _playwright = None  # global cache
 _browser = None
 
+
 def _get_browser():
-    """ Lazily start Playwright → Chromium only once. """
+    """Lazily start Playwright → Chromium only once."""
     global _playwright, _browser
     if _browser:
         return _browser
 
     from playwright.sync_api import sync_playwright  # lazy import
+
     _playwright = sync_playwright().start()
     _browser = _playwright.chromium.launch(headless=True)
     return _browser

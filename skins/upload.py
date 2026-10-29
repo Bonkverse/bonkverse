@@ -20,9 +20,7 @@ bonk_url_pattern = r"^https://bonkleagues\.io/s/([A-Za-z0-9]{7})$"
 skin_name_pattern = r"^[A-Za-z0-9_ ]+$"
 
 BLSKIN_FETCHER_URL = getattr(
-    settings,
-    "BLSKIN_FETCHER_URL",
-    "https://blskinfetcher-production.up.railway.app/api/getSkin"
+    settings, "BLSKIN_FETCHER_URL", "https://blskinfetcher-production.up.railway.app/api/getSkin"
 )
 
 
@@ -40,8 +38,7 @@ def upload_skin(request):
 
         if not re.match(skin_name_pattern, skin_name):
             messages.error(
-                request,
-                "❌ Skin name can only contain letters, numbers, spaces, and underscores."
+                request, "❌ Skin name can only contain letters, numbers, spaces, and underscores."
             )
             return render(request, "skins/upload.html")
 
@@ -116,7 +113,7 @@ def upload_skin(request):
             link=bonkleagues_link,
             image_url="",
             uuid=uuid.uuid4(),
-            skin_code=skin_code
+            skin_code=skin_code,
         )
 
         skin_dir = os.path.join(settings.MEDIA_ROOT, "skins")
@@ -156,11 +153,13 @@ def upload_skin(request):
 
         # --- Step 5: Save SkinImage records ---
         try:
-            SkinImage.objects.bulk_create([
-                SkinImage(skin=skin, kind="svg", path=svg_rel_path),
-                SkinImage(skin=skin, kind="png", path=png_rel_path),
-                SkinImage(skin=skin, kind="thumbnail", path=thumb_rel_path),
-            ])
+            SkinImage.objects.bulk_create(
+                [
+                    SkinImage(skin=skin, kind="svg", path=svg_rel_path),
+                    SkinImage(skin=skin, kind="png", path=png_rel_path),
+                    SkinImage(skin=skin, kind="thumbnail", path=thumb_rel_path),
+                ]
+            )
         except Exception as e:
             messages.error(request, f"❌ Failed to save skin image records: {e}")
 

@@ -76,8 +76,12 @@ def publish_skin(request):
     try:
         with open(svg_path, "wb") as f:
             f.write(svg_content)
-        cairosvg.svg2png(bytestring=svg_content, write_to=png_path, output_width=512, output_height=512)
-        cairosvg.svg2png(bytestring=svg_content, write_to=thumb_path, output_width=128, output_height=128)
+        cairosvg.svg2png(
+            bytestring=svg_content, write_to=png_path, output_width=512, output_height=512
+        )
+        cairosvg.svg2png(
+            bytestring=svg_content, write_to=thumb_path, output_width=128, output_height=128
+        )
         skin.image_url = f"{settings.MEDIA_URL}skins/{skin.id}.svg"
         skin.save()
     except Exception as e:
@@ -87,11 +91,13 @@ def publish_skin(request):
         skin.delete()
         return JsonResponse({"error": f"Failed to generate skin images: {e}"}, status=500)
 
-    SkinImage.objects.bulk_create([
-        SkinImage(skin=skin, kind="svg", path=f"skins/{skin.id}.svg"),
-        SkinImage(skin=skin, kind="png", path=f"skins/{skin.id}.png"),
-        SkinImage(skin=skin, kind="thumbnail", path=f"skins/{skin.id}_thumb.png"),
-    ])
+    SkinImage.objects.bulk_create(
+        [
+            SkinImage(skin=skin, kind="svg", path=f"skins/{skin.id}.svg"),
+            SkinImage(skin=skin, kind="png", path=f"skins/{skin.id}.png"),
+            SkinImage(skin=skin, kind="thumbnail", path=f"skins/{skin.id}_thumb.png"),
+        ]
+    )
 
     share_url = request.build_absolute_uri(
         reverse("share_skin", kwargs={"skin_id": skin.id, "uuid": skin.uuid})

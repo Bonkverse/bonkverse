@@ -7,7 +7,6 @@ from django_ratelimit.decorators import ratelimit
 #     return render(request, "skins/changelog.html", {"updates": updates})
 
 
-
 @ratelimit(key="ip", rate="5/m", block=True)
 def changelog_view(request):
     updates = list(Changelog.objects.all().order_by("-created_at"))  # force materialize
