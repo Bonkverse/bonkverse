@@ -35,3 +35,18 @@ label_vocab.csv
 # Local backups / dumps
 backups/
 *.dump
+
+# Build output: Dockerfile runs collectstatic at build time
+staticfiles/
+
+# Data exports / one-off backfill inputs (keep locally, never commit)
+*.csv
+
+# Template backups
+*html.txt
+
+# Test / tooling output
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
