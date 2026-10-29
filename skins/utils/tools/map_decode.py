@@ -4,7 +4,6 @@ import requests
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_exempt
 
 
 def map_decode_page(request):

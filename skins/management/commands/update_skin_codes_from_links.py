@@ -63,7 +63,7 @@ class Command(BaseCommand):
 
         # --- Summary ---
         self.stdout.write("")
-        self.stdout.write(self.style.SUCCESS(f"✅ Update complete!"))
+        self.stdout.write(self.style.SUCCESS("✅ Update complete!"))
         self.stdout.write(self.style.SUCCESS(f"✨ Updated: {updated} skins"))
         self.stdout.write(self.style.WARNING(f"⏩ Skipped: {skipped} (no matching row or invalid link)"))
 

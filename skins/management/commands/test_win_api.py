@@ -78,7 +78,7 @@ def run_tests():
 
     print("\n---- Test 8: Rate limiting (>10 wins/minute) ----")
     token = start_session("RateLimitPlayer")
-    for i in range(12):
+    for _ in range(12):
         send_win("RateLimitPlayer", token)
         time.sleep(2)
 

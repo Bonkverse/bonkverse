@@ -87,7 +87,7 @@ def validate_svg_upload(content):
     try:
         text = content.decode("utf-8")
     except UnicodeDecodeError:
-        raise UnsafeSVGError("SVG must be valid UTF-8")
+        raise UnsafeSVGError("SVG must be valid UTF-8") from None
 
     for rx in RAW_BLOCKED_RES:
         if rx.search(text):
@@ -96,7 +96,7 @@ def validate_svg_upload(content):
     try:
         root = ET.fromstring(text)
     except ET.ParseError as e:
-        raise UnsafeSVGError(f"malformed XML: {e}")
+        raise UnsafeSVGError(f"malformed XML: {e}") from e
 
     for el in root.iter():
         tag = _localname(el.tag)

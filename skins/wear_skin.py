@@ -165,10 +165,11 @@
 #     return JsonResponse({"ok": True, "slot": slot})
 
 # skins/wear_skin.py
-import time, logging, requests
+import time
+import logging
+import requests
 from dataclasses import dataclass
 from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from urllib.parse import urlparse, parse_qs

@@ -15,7 +15,6 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.http import HttpResponse
 from django.urls import path
 from skins.rerender import rerender_skin
 from skins.search import search_skins
@@ -28,9 +27,8 @@ from skins.bonkbot import matchmaking_page, join_matchmaking
 from skins.skin_detail import skin_detail
 from skins.skin_votes import vote_skin_api, toggle_favorite_api
 from skins.wear_skin import wear_skin, bonk_login_for_wear, wear_skin_code
-from skins.players import search_players_view, players_page
+from skins.players import players_page
 from skins.create_changelog import add_changelog
-from skins.changelog import changelog_view
 from skins import flash_friends
 from skins import leaderboards
 from skins import players
@@ -50,7 +48,6 @@ from skins.apis.auth.who_am_i import me
 from skins.report_skin import report_skin
 from skins.utils.tools.map_decode import map_decode_page, api_map_decode
 from django.views.static import serve
-from skins.report_skin import report_skin
 from skins.privacy import privacy
 from skins.terms import terms
 from skins import categories

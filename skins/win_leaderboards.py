@@ -1,7 +1,6 @@
 # skins/win_leaderboards.py
 from django.shortcuts import render
 from django.db.models import Count
-from django.utils.timezone import now, timedelta
 from .models import PlayerWin
 
 from django.utils import timezone
