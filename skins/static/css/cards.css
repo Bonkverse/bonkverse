@@ -243,12 +243,12 @@
 .card-rerender-btn {
     color: #2DD4BF !important;
 }
- 
+
 .card-rerender-btn:hover {
     background: rgba(45,212,191,0.1) !important;
     color: #5eead4 !important;
 }
- 
+
 .card-rerender-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
