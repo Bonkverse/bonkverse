@@ -73,7 +73,9 @@ class Command(BaseCommand):
         self.stdout.write("")
         self.stdout.write(self.style.SUCCESS("✅ Backfill complete!"))
         self.stdout.write(self.style.SUCCESS(f"✨ Updated: {updated} skins"))
-        self.stdout.write(self.style.WARNING(f"⏩ Skipped: {skipped} (already filled or not found)"))
+        self.stdout.write(
+            self.style.WARNING(f"⏩ Skipped: {skipped} (already filled or not found)")
+        )
         self.stdout.write(self.style.ERROR(f"❌ Missing: {missing} (no skinCode in CSV)"))
 
         # --- Example output ---

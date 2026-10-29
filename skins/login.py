@@ -25,7 +25,7 @@ from json import JSONDecodeError
 
 logger = logging.getLogger(__name__)
 
-BONK_LOGIN_URL   = "https://bonk2.io/scripts/login_legacy.php"
+BONK_LOGIN_URL = "https://bonk2.io/scripts/login_legacy.php"
 BONK_FRIENDS_URL = "https://bonk2.io/scripts/friends.php"
 
 # Matches "token":"<anything up to the next quote>" so we can redact it
@@ -38,10 +38,11 @@ def _redact_token(text: str) -> str:
     """Redact a bonk.io session token from a snippet before it hits the logs."""
     return _TOKEN_LOG_PATTERN.sub(r"\1***REDACTED***\2", text)
 
+
 # Configurable timeouts
 CONNECT_TIMEOUT = float(os.getenv("BONK_CONNECT_TIMEOUT", "4"))
-READ_TIMEOUT    = float(os.getenv("BONK_READ_TIMEOUT", "8"))
-REQ_TIMEOUT     = (CONNECT_TIMEOUT, READ_TIMEOUT)
+READ_TIMEOUT = float(os.getenv("BONK_READ_TIMEOUT", "8"))
+REQ_TIMEOUT = (CONNECT_TIMEOUT, READ_TIMEOUT)
 
 # Optional background sync toggle
 SYNC_FRIENDS_ON_LOGIN = os.getenv("SYNC_FRIENDS_ON_LOGIN", "1").lower() in ("1", "true", "yes")
@@ -93,8 +94,12 @@ def _sync_friends_bg(user, current_bonk_id: int | None, current_username: str, t
             friends_json=payload,
         )
 
-        logger.info("regular friends synced for %s: %s (%.2fs)",
-                    current_username, stats, time.monotonic() - t0)
+        logger.info(
+            "regular friends synced for %s: %s (%.2fs)",
+            current_username,
+            stats,
+            time.monotonic() - t0,
+        )
         log_event(user, "friends_synced", **stats)
 
     except Exception:
@@ -133,16 +138,20 @@ def login_view(request):
                 data = resp.json()
             except JSONDecodeError:
                 snippet = _redact_token(resp.text[:400].replace("\n", " "))
-                logger.warning("[bonkverse] Non-JSON login response (%s): %s", resp.status_code, snippet)
+                logger.warning(
+                    "[bonkverse] Non-JSON login response (%s): %s", resp.status_code, snippet
+                )
 
             if data and data.get("r") == "success" and data.get("token"):
                 token = data["token"]
                 bonk_username = data.get("username") or typed_username
-                bonk_user_id  = data.get("id")
+                bonk_user_id = data.get("id")
 
                 # Session (no password stored)
                 request.session["bonk_token"] = token
-                request.session["bonk_token_expires"] = time.time() + (14 * 24 * 60 * 60)  # 14 days, matches TOKEN_TTL in wear_skin.py
+                request.session["bonk_token_expires"] = time.time() + (
+                    14 * 24 * 60 * 60
+                )  # 14 days, matches TOKEN_TTL in wear_skin.py
                 # request.session["bonk_token_expires"] = time.time() + 30  # 30 seconds for testing
                 request.session["bonk_username"] = bonk_username
                 request.session["bonk_user_id"] = bonk_user_id
@@ -177,7 +186,9 @@ def login_view(request):
                             logger.warning(
                                 "[bonkverse] BonkPlayer username mismatch for bonk_id=%s: "
                                 "stored=%r, login_response=%r",
-                                bonk_user_id, player.username, bonk_username,
+                                bonk_user_id,
+                                player.username,
+                                bonk_username,
                             )
                             player.username = bonk_username
                             player.save(update_fields=["username", "updated_at"])
@@ -197,7 +208,9 @@ def login_view(request):
                 # 🔹 Flash friends sync immediately (from login response)
                 try:
                     flash_stats = sync_flash_friends_for_user(user=user, friends_json=data)
-                    logger.info("flash friends synced at login for %s: %s", bonk_username, flash_stats)
+                    logger.info(
+                        "flash friends synced at login for %s: %s", bonk_username, flash_stats
+                    )
                     log_event(user, "flash_friends_synced", **flash_stats)
                 except Exception:
                     logger.exception("flash friends immediate sync failed for %s", bonk_username)
@@ -219,10 +232,11 @@ def login_view(request):
 
                 # after messages.success(...)
                 next_url = request.POST.get("next") or request.GET.get("next")
-                if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+                if next_url and url_has_allowed_host_and_scheme(
+                    next_url, allowed_hosts={request.get_host()}
+                ):
                     return redirect(next_url)
                 return redirect("my_profile")
-
 
             # Failed login
             detail = (
@@ -239,9 +253,16 @@ def login_view(request):
 
     return render(request, "skins/login.html", {"form": form})
 
+
 @ratelimit(key="ip", rate="10/m", block=True)
 def logout_view(request):
-    for k in ("bonk_token", "bonk_token_expires", "bonk_active_slot", "bonk_username", "bonk_user_id"):
+    for k in (
+        "bonk_token",
+        "bonk_token_expires",
+        "bonk_active_slot",
+        "bonk_username",
+        "bonk_user_id",
+    ):
         request.session.pop(k, None)
     logout(request)
     messages.success(request, "Logged out!")

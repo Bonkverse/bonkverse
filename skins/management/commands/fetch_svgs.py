@@ -6,6 +6,7 @@ from skins.models import Skin
 
 IMAGE_DIR = os.path.join(settings.MEDIA_ROOT, "skins")
 
+
 class Command(BaseCommand):
     help = "Download SVGs for all skins"
 

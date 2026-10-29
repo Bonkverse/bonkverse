@@ -14,21 +14,17 @@ from .dbid_lookup import estimate_registration_date, format_registration
 def social_stats(request):
 
     # ── Headline numbers ──────────────────────────────────────────
-    total_players  = BonkPlayer.objects.filter(bonk_id__gt=0).count()
-    total_edges    = Friendship.objects.count()
-    total_flash    = FlashFriend.objects.count()
+    total_players = BonkPlayer.objects.filter(bonk_id__gt=0).count()
+    total_edges = Friendship.objects.count()
+    total_flash = FlashFriend.objects.count()
     synced_players = BonkPlayer.objects.filter(last_friend_count__gt=0).count()
 
     possible_edges = (total_players * (total_players - 1)) // 2
-    density_pct    = (
-        round(total_edges * 100.0 / possible_edges, 6)
-        if possible_edges > 0 else 0
-    )
+    density_pct = round(total_edges * 100.0 / possible_edges, 6) if possible_edges > 0 else 0
 
     # ── Most connected players (with estimated reg date) ─────────
     most_connected_qs = list(
-        BonkPlayer.objects
-        .filter(bonk_id__gt=0)
+        BonkPlayer.objects.filter(bonk_id__gt=0)
         .order_by("-last_friend_count")
         .values("username", "bonk_id", "last_friend_count", "last_seen")[:20]
     )
@@ -37,8 +33,7 @@ def social_stats(request):
 
     # ── Oldest accounts (with estimated reg date) ─────────────────
     oldest_qs = list(
-        BonkPlayer.objects
-        .filter(bonk_id__gt=0)
+        BonkPlayer.objects.filter(bonk_id__gt=0)
         .order_by("bonk_id")
         .values("username", "bonk_id", "last_friend_count")[:20]
     )
@@ -46,11 +41,7 @@ def social_stats(request):
         p["est_date"] = format_registration(p["bonk_id"], fmt="%b %Y")
 
     # ── Year-by-year registration breakdown ───────────────────────
-    all_ids = list(
-        BonkPlayer.objects
-        .filter(bonk_id__gt=0)
-        .values_list("bonk_id", flat=True)
-    )
+    all_ids = list(BonkPlayer.objects.filter(bonk_id__gt=0).values_list("bonk_id", flat=True))
 
     year_counts: dict[int, int] = {}
     for bid in all_ids:
@@ -59,8 +50,7 @@ def social_stats(request):
             year_counts[d.year] = year_counts.get(d.year, 0) + 1
 
     year_distribution = [
-        {"year": year, "player_count": count}
-        for year, count in sorted(year_counts.items())
+        {"year": year, "player_count": count} for year, count in sorted(year_counts.items())
     ]
     year_max = max((r["player_count"] for r in year_distribution), default=1)
 
@@ -90,21 +80,20 @@ def social_stats(request):
     # Log-scale bar widths — prevents the massive "0 friends" bucket from
     # making every other bar invisible when using a linear scale.
     max_count = max((row[1] for row in dist_rows), default=1)
-    max_log   = math.log10(max_count + 1)
+    max_log = math.log10(max_count + 1)
 
     friend_distribution = [
         {
-            "bracket":      row[0],
+            "bracket": row[0],
             "player_count": row[1],
-            "bar_width":    round(math.log10(row[1] + 1) / max_log * 100, 1),
+            "bar_width": round(math.log10(row[1] + 1) / max_log * 100, 1),
         }
         for row in dist_rows
     ]
 
     # ── Most popular flash friend names ───────────────────────────
     top_flash = list(
-        FlashFriend.objects
-        .annotate(times_listed=Count("friend_of"))
+        FlashFriend.objects.annotate(times_listed=Count("friend_of"))
         .filter(times_listed__gt=1)
         .order_by("-times_listed")
         .values("name", "times_listed")[:15]
@@ -129,31 +118,33 @@ def social_stats(request):
 
     biggest_gains = [
         {
-            "username":    row[0],
-            "bonk_id":     row[1],
+            "username": row[0],
+            "bonk_id": row[1],
             "captured_at": row[2],
-            "count":       row[3],
-            "gained":      row[4],
-            "est_date":    format_registration(row[1]),
+            "count": row[3],
+            "gained": row[4],
+            "est_date": format_registration(row[1]),
         }
         for row in gain_rows
         if row[4] is not None
     ]
 
-    return render(request, "skins/social_stats.html", {
-        "total_players":       total_players,
-        "total_edges":         total_edges,
-        "total_flash":         total_flash,
-        "synced_players":      synced_players,
-        "density_pct":         density_pct,
-        "possible_edges":      possible_edges,
-
-        "most_connected":      most_connected_qs,
-        "oldest_accounts":     oldest_qs,
-        "biggest_gains":       biggest_gains,
-        "top_flash":           top_flash,
-
-        "year_distribution":   year_distribution,
-        "year_max":            year_max,
-        "friend_distribution": friend_distribution,
-    })
+    return render(
+        request,
+        "skins/social_stats.html",
+        {
+            "total_players": total_players,
+            "total_edges": total_edges,
+            "total_flash": total_flash,
+            "synced_players": synced_players,
+            "density_pct": density_pct,
+            "possible_edges": possible_edges,
+            "most_connected": most_connected_qs,
+            "oldest_accounts": oldest_qs,
+            "biggest_gains": biggest_gains,
+            "top_flash": top_flash,
+            "year_distribution": year_distribution,
+            "year_max": year_max,
+            "friend_distribution": friend_distribution,
+        },
+    )

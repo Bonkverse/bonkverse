@@ -2,6 +2,7 @@ from django.shortcuts import render
 
 from django_ratelimit.decorators import ratelimit
 
+
 @ratelimit(key="ip", rate="5/m", block=True)
 def staff_page(request):
     staff_members = [
@@ -20,7 +21,7 @@ def staff_page(request):
         {
             "name": "Zorroloko CRZ",
             "role": "Moderator & Furry Specialist",
-            "bio": '''The most og staff that still hasn't been promoted 🔥, and brazilian staph, creator of boykisser skin, pixel artist and photographer (not profissional), and person who makes the server's designs! And kids, always remember, Uncle Saucy needs you in our community! I also make skins btw.''',
+            "bio": """The most og staff that still hasn't been promoted 🔥, and brazilian staph, creator of boykisser skin, pixel artist and photographer (not profissional), and person who makes the server's designs! And kids, always remember, Uncle Saucy needs you in our community! I also make skins btw.""",
             "image": "images/zorroloko.png",
         },
         {

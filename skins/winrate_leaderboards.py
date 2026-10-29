@@ -6,6 +6,7 @@ from datetime import timedelta
 from .models import PlayerWin, PlayerLoss
 from django_ratelimit.decorators import ratelimit
 
+
 @ratelimit(key="ip", rate="20/m", block=True)
 def _get_queryset(period):
     now_utc = timezone.now()
@@ -49,18 +50,21 @@ def _get_queryset(period):
         losses = next((row["losses"] for row in loss_counts if row["username"] == username), 0)
         total = wins + losses
         winrate = (wins / total) * 100 if total > 0 else 0
-        leaderboard.append({
-            "username": username,
-            "wins": wins,
-            "losses": losses,
-            "total": total,
-            "winrate": round(winrate, 2),
-        })
+        leaderboard.append(
+            {
+                "username": username,
+                "wins": wins,
+                "losses": losses,
+                "total": total,
+                "winrate": round(winrate, 2),
+            }
+        )
 
     # Sort by winrate, then by total games played
     leaderboard = sorted(leaderboard, key=lambda x: (x["winrate"], x["total"]), reverse=True)
 
     return leaderboard[:50]
+
 
 @ratelimit(key="ip", rate="20/m", block=True)
 def winrate_hub(request, period="today"):
@@ -71,8 +75,12 @@ def winrate_hub(request, period="today"):
         "month": "Monthly Winrate Leaderboard",
         "all": "All-Time Winrate Leaderboard",
     }
-    return render(request, "skins/winrate_hub.html", {
-        "leaderboard": leaderboard,
-        "period": period,
-        "title": title_map.get(period, "Winrate Leaderboard"),
-    })
+    return render(
+        request,
+        "skins/winrate_hub.html",
+        {
+            "leaderboard": leaderboard,
+            "period": period,
+            "title": title_map.get(period, "Winrate Leaderboard"),
+        },
+    )

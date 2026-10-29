@@ -5,27 +5,24 @@ from django_ratelimit.decorators import ratelimit
 
 from skins.models import Skin
 
+
 @ratelimit(key="ip", rate="5/m", block=True)
 def home(request):
     # ⚠️ Adjust these to match your model fields
-    recent = Skin.objects.order_by('-created_at')[:24]
+    recent = Skin.objects.order_by("-created_at")[:24]
 
     # Most favorited
-    top_favs = (
-        Skin.objects
-        .annotate(fav_count=Count('favorited_by'))
-        .order_by('-fav_count', '-upvotes')[:24]
-    )
+    top_favs = Skin.objects.annotate(fav_count=Count("favorited_by")).order_by(
+        "-fav_count", "-upvotes"
+    )[:24]
 
     # “Trending” = upvotes - downvotes (simple, fast)
-    trending = (
-        Skin.objects
-        .annotate(score=F('upvotes') - F('downvotes'))
-        .order_by('-score', '-created_at')[:24]
-    )
+    trending = Skin.objects.annotate(score=F("upvotes") - F("downvotes")).order_by(
+        "-score", "-created_at"
+    )[:24]
 
     # A light random strip (OK at small size)
-    random_strip = Skin.objects.order_by('?')[:24]
+    random_strip = Skin.objects.order_by("?")[:24]
 
     ctx = {
         "recent": recent,

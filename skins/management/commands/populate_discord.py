@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from skins.models import DiscordTag, DiscordServer, DiscordServerSnapshot
 import random
 
+
 class Command(BaseCommand):
     help = "Populate Discord servers"
 

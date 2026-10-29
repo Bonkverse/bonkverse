@@ -39,6 +39,8 @@ def api_map_decode(request):
     try:
         data = r.json()
     except ValueError:
-        return JsonResponse({"error": "Decoder returned non-JSON", "raw": r.text[:2000]}, status=502)
+        return JsonResponse(
+            {"error": "Decoder returned non-JSON", "raw": r.text[:2000]}, status=502
+        )
 
     return JsonResponse(data, status=r.status_code)

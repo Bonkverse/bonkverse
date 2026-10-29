@@ -10,6 +10,7 @@ from django.core.exceptions import ValidationError
 
 # Create your models here.
 
+
 class Skin(models.Model):
     name = models.CharField(max_length=1000, default="UnnamedSkin")
     link = models.URLField(
@@ -18,11 +19,18 @@ class Skin(models.Model):
         help_text="Legacy external source (e.g. Bonkleagues import)",
     )
     creator = models.CharField(max_length=1000, blank=True, null=True, default="UnknownSkinCreator")
-    image_url = models.URLField(max_length=4000, blank=True, null=True, default="https://bonkleagues.io/api/avatar.svg?skinCode=CgcDYQACCQkBCgcFYWwAAQBNPlt5PUI19d8%2FGMUDPsJvGgAAAAAAAAoFAAEATT5beT1CNfXfvvn8kL80i70BAAAAAAAKBQABAEs%2BgkonQjVq%2FL2vivk9L4r5AAAAzxsPCgUAAQANP1yl2D9VbKUAAAAAAAAAAAAAAM8bDwAAAAA%3D")  # Store the extracted image URL
+    image_url = models.URLField(
+        max_length=4000,
+        blank=True,
+        null=True,
+        default="https://bonkleagues.io/api/avatar.svg?skinCode=CgcDYQACCQkBCgcFYWwAAQBNPlt5PUI19d8%2FGMUDPsJvGgAAAAAAAAoFAAEATT5beT1CNfXfvvn8kL80i70BAAAAAAAKBQABAEs%2BgkonQjVq%2FL2vivk9L4r5AAAAzxsPCgUAAQANP1yl2D9VbKUAAAAAAAAAAAAAAM8bDwAAAAA%3D",
+    )  # Store the extracted image URL
     skin_code = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     description = models.TextField(blank=True, null=True)
-    labels = models.JSONField(blank=True, null=True)  # Django 3.1+ uses this instead of `from contrib.postgres`
+    labels = models.JSONField(
+        blank=True, null=True
+    )  # Django 3.1+ uses this instead of `from contrib.postgres`
     labeled_at = models.DateTimeField(blank=True, null=True)
     upvotes = models.PositiveIntegerField(default=0)
     downvotes = models.PositiveIntegerField(default=0)
@@ -31,7 +39,7 @@ class Skin(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.link})"
-    
+
     def get_absolute_url(self):
         return reverse("skin_detail", kwargs={"skin_id": self.id})
 
@@ -45,6 +53,7 @@ class BonkUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
+
 class BonkUser(AbstractBaseUser):
     username = models.CharField(max_length=100, unique=True)
     date_joined = models.DateTimeField(auto_now_add=True)
@@ -52,31 +61,34 @@ class BonkUser(AbstractBaseUser):
 
     objects = BonkUserManager()
 
-    USERNAME_FIELD = 'username'
+    USERNAME_FIELD = "username"
 
     def __str__(self):
         return self.username
 
+
 class SkinVote(models.Model):
     VOTE_CHOICES = [
-        ('up', 'Upvote'),
-        ('down', 'Downvote'),
+        ("up", "Upvote"),
+        ("down", "Downvote"),
     ]
     user = models.ForeignKey("BonkUser", on_delete=models.CASCADE)
     skin = models.ForeignKey(Skin, on_delete=models.CASCADE)
     vote = models.CharField(max_length=4, choices=VOTE_CHOICES)
 
     class Meta:
-        unique_together = ('user', 'skin')
+        unique_together = ("user", "skin")
 
     def __str__(self):
         return f"{self.user.username} voted {self.vote} on {self.skin.name}"
+
 
 class BonkPlayer(models.Model):
     """
     Any Bonk account we discover (friends, map authors, etc.).
     This is NOT your Bonkverse login user (BonkUser) — it’s the in-game identity.
     """
+
     bonk_id = models.BigIntegerField(unique=True, db_index=True)
     username = models.CharField(max_length=255, db_index=True)
     last_seen = models.DateTimeField(default=timezone.now)
@@ -100,7 +112,8 @@ class Friendship(models.Model):
     Undirected friendship edge between two BonkPlayers.
     Store once using ordered endpoints (player_low < player_high) to avoid duplicates.
     """
-    player_low  = models.ForeignKey(BonkPlayer, on_delete=models.CASCADE, related_name="edges_low")
+
+    player_low = models.ForeignKey(BonkPlayer, on_delete=models.CASCADE, related_name="edges_low")
     player_high = models.ForeignKey(BonkPlayer, on_delete=models.CASCADE, related_name="edges_high")
     created_at = models.DateTimeField(auto_now_add=True)
     last_confirmed_at = models.DateTimeField(default=timezone.now)  # updated each sync we see it
@@ -108,8 +121,12 @@ class Friendship(models.Model):
     class Meta:
         constraints = [
             # Enforce undirected uniqueness and no self-edges
-            models.UniqueConstraint(fields=["player_low", "player_high"], name="uniq_undirected_friendship"),
-            models.CheckConstraint(check=~models.Q(player_low=models.F("player_high")), name="no_self_friendship"),
+            models.UniqueConstraint(
+                fields=["player_low", "player_high"], name="uniq_undirected_friendship"
+            ),
+            models.CheckConstraint(
+                check=~models.Q(player_low=models.F("player_high")), name="no_self_friendship"
+            ),
         ]
         indexes = [
             models.Index(fields=["player_low", "player_high"]),
@@ -119,8 +136,11 @@ class Friendship(models.Model):
     def __str__(self):
         return f"{self.player_low.bonk_id} ↔ {self.player_high.bonk_id}"
 
+
 class FriendCountHistory(models.Model):
-    player = models.ForeignKey(BonkPlayer, on_delete=models.CASCADE, related_name="friend_count_history")
+    player = models.ForeignKey(
+        BonkPlayer, on_delete=models.CASCADE, related_name="friend_count_history"
+    )
     count = models.IntegerField()
     captured_at = models.DateTimeField(auto_now_add=True)
 
@@ -130,9 +150,14 @@ class BonkAccountLink(models.Model):
     Links a Bonkverse site user (BonkUser) to an in-game BonkPlayer.
     Optionally stores an encrypted token for server-side Bonk API calls.
     """
+
     user = models.ForeignKey("BonkUser", on_delete=models.CASCADE, related_name="bonk_accounts")
-    bonk_player = models.ForeignKey(BonkPlayer, on_delete=models.CASCADE, related_name="linked_site_users")
-    token_encrypted = models.TextField(blank=True, null=True)  # store your encrypted session token, not password
+    bonk_player = models.ForeignKey(
+        BonkPlayer, on_delete=models.CASCADE, related_name="linked_site_users"
+    )
+    token_encrypted = models.TextField(
+        blank=True, null=True
+    )  # store your encrypted session token, not password
     token_expires_at = models.DateTimeField(blank=True, null=True)
     scopes = models.JSONField(blank=True, null=True)  # e.g., {"friends": true}
     active = models.BooleanField(default=True)
@@ -142,15 +167,16 @@ class BonkAccountLink(models.Model):
     class Meta:
         unique_together = ("user", "bonk_player")
 
+
 class FlashFriend(models.Model):
     """
     Represents a legacy Flash friend (Bonk1/TinyTanks import).
     Name-only unless we resolve to a BonkPlayer later.
     """
+
     name = models.TextField(db_index=True)
     bonk_player = models.ForeignKey(
-        BonkPlayer, on_delete=models.SET_NULL,
-        null=True, blank=True, related_name="as_flash_friend"
+        BonkPlayer, on_delete=models.SET_NULL, null=True, blank=True, related_name="as_flash_friend"
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -185,8 +211,11 @@ class FlashFriendship(models.Model):
     """
     Links a Bonkverse site user to their imported flash friends.
     """
+
     user = models.ForeignKey("BonkUser", on_delete=models.CASCADE, related_name="flash_friendships")
-    flash_friend = models.ForeignKey(FlashFriend, on_delete=models.CASCADE, related_name="friend_of")
+    flash_friend = models.ForeignKey(
+        FlashFriend, on_delete=models.CASCADE, related_name="friend_of"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -194,6 +223,7 @@ class FlashFriendship(models.Model):
 
     def __str__(self):
         return f"{self.user.username} ↔ {self.flash_friend.name}"
+
 
 class Changelog(models.Model):
     title = models.CharField(max_length=200)
@@ -204,6 +234,7 @@ class Changelog(models.Model):
     def __str__(self):
         return f"{self.version or ''} - {self.title}"
 
+
 class SkinImage(models.Model):
     skin = models.ForeignKey("skins.Skin", on_delete=models.CASCADE, related_name="images")
     kind = models.CharField(max_length=50, default="original")
@@ -212,9 +243,10 @@ class SkinImage(models.Model):
 
     def __str__(self):
         return f"{self.kind} image for {self.skin.name}"
-    
+
 
 USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9 _]+$")
+
 
 def validate_username(value: str):
     if not value:
@@ -224,27 +256,24 @@ def validate_username(value: str):
     if len(value) > 35:
         raise ValidationError("Username must be at most 35 characters long.")
     if not USERNAME_PATTERN.match(value):
-        raise ValidationError("Username can only contain letters, numbers, spaces, and underscores.")
+        raise ValidationError(
+            "Username can only contain letters, numbers, spaces, and underscores."
+        )
     if value.lower().startswith("guest") or value.lower().startswith("new player"):
         raise ValidationError("Guest accounts are not allowed.")
 
+
 class PlayerWin(models.Model):
-    username = models.CharField(
-        max_length=35,
-        db_index=True,
-        validators=[validate_username]
-    )
+    username = models.CharField(max_length=35, db_index=True, validators=[validate_username])
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.username} win at {self.created_at}"
 
+
 class PlayerSession(models.Model):
     username = models.CharField(
-        max_length=35,
-        unique=True,
-        db_index=True,
-        validators=[validate_username]
+        max_length=35, unique=True, db_index=True, validators=[validate_username]
     )
     token = models.CharField(max_length=255, unique=True, db_index=True)
     client_id = models.UUIDField(default=uuid.uuid4, editable=False)
@@ -259,16 +288,14 @@ class PlayerSession(models.Model):
     def __str__(self):
         return f"Session for {self.username} (active={self.is_active()})"
 
+
 class PlayerLoss(models.Model):
-    username = models.CharField(
-        max_length=35,
-        db_index=True,
-        validators=[validate_username]
-    )
+    username = models.CharField(max_length=35, db_index=True, validators=[validate_username])
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.username} loss at {self.created_at}"
+
 
 class DiscordTag(models.Model):
     name = models.CharField(max_length=64, unique=True)
@@ -331,40 +358,43 @@ class DiscordServerSnapshot(models.Model):
             models.Index(fields=["server", "recorded_at"]),
         ]
 
+
 class SkinReport(models.Model):
     REASON_CHOICES = [
-        ('inappropriate', 'Inappropriate content'),
-        ('stolen',        'Stolen / reposted without credit'),
-        ('spam',          'Spam or low-effort'),
-        ('broken',        'Broken / not loading'),
-        ('other',         'Other'),
+        ("inappropriate", "Inappropriate content"),
+        ("stolen", "Stolen / reposted without credit"),
+        ("spam", "Spam or low-effort"),
+        ("broken", "Broken / not loading"),
+        ("other", "Other"),
     ]
 
-    skin       = models.ForeignKey(Skin, on_delete=models.CASCADE, related_name='reports')
-    reporter   = models.ForeignKey(
-        'BonkUser', on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='skin_reports'
+    skin = models.ForeignKey(Skin, on_delete=models.CASCADE, related_name="reports")
+    reporter = models.ForeignKey(
+        "BonkUser", on_delete=models.SET_NULL, null=True, blank=True, related_name="skin_reports"
     )  # null = anonymous report
-    reason     = models.CharField(max_length=32, choices=REASON_CHOICES)
-    details    = models.TextField(blank=True, default='')
+    reason = models.CharField(max_length=32, choices=REASON_CHOICES)
+    details = models.TextField(blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
-    resolved   = models.BooleanField(default=False)
+    resolved = models.BooleanField(default=False)
 
     class Meta:
         # One report per user per skin (authenticated users only)
         constraints = [
             models.UniqueConstraint(
-                fields=['skin', 'reporter'],
+                fields=["skin", "reporter"],
                 condition=models.Q(reporter__isnull=False),
-                name='one_report_per_user_per_skin'
+                name="one_report_per_user_per_skin",
             )
         ]
 
     def __str__(self):
         return f"Report on {self.skin.name} ({self.reason})"
 
+
 class UserEvent(models.Model):
-    user = models.ForeignKey("BonkUser", on_delete=models.SET_NULL, null=True, blank=True, related_name="events")
+    user = models.ForeignKey(
+        "BonkUser", on_delete=models.SET_NULL, null=True, blank=True, related_name="events"
+    )
     event_type = models.CharField(max_length=50, db_index=True)
     skin = models.ForeignKey("Skin", on_delete=models.SET_NULL, null=True, blank=True)
     metadata = models.JSONField(blank=True, null=True)

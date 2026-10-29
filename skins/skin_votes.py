@@ -62,12 +62,14 @@ def vote_skin_api(request, skin_id):
 
     # Don't call skin.favorited_by.count() here — the vote API response
     # doesn't use it on the frontend, so it's a free wasted query.
-    return JsonResponse({
-        "upvotes":      skin.upvotes,
-        "downvotes":    skin.downvotes,
-        "current_vote": current_vote,
-        "status":       "ok",
-    })
+    return JsonResponse(
+        {
+            "upvotes": skin.upvotes,
+            "downvotes": skin.downvotes,
+            "current_vote": current_vote,
+            "status": "ok",
+        }
+    )
 
 
 @require_POST
@@ -91,10 +93,12 @@ def toggle_favorite_api(request, skin_id):
 
     log_event(request.user, "skin_favorited" if favorited else "skin_unfavorited", skin=skin)
 
-    return JsonResponse({
-        "favorited":  favorited,
-        "favorites":  favorites,
-        "upvotes":    skin.upvotes,
-        "downvotes":  skin.downvotes,
-        "status":     "ok",
-    })
+    return JsonResponse(
+        {
+            "favorited": favorited,
+            "favorites": favorites,
+            "upvotes": skin.upvotes,
+            "downvotes": skin.downvotes,
+            "status": "ok",
+        }
+    )

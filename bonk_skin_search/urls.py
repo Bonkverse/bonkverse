@@ -14,6 +14,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
 from django.urls import path
 from skins.rerender import rerender_skin
@@ -40,7 +41,7 @@ from skins import winrate_leaderboards
 from skins import staff
 from skins import discord
 from skins import discord_views
-from skins.social_stats import social_stats 
+from skins.social_stats import social_stats
 from skins.apis.index import index
 from skins.apis.publish_skin import publish_skin
 from skins.share_skin import share_skin
@@ -54,57 +55,58 @@ from skins import categories
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path("admin/", admin.site.urls),
     path("search/", search_skins, name="search_skins"),
-    path("", home.home, name='home'),
+    path("", home.home, name="home"),
     # path("", search_skins, name="home"),  # Home page is now the search page
-    path('api/publish-skin/', publish_skin, name="publish_skin"),
+    path("api/publish-skin/", publish_skin, name="publish_skin"),
     path("skins/share/<int:skin_id>/<uuid:uuid>/", share_skin, name="share_skin"),
-    path('login/', login_view, name='login'),
+    path("login/", login_view, name="login"),
     path("api/me/", me, name="api_me"),
-    path('logout/', logout_view, name='logout'),
-    path('my-profile/', my_profile, name='my_profile'),
-    path('upload/', upload_skin, name='upload_skin'),
-    path('skin/<int:skin_id>/delete/', delete_skin, name='delete_skin'),
+    path("logout/", logout_view, name="logout"),
+    path("my-profile/", my_profile, name="my_profile"),
+    path("upload/", upload_skin, name="upload_skin"),
+    path("skin/<int:skin_id>/delete/", delete_skin, name="delete_skin"),
     path("skins/bulk-delete/", bulk_delete_skins, name="bulk_delete_skins"),
     path("my-profile/skins-partial/", my_skins_partial, name="my_skins_partial"),
-    path('skin/<int:skin_id>/edit/', edit_skin, name='edit_skin'),
-    path('matchmaking/', matchmaking_page, name='matchmaking'),
+    path("skin/<int:skin_id>/edit/", edit_skin, name="edit_skin"),
+    path("matchmaking/", matchmaking_page, name="matchmaking"),
     # path('skins/<int:skin_id>/', skin_detail, name='skin_detail'),
     # path("skins/<int:skin_id>/<uuid:uuid>/", skin_detail, name="skin_detail"),
     path("skins/detail/<int:skin_id>", skin_detail, name="skin_detail"),
     # path("changelog/", changelog_view, name="changelog"),
     path("staff/", staff.staff_page, name="staff"),
-
-
     # NEW: AJAX/JSON endpoints used by search cards
-    path('api/', index, name="api_index"),
-    path('api/skins/<int:skin_id>/vote/', vote_skin_api, name='api_vote_skin'),
-    path('api/skins/<int:skin_id>/favorite/', toggle_favorite_api, name='api_toggle_favorite'),
+    path("api/", index, name="api_index"),
+    path("api/skins/<int:skin_id>/vote/", vote_skin_api, name="api_vote_skin"),
+    path("api/skins/<int:skin_id>/favorite/", toggle_favorite_api, name="api_toggle_favorite"),
     path("api/skins/<int:skin_id>/wear/", wear_skin, name="wear_skin"),
     path("api/skins/wear-code/", wear_skin_code, name="wear_skin_code"),
     path("api/bonk/login/", bonk_login_for_wear, name="bonk_login_for_wear"),
     path("api/players/search/", players.search_players_view, name="players_search"),
-    path("api/flash-friends/search/", flash_friends.search_flash_friends_view, name="flash_friends_search"),
-    path('api/join-matchmaking/', join_matchmaking),
-
-
+    path(
+        "api/flash-friends/search/",
+        flash_friends.search_flash_friends_view,
+        name="flash_friends_search",
+    ),
+    path("api/join-matchmaking/", join_matchmaking),
     path("new/", categories.new_releases, name="new_releases"),
     path("categories/", categories.category_index, name="category_index"),
     path("category/<slug:slug>/", categories.category_detail, name="category_detail"),
-
-
     # Leaderboards
     path("leaderboards/upvoted/", leaderboards.most_upvoted_skins, name="leaderboards_upvoted"),
-    path("leaderboards/downvoted/", leaderboards.most_downvoted_skins, name="leaderboards_downvoted"),
-    path("leaderboards/favorited/", leaderboards.most_favorited_skins, name="leaderboards_favorited"),
-
+    path(
+        "leaderboards/downvoted/", leaderboards.most_downvoted_skins, name="leaderboards_downvoted"
+    ),
+    path(
+        "leaderboards/favorited/", leaderboards.most_favorited_skins, name="leaderboards_favorited"
+    ),
     # Players Search navigation
     path("players_search/players/", players_page, name="players_page"),
-    path("players_search/flash-friends/", flash_friends.flash_friends_page, name="flash_friends_page"),
-
+    path(
+        "players_search/flash-friends/", flash_friends.flash_friends_page, name="flash_friends_page"
+    ),
     path("changelog/add/", add_changelog, name="add_changelog"),
-
     path("api/wins/", api.record_win, name="api_record_win"),
     path("api/losses/", api.record_loss, name="api_record_loss"),
     path("api/leaderboard/<str:period>/", api.leaderboard, name="api_leaderboard"),
@@ -112,39 +114,28 @@ urlpatterns = [
     path("api/heartbeat/", api.heartbeat, name="heartbeat"),
     path("api/stop_tracking/", api.stop_tracking, name="stop_tracking"),
     path("api/friends-sync-status/", api.friends_sync_status, name="friends_sync_status"),
-
     # Verification
     path("api/request_verification/", api.request_verification, name="request_verification"),
     path("api/complete_verification/", api.complete_verification, name="complete_verification"),
-
-
-
     path("leaderboards/wins/<str:period>/", win_leaderboards.wins_hub, name="wins_hub"),
     path("leaderboards/wins/", win_leaderboards.wins_hub, {"period": "today"}),  # default
     path("leaderboards/losses/<str:period>/", loss_leaderboards.losses_hub, name="losses_hub"),
     path("leaderboards/losses/", loss_leaderboards.losses_hub, {"period": "today"}),  # default
-    path("leaderboards/winrate/<str:period>/", winrate_leaderboards.winrate_hub, name="winrate_hub"),
+    path(
+        "leaderboards/winrate/<str:period>/", winrate_leaderboards.winrate_hub, name="winrate_hub"
+    ),
     path("leaderboards/winrate/", winrate_leaderboards.winrate_hub, {"period": "today"}),
-
     path("serverlist/", discord.server_list, name="list"),
     path("<uuid:server_id>/", discord.server_detail, name="detail"),
     path("submit/", discord.submit_server_page, name="submit_server"),
     path("api/discords/submit/", discord_views.submit_server, name="api_submit_server"),
-
     path("tools/map-decode/", map_decode_page, name="map_decode_page"),
     path("api/tools/map-decode/", api_map_decode, name="api_map_decode"),
-
     path("api/skins/<int:skin_id>/report/", report_skin, name="report_skin"),
     path("social-stats/", social_stats, name="social_stats"),
-
     path("skins/<int:skin_id>/rerender/", rerender_skin, name="rerender_skin"),
-    
     path("privacy/", privacy, name="privacy"),
     path("terms/", terms, name="terms"),
-    
-
-
-
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 # Static files (always safe)

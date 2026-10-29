@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from skins.models import PlayerWin, PlayerLoss
 import random
 
+
 class Command(BaseCommand):
     help = "Populate wins and losses"
 

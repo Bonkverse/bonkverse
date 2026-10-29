@@ -14,13 +14,13 @@ from .pagination_utils import elided_page_range
 @login_required
 @ratelimit(key="ip", rate="10/m", block=True)
 def my_profile(request):
-    user       = request.user
+    user = request.user
     user_skins = Skin.objects.filter(creator__iexact=user.username).order_by("name")
-    favorites  = user.favorite_skins.all().order_by("-created_at")
+    favorites = user.favorite_skins.all().order_by("-created_at")
 
-    paginator   = Paginator(user_skins, 20)
+    paginator = Paginator(user_skins, 20)
     page_number = request.GET.get("page", 1)
-    page_obj    = paginator.get_page(page_number)
+    page_obj = paginator.get_page(page_number)
 
     # ── Bulk-fetch favorite counts for both lists ─────────────────
     #
@@ -28,16 +28,15 @@ def my_profile(request):
     # one query per skin. With 20 uploaded skins + N favorites that's
     # 20 + N extra queries. We fetch all counts in 2 queries instead.
 
-    uploaded_ids  = [s.id for s in page_obj]
+    uploaded_ids = [s.id for s in page_obj]
     favorite_list = list(favorites)
-    favorite_ids  = [s.id for s in favorite_list]
+    favorite_ids = [s.id for s in favorite_list]
 
-    all_ids       = list(set(uploaded_ids + favorite_ids))
-    fav_counts    = {
+    all_ids = list(set(uploaded_ids + favorite_ids))
+    fav_counts = {
         row["id"]: row["fav_count"]
         for row in (
-            Skin.objects
-            .filter(id__in=all_ids)
+            Skin.objects.filter(id__in=all_ids)
             .annotate(fav_count=Count("favorited_by"))
             .values("id", "fav_count")
         )
@@ -58,9 +57,8 @@ def my_profile(request):
     # created. Nothing else here needs a new query: skin/favorite
     # counts below reuse objects we already built above.
     total_upvotes = (
-        Skin.objects
-        .filter(creator__iexact=user.username)
-        .aggregate(total=Sum("upvotes"))["total"] or 0
+        Skin.objects.filter(creator__iexact=user.username).aggregate(total=Sum("upvotes"))["total"]
+        or 0
     )
 
     # Popped (not just read) so the toast only fires once, right after
@@ -68,17 +66,21 @@ def my_profile(request):
     # page load or refresh.
     show_friend_sync_toast = request.session.pop("show_friend_sync_toast", False)
 
-    return render(request, "skins/my_profile.html", {
-        "skins":                   page_obj,
-        "favorites":               favorite_list,
-        "user":                    user,
-        "show_friend_sync_toast":  show_friend_sync_toast,
-        "total_skins":             paginator.count,
-        "total_favorites":         len(favorite_list),
-        "total_upvotes":           total_upvotes,
-        "base_qs":                 "",
-        "elided_range":            elided_page_range(page_obj),
-    })
+    return render(
+        request,
+        "skins/my_profile.html",
+        {
+            "skins": page_obj,
+            "favorites": favorite_list,
+            "user": user,
+            "show_friend_sync_toast": show_friend_sync_toast,
+            "total_skins": paginator.count,
+            "total_favorites": len(favorite_list),
+            "total_upvotes": total_upvotes,
+            "base_qs": "",
+            "elided_range": elided_page_range(page_obj),
+        },
+    )
 
 
 @login_required
@@ -90,19 +92,18 @@ def my_skins_partial(request):
     so a multi-select in progress survives paging instead of being wiped
     by navigation — see the "Go to page N" flow in my_profile.html.
     """
-    user       = request.user
+    user = request.user
     user_skins = Skin.objects.filter(creator__iexact=user.username).order_by("name")
 
-    paginator   = Paginator(user_skins, 20)
+    paginator = Paginator(user_skins, 20)
     page_number = request.GET.get("page", 1)
-    page_obj    = paginator.get_page(page_number)
+    page_obj = paginator.get_page(page_number)
 
     ids = [s.id for s in page_obj]
     fav_counts = {
         row["id"]: row["fav_count"]
         for row in (
-            Skin.objects
-            .filter(id__in=ids)
+            Skin.objects.filter(id__in=ids)
             .annotate(fav_count=Count("favorited_by"))
             .values("id", "fav_count")
         )
@@ -111,11 +112,15 @@ def my_skins_partial(request):
         skin.fav_count_val = fav_counts.get(skin.id, 0)
         skin.labels_json = json.dumps(skin.labels or {})
 
-    return render(request, "skins/partials/_my_skins_cards.html", {
-        "skins":         page_obj,
-        "elided_range":  elided_page_range(page_obj),
-        "base_qs":       "",
-    })
+    return render(
+        request,
+        "skins/partials/_my_skins_cards.html",
+        {
+            "skins": page_obj,
+            "elided_range": elided_page_range(page_obj),
+            "base_qs": "",
+        },
+    )
 
 
 @login_required
@@ -192,21 +197,27 @@ def edit_skin(request, skin_id):
             if is_ajax:
                 return JsonResponse({"ok": False, "error": "Failed to parse tags."}, status=400)
             messages.error(request, "❌ Failed to parse tags JSON.")
-            referer = request.POST.get("referer") or request.META.get("HTTP_REFERER") or reverse("my_profile")
+            referer = (
+                request.POST.get("referer")
+                or request.META.get("HTTP_REFERER")
+                or reverse("my_profile")
+            )
             return render(request, "skins/edit_skin.html", {"skin": skin, "referer": referer})
 
         skin.save()
 
         if is_ajax:
-            return JsonResponse({
-                "ok": True,
-                "skin": {
-                    "id":          skin.id,
-                    "name":        skin.name,
-                    "description": skin.description or "",
-                    "labels":      skin.labels or {},
-                },
-            })
+            return JsonResponse(
+                {
+                    "ok": True,
+                    "skin": {
+                        "id": skin.id,
+                        "name": skin.name,
+                        "description": skin.description or "",
+                        "labels": skin.labels or {},
+                    },
+                }
+            )
 
         messages.success(request, "✅ Skin updated successfully!")
         return redirect("skin_detail", skin_id=skin.id)
