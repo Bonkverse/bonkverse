@@ -1,0 +1,98 @@
+# CI for the Bonkverse Django repo (RFC-0001, "Testing and CI/CD").
+# lint -> tests on Postgres -> migrations check -> security scan.
+# Branch protection on main requires all three jobs; Railway deploys only a green main.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.10" # matches the Dockerfile base image
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install ruff==0.17.3
+      - name: ruff lint
+        run: ruff check --output-format=github .
+      - name: ruff format
+        run: ruff format --check .
+
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: bonkverse
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      ENV: ci
+      SECRET_KEY: ci-only-not-a-secret
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/bonkverse
+      REDIS_URL: redis://localhost:6379/0
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements*.txt
+      - name: System libraries for CairoSVG
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libcairo2
+      - run: pip install -r requirements-dev.txt
+      - name: Migrations are in sync with models
+        run: python manage.py makemigrations --check --dry-run
+      - name: pytest
+        run: pytest --create-db --cov --cov-report=term-missing:skip-covered
+
+  security:
+    runs-on: ubuntu-latest
+    env:
+      SECRET_KEY: ci-only-not-a-secret-but-long-enough-for-check-deploy-0123456789
+      DATABASE_URL: postgresql://unused@localhost/unused
+      REDIS_URL: redis://localhost:6379/0
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements*.txt
+      - name: System libraries for CairoSVG
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libcairo2
+      - run: pip install -r requirements-dev.txt
+      - name: Dependency vulnerabilities
+        run: pip-audit -r requirements.txt
+      - name: bandit (new medium+ findings only)
+        # .bandit-baseline.json holds findings that existed when CI was added.
+        run: bandit -q -r skins bonk_skin_search -x skins/migrations -ll -ii -b .bandit-baseline.json
+      - name: Django deploy checks
+        # Fails on errors. The HSTS / SSL-redirect warnings are tracked for Phase 1.
+        run: ENV=production python manage.py check --deploy --fail-level ERROR
