@@ -13,6 +13,7 @@ from django.contrib import messages
 
 from skins.events import log_event
 from skins.models import Skin, SkinImage
+from skins.svg_sanitizer import validate_svg_upload, UnsafeSVGError
 
 
 bonk_url_pattern = r"^https://bonkleagues\.io/s/([A-Za-z0-9]{7})$"
@@ -85,6 +86,14 @@ def upload_skin(request):
 
         if not svg_content or not png_base64:
             messages.error(request, "❌ Skin Fetcher did not return rendered SVG/PNG media.")
+            return render(request, "skins/upload.html")
+
+        # The SVG comes from an external fetcher service — validate before
+        # anything is written to disk or the DB.
+        try:
+            validate_svg_upload(svg_content)
+        except UnsafeSVGError as e:
+            messages.error(request, f"❌ Unsafe SVG rejected: {e}")
             return render(request, "skins/upload.html")
 
         # --- Step 2: Decode PNG/thumbnail from base64 ---

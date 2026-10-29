@@ -10,6 +10,7 @@ from django.conf import settings
 from skins.events import log_event
 from skins.models import Skin, SkinImage
 from skins.auth_guards import api_login_required
+from skins.svg_sanitizer import validate_svg_upload, UnsafeSVGError
 
 # Validation
 SKIN_NAME_PATTERN = re.compile(r"^[A-Za-z0-9 _]+$")
@@ -50,6 +51,13 @@ def publish_skin(request):
         svg_content = svg_file.read() if svg_file else svg_text.encode("utf-8")
     except Exception as e:
         return JsonResponse({"error": f"Failed to read SVG content: {e}"}, status=400)
+
+    # Reject active content (script, event handlers, javascript:/data: URIs,
+    # foreignObject, ...) before anything is written to disk or the DB.
+    try:
+        validate_svg_upload(svg_content)
+    except UnsafeSVGError as e:
+        return JsonResponse({"error": f"Unsafe SVG rejected: {e}"}, status=400)
 
     skin = Skin.objects.create(
         name=skin_name,
