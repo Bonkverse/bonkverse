@@ -1,10 +1,8 @@
 # skins/players.py
 from django.shortcuts import render
 from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
 from django.db.models import Count
 from .models import BonkPlayer, FlashFriendship, BonkAccountLink
-from django.db.models import Q
 from django_ratelimit.decorators import ratelimit
 
 

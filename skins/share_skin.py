@@ -3,8 +3,6 @@ from django.shortcuts import render, get_object_or_404
 from .models import Skin
 
 # skins/skin_detail.py
-from django.shortcuts import render, get_object_or_404
-from .models import Skin
 from django.conf import settings
 
 def share_skin(request, skin_id, uuid):

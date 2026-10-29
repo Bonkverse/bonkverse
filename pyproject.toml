@@ -1,0 +1,46 @@
+# Tooling config for the Bonkverse Django repo (RFC-0001, Phase 0).
+# Dependencies still live in requirements.txt / requirements-dev.txt.
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+extend-exclude = [
+    "staticfiles",
+    "media",
+    "backups",
+    "skins/migrations",
+]
+
+[tool.ruff.lint]
+# E4/E7/E9 + F: real errors (pyflakes, syntax, imports).
+# B: likely bugs (bugbear).
+# ERA: commented-out code. RFC rule 6: "Delete, don't comment out."
+select = ["E4", "E7", "E9", "F", "B", "ERA"]
+
+[tool.ruff.lint.per-file-ignores]
+# Grandfathered commented-out code. Phase 1 deletes these blocks and
+# removes each line below; do NOT add new files to this list.
+"bonk_skin_search/urls.py" = ["ERA001"]
+"skins/api.py" = ["ERA001"]
+"skins/categories.py" = ["ERA001"]
+"skins/changelog.py" = ["ERA001"]
+"skins/login.py" = ["ERA001"]
+"skins/management/commands/generate_pngs.py" = ["ERA001"]
+"skins/players.py" = ["ERA001"]
+"skins/rerender.py" = ["ERA001"]
+"skins/share_skin.py" = ["ERA001"]
+"skins/wear_skin.py" = ["ERA001"]
+# Tests may use assert-heavy, fixture-shadowing patterns.
+"tests/**" = ["B011"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "bonk_skin_search.settings"
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --reuse-db"
+filterwarnings = [
+    "ignore::DeprecationWarning:django_celery_beat.*",
+]
+
+[tool.coverage.run]
+source = ["skins", "bonk_skin_search"]
+omit = ["*/migrations/*", "*/management/commands/*"]

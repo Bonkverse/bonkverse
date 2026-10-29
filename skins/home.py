@@ -1,10 +1,7 @@
 # views/search.py
 from django.db.models import Count, F
-from django.utils import timezone
-from datetime import timedelta
 from django.shortcuts import render
 from django_ratelimit.decorators import ratelimit
-import random
 
 from skins.models import Skin
 

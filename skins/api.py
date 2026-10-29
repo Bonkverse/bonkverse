@@ -4,7 +4,9 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.timezone import now
 from datetime import timedelta
 from django_ratelimit.decorators import ratelimit
-import json, secrets, requests
+import json
+import secrets
+import requests
 
 from .models import PlayerWin, PlayerSession, PlayerLoss, validate_username
 from django.core.exceptions import ValidationError
