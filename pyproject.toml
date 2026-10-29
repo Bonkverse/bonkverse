@@ -40,6 +40,8 @@ pythonpath = ["."]
 addopts = "-ra --strict-markers --reuse-db"
 filterwarnings = [
     "ignore::DeprecationWarning:django_celery_beat.*",
+    # WhiteNoise: staticfiles/ only exists after collectstatic; tests do not need it.
+    "ignore:No directory at:UserWarning",
 ]
 
 [tool.coverage.run]
