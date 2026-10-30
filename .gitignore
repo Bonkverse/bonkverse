@@ -11,7 +11,9 @@ __pycache__/
 venv/
 .venv/
 .env/
-.env
+# Any env file (.env, .env.local, '.env 2' from iCloud copies), except the template
+.env*
+!.env.example
 
 # Folders
 debug_dumps/
@@ -50,3 +52,7 @@ staticfiles/
 .ruff_cache/
 .coverage
 htmlcov/
+
+# macOS / iCloud duplicate copies (e.g. 'settings 2.py')
+* 2.*
+* 2
