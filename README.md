@@ -5,7 +5,7 @@ Bonkverse
 
 This repository contains the Django backend that powers Bonkverse.
 
-## ⚡ TL;DR — Quick Start (Local Dev)
+## TL;DR — Quick Start (Local Dev)
 
 If you just want Bonkverse running locally:
 
@@ -34,7 +34,7 @@ python manage.py runserver
 
 ```
 
-🧠 Tech Stack
+Tech Stack
 -------------
 
 -   **Python / Django**
@@ -45,7 +45,7 @@ python manage.py runserver
 -   **Cloudflare** (production edge / protection)
 
 
-🚀 Local Development Setup
+Local Development Setup
 --------------------------
 
 Bonkverse is designed to run **fully locally**, without touching production.
@@ -59,7 +59,7 @@ Make sure you have:
 -   Git
 
 
-1️⃣ Clone the repository
+**1. Clone the repository**
 ------------------------
 
 ```bash 
@@ -68,7 +68,7 @@ cd bonkverse
 ```
 
 
-2️⃣ Create and activate a virtual environment
+**2. Create and activate a virtual environment**
 ---------------------------------------------
 
 ```bash 
@@ -83,7 +83,7 @@ pip install -r requirements.txt
 ```
 
 
-3️⃣ Environment variables
+**3. Environment variables**
 -------------------------
 
 Create a local `.env` file (this is **not committed**):
@@ -96,11 +96,11 @@ DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5433/bonkverse
 REDIS_URL=redis://localhost:6379/0
 ```
 
-> ⚠️ Do **not** include quotes around values.
+> Do **not** include quotes around values.
 A `.env.example` file is provided for reference.
 
 
-4️⃣ Start local infrastructure (Postgres + Redis)
+**4. Start local infrastructure (Postgres + Redis)**
 -------------------------------------------------
 
 Bonkverse uses Docker for local databases.
@@ -114,7 +114,7 @@ This starts:
 -   Redis (on port **6379**)
 
 
-5️⃣ Run migrations
+**5. Run migrations**
 ------------------
 
 ```bash 
@@ -122,7 +122,7 @@ python manage.py migrate
 ```
 
 
-6️⃣ Install PostgreSQL extensions (required for search)
+**6. Install PostgreSQL extensions (required for search)**
 -------------------------------------------------------
 
 Bonkverse search relies on PostgreSQL extensions (`pg_trgm`, `unaccent`).
@@ -134,7 +134,7 @@ python manage.py init_pg_extensions
 ```
 
 
-7️⃣ Populate local development data
+**7. Populate local development data**
 -----------------------------------
 
 Bonkverse includes a full local seeding system.
@@ -151,7 +151,7 @@ python manage.py populate_all
 > This **does not** use production data and is safe to run multiple times.
 
 
-8️⃣ Run the development server
+**8. Run the development server**
 ------------------------------
 
 ```bash 
@@ -167,10 +167,10 @@ Admin panel:
 `http://localhost:8000/admin`
 
 
-🧪 Working with the Database
+Working with the Database
 ----------------------------
 
-### 🟢 Django Shell (Rails console equivalent)
+### Django Shell (Rails console equivalent)
 
 **Recommended daily tool**
 
@@ -187,7 +187,7 @@ Examples:
 `BonkPlayer.objects.all()[:5]`
 
 
-### 🟢 Database shell (psql)
+### Database shell (psql)
 
 ```bash
 python manage.py dbshell
@@ -200,7 +200,7 @@ brew install libpq
 brew link --force libpq
 ```
 
-### 🟢 Django Admin
+### Django Admin
 Use Admin for:
 -   Browsing data
 -   Editing records
@@ -209,7 +209,7 @@ Use Admin for:
 `http://localhost:8000/admin`
 
 
-🔍 Search Notes
+Search Notes
 ---------------
 Bonkverse search uses:
 -   PostgreSQL full-text search
@@ -219,7 +219,7 @@ If search errors locally:
 -   Make sure extensions are installed:
     `python manage.py init_pg_extensions`
 
-🔁 Resetting the Local Database
+Resetting the Local Database
 -------------------------------
 
 `python manage.py reset_db`
@@ -230,7 +230,7 @@ If search errors locally:
 
 (`reset_db` is provided by `django-extensions`)
 
-🧩 Project Structure (relevant parts)
+Project Structure (relevant parts)
 -------------------------------------
 
 
@@ -252,14 +252,14 @@ bonkverse/
 └── .env.example
 ```
 
-🛡 Production vs Local
+Production vs Local
 ----------------------
 -   **Local** uses Docker + `.env`
 -   **Production** runs on Railway
 -   Never point local code at production databases
 -   Never commit `.env` files
 
-🤝 Contributing
+Contributing
 ---------------
 1.  Fork the repo
 2.  Create a feature branch
@@ -269,12 +269,12 @@ bonkverse/
 
 If something is unclear or broken locally, please open an issue.
 
-❤️ Acknowledgements
+Acknowledgements
 -------------------
 Bonkverse is built by the Bonk.io community, for the Bonk.io community.
 
 
-🤖 AI Usage
+AI Usage
 ---------------
 
 Yes this code was made with the help of ChatGPT. What does this mean? It means that most likely the code you're about to see is gonna be shit.
