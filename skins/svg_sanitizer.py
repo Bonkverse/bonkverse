@@ -3,8 +3,11 @@
 Policy: an upload is REJECTED (not silently rewritten) if it contains
 <script> in any form, or any other active-content vector (event handlers,
 javascript:/data: URIs, foreignObject, animation of href, CSS injection,
-DOCTYPE/entities, stylesheet PIs). Plain shapes and <image> references
-(https or raster data: URIs) are allowed.
+DOCTYPE/entities, stylesheet PIs). CSS url() is allowed only for local
+fragments (#id) — any external url() is an outbound request to an
+attacker-controlled server (tracking/exfil). <use> may only reference
+local fragments, never an external document. Plain shapes and <image>
+references (https or raster data: URIs) are allowed.
 """
 
 import re
@@ -36,6 +39,11 @@ RAW_BLOCKED_RES = [
 
 CSS_BLOCKED_TOKENS = ("javascript:", "vbscript:", "expression(", "@import",
                       "-moz-binding", "behavior:")
+
+# Every url(...) target in CSS must be a local fragment; anything else is a
+# request to an external server. Checked on the obfuscation-stripped string,
+# so 'u r l ( "https://..." )' is caught too.
+CSS_URL_RE = re.compile(r"url\(([^)]*)\)")
 
 
 class UnsafeSVGError(ValueError):
@@ -69,7 +77,13 @@ def _uri_is_safe(value, allow_raster_data):
 
 def _css_is_safe(css):
     norm = _strip_obfuscation(css)
-    return not any(tok in norm for tok in CSS_BLOCKED_TOKENS)
+    if any(tok in norm for tok in CSS_BLOCKED_TOKENS):
+        return False
+    for m in CSS_URL_RE.finditer(norm):
+        target = m.group(1).strip("\"'")
+        if not target.startswith("#"):
+            return False
+    return True
 
 
 def validate_svg_upload(content):
@@ -108,8 +122,13 @@ def validate_svg_upload(content):
             name = _localname(attr)
             if name.startswith("on"):
                 raise UnsafeSVGError(f"event handler attribute '{name}' on <{tag}>")
-            if name in URI_ATTRS and not _uri_is_safe(value, allow_raster_data):
-                raise UnsafeSVGError(f"unsafe URI in '{name}' on <{tag}>")
+            if name in URI_ATTRS:
+                # <use> pulls in another document; only same-document
+                # fragments are safe, anything else can carry script.
+                if tag == "use" and not _strip_obfuscation(value).startswith("#"):
+                    raise UnsafeSVGError(f"external <use> reference in '{name}' on <use>")
+                if not _uri_is_safe(value, allow_raster_data):
+                    raise UnsafeSVGError(f"unsafe URI in '{name}' on <{tag}>")
             if name == "style" and not _css_is_safe(value):
                 raise UnsafeSVGError(f"unsafe CSS in style attribute on <{tag}>")
 
