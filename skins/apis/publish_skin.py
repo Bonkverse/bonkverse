@@ -3,7 +3,7 @@ import os
 import re
 import cairosvg
 
-from django.http import JsonResponse, HttpResponseBadRequest
+from django.http import JsonResponse, HttpResponseBadRequest, HttpResponseNotAllowed
 from django.urls import reverse
 from django.conf import settings
 
@@ -24,7 +24,7 @@ def publish_skin(request):
     `creator` is derived from the authenticated user.
     """
     if request.method != "POST":
-        return HttpResponseBadRequest("Invalid request method")
+        return HttpResponseNotAllowed(["POST"], "Invalid request method")
 
     skin_name = request.POST.get("skin_name", "").strip()
     skin_code = request.POST.get("skin_code", "").strip()
@@ -34,18 +34,18 @@ def publish_skin(request):
     svg_text = request.POST.get("svg")
 
     if not skin_name or not skin_code:
-        return JsonResponse({"error": "skin_name and skin_code are required"}, status=400)
+        return JsonResponse({"error": "skin_name and skin_code are required"}, status=422)
     if not creator:
         return JsonResponse({"error": "could not determine creator"}, status=400)
     if not SKIN_NAME_PATTERN.match(skin_name):
         return JsonResponse(
             {"error": "Skin name can only contain letters, numbers, spaces, and underscores"},
-            status=400,
+            status=422,
         )
     if len(skin_name) > 1000:
-        return JsonResponse({"error": "Skin name must be under 1000 characters"}, status=400)
+        return JsonResponse({"error": "Skin name must be under 1000 characters"}, status=422)
     if not svg_file and not svg_text:
-        return JsonResponse({"error": "SVG content is required"}, status=400)
+        return JsonResponse({"error": "SVG content is required"}, status=422)
 
     try:
         svg_content = svg_file.read() if svg_file else svg_text.encode("utf-8")
