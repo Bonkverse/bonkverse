@@ -59,7 +59,7 @@ Make sure you have:
 -   Git
 
 
-**1. Clone the repository**
+# 1. Clone the repository
 ------------------------
 
 ```bash 
@@ -68,7 +68,7 @@ cd bonkverse
 ```
 
 
-**2. Create and activate a virtual environment**
+# 2. Create and activate a virtual environment
 ---------------------------------------------
 
 ```bash 
@@ -83,7 +83,7 @@ pip install -r requirements.txt
 ```
 
 
-**3. Environment variables**
+# 3. Environment variables
 -------------------------
 
 Create a local `.env` file (this is **not committed**):
@@ -100,7 +100,7 @@ REDIS_URL=redis://localhost:6379/0
 A `.env.example` file is provided for reference.
 
 
-**4. Start local infrastructure (Postgres + Redis)**
+# 4. Start local infrastructure (Postgres + Redis)
 -------------------------------------------------
 
 Bonkverse uses Docker for local databases.
@@ -114,7 +114,7 @@ This starts:
 -   Redis (on port **6379**)
 
 
-**5. Run migrations**
+# 5. Run migrations
 ------------------
 
 ```bash 
@@ -122,7 +122,7 @@ python manage.py migrate
 ```
 
 
-**6. Install PostgreSQL extensions (required for search)**
+# 6. Install PostgreSQL extensions (required for search)
 -------------------------------------------------------
 
 Bonkverse search relies on PostgreSQL extensions (`pg_trgm`, `unaccent`).
@@ -134,7 +134,7 @@ python manage.py init_pg_extensions
 ```
 
 
-**7. Populate local development data**
+# 7. Populate local development data
 -----------------------------------
 
 Bonkverse includes a full local seeding system.
@@ -151,7 +151,7 @@ python manage.py populate_all
 > This **does not** use production data and is safe to run multiple times.
 
 
-**8. Run the development server**
+# 8. Run the development server
 ------------------------------
 
 ```bash 
