@@ -41,7 +41,7 @@ def upload_skin(request):
         if not re.match(skin_name_pattern, skin_name):
             messages.error(
                 request,
-                "❌ Skin name can only contain letters, numbers, spaces, and underscores."
+                "Skin name can only contain letters, numbers, spaces, and underscores."
             )
             return render(request, "skins/upload.html")
 
