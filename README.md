@@ -21,7 +21,6 @@ docker compose up -d                  # Postgres (5433) + Redis (6379)
 
 python manage.py migrate
 python manage.py populate_all         # fake local data, safe to re-run
-python manage.py createsuperuser      # optional
 
 python manage.py runserver            # http://localhost:8000
 pytest                                # run the test suite
@@ -110,7 +109,14 @@ python manage.py runserver
 ```
 
 -   Site: `http://localhost:8000`
--   Admin: `http://localhost:8000/admin`
+
+Log in with your real bonk.io account; it creates a user in your **local** database only. To give that user staff access (the `/staff/` page, re-render buttons):
+
+```bash
+python manage.py shell -c "from skins.models import BonkUser; BonkUser.objects.filter(username='YourBonkName').update(is_staff=True)"
+```
+
+There is no `createsuperuser`: site accounts have no passwords because login goes through bonk.io. The Django admin (`/admin`) currently crashes for all users because `BonkUser` has no permission methods; see `tests/test_admin.py`.
 
 
 ✅ Tests, Linting and CI
