@@ -35,7 +35,7 @@ def upload_skin(request):
 
         # --- Validation ---
         if not skin_name or not bonkleagues_link:
-            messages.error(request, "❌ All fields are required.")
+            messages.error(request, "All fields are required.")
             return render(request, "skins/upload.html")
 
         if not re.match(skin_name_pattern, skin_name):
@@ -46,15 +46,15 @@ def upload_skin(request):
             return render(request, "skins/upload.html")
 
         if not re.match(bonk_url_pattern, bonkleagues_link):
-            messages.error(request, "❌ Invalid Bonkleagues link format.")
+            messages.error(request, "Invalid Bonkleagues link format.")
             return render(request, "skins/upload.html")
 
         if Skin.objects.filter(link=bonkleagues_link).exists():
-            messages.error(request, "❌ This Bonkleagues link has already been submitted!")
+            messages.error(request, "This Bonkleagues link has already been submitted!")
             return redirect("upload_skin")
 
         if len(skin_name) > 1000:
-            messages.error(request, "❌ Skin name must be under 1000 characters.")
+            messages.error(request, "Skin name must be under 1000 characters.")
             return render(request, "skins/upload.html")
 
         # --- Step 1: Ask BLSkinFetcher for skin data + rendered media ---
@@ -70,7 +70,7 @@ def upload_skin(request):
             fetch_res.raise_for_status()
             data = fetch_res.json()
         except Exception as e:
-            messages.error(request, f"❌ Could not fetch/render skin: {e}")
+            messages.error(request, f"Could not fetch/render skin: {e}")
             return render(request, "skins/upload.html")
 
         skin_code = data.get("skinCode")
@@ -81,11 +81,11 @@ def upload_skin(request):
         thumb_base64 = media.get("thumbnailBase64")
 
         if not skin_code:
-            messages.error(request, "❌ Skin Fetcher did not return a skin code.")
+            messages.error(request, "Skin Fetcher did not return a skin code.")
             return render(request, "skins/upload.html")
 
         if not svg_content or not png_base64:
-            messages.error(request, "❌ Skin Fetcher did not return rendered SVG/PNG media.")
+            messages.error(request, "Skin Fetcher did not return rendered SVG/PNG media.")
             return render(request, "skins/upload.html")
 
         # The SVG comes from an external fetcher service — validate before
@@ -93,7 +93,7 @@ def upload_skin(request):
         try:
             validate_svg_upload(svg_content)
         except UnsafeSVGError as e:
-            messages.error(request, f"❌ Unsafe SVG rejected: {e}")
+            messages.error(request, f"Unsafe SVG rejected: {e}")
             return render(request, "skins/upload.html")
 
         # --- Step 2: Decode PNG/thumbnail from base64 ---
@@ -106,7 +106,7 @@ def upload_skin(request):
                 thumb_content = png_content
 
         except Exception as e:
-            messages.error(request, f"❌ Could not decode rendered media: {e}")
+            messages.error(request, f"Could not decode rendered media: {e}")
             return render(request, "skins/upload.html")
 
         # --- Step 3: Create DB entry first ---
@@ -145,7 +145,7 @@ def upload_skin(request):
             skin.save()
 
         except Exception as e:
-            messages.error(request, f"❌ Failed to save rendered media: {e}")
+            messages.error(request, f"Failed to save rendered media: {e}")
 
             for file_path in (svg_path, png_path, thumb_path):
                 if os.path.exists(file_path):
@@ -162,7 +162,7 @@ def upload_skin(request):
                 SkinImage(skin=skin, kind="thumbnail", path=thumb_rel_path),
             ])
         except Exception as e:
-            messages.error(request, f"❌ Failed to save skin image records: {e}")
+            messages.error(request, f"Failed to save skin image records: {e}")
 
             for file_path in (svg_path, png_path, thumb_path):
                 if os.path.exists(file_path):
@@ -171,7 +171,7 @@ def upload_skin(request):
             skin.delete()
             return render(request, "skins/upload.html")
 
-        messages.success(request, "✅ Skin uploaded successfully!")
+        messages.success(request, "Skin uploaded successfully!")
         log_event(request.user, "skin_uploaded", skin=skin, source="bonkleagues")
         return redirect(reverse("search_skins") + f"?q={skin_name}")
 
