@@ -57,7 +57,7 @@ def publish_skin(request):
     try:
         validate_svg_upload(svg_content)
     except UnsafeSVGError as e:
-        return JsonResponse({"error": f"Unsafe SVG rejected: {e}"}, status=400)
+        return JsonResponse({"error": f"Unsafe SVG rejected: {e}"}, status=422)
 
     skin = Skin.objects.create(
         name=skin_name,
