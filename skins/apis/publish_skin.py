@@ -3,7 +3,7 @@ import os
 import re
 import cairosvg
 
-from django.http import JsonResponse, HttpResponseBadRequest, HttpResponseNotAllowed
+from django.http import JsonResponse, HttpResponseNotAllowed
 from django.urls import reverse
 from django.conf import settings
 
