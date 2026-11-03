@@ -56,3 +56,6 @@ htmlcov/
 # macOS / iCloud duplicate copies (e.g. 'settings 2.py')
 * 2.*
 * 2
+
+# Local Redis snapshots (redis-server run from the repo folder)
+dump.rdb
