@@ -15,7 +15,7 @@ pydotplus==2.0.2
 django-extensions==3.2.3
 django-ratelimit==4.1.0
 django-redis==7.0.0
-redis==6.4.0
+redis==8.1.0
 CairoSVG==2.9.1
 pandas==2.3.3
 tqdm==4.67.1
