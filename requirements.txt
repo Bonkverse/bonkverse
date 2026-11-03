@@ -10,7 +10,7 @@ opencv-python-headless
 psycopg2-binary==2.9.12
 requests
 whitenoise
-python-dotenv==1.2.2
+python-dotenv==1.2.4
 pydotplus==2.0.2
 django-extensions==3.2.3
 django-ratelimit==4.1.0
