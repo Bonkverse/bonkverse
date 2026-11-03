@@ -28,4 +28,5 @@ RUN rm -rf staticfiles && python manage.py collectstatic --noinput --clear
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "python manage.py migrate && gunicorn -b 0.0.0.0:8080 bonk_skin_search.wsgi:application"]
+# Workers, threads, port and timeouts live in gunicorn.conf.py.
+CMD ["sh", "-c", "python manage.py migrate && gunicorn -c gunicorn.conf.py bonk_skin_search.wsgi:application"]
