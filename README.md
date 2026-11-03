@@ -29,7 +29,7 @@ pytest                                # run the test suite
 Tech Stack
 -------------
 
--   **Python 3.10 / Django 5.2**
+-   **Python 3.13 / Django 5.2**
 -   **PostgreSQL** (full-text search, `pg_trgm`, `unaccent`)
 -   **Redis** (cache, rate limiting, Celery broker)
 -   **Celery** + `django-celery-beat`
@@ -45,7 +45,7 @@ Bonkverse is designed to run **fully locally**, without touching production.
 
 ### Prerequisites
 
--   Python **3.10+**
+-   Python **3.13**
 -   Docker & Docker Compose
 -   Git
 -   Cairo (for CairoSVG): `brew install cairo` on macOS, `apt install libcairo2` on Debian/Ubuntu
