@@ -1,8 +1,8 @@
 import uuid
+from core.ratelimits import limit
 import re
 import os
 import base64
-from django_ratelimit.decorators import ratelimit
 import requests
 
 from django.contrib.auth.decorators import login_required
@@ -25,7 +25,7 @@ BLSKIN_FETCHER_URL = getattr(
 
 
 @login_required(login_url="/login/")
-@ratelimit(key="ip", rate="10/m", block=True)
+@limit("upload")
 def upload_skin(request):
     if request.method == "POST":
         skin_name = request.POST.get("skin_name", "").strip()

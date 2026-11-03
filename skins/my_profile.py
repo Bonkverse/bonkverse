@@ -1,4 +1,5 @@
 from django.contrib.auth.decorators import login_required
+from core.ratelimits import limit
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.urls import reverse
@@ -7,12 +8,11 @@ from django.db.models import Count, Sum
 from django.core.paginator import Paginator
 import json
 from django.contrib import messages
-from django_ratelimit.decorators import ratelimit
 from .pagination_utils import elided_page_range
 
 
 @login_required
-@ratelimit(key="ip", rate="10/m", block=True)
+@limit("browse")
 def my_profile(request):
     user = request.user
     user_skins = Skin.objects.filter(creator__iexact=user.username).order_by("name")
@@ -84,7 +84,7 @@ def my_profile(request):
 
 
 @login_required
-@ratelimit(key="ip", rate="10/m", block=True)
+@limit("browse")
 def my_skins_partial(request):
     """
     Returns just the My Skins card grid + pagination for a given page.
@@ -124,7 +124,7 @@ def my_skins_partial(request):
 
 
 @login_required
-@ratelimit(key="ip", rate="10/m", block=True)
+@limit("write")
 def delete_skin(request, skin_id):
     skin = get_object_or_404(Skin, id=skin_id)
     is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
@@ -142,7 +142,7 @@ def delete_skin(request, skin_id):
 
 
 @login_required
-@ratelimit(key="ip", rate="10/m", block=True)
+@limit("write")
 def bulk_delete_skins(request):
     """
     Deletes multiple skins owned by the current user in one request.
@@ -172,7 +172,7 @@ def bulk_delete_skins(request):
 
 
 @login_required
-@ratelimit(key="ip", rate="10/m", block=True)
+@limit("write")
 def edit_skin(request, skin_id):
     skin = get_object_or_404(Skin, id=skin_id)
     is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"

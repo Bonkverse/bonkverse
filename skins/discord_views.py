@@ -1,4 +1,5 @@
 from urllib.parse import urlparse
+from core.ratelimits import limit
 from django.db import transaction
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -6,7 +7,6 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
-from django_ratelimit.decorators import ratelimit
 from .discord_invite import fetch_invite, parse_invite_payload
 
 from .models import DiscordServer, DiscordTag, DiscordServerSnapshot
@@ -24,7 +24,7 @@ def extract_invite_code(invite: str) -> str:
 
 @csrf_exempt
 @require_POST
-@ratelimit(key="ip", rate="7/h", block=True)
+@limit("submit")
 def submit_server(request):
     invite = request.POST.get("invite", "").strip()
     tags = request.POST.getlist("tags")

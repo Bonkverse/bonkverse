@@ -1,13 +1,13 @@
 # skins/players.py
 from django.shortcuts import render
+from core.ratelimits import limit
 from django.http import JsonResponse
 from django.db.models import Count
 from .models import BonkPlayer, FlashFriendship, BonkAccountLink
-from django_ratelimit.decorators import ratelimit
 
 
 # @login_required
-@ratelimit(key="ip", rate="10/m", block=True)
+@limit("browse")
 def players_page(request):
     """Render the search UI page."""
     total_players = BonkPlayer.objects.count()
@@ -15,7 +15,7 @@ def players_page(request):
 
 
 # @login_required
-@ratelimit(key="ip", rate="10/m", block=True)
+@limit("search")
 def search_players_view(request):
     q = (request.GET.get("q") or "").strip()
     try:

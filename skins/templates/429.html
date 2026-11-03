@@ -1,0 +1,15 @@
+{% extends "error_base.html" %}
+{% comment %}
+  Rendered by core.ratelimits.too_many_requests. Context: wait ("in 42 seconds").
+{% endcomment %}
+
+{% block heading_title %}Slow down{% endblock %}
+{% block code %}429 · Too many requests{% endblock %}
+{% block heading %}Slow down a little{% endblock %}
+{% block message %}
+  You're moving faster than this page allows. Try again {{ wait }}.
+{% endblock %}
+{% block actions %}
+  <a class="btn btn-primary" href="{{ request.get_full_path }}">Try again</a>
+  <a class="btn btn-ghost" href="/">Back to Home</a>
+{% endblock %}

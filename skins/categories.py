@@ -14,6 +14,7 @@
 # and matching it would make "dark" hit "dark blue", etc).
 
 from datetime import timedelta
+from core.ratelimits import limit
 
 from django.core.cache import cache
 from django.core.paginator import Paginator
@@ -21,7 +22,6 @@ from django.db.models import Q, Count, F
 from django.http import Http404
 from django.shortcuts import render
 from django.utils import timezone
-from django_ratelimit.decorators import ratelimit
 
 from skins.models import Skin
 from .pagination_utils import elided_page_range
@@ -190,7 +190,7 @@ def _apply_sort(qs, sort):
     ), "favorites"
 
 
-@ratelimit(key="ip", rate="30/m", block=True)
+@limit("browse")
 def category_index(request):
     """Tiles for every category, with a cover image and count. Cached in Redis."""
     items = cache.get("category_index_v1")
@@ -213,7 +213,7 @@ def category_index(request):
     return render(request, "skins/category_index.html", {"categories": items})
 
 
-@ratelimit(key="ip", rate="30/m", block=True)
+@limit("browse")
 def category_detail(request, slug):
     meta = CATEGORIES.get(slug)
     if not meta:
@@ -238,7 +238,7 @@ def category_detail(request, slug):
     )
 
 
-@ratelimit(key="ip", rate="30/m", block=True)
+@limit("browse")
 def new_releases(request):
     period = request.GET.get("period", "all")
     qs = _base_queryset().order_by("-created_at")
