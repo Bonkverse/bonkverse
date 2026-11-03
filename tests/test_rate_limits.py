@@ -140,6 +140,14 @@ class TestTooManyRequests:
         assert b"Slow down" in response.content
         assert b"403 Forbidden" not in response.content
 
+    def test_page_view_gets_live_countdown_that_reloads(self, client):
+        response = self._exhaust(client, "/search/?q=x")
+        seconds = response["Retry-After"]
+
+        assert f'data-seconds="{seconds}"'.encode() in response.content
+        assert b'data-reload="true"' in response.content
+        assert b"js/ratelimit.js" in response.content
+
     def test_api_gets_json_error_contract(self, client):
         response = self._exhaust(client, "/api/players/search/?q=x")
 
@@ -178,7 +186,12 @@ def test_login_limit_counts_only_attempts_not_page_views(client, settings, mocke
     assert client.get("/login/").status_code == 200
     assert client.get("/login/").status_code == 200
     assert client.post("/login/", {"username": "a", "password": "b"}).status_code == 200
-    assert client.post("/login/", {"username": "a", "password": "b"}).status_code == 429
+    response = client.post("/login/", {"username": "a", "password": "b"})
+    assert response.status_code == 429
+    # A blocked form submission must never auto-reload: the browser would resubmit
+    # the login form. It counts down and says when to submit again instead.
+    assert b'data-reload="true"' not in response.content
+    assert b"then submit again" in response.content
 
 
 # ── Views still on the old @ratelimit decorator ───────────────────────────────
@@ -203,3 +216,76 @@ def test_legacy_decorator_also_returns_429_not_403(client, settings):
 
     assert response.status_code == 429
     assert b"Slow down" in response.content
+
+
+# ── manage.py audit_rate_limits ───────────────────────────────────────────────
+
+
+def test_audit_lists_every_route_with_its_tier(settings):
+    from io import StringIO
+
+    from django.core.management import call_command
+
+    settings.RATE_LIMITS = {**settings.RATE_LIMITS, "search": "60/m"}
+    out = StringIO()
+
+    call_command("audit_rate_limits", stdout=out)
+    text = out.getvalue()
+
+    search_line = next(line for line in text.splitlines() if line.strip().startswith("/search/"))
+    assert "search" in search_line and "60/m" in search_line
+    login_line = next(line for line in text.splitlines() if line.strip().startswith("/login/"))
+    assert "login" in login_line and "POST" in login_line
+    # Tracker endpoints are still on the old decorator until they are retired.
+    assert any(line.strip().startswith("/api/wins/") for line in text.splitlines())
+
+
+# Routes allowed to have no tier, each with the PR that removes it from this list.
+# Shrink only: the guard test fails if a listed route gains a tier (delete it here)
+# or if any route not listed here has no tier (add @limit to it).
+UNTIERED_ALLOWED = {
+    # Retired with the win/loss tracker (RFC-0001 Phase 1, retire PR).
+    "/api/complete_verification/",
+    "/api/friends-sync-status/",
+    "/api/heartbeat/",
+    "/api/leaderboard/<str:period>/",
+    "/api/loss-leaderboard/<str:period>/",
+    "/api/losses/",
+    "/api/request_verification/",
+    "/api/stop_tracking/",
+    "/api/wins/",
+    # Fixed in the Phase 1 crash-fix PR.
+    "/api/join-matchmaking/",
+    "/leaderboards/losses/",
+    "/leaderboards/losses/<str:period>/",
+    "/leaderboards/winrate/",
+    "/leaderboards/winrate/<str:period>/",
+    "/leaderboards/wins/",
+    "/leaderboards/wins/<str:period>/",
+}
+
+
+def test_every_route_has_a_rate_limit_tier():
+    """New pages and endpoints must ship with @limit(...). Lists the offenders."""
+    from skins.management.commands.audit_rate_limits import collect_rows
+
+    untiered = {route for route, _view, tier, _rate, _methods in collect_rows() if tier is None}
+
+    assert untiered - UNTIERED_ALLOWED == set(), "add @limit(...) to these routes"
+    assert UNTIERED_ALLOWED - untiered == set(), "now tiered: remove from UNTIERED_ALLOWED"
+
+
+def test_bonk_login_for_wear_cannot_be_used_to_guess_passwords(
+    logged_in_client, settings, mocked_http
+):
+    """Regression: /api/bonk/login/ had no limit, so a logged-in user could try
+    bonk.io passwords through Bonkverse as fast as they liked."""
+    settings.RATE_LIMITS = {**settings.RATE_LIMITS, "login": "2/h"}
+    mocked_http.post(
+        "https://bonk2.io/scripts/login_legacy.php", json={"r": "fail", "e": "password"}
+    )
+    attempt = {"bonk_username": "victim", "bonk_password": "guess"}
+
+    codes = [logged_in_client.post("/api/bonk/login/", attempt).status_code for _ in range(3)]
+
+    assert codes == [401, 401, 429]

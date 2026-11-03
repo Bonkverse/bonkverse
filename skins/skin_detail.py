@@ -1,9 +1,11 @@
 from django.shortcuts import render, get_object_or_404
+from core.ratelimits import limit
 from .models import Skin, SkinVote
 from django.conf import settings
 from django.urls import reverse
 
 
+@limit("browse")
 def skin_detail(request, skin_id):
     skin = get_object_or_404(Skin, id=skin_id)
 

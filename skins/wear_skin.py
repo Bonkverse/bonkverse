@@ -9,6 +9,7 @@
 # from .models import Skin
 # from .auth_guards import api_login_required, bonk_token_required
 # from .events import log_event
+from core.ratelimits import limit
 
 # BONK_LOGIN_URL = "https://bonk2.io/scripts/login_legacy.php"
 # BONK_AVATAR_UPDATE_URL = "https://bonk2.io/scripts/avatar_update.php"
@@ -311,6 +312,7 @@ def _resolve_slot(request):
 
 @api_login_required
 @require_POST
+@limit("login", method="POST")
 def bonk_login_for_wear(request):
     """Mint a bonk.io token from credentials (the rare first-time / expired path)."""
     u = request.POST.get("bonk_username")
@@ -332,6 +334,7 @@ def bonk_login_for_wear(request):
 
 @bonk_token_required
 @require_POST
+@limit("write")
 def wear_skin_code(request):
     """Wear an unsaved editor skin from a raw skin_code (no DB row)."""
     token = _get_session_token(request)  # guaranteed present by decorator
@@ -356,6 +359,7 @@ def wear_skin_code(request):
 # ── Existing gallery "wear by id" ────────────────────────────────────────────
 @bonk_token_required
 @require_POST
+@limit("write")
 def wear_skin(request, skin_id: int):
     _debug_wear(request, "wear: passed decorator", skin_id=skin_id)
     token = _get_session_token(request)  # guaranteed present by decorator

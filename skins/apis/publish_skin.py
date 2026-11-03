@@ -1,4 +1,5 @@
 import uuid
+from core.ratelimits import limit
 import os
 import re
 import cairosvg
@@ -17,6 +18,7 @@ SKIN_NAME_PATTERN = re.compile(r"^[A-Za-z0-9 _]+$")
 
 
 @api_login_required
+@limit("upload")
 def publish_skin(request):
     """
     Publish a skin from the Bonkverse skin editor.

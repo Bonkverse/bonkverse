@@ -1,10 +1,12 @@
 from django.shortcuts import render, redirect
+from core.ratelimits import limit
 from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from .models import Changelog
 
 
 @login_required
+@limit("write")
 def add_changelog(request):
     # ✅ Only allow "The Saucy Tulip" to access
     if request.user.username != "The Saucy Tulip":

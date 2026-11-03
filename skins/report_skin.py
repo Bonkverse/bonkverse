@@ -1,5 +1,6 @@
 # skins/report_skin.py
 from django.http import JsonResponse
+from core.ratelimits import limit
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
 from .models import Skin, SkinReport
@@ -7,6 +8,7 @@ from .events import log_event
 
 
 @require_POST
+@limit("write")
 def report_skin(request, skin_id: int):
     skin = get_object_or_404(Skin, id=skin_id)
     reason = request.POST.get("reason", "").strip()

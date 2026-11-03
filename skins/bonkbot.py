@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from core.ratelimits import limit
 import requests
 import json
 from django.http import JsonResponse
@@ -19,5 +20,6 @@ def join_matchmaking(request):
             return JsonResponse({"error": str(e)}, status=500)
 
 
+@limit("browse")
 def matchmaking_page(request):
     return render(request, "skins/matchmaking.html")

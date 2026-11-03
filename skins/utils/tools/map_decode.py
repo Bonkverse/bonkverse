@@ -1,4 +1,5 @@
 import os
+from core.ratelimits import limit
 import requests
 
 from django.http import JsonResponse
@@ -6,11 +7,13 @@ from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
 
 
+@limit("browse")
 def map_decode_page(request):
     return render(request, "tools/map_decoder.html")
 
 
 @require_http_methods(["POST"])
+@limit("search")
 def api_map_decode(request):
     encoded = (request.POST.get("encoded") or "").strip()
     if not encoded:
