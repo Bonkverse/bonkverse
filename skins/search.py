@@ -1,13 +1,67 @@
-from django.shortcuts import render
-from core.ratelimits import limit
-from django.db.models import Q, Count, F
-from django.core.paginator import Paginator
-from skins.models import Skin, SkinVote
-from django.utils import timezone
+"""Skin search page (/search/).
+
+Every query narrows the table with an index first, then applies the relevance
+rules to the few rows left, so a search costs milliseconds instead of reading
+every skin. Indexes are declared on Skin.Meta (skins/models.py).
+"""
+
+import logging
+import random
 from datetime import timedelta
-from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank, TrigramSimilarity
 from urllib.parse import urlencode
+
+from django.conf import settings
+from django.contrib.postgres.search import SearchQuery, SearchRank, TrigramSimilarity
+from django.core.paginator import Paginator
+from django.db import OperationalError
+from django.db.models import Count, F, Max, Min, Q
+from django.shortcuts import render
+from django.utils import timezone
+
+from core.db import time_limited_queries
+from core.ratelimits import limit
+from skins.models import SKIN_SEARCH_CONFIG, Skin, SkinVote
+
 from .pagination_utils import elided_page_range
+
+logger = logging.getLogger(__name__)
+
+PER_PAGE = 50
+# Relevance thresholds. Unchanged from the original search; the index prefilter
+# below only skips rows that could never pass them.
+MIN_RANK = 0.1
+MIN_NAME_SIMILARITY = 0.2
+
+
+def _relevance(skins, query: str):
+    """Full-text + fuzzy-name matches, ranked. Index-backed (search_vector, name trigram)."""
+    search_query = SearchQuery(query, config=SKIN_SEARCH_CONFIG)
+    return (
+        # Narrow with the GIN indexes: full-text hit OR name similar enough. With
+        # pg_trgm.similarity_threshold = MIN_NAME_SIMILARITY this keeps every row
+        # the rule below can accept.
+        skins.filter(Q(search_vector=search_query) | Q(name__trigram_similar=query))
+        .annotate(
+            rank=SearchRank(F("search_vector"), search_query),
+            similarity=TrigramSimilarity("name", query),
+        )
+        .filter(Q(rank__gte=MIN_RANK) | Q(similarity__gt=MIN_NAME_SIMILARITY))
+    )
+
+
+def _random_sample(size: int):
+    """About `size` random skins via the primary key index, not ORDER BY random().
+
+    Returns an unsliced queryset, so any sort can still be applied to it.
+    """
+    bounds = Skin.objects.aggregate(lo=Min("id"), hi=Max("id"))
+    if bounds["lo"] is None:
+        return Skin.objects.none()
+    span = range(bounds["lo"], bounds["hi"] + 1)
+    # Oversample to make up for deleted ids, then keep `size` that exist.
+    candidates = random.sample(span, min(len(span), size * 3))
+    ids = list(Skin.objects.filter(id__in=candidates).values_list("id", flat=True)[:size])
+    return Skin.objects.filter(id__in=ids)
 
 
 @limit("search")
@@ -16,35 +70,20 @@ def search_skins(request):
     mode = request.GET.get("mode", "relevance")
     sort = request.GET.get("sort", "relevance")
     page_number = request.GET.get("page", 1)
-    per_page = 50
-
-    skins = Skin.objects.all()
 
     if query:
-        vector = (
-            SearchVector("labels", weight="A")
-            + SearchVector("description", weight="A")
-            + SearchVector("name", weight="B")
-            + SearchVector("creator", weight="C")
-        )
-        search_query = SearchQuery(query)
-
         if mode == "name":
-            skins = skins.filter(name__icontains=query)
+            skins = Skin.objects.filter(name__ilike_contains=query)
         elif mode == "creator":
-            skins = skins.filter(creator__icontains=query)
+            skins = Skin.objects.filter(creator__ilike_contains=query)
         elif mode == "tags":
-            skins = skins.filter(labels__icontains=[query.lower()])
+            skins = Skin.objects.filter(labels__icontains=[query.lower()])
         elif mode == "description":
-            skins = skins.filter(description__icontains=query)
+            skins = Skin.objects.filter(description__ilike_contains=query)
         else:  # relevance
-            skins = skins.annotate(
-                rank=SearchRank(vector, search_query),
-                similarity=TrigramSimilarity("name", query),
-            ).filter(Q(rank__gte=0.1) | Q(similarity__gt=0.2))
+            skins = _relevance(Skin.objects.all(), query)
     else:
-        # DB-level random sample — never pulls the whole table into Python
-        skins = Skin.objects.order_by("?")[:50]
+        skins = _random_sample(PER_PAGE)
 
     # ── Sorting ───────────────────────────────────────────────────
     if sort == "newest":
@@ -53,17 +92,28 @@ def search_skins(request):
         skins = skins.annotate(fav_count=Count("favorited_by")).order_by("-fav_count")
     elif sort == "upvotes":
         skins = skins.annotate(score=F("upvotes") - F("downvotes")).order_by("-score")
-    else:  # relevance (default)
-        if query and mode == "relevance":
-            skins = skins.order_by("-rank", "-similarity", "name")
-        elif query:
-            skins = skins.order_by("name")
-        # else: random order already applied above
+    elif query and mode == "relevance":
+        skins = skins.order_by("-rank", "-similarity", "name")
+    elif query:
+        skins = skins.order_by("name")
+    else:
+        skins = skins.order_by("?")  # shuffle the sample (at most PER_PAGE rows)
 
-    # ── Pagination ────────────────────────────────────────────────
-    paginator = Paginator(skins, per_page)
-    page_obj = paginator.get_page(page_number)
-    skins_on_page = list(page_obj)  # evaluate once; reused below
+    # ── Run it, under a time limit ────────────────────────────────
+    # A pathological query is cancelled instead of tying up a worker for everyone.
+    search_error = None
+    try:
+        with time_limited_queries(
+            settings.SEARCH_STATEMENT_TIMEOUT_MS,
+            pg_trgm__similarity_threshold=MIN_NAME_SIMILARITY,
+        ):
+            page_obj = Paginator(skins, PER_PAGE).get_page(page_number)
+            skins_on_page = list(page_obj)  # evaluate once; reused below
+    except OperationalError:
+        logger.warning("search timed out: q=%r mode=%s sort=%s", query[:100], mode, sort)
+        search_error = "That search took too long. Try a more specific search term."
+        page_obj = Paginator([], PER_PAGE).get_page(1)
+        skins_on_page = []
     skin_ids = [s.id for s in skins_on_page]
 
     # ── Prefetch votes + favorites in bulk (3 queries total) ──────
@@ -150,5 +200,6 @@ def search_skins(request):
             "total_skin_count": total_skin_count,
             "base_qs": base_qs,
             "elided_range": elided_page_range(page_obj),
+            "search_error": search_error,
         },
     )
