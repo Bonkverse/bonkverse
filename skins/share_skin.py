@@ -3,9 +3,8 @@ from django.shortcuts import render, get_object_or_404
 from .models import Skin
 
 # skins/skin_detail.py
-from django.shortcuts import render, get_object_or_404
-from .models import Skin
 from django.conf import settings
+
 
 def share_skin(request, skin_id, uuid):
     skin = get_object_or_404(Skin, id=skin_id, uuid=uuid)
@@ -21,7 +20,7 @@ def share_skin(request, skin_id, uuid):
     image_url = request.build_absolute_uri(png_path)
 
     # Nice description (fallbacks if none)
-    desc = (skin.description or f"{skin.name} by {skin.creator} on Bonkverse.")
+    desc = skin.description or f"{skin.name} by {skin.creator} on Bonkverse."
     desc = desc.strip()[:200]  # keep it short for cards
 
     og = {

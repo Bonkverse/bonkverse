@@ -5,6 +5,7 @@ from skins.models import Skin
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
+
 class Command(BaseCommand):
     help = "Imports skins from a CSV file into the database."
 
@@ -23,7 +24,9 @@ class Command(BaseCommand):
                 creator = row.get("Creator (if known)", "").strip()
 
                 # Check if skin exists
-                skin, created = Skin.objects.get_or_create(link=link, defaults={"name": name, "creator": creator})
+                skin, created = Skin.objects.get_or_create(
+                    link=link, defaults={"name": name, "creator": creator}
+                )
 
                 # Update creator if it's missing or an empty string
                 if not skin.creator or skin.creator.strip() == "" and creator:

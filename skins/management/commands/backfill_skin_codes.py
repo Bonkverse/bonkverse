@@ -11,6 +11,7 @@ IMG_RE = re.compile(
     re.IGNORECASE,
 )
 
+
 def extract_skin_code(link_or_img_url: str) -> str | None:
     """
     Extract the skinCode query parameter from a Bonkleagues shared image URL.
@@ -55,7 +56,9 @@ class Command(BaseCommand):
                     skin.save(update_fields=["skin_code"])
                     self.stdout.write(self.style.SUCCESS(f"Updated skin {skin.id}"))
                 else:
-                    self.stdout.write(self.style.WARNING(f"Could not extract skin_code for {skin.link}"))
+                    self.stdout.write(
+                        self.style.WARNING(f"Could not extract skin_code for {skin.link}")
+                    )
 
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f"Error processing {skin.link}: {e}"))

@@ -4,6 +4,7 @@ from .models import UserEvent
 
 logger = logging.getLogger(__name__)
 
+
 def log_event(user, event_type, skin=None, **metadata):
     try:
         UserEvent.objects.create(

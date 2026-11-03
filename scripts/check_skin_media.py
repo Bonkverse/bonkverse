@@ -8,11 +8,9 @@ INPUT_JSON = "skin_ids.json"
 
 OUT_EXISTING = "existing_ids.json"
 OUT_MISSING = "missing_ids.json"
-OUT_REPORT  = "media_audit.json"
+OUT_REPORT = "media_audit.json"
 
-HEADERS = {
-    "User-Agent": "Bonkverse-Media-Audit/1.0"
-}
+HEADERS = {"User-Agent": "Bonkverse-Media-Audit/1.0"}
 
 REQUEST_DELAY = 0.05  # 20 req/sec, safe
 
@@ -36,10 +34,7 @@ def main():
     for i, skin_id in enumerate(ids, start=1):
         ok = image_exists(skin_id)
 
-        report[skin_id] = {
-            "exists": ok,
-            "url": f"{MEDIA_BASE}/{skin_id}.png"
-        }
+        report[skin_id] = {"exists": ok, "url": f"{MEDIA_BASE}/{skin_id}.png"}
 
         if ok:
             existing.append(skin_id)

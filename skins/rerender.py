@@ -110,11 +110,7 @@ from django.contrib.auth.decorators import login_required
 from skins.events import log_event
 from skins.models import Skin, SkinImage
 
-SKIN_EDITOR_URL = getattr(
-    settings,
-    "BONKVERSE_EDITOR_URL",
-    "https://editor.bonkverse.io"
-)
+SKIN_EDITOR_URL = getattr(settings, "BONKVERSE_EDITOR_URL", "https://editor.bonkverse.io")
 
 
 def staff_required(view_func):
@@ -123,12 +119,13 @@ def staff_required(view_func):
         if not getattr(request.user, "is_staff", False):
             return JsonResponse({"error": "Forbidden"}, status=403)
         return view_func(request, *args, **kwargs)
+
     return wrapper
 
 
 def purge_cloudflare_cache(paths: list):
     """Purge specific file paths from Cloudflare's edge cache."""
-    zone_id   = getattr(settings, "CLOUDFLARE_ZONE_ID", "")
+    zone_id = getattr(settings, "CLOUDFLARE_ZONE_ID", "")
     api_token = getattr(settings, "CLOUDFLARE_CACHE_API_TOKEN", "")
 
     if not zone_id or not api_token:
@@ -179,25 +176,28 @@ def rerender_skin(request, skin_id):
             editor_error = fetch_res.json()
         except Exception:
             editor_error = fetch_res.text
-        return JsonResponse({
-            "error": f"Render service returned {fetch_res.status_code}",
-            "detail": editor_error,
-        }, status=502)
+        return JsonResponse(
+            {
+                "error": f"Render service returned {fetch_res.status_code}",
+                "detail": editor_error,
+            },
+            status=502,
+        )
 
     data = fetch_res.json()
 
     if not data.get("ok"):
         return JsonResponse({"error": data.get("error", "render_failed")}, status=502)
 
-    svg_content  = data.get("svg")
-    png_base64   = data.get("pngBase64")
+    svg_content = data.get("svg")
+    png_base64 = data.get("pngBase64")
     thumb_base64 = data.get("thumbnailBase64")
 
     if not svg_content or not png_base64:
         return JsonResponse({"error": "Render bundle missing SVG/PNG"}, status=502)
 
     try:
-        png_content   = base64.b64decode(png_base64)
+        png_content = base64.b64decode(png_base64)
         thumb_content = base64.b64decode(thumb_base64) if thumb_base64 else png_content
     except Exception as e:
         return JsonResponse({"error": f"Decode error: {e}"}, status=500)
@@ -206,8 +206,8 @@ def rerender_skin(request, skin_id):
     skin_dir = os.path.join(settings.MEDIA_ROOT, "skins")
     os.makedirs(skin_dir, exist_ok=True)
 
-    svg_rel   = f"skins/{skin.id}.svg"
-    png_rel   = f"skins/{skin.id}.png"
+    svg_rel = f"skins/{skin.id}.svg"
+    png_rel = f"skins/{skin.id}.png"
     thumb_rel = f"skins/{skin.id}_thumb.png"
 
     try:
@@ -224,22 +224,23 @@ def rerender_skin(request, skin_id):
     skin.save(update_fields=["image_url"])
 
     for kind, rel_path in [("svg", svg_rel), ("png", png_rel), ("thumbnail", thumb_rel)]:
-        SkinImage.objects.update_or_create(
-            skin=skin, kind=kind,
-            defaults={"path": rel_path}
-        )
+        SkinImage.objects.update_or_create(skin=skin, kind=kind, defaults={"path": rel_path})
 
     # Purge Cloudflare's cached copies so the new files are served immediately
-    purge_cloudflare_cache([
-        f"/media/{svg_rel}",
-        f"/media/{png_rel}",
-        f"/media/{thumb_rel}",
-    ])
+    purge_cloudflare_cache(
+        [
+            f"/media/{svg_rel}",
+            f"/media/{png_rel}",
+            f"/media/{thumb_rel}",
+        ]
+    )
 
     log_event(request.user, "skin_rerendered", skin=skin)
 
-    return JsonResponse({
-        "ok": True,
-        "image_url": skin.image_url,
-        "skin_id": skin.id,
-    })
+    return JsonResponse(
+        {
+            "ok": True,
+            "image_url": skin.image_url,
+            "skin_id": skin.id,
+        }
+    )

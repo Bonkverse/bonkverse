@@ -11,7 +11,9 @@ __pycache__/
 venv/
 .venv/
 .env/
-.env
+# Any env file (.env, .env.local, '.env 2' from iCloud copies), except the template
+.env*
+!.env.example
 
 # Folders
 debug_dumps/
@@ -35,3 +37,22 @@ label_vocab.csv
 # Local backups / dumps
 backups/
 *.dump
+
+# Build output: Dockerfile runs collectstatic at build time
+staticfiles/
+
+# Data exports / one-off backfill inputs (keep locally, never commit)
+*.csv
+
+# Template backups
+*html.txt
+
+# Test / tooling output
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# macOS / iCloud duplicate copies (e.g. 'settings 2.py')
+* 2.*
+* 2

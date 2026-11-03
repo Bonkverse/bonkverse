@@ -4,7 +4,6 @@ import requests
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_exempt
 
 
 def map_decode_page(request):
@@ -40,6 +39,8 @@ def api_map_decode(request):
     try:
         data = r.json()
     except ValueError:
-        return JsonResponse({"error": "Decoder returned non-JSON", "raw": r.text[:2000]}, status=502)
+        return JsonResponse(
+            {"error": "Decoder returned non-JSON", "raw": r.text[:2000]}, status=502
+        )
 
     return JsonResponse(data, status=r.status_code)

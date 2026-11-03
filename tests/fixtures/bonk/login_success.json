@@ -1,0 +1,9 @@
+{
+  "r": "success",
+  "username": "TestPlayer",
+  "id": 1234567,
+  "token": "SCRUBBED-TEST-TOKEN-abc123",
+  "xp": 4200,
+  "activeAvatarNumber": 2,
+  "legacyFriends": ""
+}

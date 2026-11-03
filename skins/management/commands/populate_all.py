@@ -4,7 +4,6 @@ from django.core.management import call_command
 
 class Command(BaseCommand):
     help = "Populate all local dev data"
-    
 
     def handle(self, *args, **kwargs):
         self.stdout.write("Installing Postgres extensions...")

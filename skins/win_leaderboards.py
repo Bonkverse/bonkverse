@@ -1,12 +1,12 @@
 # skins/win_leaderboards.py
 from django.shortcuts import render
 from django.db.models import Count
-from django.utils.timezone import now, timedelta
 from .models import PlayerWin
 
 from django.utils import timezone
 from datetime import timedelta
 from django_ratelimit.decorators import ratelimit
+
 
 @ratelimit(key="ip", rate="20/m", block=True)
 def _get_queryset(period):
@@ -36,11 +36,7 @@ def _get_queryset(period):
             end = start.replace(month=start.month + 1)
         qs = qs.filter(created_at__gte=start, created_at__lt=end)
 
-    return (
-        qs.values("username")
-          .annotate(total=Count("id"))
-          .order_by("-total")[:50]
-    )
+    return qs.values("username").annotate(total=Count("id")).order_by("-total")[:50]
 
 
 @ratelimit(key="ip", rate="20/m", block=True)
@@ -52,8 +48,12 @@ def wins_hub(request, period="today"):
         "month": "Monthly Wins Leaderboard",
         "all": "All-Time Wins Leaderboard",
     }
-    return render(request, "skins/wins_hub.html", {
-        "leaderboard": leaderboard,
-        "period": period,
-        "title": title_map.get(period, "Wins Leaderboard"),
-    })
+    return render(
+        request,
+        "skins/wins_hub.html",
+        {
+            "leaderboard": leaderboard,
+            "period": period,
+            "title": title_map.get(period, "Wins Leaderboard"),
+        },
+    )

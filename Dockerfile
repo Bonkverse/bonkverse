@@ -1,4 +1,5 @@
-FROM python:3.10-slim
+# Keep in step with PYTHON_VERSION in .github/workflows/ci.yml.
+FROM python:3.13-slim
 
 RUN apt-get update && apt-get install -y \
     libcairo2 \

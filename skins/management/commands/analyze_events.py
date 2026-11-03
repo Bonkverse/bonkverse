@@ -5,42 +5,59 @@ from django.utils import timezone
 
 
 QUERIES = [
-    ("Event volume by type", """
+    (
+        "Event volume by type",
+        """
         SELECT event_type, COUNT(*) AS total
         FROM skins_userevent
         GROUP BY event_type
         ORDER BY total DESC;
-    """),
-    ("Daily activity, last 30 days", """
+    """,
+    ),
+    (
+        "Daily activity, last 30 days",
+        """
         SELECT date_trunc('day', created_at) AS day, event_type, COUNT(*) AS total
         FROM skins_userevent
         WHERE created_at > NOW() - INTERVAL '30 days'
         GROUP BY day, event_type
         ORDER BY day DESC, total DESC;
-    """),
-    ("Most active users", """
+    """,
+    ),
+    (
+        "Most active users",
+        """
         SELECT e.user_id, u.username, COUNT(*) AS total
         FROM skins_userevent e
         JOIN skins_bonkuser u ON u.id = e.user_id
         GROUP BY e.user_id, u.username
         ORDER BY total DESC
         LIMIT 20;
-    """),
-    ("Anonymous vs authenticated", """
+    """,
+    ),
+    (
+        "Anonymous vs authenticated",
+        """
         SELECT CASE WHEN user_id IS NULL THEN 'anonymous' ELSE 'authenticated' END AS actor,
                COUNT(*) AS total
         FROM skins_userevent
         GROUP BY actor;
-    """),
-    ("Top skins by engagement", """
+    """,
+    ),
+    (
+        "Top skins by engagement",
+        """
         SELECT skin_id, event_type, COUNT(*) AS total
         FROM skins_userevent
         WHERE skin_id IS NOT NULL
         GROUP BY skin_id, event_type
         ORDER BY total DESC
         LIMIT 30;
-    """),
-    ("New vs returning users", """
+    """,
+    ),
+    (
+        "New vs returning users",
+        """
         SELECT e.user_id, u.username, MIN(e.created_at) AS first_event, MAX(e.created_at) AS last_event,
                COUNT(*) AS total_events
         FROM skins_userevent e
@@ -48,29 +65,41 @@ QUERIES = [
         GROUP BY e.user_id, u.username
         ORDER BY total_events DESC
         LIMIT 20;
-    """),
-    ("User 229 event breakdown", """
+    """,
+    ),
+    (
+        "User 229 event breakdown",
+        """
         SELECT event_type, COUNT(*) AS total
         FROM skins_userevent
         WHERE user_id = 229
         GROUP BY event_type
         ORDER BY total DESC;
-    """),
-    ("Burst users 3235 and 3407 timeline", """
+    """,
+    ),
+    (
+        "Burst users 3235 and 3407 timeline",
+        """
         SELECT user_id, event_type, created_at
         FROM skins_userevent
         WHERE user_id IN (3235, 3407)
         ORDER BY user_id, created_at;
-    """),
-    ("Aug 20 upload spike source", """
+    """,
+    ),
+    (
+        "Aug 20 upload spike source",
+        """
         SELECT user_id, COUNT(*) AS total
         FROM skins_userevent
         WHERE event_type = 'skin_uploaded'
           AND created_at::date = '2026-08-20'
         GROUP BY user_id
         ORDER BY total DESC;
-    """),
-    ("Retention proxy: multi-week vs single-burst users", """
+    """,
+    ),
+    (
+        "Retention proxy: multi-week vs single-burst users",
+        """
         SELECT pattern, COUNT(*) AS user_count
         FROM (
           SELECT user_id,
@@ -81,13 +110,19 @@ QUERIES = [
           GROUP BY user_id
         ) sub
         GROUP BY pattern;
-    """),
-    ("Top worn skin details (3273)", """
+    """,
+    ),
+    (
+        "Top worn skin details (3273)",
+        """
         SELECT id, name, creator, created_at
         FROM skins_skin
         WHERE id = 3273;
-    """),
-    ("First real action for single-burst users", """
+    """,
+    ),
+    (
+        "First real action for single-burst users",
+        """
         WITH burst_users AS (
           SELECT user_id
           FROM skins_userevent
@@ -106,8 +141,11 @@ QUERIES = [
         FROM first_action
         GROUP BY event_type
         ORDER BY total DESC;
-    """),
-    ("Single-burst users who never got past login/sync", """
+    """,
+    ),
+    (
+        "Single-burst users who never got past login/sync",
+        """
         WITH burst_users AS (
           SELECT user_id
           FROM skins_userevent
@@ -122,8 +160,11 @@ QUERIES = [
           WHERE e.user_id = bu.user_id
             AND e.event_type NOT IN ('user_logged_in', 'friends_synced', 'flash_friends_synced')
         );
-    """),
-    ("Distinct event types tried per single-burst user", """
+    """,
+    ),
+    (
+        "Distinct event types tried per single-burst user",
+        """
         WITH burst_users AS (
           SELECT user_id
           FROM skins_userevent
@@ -140,8 +181,11 @@ QUERIES = [
         ) sub
         GROUP BY distinct_event_types
         ORDER BY distinct_event_types;
-    """),
-    ("Session count per single-burst user (login events as proxy)", """
+    """,
+    ),
+    (
+        "Session count per single-burst user (login events as proxy)",
+        """
         WITH burst_users AS (
           SELECT user_id
           FROM skins_userevent
@@ -159,8 +203,11 @@ QUERIES = [
         ) sub
         GROUP BY session_count
         ORDER BY session_count;
-    """),
-    ("Heavy single-burst users (15+ logins), with usernames", """
+    """,
+    ),
+    (
+        "Heavy single-burst users (15+ logins), with usernames",
+        """
         SELECT
           e.user_id,
           u.username,
@@ -172,7 +219,8 @@ QUERIES = [
         GROUP BY e.user_id, u.username, u.date_joined
         HAVING COUNT(*) >= 15
         ORDER BY logins DESC;
-    """),
+    """,
+    ),
 ]
 
 
@@ -188,7 +236,10 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        outfile = options["outfile"] or f"userevent_analysis_{timezone.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        outfile = (
+            options["outfile"]
+            or f"userevent_analysis_{timezone.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        )
 
         with open(outfile, "w") as f, connection.cursor() as cursor:
             for label, sql in QUERIES:

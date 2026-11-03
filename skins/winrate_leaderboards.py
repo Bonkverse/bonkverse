@@ -1,11 +1,11 @@
 # skins/winrate_leaderboards.py
 from django.shortcuts import render
-from django.db.models import Count, F, Q, FloatField, IntegerField
-from django.db.models.functions import Cast, Coalesce
+from django.db.models import Count
 from django.utils import timezone
 from datetime import timedelta
 from .models import PlayerWin, PlayerLoss
 from django_ratelimit.decorators import ratelimit
+
 
 @ratelimit(key="ip", rate="20/m", block=True)
 def _get_queryset(period):
@@ -42,26 +42,29 @@ def _get_queryset(period):
     loss_counts = loss_qs.values("username").annotate(losses=Count("id"))
 
     # Merge usernames from both win + loss sets
-    usernames = set([w["username"] for w in win_counts] + [l["username"] for l in loss_counts])
+    usernames = set([w["username"] for w in win_counts] + [row["username"] for row in loss_counts])
 
     leaderboard = []
     for username in usernames:
         wins = next((w["wins"] for w in win_counts if w["username"] == username), 0)
-        losses = next((l["losses"] for l in loss_counts if l["username"] == username), 0)
+        losses = next((row["losses"] for row in loss_counts if row["username"] == username), 0)
         total = wins + losses
         winrate = (wins / total) * 100 if total > 0 else 0
-        leaderboard.append({
-            "username": username,
-            "wins": wins,
-            "losses": losses,
-            "total": total,
-            "winrate": round(winrate, 2),
-        })
+        leaderboard.append(
+            {
+                "username": username,
+                "wins": wins,
+                "losses": losses,
+                "total": total,
+                "winrate": round(winrate, 2),
+            }
+        )
 
     # Sort by winrate, then by total games played
     leaderboard = sorted(leaderboard, key=lambda x: (x["winrate"], x["total"]), reverse=True)
 
     return leaderboard[:50]
+
 
 @ratelimit(key="ip", rate="20/m", block=True)
 def winrate_hub(request, period="today"):
@@ -72,8 +75,12 @@ def winrate_hub(request, period="today"):
         "month": "Monthly Winrate Leaderboard",
         "all": "All-Time Winrate Leaderboard",
     }
-    return render(request, "skins/winrate_hub.html", {
-        "leaderboard": leaderboard,
-        "period": period,
-        "title": title_map.get(period, "Winrate Leaderboard"),
-    })
+    return render(
+        request,
+        "skins/winrate_hub.html",
+        {
+            "leaderboard": leaderboard,
+            "period": period,
+            "title": title_map.get(period, "Winrate Leaderboard"),
+        },
+    )

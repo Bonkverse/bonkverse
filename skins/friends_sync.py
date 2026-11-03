@@ -100,7 +100,8 @@ def sync_friends_for_player(
         if not isinstance(rname, str) or rname == "":
             skipped_names += 1
             logger.warning(
-                "[bonkverse] friend request id=%s had a missing/blank name in friends.php response", rid
+                "[bonkverse] friend request id=%s had a missing/blank name in friends.php response",
+                rid,
             )
             continue
         norm_requests.append({"id": rid, "name": rname})
@@ -135,7 +136,9 @@ def sync_friends_for_player(
             logger.warning(
                 "[bonkverse] BonkPlayer username mismatch for bonk_id=%s (current player): "
                 "stored=%r, live=%r — correcting stored value",
-                current_bonk_id, current.username, current_username,
+                current_bonk_id,
+                current.username,
+                current_username,
             )
             current.username = current_username
             current.save(update_fields=["username", "updated_at"])
@@ -182,22 +185,25 @@ def sync_friends_for_player(
         if stored_name != live_name:
             logger.warning(
                 "[bonkverse] correcting stale username for bonk_id=%s: stored=%r live=%r",
-                bonk_id, stored_name, live_name,
+                bonk_id,
+                stored_name,
+                live_name,
             )
             to_update.append(BonkPlayer(pk=pk, username=live_name))
-            corrections.append({
-                "bonk_id": bonk_id,
-                "old_username": stored_name,
-                "new_username": live_name,
-            })
+            corrections.append(
+                {
+                    "bonk_id": bonk_id,
+                    "old_username": stored_name,
+                    "new_username": live_name,
+                }
+            )
 
     if to_update:
         BonkPlayer.objects.bulk_update(to_update, ["username"], batch_size=200)
 
     # --------- Fetch PKs for everyone (existing + just-created) ----------
     friend_pks_by_bonkid: dict[int, int] = dict(
-        BonkPlayer.objects.filter(bonk_id__in=combined_by_id.keys())
-        .values_list("bonk_id", "pk")
+        BonkPlayer.objects.filter(bonk_id__in=combined_by_id.keys()).values_list("bonk_id", "pk")
     )
 
     # --------- Batch upsert: which friendship edges already exist? ----------
@@ -208,9 +214,9 @@ def sync_friends_for_player(
     ]
 
     existing_edge_pairs: Set[Tuple[int, int]] = set(
-        Friendship.objects.filter(
-            Q(player_low=current) | Q(player_high=current)
-        ).values_list("player_low_id", "player_high_id")
+        Friendship.objects.filter(Q(player_low=current) | Q(player_high=current)).values_list(
+            "player_low_id", "player_high_id"
+        )
     )
 
     new_edges = [
@@ -264,7 +270,9 @@ def sync_friends_for_player(
             "[bonkverse] suspicious friend-count drop for bonk_id=%s: "
             "had %s stored friendships, this sync only reported %s — "
             "skipping edge removal for this sync",
-            current.bonk_id, previous_count, reported_count,
+            current.bonk_id,
+            previous_count,
+            reported_count,
         )
     elif to_remove:
         to_remove_pks = list(
@@ -299,6 +307,6 @@ def sync_friends_for_player(
         "edges_touched": touched_edges,
         "skipped_names": skipped_names,
         "suspicious_drop": suspicious_drop,
-        "corrected_usernames": corrections,   # e.g. [{"bonk_id": 1834575, "old_username": "Motionless in white", "new_username": " Motionless in white"}]
+        "corrected_usernames": corrections,  # e.g. [{"bonk_id": 1834575, "old_username": "Motionless in white", "new_username": " Motionless in white"}]
         "corrected_count": len(corrections),
     }

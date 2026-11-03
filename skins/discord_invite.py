@@ -3,12 +3,14 @@ import requests
 
 DISCORD_INVITE_API = "https://discord.com/api/v9/invites/{code}"
 
+
 def fetch_invite(code: str) -> dict:
     url = DISCORD_INVITE_API.format(code=code)
     params = {"with_counts": "true", "with_expiration": "true"}
     r = requests.get(url, params=params, timeout=10)
     r.raise_for_status()
     return r.json()
+
 
 def parse_invite_payload(payload: dict) -> dict:
     guild = payload.get("guild") or {}
