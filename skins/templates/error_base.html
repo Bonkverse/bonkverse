@@ -1,0 +1,24 @@
+{% extends "skins/base.html" %}
+{% load static %}
+{% comment %}
+  Shared layout for error pages. Children fill: code, heading, message, actions.
+{% endcomment %}
+
+{% block title %}{% block heading_title %}{% endblock %} · Bonkverse{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'css/errors.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="error-page">
+  <p class="error-page__code">{% block code %}{% endblock %}</p>
+  <h1 class="error-page__title">{% block heading %}{% endblock %}</h1>
+  <p class="error-page__message">{% block message %}{% endblock %}</p>
+  <div class="error-page__actions">
+    {% block actions %}
+      <a class="btn btn-primary" href="/">Back to Home</a>
+    {% endblock %}
+  </div>
+</section>
+{% endblock %}

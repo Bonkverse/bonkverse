@@ -1,0 +1,41 @@
+/* Error pages (404, 429): templates/error_base.html */
+
+.error-page {
+    text-align: center;
+    padding: 60px 20px;
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+.error-page__code {
+    font-size: 0.95rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #8fa3b5;
+    margin: 0 0 8px;
+}
+
+.error-page__title {
+    font-size: 2.6rem;
+    color: #ff6b6b;
+    margin: 0 0 16px;
+}
+
+.error-page__message {
+    font-size: 1.15rem;
+    line-height: 1.6;
+    color: #ccc;
+    margin: 0 auto 28px;
+}
+
+.error-page__actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.error-page__actions .btn {
+    text-decoration: none;
+    display: inline-block;
+}
