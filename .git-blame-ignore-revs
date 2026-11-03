@@ -1,5 +1,5 @@
 # Formatting-only commits; GitHub and 'git blame --ignore-revs-file' skip these.
 # RFC-0001 Phase 0: ruff format
-315816a3b69323e482be3a970bd9b9eff24d773b
+3c9d75c45cb54f9d84419be50998fdc1a7e91a2d
 # pre-commit whitespace / end-of-file fixers
-1b4828e3ad08256098898378ca473678bb61e010
+b3f04fd3943067a00b4b6bf285ed07532540e79e
