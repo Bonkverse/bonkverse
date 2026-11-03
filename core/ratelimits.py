@@ -64,6 +64,9 @@ def limit(tier: str, *, method=ALL):
                 return too_many_requests(request, retry_after=usage["time_left"])
             return view(request, *args, **kwargs)
 
+        # Read by `manage.py audit_rate_limits` to list every route's limit.
+        wrapped.rate_limit_tier = tier
+        wrapped.rate_limit_method = method
         return wrapped
 
     return decorator
@@ -80,12 +83,12 @@ def _wants_json(request) -> bool:
 
 
 def _describe_wait(seconds: int | None) -> str:
+    """Human wait time: "42 seconds", "about 3 minutes", or "a minute" when unknown."""
     if not seconds or seconds <= 0:
-        return "in a minute"
+        return "a minute"
     if seconds < 90:
-        return f"in {seconds} second{'s' if seconds != 1 else ''}"
-    minutes = round(seconds / 60)
-    return f"in about {minutes} minutes"
+        return f"{seconds} second{'s' if seconds != 1 else ''}"
+    return f"about {round(seconds / 60)} minutes"
 
 
 def too_many_requests(request, *, retry_after: int | None = None):
@@ -110,7 +113,13 @@ def too_many_requests(request, *, retry_after: int | None = None):
         response = render(
             request,
             "429.html",
-            {"wait": _describe_wait(retry_after)},
+            {
+                "wait": _describe_wait(retry_after),
+                "retry_after": retry_after,
+                # Reloading after a POST would make the browser resubmit the form
+                # (e.g. a login), so only page views reload themselves.
+                "auto_reload": request.method in ("GET", "HEAD"),
+            },
             status=429,
         )
 
