@@ -224,6 +224,9 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Turns Ratelimited from views still on the old @ratelimit decorator into
+    # the same 429 response as core.ratelimits.limit (see RATELIMIT_VIEW).
+    "django_ratelimit.middleware.RatelimitMiddleware",
 ]
 
 # =========================================================
@@ -338,6 +341,32 @@ else:
     }
 
 RATELIMIT_USE_CACHE = "default"
+
+# =========================================================
+# Rate limiting (core/client_ip.py, core/ratelimits.py)
+# =========================================================
+
+# Read the visitor IP from Railway's X-Real-IP / Cloudflare's CF-Connecting-IP.
+# Only safe behind Railway, which overwrites X-Real-IP; off locally.
+TRUST_PROXY_HEADERS = os.getenv("TRUST_PROXY_HEADERS", "true" if IS_PROD else "false") == "true"
+RATELIMIT_IP_META_KEY = "core.client_ip.client_ip"
+RATELIMIT_VIEW = "core.ratelimits.ratelimited_view"
+
+# Requests per visitor IP, per view. Override any tier with RATE_LIMIT_<TIER>,
+# e.g. RATE_LIMIT_SEARCH=120/m. Generous on purpose: schools and households
+# share one IP, and Cloudflare already absorbs floods before they reach us.
+RATE_LIMITS = {
+    tier: os.getenv(f"RATE_LIMIT_{tier.upper()}", default)
+    for tier, default in {
+        "browse": "120/m",  # page views: home, categories, leaderboards, profiles
+        "search": "60/m",  # full-text skin search and player search
+        "write": "30/m",  # edit / delete your own skins, logout
+        "vote": "500/h",  # upvotes, downvotes, favorites
+        "upload": "10/m",  # skin uploads (fetch + render)
+        "login": "15/h",  # bonk.io login attempts (POST only)
+        "submit": "7/h",  # Discord server submissions
+    }.items()
+}
 
 # =========================================================
 # Celery

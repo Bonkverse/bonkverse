@@ -107,6 +107,13 @@
       const resp = await fetch(`${searchUrl}?q=${encodeURIComponent(q)}&page=${page}&mode=${mode}`, {
         signal: lastFetchAbort.signal
       });
+      if (!resp.ok) {
+        const message = resp.status === 429
+          ? "You're searching too fast. Wait a moment and try again."
+          : "Search failed. Please try again.";
+        BVToast.show(message, { type: "error" });
+        return;
+      }
       const data = await resp.json();
       renderResults(data.results);
       BVPagination.render(paginationEl, {

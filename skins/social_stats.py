@@ -1,16 +1,16 @@
 # skins/social_stats.py
 
 import math
+from core.ratelimits import limit
 from django.shortcuts import render
 from django.db.models import Count
-from django_ratelimit.decorators import ratelimit
 from django.db import connection
 
 from .models import BonkPlayer, Friendship, FlashFriend
 from .dbid_lookup import estimate_registration_date, format_registration
 
 
-@ratelimit(key="ip", rate="20/m", block=True)
+@limit("browse")
 def social_stats(request):
 
     # ── Headline numbers ──────────────────────────────────────────

@@ -1,16 +1,16 @@
 from django.shortcuts import render
+from core.ratelimits import limit
 from django.db.models import Q, Count, F
 from django.core.paginator import Paginator
 from skins.models import Skin, SkinVote
 from django.utils import timezone
 from datetime import timedelta
-from django_ratelimit.decorators import ratelimit
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank, TrigramSimilarity
 from urllib.parse import urlencode
 from .pagination_utils import elided_page_range
 
 
-@ratelimit(key="ip", rate="10/m", block=True)
+@limit("search")
 def search_skins(request):
     query = request.GET.get("q", "").strip()
     mode = request.GET.get("mode", "relevance")

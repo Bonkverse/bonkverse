@@ -1,8 +1,10 @@
 # skins/apis/auth/who_am_i.py
 
 from django.http import JsonResponse
+from core.ratelimits import limit
 
 
+@limit("browse")
 def me(request):
     if not request.user.is_authenticated:
         return JsonResponse({"authenticated": False}, status=401)

@@ -1,12 +1,12 @@
 # views/search.py
 from django.db.models import Count, F
+from core.ratelimits import limit
 from django.shortcuts import render
-from django_ratelimit.decorators import ratelimit
 
 from skins.models import Skin
 
 
-@ratelimit(key="ip", rate="5/m", block=True)
+@limit("browse")
 def home(request):
     # ⚠️ Adjust these to match your model fields
     recent = Skin.objects.order_by("-created_at")[:24]

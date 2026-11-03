@@ -1,7 +1,7 @@
 # skins/api.py
 from django.shortcuts import render
+from core.ratelimits import limit
 from django.views.decorators.csrf import csrf_exempt
-from django_ratelimit.decorators import ratelimit
 
 
 def add_cors_headers(response):
@@ -12,7 +12,7 @@ def add_cors_headers(response):
 
 
 @csrf_exempt
-@ratelimit(key="ip", rate="5/m", block=True)
+@limit("browse")
 def index(request):
     message = "This is the Bonkverse.io API!"
     return render(request, "skins/apis/index.html", {"message": message})

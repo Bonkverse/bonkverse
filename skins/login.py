@@ -1,9 +1,9 @@
 # skins/login.py
 
 from django.shortcuts import render, redirect
+from core.ratelimits import limit
 from django.contrib.auth import login, logout
 from django.contrib import messages
-from django_ratelimit.decorators import ratelimit
 from django.core import signing
 from django.utils.http import url_has_allowed_host_and_scheme
 
@@ -106,7 +106,7 @@ def _sync_friends_bg(user, current_bonk_id: int | None, current_username: str, t
         logger.exception("background friends sync failed for %s", current_username)
 
 
-@ratelimit(key="ip", rate="15/h", method="POST", block=True)
+@limit("login", method="POST")
 def login_view(request):
     if request.method == "POST":
         form = LoginForm(request.POST)
@@ -254,7 +254,7 @@ def login_view(request):
     return render(request, "skins/login.html", {"form": form})
 
 
-@ratelimit(key="ip", rate="10/m", block=True)
+@limit("write")
 def logout_view(request):
     for k in (
         "bonk_token",

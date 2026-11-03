@@ -1,11 +1,13 @@
 # skins/views.py
 from django.shortcuts import render, get_object_or_404
+from core.ratelimits import limit
 from .models import Skin
 
 # skins/skin_detail.py
 from django.conf import settings
 
 
+@limit("browse")
 def share_skin(request, skin_id, uuid):
     skin = get_object_or_404(Skin, id=skin_id, uuid=uuid)
 

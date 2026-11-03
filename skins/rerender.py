@@ -97,7 +97,9 @@
 #         "skin_id": skin.id,
 #     })
 
+import functools
 import os
+from core.ratelimits import limit
 import base64
 import urllib.parse
 import requests
@@ -114,6 +116,7 @@ SKIN_EDITOR_URL = getattr(settings, "BONKVERSE_EDITOR_URL", "https://editor.bonk
 
 
 def staff_required(view_func):
+    @functools.wraps(view_func)
     @login_required(login_url="/login/")
     def wrapper(request, *args, **kwargs):
         if not getattr(request.user, "is_staff", False):
@@ -147,6 +150,7 @@ def purge_cloudflare_cache(paths: list):
 
 @staff_required
 @require_POST
+@limit("write")
 def rerender_skin(request, skin_id):
     try:
         skin = Skin.objects.get(id=skin_id)

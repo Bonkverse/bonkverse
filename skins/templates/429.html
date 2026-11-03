@@ -1,0 +1,31 @@
+{% extends "error_base.html" %}
+{% load static %}
+{% comment %}
+  Rendered by core.ratelimits.too_many_requests.
+  Context: wait ("42 seconds", server-side fallback), retry_after (seconds or None),
+  auto_reload (True for page views; never for form submissions).
+  static/js/ratelimit.js turns the wait into a live countdown and reloads when it ends.
+{% endcomment %}
+
+{% block heading_title %}Slow down{% endblock %}
+{% block code %}429 · Too many requests{% endblock %}
+{% block heading %}Slow down a little{% endblock %}
+{% block message %}
+  You're moving faster than this page allows.
+  <span id="rate-limit-countdown"
+        role="timer"
+        {% if retry_after %}data-seconds="{{ retry_after }}"{% endif %}
+        {% if auto_reload %}data-reload="true"{% endif %}>
+    {% if auto_reload %}Try again in {{ wait }}.{% else %}Wait {{ wait }}, then submit again.{% endif %}
+  </span>
+{% endblock %}
+{% block actions %}
+  {% if auto_reload %}
+    <a class="btn btn-primary" href="{{ request.get_full_path }}">Try again</a>
+  {% endif %}
+  <a class="btn btn-ghost" href="/">Back to Home</a>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="{% static 'js/ratelimit.js' %}" defer></script>
+{% endblock %}
