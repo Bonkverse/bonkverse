@@ -13,7 +13,7 @@ development are in the [README](../README.md); code conventions in
 | [operations/runbook.md](operations/runbook.md) | Something is wrong in production, or you're deploying / rotating a secret |
 | [operations/rate-limiting.md](operations/rate-limiting.md) | Adding a route, changing a limit, or someone hits a 429 / Cloudflare 1015 |
 | [search.md](search.md) | Changing search, sorting, or the skin indexes |
-| [bonk/](bonk/) | What bonk.io sends and accepts: accounts and usernames (more in Phase 2.2) |
+| [bonk/](bonk/) | What bonk.io sends and accepts: [the account API](bonk/api.md) (login, friends, avatar update) and [accounts and usernames](bonk/accounts.md) |
 | [incidents/](incidents/) | What went wrong before, and what changed because of it |
 | [adr/](adr/) | Why a hard-to-reverse decision was made |
 

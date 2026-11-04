@@ -445,7 +445,8 @@ async function tryWearCard(skinId, card) {
     openBonkLogin();
     return;
   }
-  BVToast.show('Failed to apply skin.', { type: 'error' });
+  const why = json?.error === 'network_error' ? " bonk.io isn't responding; try again in a minute." : '';
+  BVToast.show('Failed to apply skin.' + why, { type: 'error' });
 }
 
 async function doBonkLoginFromSearch(e) {
@@ -460,7 +461,7 @@ async function doBonkLoginFromSearch(e) {
   });
   const json = await r.json().catch(() => ({}));
   if (!r.ok || !json.ok) {
-    bonkLoginMsg.textContent = '❌ ' + (json.error || 'Login failed');
+    bonkLoginMsg.textContent = '❌ ' + (json.message || json.error || 'Login failed');
     bonkLoginMsg.className   = 'modal-feedback error';
     return;
   }

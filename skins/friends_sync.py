@@ -1,12 +1,22 @@
-# skins/friends_sync.py
+"""Storing a player's bonk.io friend list (friends.php) as Friendship edges.
 
-from typing import Dict, Any, Iterable, List, Tuple, Set
+Owns: upserting BonkPlayer rows for friends and requests, adding and pruning
+Friendship edges, and friend-count history.
+Does not own: fetching the list from bonk.io (integrations/bonk_api.py) or
+Flash-era friends (flash_friends_sync.py).
+"""
+
+import logging
+from collections.abc import Iterable
+from typing import Dict, List, Set, Tuple
+
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
-import logging
 
-from .models import BonkPlayer, Friendship, FriendCountHistory
+from integrations.bonk_api import BonkFriend
+
+from .models import BonkPlayer, FriendCountHistory, Friendship
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +41,8 @@ def sync_friends_for_player(
     *,
     current_bonk_id: int | None,
     current_username: str,
-    friends_json: Dict[str, Any],
+    friends: Iterable[BonkFriend],
+    requests: Iterable[BonkFriend] = (),
 ) -> Dict[str, int]:
     """
     Upsert the current player + (friends + incoming requests),
@@ -68,43 +79,32 @@ def sync_friends_for_player(
     now = timezone.now()
 
     # --------- Normalize confirmed friends ----------
-    friends_list: Iterable[Dict[str, Any]] = friends_json.get("friends") or []
+    # The client already dropped entries whose id isn't a number.
     raw_friend_ids: Set[int] = set()
     norm_friends = []
     skipped_names = 0
-    for f in friends_list:
-        try:
-            fid = int(f.get("id"))
-        except Exception:
-            continue
-        raw_friend_ids.add(fid)
-
-        fname = f.get("name")
-        if not isinstance(fname, str) or fname == "":
+    for f in friends:
+        raw_friend_ids.add(f.bonk_id)
+        if f.name is None:
             skipped_names += 1
             logger.warning(
-                "[bonkverse] friend id=%s had a missing/blank name in friends.php response", fid
+                "[bonkverse] friend id=%s had a missing/blank name in friends.php response",
+                f.bonk_id,
             )
             continue
-        norm_friends.append({"id": fid, "name": fname})
+        norm_friends.append({"id": f.bonk_id, "name": f.name})
 
     # --------- Normalize friend requests -------------
-    requests_list: Iterable[Dict[str, Any]] = friends_json.get("requests") or []
     norm_requests = []
-    for r in requests_list:
-        try:
-            rid = int(r.get("id"))
-        except Exception:
-            continue
-        rname = r.get("name")
-        if not isinstance(rname, str) or rname == "":
+    for r in requests:
+        if r.name is None:
             skipped_names += 1
             logger.warning(
                 "[bonkverse] friend request id=%s had a missing/blank name in friends.php response",
-                rid,
+                r.bonk_id,
             )
             continue
-        norm_requests.append({"id": rid, "name": rname})
+        norm_requests.append({"id": r.bonk_id, "name": r.name})
 
     # --------- Fast membership set, built ONCE ----------
     # Only ids with a usable name become "confirmed friend" edges this sync.
@@ -117,7 +117,10 @@ def sync_friends_for_player(
 
     # --------- Upsert current player (single record, unchanged) ----------
     if current_bonk_id is None:
-        current = BonkPlayer.objects.filter(username=current_username).first()
+        # bonk.io names are unique case-insensitively (docs/bonk/accounts.md).
+        current = (
+            BonkPlayer.objects.filter(username__iexact=current_username).order_by("pk").first()
+        )
         if not current:
             current = BonkPlayer.objects.create(
                 bonk_id=-1,

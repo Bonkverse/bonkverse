@@ -1,242 +1,193 @@
-# skins/login.py
+"""Signing in to Bonkverse with a bonk.io account, and signing out.
 
-from django.shortcuts import render, redirect
-from core.ratelimits import limit
-from django.contrib.auth import login, logout
-from django.contrib import messages
-from django.core import signing
-from django.utils.http import url_has_allowed_host_and_scheme
+Owns: the /login/ and /logout/ views, finding or creating the site account
+for a bonk.io name, linking it to its BonkPlayer, and starting friend syncs.
+Does not own: talking to bonk.io (integrations/bonk_api.py), the bonk.io
+session rules (core/bonk/session.py) or friend storage (friends_sync.py,
+flash_friends_sync.py).
+"""
 
-from core.bonk import BonkSession
-from skins.events import log_event
-
-from .models import BonkUser, BonkPlayer, BonkAccountLink
-from .forms import LoginForm
-from .friends_sync import sync_friends_for_player
-from .flash_friends_sync import sync_flash_friends_for_user
+import logging
+import threading
+import time
 
 from django.conf import settings
-import re
-import time
-import threading
-import logging
-import requests
-from requests.exceptions import RequestException
-from json import JSONDecodeError
+from django.contrib import messages
+from django.contrib.auth import login, logout
+from django.core import signing
+from django.shortcuts import redirect, render
+from django.utils.http import url_has_allowed_host_and_scheme
+
+from core.bonk import BonkSession, BonkUsername
+from core.ratelimits import limit
+from integrations.bonk_api import BonkError, BonkLoginResult, get_client
+from skins.events import log_event
+
+from .flash_friends_sync import sync_flash_friends_for_user
+from .forms import LoginForm
+from .friends_sync import sync_friends_for_player
+from .models import BonkAccountLink, BonkPlayer, BonkUser
 
 logger = logging.getLogger(__name__)
 
-BONK_LOGIN_URL = "https://bonk2.io/scripts/login_legacy.php"
-BONK_FRIENDS_URL = "https://bonk2.io/scripts/friends.php"
-
-# Matches "token":"<anything up to the next quote>" so we can redact it
-# from logged response bodies without needing a full JSON parse (the
-# body may be truncated to 500 chars before this runs).
-_TOKEN_LOG_PATTERN = re.compile(r'("token"\s*:\s*")[^"]*(")')
-
-
-def _redact_token(text: str) -> str:
-    """Redact a bonk.io session token from a snippet before it hits the logs."""
-    return _TOKEN_LOG_PATTERN.sub(r"\1***REDACTED***\2", text)
-
-
-REQ_TIMEOUT = (settings.BONK_CONNECT_TIMEOUT, settings.BONK_READ_TIMEOUT)
-
-BROWSER_HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/119.0.0.0 Safari/537.36"
-    ),
-    "Origin": "https://bonk.io",
-    "Referer": "https://bonk.io/",
-    "Accept": "application/json, text/plain, */*",
-    "Accept-Language": "en-US,en;q=0.9",
+# What a player sees when bonk.io turns a login down, by BonkError code.
+# Also used by the in-page bonk.io login on wear (wear_skin.py).
+LOGIN_FAILURE_MESSAGES = {
+    BonkError.WRONG_PASSWORD: "Wrong password.",
+    BonkError.UNKNOWN_USERNAME: "No bonk.io account has that username.",
+    BonkError.REJECTED: "bonk.io didn't accept that login.",
+    BonkError.UNAVAILABLE: "Network error talking to bonk.io. Try again in a minute.",
 }
 
 
-def _fetch_friends(token: str) -> dict:
-    """Fetch *regular* friends (not flash) from friends.php"""
-    r = requests.post(
-        BONK_FRIENDS_URL,
-        data={"token": token, "task": "getfriends"},
-        headers=BROWSER_HEADERS,
-        timeout=REQ_TIMEOUT,
+def login_failure_message(error: str | None) -> str:
+    """The user-facing sentence for a failed bonk.io login."""
+    return LOGIN_FAILURE_MESSAGES.get(error, LOGIN_FAILURE_MESSAGES[BonkError.REJECTED])
+
+
+def site_account_for(username: BonkUsername) -> BonkUser:
+    """The site account for a bonk.io name, created on first login.
+
+    Matched case-insensitively because bonk.io names are unique that way
+    (docs/bonk/accounts.md), so "the saucy tulip" and "The Saucy Tulip" are
+    one account. An exact-spelling match wins if older data holds more than
+    one. An existing account keeps its stored spelling: skins and other rows
+    refer to it by that name.
+    """
+    matches = list(BonkUser.objects.filter(username__iexact=username.value).order_by("pk"))
+    if len(matches) > 1:
+        # No names in the log line; the count and ids are enough to find them.
+        logger.warning(
+            "site accounts %s match one bonk.io name case-insensitively",
+            [user.pk for user in matches],
+        )
+    for user in matches:
+        if user.username == username.value:
+            return user
+    if matches:
+        return matches[0]
+    return BonkUser.objects.create_user(username=username.value)
+
+
+def _link_bonk_player(user: BonkUser, result: BonkLoginResult) -> None:
+    """Create or refresh the BonkPlayer and its link to the site account."""
+    player, created = BonkPlayer.objects.get_or_create(
+        bonk_id=result.bonk_id,
+        defaults={"username": result.username.value},
     )
-    r.raise_for_status()
-    try:
-        return r.json()
-    except JSONDecodeError:
-        return {"r": "error", "error": "Non-JSON response from friends.php"}
+    if not created and player.username != result.username.value:
+        # bonk_id is the real identity; a different name here means our stored
+        # copy is stale (e.g. stripped by an old bug), so correct it.
+        logger.warning(
+            "BonkPlayer username for bonk_id=%s differed from login response; corrected",
+            result.bonk_id,
+        )
+        player.username = result.username.value
+        player.save(update_fields=["username", "updated_at"])
+    BonkAccountLink.objects.update_or_create(
+        user=user,
+        bonk_player=player,
+        defaults={
+            "token_encrypted": signing.dumps({"t": result.token}, salt="bonk_token"),
+            "scopes": {"friends": True},
+            "active": True,
+        },
+    )
 
 
 def _sync_friends_bg(user, current_bonk_id: int | None, current_username: str, token: str) -> None:
-    """
-    Background sync for regular friends only (from friends.php).
-    Flash friends are synced immediately during login.
-    """
+    """Background sync of regular friends (friends.php). Flash friends sync at login."""
     t0 = time.monotonic()
     try:
-        payload = _fetch_friends(token)
-
-        if payload.get("r") != "success":
-            logger.warning("friends sync skipped: %s", payload.get("error") or payload)
+        result = get_client().get_friends(token)
+        if not result.ok:
+            logger.warning(
+                "friends sync skipped: %s (bonk_error=%s)", result.error, result.bonk_error
+            )
             return
 
         stats = sync_friends_for_player(
             current_bonk_id=current_bonk_id,
             current_username=current_username,
-            friends_json=payload,
+            friends=result.friends,
+            requests=result.requests,
         )
-
         logger.info(
-            "regular friends synced for %s: %s (%.2fs)",
-            current_username,
+            "regular friends synced for bonk_id=%s: %s (%.2fs)",
+            current_bonk_id,
             stats,
             time.monotonic() - t0,
         )
         log_event(user, "friends_synced", **stats)
-
     except Exception:
-        logger.exception("background friends sync failed for %s", current_username)
+        logger.exception("background friends sync failed for bonk_id=%s", current_bonk_id)
+
+
+def _sign_in(request, result: BonkLoginResult) -> None:
+    """Everything a successful bonk.io login does on our side."""
+    bonk = BonkSession(request.session)
+    bonk.store_token(result.token)
+    bonk.store_identity(result.username.value, result.bonk_id)
+    # Remember the active slot so wear works immediately without the modal.
+    bonk.store_active_slot(result.active_slot)
+
+    user = site_account_for(result.username)
+    login(request, user)
+    log_event(user, "user_logged_in")
+
+    if result.bonk_id is not None:
+        try:
+            _link_bonk_player(user, result)
+        except Exception:
+            logger.exception("Could not persist account link")
+
+    try:
+        flash_stats = sync_flash_friends_for_user(
+            user=user, friends_json={"legacyFriends": result.legacy_friends}
+        )
+        log_event(user, "flash_friends_synced", **flash_stats)
+    except Exception:
+        logger.exception("flash friends sync at login failed")
+
+    # The profile page shows a toast that polls /api/friends-sync-status/
+    # until this background sync finishes.
+    if settings.SYNC_FRIENDS_ON_LOGIN:
+        threading.Thread(
+            target=_sync_friends_bg,
+            args=(user, result.bonk_id, result.username.value, result.token),
+            daemon=True,
+        ).start()
+        request.session["show_friend_sync_toast"] = True
 
 
 @limit("login", method="POST")
 def login_view(request):
-    if request.method == "POST":
-        form = LoginForm(request.POST)
-        if form.is_valid():
-            typed_username = form.cleaned_data["username"]
-            password = form.cleaned_data["password"]
+    if request.method != "POST":
+        return render(request, "skins/login.html", {"form": LoginForm()})
 
-            s = requests.Session()
-            try:
-                resp = s.post(
-                    BONK_LOGIN_URL,
-                    data={"username": typed_username, "password": password},
-                    headers=BROWSER_HEADERS,
-                    timeout=REQ_TIMEOUT,
-                )
-            except RequestException as e:
-                messages.error(request, f"Network error talking to Bonk.io: {e}")
-                return render(request, "skins/login.html", {"form": form})
+    form = LoginForm(request.POST)
+    if not form.is_valid():
+        return render(request, "skins/login.html", {"form": form})
 
-            data = None
-            try:
-                data = resp.json()
-            except JSONDecodeError:
-                snippet = _redact_token(resp.text[:400].replace("\n", " "))
-                logger.warning(
-                    "[bonkverse] Non-JSON login response (%s): %s", resp.status_code, snippet
-                )
+    result = get_client().login(form.cleaned_data["username"], form.cleaned_data["password"])
+    # Outcome only: a success holds the player's token, username, id and avatar.
+    logger.info(
+        "bonk login response | result=%s | error=%s | bonk_error=%s",
+        "success" if result.ok else "fail",
+        result.error,
+        result.bonk_error,
+    )
+    if not result.ok:
+        messages.error(request, f"Bonk.io login failed: {login_failure_message(result.error)}")
+        return render(request, "skins/login.html", {"form": form})
 
-            # Outcome only: the body holds the player's token, username, id and avatar.
-            logger.info(
-                "bonk login response | status=%s | result=%s | error=%s",
-                resp.status_code,
-                data.get("r") if isinstance(data, dict) else "non-json",
-                data.get("e") or data.get("error") if isinstance(data, dict) else None,
-            )
+    _sign_in(request, result)
+    messages.success(request, "Logged in successfully!")
 
-            if data and data.get("r") == "success" and data.get("token"):
-                token = data["token"]
-                bonk_username = data.get("username") or typed_username
-                bonk_user_id = data.get("id")
-
-                # Session (no password stored)
-                bonk = BonkSession(request.session)
-                bonk.store_token(token)
-                bonk.store_identity(bonk_username, bonk_user_id)
-                # Remember the active slot so wear works immediately without the modal.
-                bonk.store_active_slot(
-                    data.get("activeAvatarNumber") or data.get("activeavatarnumber")
-                )
-
-                # Site account
-                user, _ = BonkUser.objects.get_or_create(username=bonk_username)
-                login(request, user)
-                log_event(user, "user_logged_in")
-
-                # BonkPlayer + AccountLink
-                if bonk_user_id:
-                    try:
-                        player, created = BonkPlayer.objects.get_or_create(
-                            bonk_id=int(bonk_user_id),
-                            defaults={"username": bonk_username},
-                        )
-                        if not created and player.username != bonk_username:
-                            # Bonk.io usernames are unique and permanent, so this
-                            # should never happen in steady state. Flag it instead
-                            # of silently relabeling the record.
-                            logger.warning(
-                                "[bonkverse] BonkPlayer username mismatch for bonk_id=%s: "
-                                "stored=%r, login_response=%r",
-                                bonk_user_id,
-                                player.username,
-                                bonk_username,
-                            )
-                            player.username = bonk_username
-                            player.save(update_fields=["username", "updated_at"])
-                        signed_token = signing.dumps({"t": token}, salt="bonk_token")
-                        BonkAccountLink.objects.update_or_create(
-                            user=user,
-                            bonk_player=player,
-                            defaults={
-                                "token_encrypted": signed_token,
-                                "scopes": {"friends": True},
-                                "active": True,
-                            },
-                        )
-                    except Exception:
-                        logger.exception("[bonkverse] Could not persist account link")
-
-                # 🔹 Flash friends sync immediately (from login response)
-                try:
-                    flash_stats = sync_flash_friends_for_user(user=user, friends_json=data)
-                    logger.info(
-                        "flash friends synced at login for %s: %s", bonk_username, flash_stats
-                    )
-                    log_event(user, "flash_friends_synced", **flash_stats)
-                except Exception:
-                    logger.exception("flash friends immediate sync failed for %s", bonk_username)
-
-                # 🔹 Async regular friends sync — flag the toast to appear on the
-                # next page render instead of sending a static Django message.
-                # my_profile view pops this flag and passes it to the template,
-                # where a small script polls /api/friends-sync-status/ and
-                # updates the toast in place once the sync actually finishes.
-                if settings.SYNC_FRIENDS_ON_LOGIN:
-                    threading.Thread(
-                        target=_sync_friends_bg,
-                        args=(user, bonk_user_id, bonk_username, token),
-                        daemon=True,
-                    ).start()
-                    request.session["show_friend_sync_toast"] = True
-
-                messages.success(request, "Logged in successfully!")
-
-                # after messages.success(...)
-                next_url = request.POST.get("next") or request.GET.get("next")
-                if next_url and url_has_allowed_host_and_scheme(
-                    next_url, allowed_hosts={request.get_host()}
-                ):
-                    return redirect(next_url)
-                return redirect("my_profile")
-
-            # Failed login
-            detail = (
-                (data or {}).get("error")
-                or (data or {}).get("message")
-                or (data or {}).get("reason")
-                or (data or {}).get("r")
-                or "unknown error"
-            )
-            messages.error(request, f"Bonk.io login failed: {detail}. Check your credentials.")
-
-    else:
-        form = LoginForm()
-
-    return render(request, "skins/login.html", {"form": form})
+    next_url = request.POST.get("next") or request.GET.get("next")
+    if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        return redirect(next_url)
+    return redirect("my_profile")
 
 
 @limit("write")

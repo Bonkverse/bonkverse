@@ -4,6 +4,7 @@ They pin the JSON contract the frontend wear/login-modal flow depends on:
 - 401 with auth="bonkverse" -> sign in to the site
 - 401 with auth="bonk"      -> show the bonk.io login modal
 - 401 without auth          -> the bonk.io credentials were wrong
+- 502 error="network_error" -> bonk.io unreachable; no login modal
 Any refactor in Phases 2-3 (bonk_api client, bv-api.js, one login modal)
 must keep these passing.
 """
@@ -136,13 +137,31 @@ class TestWearSkin:
         assert response.status_code == 401
         assert response.json()["auth"] == "bonk"
 
-    def test_bonk_network_error_asks_for_bonk_login(self, bonk_session_client, skin, mocked_http):
+    def test_bonk_network_error_does_not_ask_for_bonk_login(
+        self, bonk_session_client, skin, mocked_http
+    ):
+        """Regression: a timeout or outage used to answer 401 auth="bonk", which
+        opens the bonk.io login modal even though the token was fine (one cause
+        of the "login modal keeps reappearing" bug). Logging in again can't fix
+        an outage, so it is a 502 without an auth tag."""
         mocked_http.post(BONK_AVATAR_UPDATE_URL, body=requests.Timeout("slow"))
 
         response = bonk_session_client.post(_wear_url(skin.id))
 
-        assert response.status_code == 401
-        assert response.json() == {"ok": False, "auth": "bonk", "error": "network_error"}
+        assert response.status_code == 502
+        assert response.json() == {"ok": False, "error": "network_error"}
+        # The token is kept: nothing says it went bad.
+        assert bonk_session_client.session["bonk_token"] == "test-bonk-token"
+
+    def test_cloudflare_page_from_bonk_does_not_ask_for_bonk_login(
+        self, bonk_session_client, skin, mocked_http
+    ):
+        mocked_http.post(BONK_AVATAR_UPDATE_URL, body="<html>challenge</html>", status=403)
+
+        response = bonk_session_client.post(_wear_url(skin.id))
+
+        assert response.status_code == 502
+        assert "auth" not in response.json()
 
     def test_skin_without_code_is_400(self, bonk_session_client):
         skin = SkinFactory(skin_code=None)
@@ -199,8 +218,18 @@ class TestBonkLoginForWear:
         response = logged_in_client.post(self.URL, {"bonk_username": "a", "bonk_password": "b"})
 
         assert response.status_code == 401
-        assert "auth" not in response.json()
+        body = response.json()
+        assert "auth" not in body
+        assert body["error"] == "wrong_password"
+        assert body["message"] == "Wrong password."
         assert "bonk_token" not in logged_in_client.session
+
+    def test_bonk_down_is_a_network_error_not_bad_credentials(self, logged_in_client, mocked_http):
+        mocked_http.post(BONK_LOGIN_URL, body=requests.ConnectionError("down"))
+
+        response = logged_in_client.post(self.URL, {"bonk_username": "a", "bonk_password": "b"})
+
+        assert response.json()["error"] == "network_error"
 
     def test_success_saves_token_and_active_slot(self, logged_in_client, mocked_http):
         call = mocked_http.post(BONK_LOGIN_URL, json=load_bonk_fixture("login_success"))
@@ -212,6 +241,9 @@ class TestBonkLoginForWear:
         assert response.json() == {"ok": True, "active_slot": 2}
         assert logged_in_client.session["bonk_token"] == "SCRUBBED-TEST-TOKEN-abc123"
         assert logged_in_client.session["bonk_active_slot"] == 2
-        # Pinned divergence: this path sends task=legacy, the main login view does not.
-        # Phase 2 unifies both behind integrations/bonk_api.py.
-        assert _sent_form(call.calls[0])["task"] == "legacy"
+        # One request shape for every bonk.io login (integrations/bonk_api.py).
+        assert _sent_form(call.calls[0]) == {
+            "username": "TestPlayer",
+            "password": "hunter2",
+            "remember": "false",
+        }

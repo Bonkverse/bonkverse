@@ -55,6 +55,13 @@ What that shows:
   empty, over 64 characters (headroom over the 35 seen), or control characters.
 - The login form doesn't strip spaces (`LoginForm.username` has `strip=False`).
 - Compare names with `BonkUsername.key` (case-insensitive, spaces kept).
+- Login finds the site account with a case-insensitive match
+  (`skins.login.site_account_for`), preferring an exact spelling if older
+  data has more than one. An existing account keeps its stored spelling,
+  because skins name their creator by it. A login without a bonk.io id
+  matches its `BonkPlayer` the same way.
+- Published skins record the signed-in account's name exactly
+  (`apis/publish_skin.py`); it used to be trimmed (fixed in Phase 2.2).
 - Display a name with the capitalization bonk.io returned; never re-case it.
 
 ## Case
@@ -65,15 +72,16 @@ register "the saucy tulip" on bonk.io fails with "username taken" because
 and a case-insensitive match identifies one account. bonk.io keeps the
 capitalization the owner chose; that spelling is what we store and show.
 
+**Login accepts any capitalization.** Verified 2026-11-03: logging in as
+"the saucy tulip" signs in to "The Saucy Tulip". The login response returns
+the account's own spelling, which is what Bonkverse stores, so a player who
+types a different capitalization still lands on the same site account.
+
 ## Open questions
 
-- Does login accept any capitalization of the name? Registration is
-  case-insensitive (above); login probably is too, but that isn't verified.
 - Is "leading space" really a separate account, or bonk.io storing the same
   account's name with a space? Registration with a leading space isn't
   possible today, so these are older accounts.
-- Known bug: `apis/publish_skin.py` strips the creator name, so a creator whose
-  name has leading/trailing spaces is saved without them.
 
 ## Re-running the audit
 
