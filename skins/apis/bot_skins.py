@@ -3,11 +3,13 @@
 Owns: POST /api/bot/skins/ — the bot's shared-secret check, reading its JSON,
 and mapping import results to status codes the bot can act on (2xx = stored,
 4xx = will never work so stop retrying, 5xx = try again later).
-Does not own: fetching or storing the skin (skins/skin_import.py).
+Does not own: rendering or storing the skin (skins/skin_import.py).
 
 Request:  Authorization: Bearer <BONXBOT_API_TOKEN>
-          {"link": "...", "name": "...", "creator": "...",
+          {"link": "...", "name": "...", "creator": "...", "skin_code": "...",
            "discord_user_id": 123, "bonx_skin_id": 45}
+          With skin_code the editor renders the skin and BonkLeagues is never
+          contacted; without it, the link is read from BonkLeagues.
 Response: 201 created / 200 already on Bonkverse, both {"created", "skin": {...}};
           otherwise {"error": "<code>", "retryable": bool}.
 """
@@ -28,6 +30,7 @@ ERROR_STATUS = {
     ImportFailure.INVALID_LINK: 422,
     ImportFailure.LINK_TOO_LONG: 422,
     ImportFailure.UNSAFE_SVG: 422,
+    ImportFailure.RENDER_FAILED: 502,
     ImportFailure.FETCH_FAILED: 502,
     ImportFailure.STORAGE_FAILED: 500,
 }
@@ -56,7 +59,12 @@ def submit_skin(request):
     if not isinstance(body, dict):
         return _error("bad_json", 400)
 
-    result = import_bonkleagues_skin(body.get("link", ""), body.get("name"), body.get("creator"))
+    result = import_bonkleagues_skin(
+        body.get("link", ""),
+        body.get("name"),
+        body.get("creator"),
+        skin_code=body.get("skin_code"),
+    )
     if result.error:
         return _error(result.error, ERROR_STATUS[result.error])
 

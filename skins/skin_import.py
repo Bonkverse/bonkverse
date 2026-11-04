@@ -1,11 +1,17 @@
 """Importing a BonkLeagues skin that was submitted somewhere other than the upload form.
 
-Owns: turning a BonkLeagues link plus a name and creator into a Skin with its
-SVG, PNG and thumbnail files; treating an already-imported link as a duplicate;
-and cleaning names that the upload form would have refused.
-Used by: the BonxBot submission API (skins/apis/bot_skins.py).
-Does not own: the HTTP call to the fetcher (integrations/bl_skin_fetcher.py),
-authentication, or event logging (the caller knows who submitted).
+Owns: turning a BonkLeagues link plus a name, creator and (usually) its skin
+code into a Skin with its SVG, PNG and thumbnail files; treating an
+already-imported link as a duplicate; and cleaning names the upload form would
+have refused.
+Used by: the BonxBot submission API (skins/apis/bot_skins.py) and the one-time
+migration (management command import_bonxbot_skins).
+Does not own: HTTP to the editor or the fetcher (integrations/), authentication,
+or event logging (the caller knows who submitted).
+
+Where the images come from: when the caller already has the skin code, the
+editor renders it and BonkLeagues is never contacted. Only a submission without
+a code falls back to BLSkinFetcher, which reads the link from BonkLeagues.
 """
 
 from __future__ import annotations
@@ -21,7 +27,9 @@ from urllib.parse import urlparse
 from django.conf import settings
 from django.db import transaction
 
+from core.bonk import SkinCode
 from integrations.bl_skin_fetcher import FetchResult, fetch_skin
+from integrations.editor_render import RenderResult, render_skin_code
 from skins.models import Skin, SkinImage
 from skins.svg_sanitizer import UnsafeSVGError, validate_svg_upload
 
@@ -45,7 +53,8 @@ class ImportFailure:
     INVALID_LINK = "invalid_link"
     LINK_TOO_LONG = "link_too_long"
     UNSAFE_SVG = "unsafe_svg"
-    FETCH_FAILED = "fetch_failed"  # fetcher down or could not read the link
+    RENDER_FAILED = "render_failed"  # editor down or could not render the code
+    FETCH_FAILED = "fetch_failed"  # no code given; fetcher down or could not read the link
     STORAGE_FAILED = "storage_failed"
 
     PERMANENT = {INVALID_LINK, LINK_TOO_LONG, UNSAFE_SVG}
@@ -57,6 +66,14 @@ class ImportResult:
     created: bool = False
     error: str | None = None
     detail: str = ""
+
+
+@dataclass(frozen=True)
+class _Media:
+    skin_code: str
+    svg: str
+    png: bytes
+    thumbnail: bytes
 
 
 def clean_skin_name(raw: str | None) -> str:
@@ -77,9 +94,19 @@ def clean_creator(raw: str | None) -> str:
     return raw[:CREATOR_MAX_LENGTH]
 
 
-def is_bonkleagues_link(link: str) -> bool:
+def link_problem(link: str) -> str | None:
+    """The permanent error for this link, or None if it can be imported."""
     parsed = urlparse(link)
-    return parsed.scheme == "https" and (parsed.hostname or "").lower() in BONKLEAGUES_HOSTS
+    if parsed.scheme != "https" or (parsed.hostname or "").lower() not in BONKLEAGUES_HOSTS:
+        return ImportFailure.INVALID_LINK
+    if len(link) > LINK_MAX_LENGTH:
+        return ImportFailure.LINK_TOO_LONG
+    return None
+
+
+def existing_skin(link: str) -> Skin | None:
+    """The skin already imported from this exact link (the upload form's duplicate rule)."""
+    return Skin.objects.filter(link=link).order_by("id").first()
 
 
 def import_bonkleagues_skin(
@@ -87,41 +114,59 @@ def import_bonkleagues_skin(
     name: str | None,
     creator: str | None,
     *,
+    skin_code: str | None = None,
+    render: Callable[[str], RenderResult] = render_skin_code,
     fetch: Callable[[str], FetchResult] = fetch_skin,
 ) -> ImportResult:
-    """Create a Skin from a BonkLeagues link, or return the one already imported from it.
+    """Create a Skin from a BonkLeagues submission, or return the one already imported from it.
 
-    Duplicates are matched on the exact link, the same rule the upload form uses,
-    so a skin uploaded on the site and later submitted on Discord is stored once.
+    Duplicates are matched on the exact link, so a skin uploaded on the site and
+    later submitted on Discord is stored once, and nothing is rendered for it.
     """
     link = (link or "").strip()
-    if not is_bonkleagues_link(link):
-        return ImportResult(error=ImportFailure.INVALID_LINK)
-    if len(link) > LINK_MAX_LENGTH:
-        return ImportResult(error=ImportFailure.LINK_TOO_LONG)
+    problem = link_problem(link)
+    if problem:
+        return ImportResult(error=problem)
 
-    existing = Skin.objects.filter(link=link).order_by("id").first()
+    existing = existing_skin(link)
     if existing:
         return ImportResult(skin=existing, created=False)
 
-    fetched = fetch(link)
-    if fetched.error:
-        return ImportResult(error=ImportFailure.FETCH_FAILED, detail=fetched.error)
+    media, error, detail = _get_media(link, (skin_code or "").strip(), render, fetch)
+    if error:
+        return ImportResult(error=error, detail=detail)
 
     try:
-        validate_svg_upload(fetched.skin.svg)
+        validate_svg_upload(media.svg)
     except UnsafeSVGError as exc:
         return ImportResult(error=ImportFailure.UNSAFE_SVG, detail=str(exc))
 
     try:
-        skin = _save(link, clean_skin_name(name), clean_creator(creator), fetched.skin)
+        skin = _save(link, clean_skin_name(name), clean_creator(creator), media)
     except Exception:
         logger.exception("could not store imported skin %s", link)
         return ImportResult(error=ImportFailure.STORAGE_FAILED)
     return ImportResult(skin=skin, created=True)
 
 
-def _save(link, name, creator, fetched) -> Skin:
+def _get_media(link, skin_code, render, fetch):
+    """(media, error, detail): render the code if we have one, otherwise ask BonkLeagues."""
+    if skin_code:
+        code = SkinCode(skin_code).decoded  # bot codes may be URL-encoded once or twice
+        rendered = render(code)
+        if rendered.error:
+            return None, ImportFailure.RENDER_FAILED, rendered.error
+        r = rendered.skin
+        return _Media(code, r.svg, r.png, r.thumbnail), None, ""
+
+    fetched = fetch(link)
+    if fetched.error:
+        return None, ImportFailure.FETCH_FAILED, fetched.error
+    f = fetched.skin
+    return _Media(f.skin_code, f.svg, f.png, f.thumbnail), None, ""
+
+
+def _save(link, name, creator, media: _Media) -> Skin:
     """Write the row and its three files together; on any failure keep neither."""
     written = []
     try:
@@ -130,14 +175,14 @@ def _save(link, name, creator, fetched) -> Skin:
                 name=name,
                 creator=creator,
                 link=link,
-                skin_code=fetched.skin_code,
+                skin_code=media.skin_code,
                 image_url="",
                 uuid=uuid.uuid4(),
             )
             files = {
-                "svg": (f"skins/{skin.id}.svg", fetched.svg.encode("utf-8")),
-                "png": (f"skins/{skin.id}.png", fetched.png),
-                "thumbnail": (f"skins/{skin.id}_thumb.png", fetched.thumbnail),
+                "svg": (f"skins/{skin.id}.svg", media.svg.encode("utf-8")),
+                "png": (f"skins/{skin.id}.png", media.png),
+                "thumbnail": (f"skins/{skin.id}_thumb.png", media.thumbnail),
             }
             os.makedirs(os.path.join(settings.MEDIA_ROOT, "skins"), exist_ok=True)
             for rel_path, content in files.values():
