@@ -301,7 +301,11 @@ class SkinImage(models.Model):
 
 
 def validate_username(value: str):
-    """Model-field validator for bonk.io usernames (rules in core/bonk/usernames.py)."""
+    """Model-field validator for bonk.io usernames (rules in core/bonk/usernames.py).
+
+    Only used by the archived PlayerWin/PlayerLoss tables; kept because their
+    migrations import it by this path.
+    """
     try:
         BonkUsername.validate(value)
     except InvalidUsername as error:

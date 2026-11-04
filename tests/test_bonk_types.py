@@ -32,36 +32,50 @@ class TestAvatarSlot:
 
 
 class TestBonkUsername:
-    @pytest.mark.parametrize("value", ["abc", "The Saucy Tulip", "a_b_c", "x" * 35])
-    def test_accepts_valid_names(self, value):
-        assert BonkUsername(value).value == value
+    """Rules come from real bonk.io data (docs/bonk/accounts.md), not the
+    new-account rules: older accounts break those, and we must accept them."""
+
+    @pytest.mark.parametrize(
+        "value",
+        [
+            "a",  # 1 character
+            "07",
+            "x" * 35,  # an older limit; real accounts this long exist
+            " LeadingSpace",  # leading space
+            "a b c d ",  # trailing space
+            "x    y",  # repeated spaces
+            "Guest1234",  # a registered account, not a guest
+            "Guestimate",
+            "a.j",
+            "1/2",
+            "-.-",
+            "$$",
+            "Chaz",
+        ],
+    )
+    def test_accepts_names_real_accounts_have(self, value):
+        assert BonkUsername(value).value == value  # kept exactly, never trimmed
 
     @pytest.mark.parametrize(
         "value,message",
-        [
-            ("", "required"),
-            ("ab", "at least 3"),
-            ("x" * 36, "at most 35"),
-            ("bad-name!", "letters, numbers"),
-            ("Guest1234", "Guest"),
-            ("new player", "Guest"),
-        ],
+        [("", "required"), ("x" * 65, "at most 64"), ("bad\nname", "doesn't allow")],
     )
-    def test_rejects_with_user_facing_message(self, value, message):
+    def test_rejects_only_impossible_names(self, value, message):
         with pytest.raises(InvalidUsername, match=message):
             BonkUsername(value)
 
-    def test_key_is_case_insensitive(self):
+    def test_key_ignores_case_but_keeps_spaces(self):
         assert BonkUsername("Saucy").key == BonkUsername("sAUCY").key
+        assert BonkUsername(" Saucy").key != BonkUsername("Saucy").key
 
     def test_model_validator_uses_the_same_rules(self):
         from django.core.exceptions import ValidationError
 
         from skins.models import validate_username
 
-        validate_username("Saucy")
-        with pytest.raises(ValidationError, match="Guest accounts"):
-            validate_username("Guest99")
+        validate_username("Guest99")
+        with pytest.raises(ValidationError, match="required"):
+            validate_username("")
 
 
 class TestSkinCode:
