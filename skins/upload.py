@@ -19,10 +19,6 @@ from skins.svg_sanitizer import validate_svg_upload, UnsafeSVGError
 bonk_url_pattern = r"^https://bonkleagues\.io/s/([A-Za-z0-9]{7})$"
 skin_name_pattern = r"^[A-Za-z0-9_ ]+$"
 
-BLSKIN_FETCHER_URL = getattr(
-    settings, "BLSKIN_FETCHER_URL", "https://blskinfetcher-production.up.railway.app/api/getSkin"
-)
-
 
 @login_required(login_url="/login/")
 @limit("upload")
@@ -57,7 +53,7 @@ def upload_skin(request):
         # --- Step 1: Ask BLSkinFetcher for skin data + rendered media ---
         try:
             fetch_res = requests.get(
-                BLSKIN_FETCHER_URL,
+                settings.BLSKIN_FETCHER_URL,
                 params={
                     "link": bonkleagues_link,
                     "media": "true",

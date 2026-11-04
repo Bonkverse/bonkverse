@@ -1,10 +1,14 @@
-import os
-from core.ratelimits import limit
-import requests
+import logging
 
+import requests
+from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
+
+from core.ratelimits import limit
+
+logger = logging.getLogger(__name__)
 
 
 @limit("browse")
@@ -19,12 +23,12 @@ def api_map_decode(request):
     if not encoded:
         return JsonResponse({"error": "Missing encoded map string"}, status=400)
 
-    base_url = os.environ.get("DECODER_SERVICE_URL", "").rstrip("/")
+    base_url = settings.DECODER_SERVICE_URL
     if not base_url:
-        return JsonResponse({"error": "DECODER_SERVICE_URL not configured"}, status=500)
+        return JsonResponse({"error": "Map decoder is not available right now"}, status=503)
 
     headers = {"Content-Type": "application/json"}
-    key = os.environ.get("DECODER_SERVICE_KEY")
+    key = settings.DECODER_SERVICE_KEY
     if key:
         headers["X-Decoder-Key"] = key
 
@@ -35,8 +39,9 @@ def api_map_decode(request):
             headers=headers,
             timeout=15,
         )
-    except requests.RequestException as e:
-        return JsonResponse({"error": "Decoder service unreachable", "details": str(e)}, status=502)
+    except requests.RequestException:
+        logger.warning("map decoder unreachable", exc_info=True)
+        return JsonResponse({"error": "Decoder service unreachable"}, status=502)
 
     # Pass through JSON (and status)
     try:

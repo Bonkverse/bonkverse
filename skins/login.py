@@ -14,7 +14,7 @@ from .forms import LoginForm
 from .friends_sync import sync_friends_for_player
 from .flash_friends_sync import sync_flash_friends_for_user
 
-import os
+from django.conf import settings
 import re
 import time
 import threading
@@ -39,13 +39,7 @@ def _redact_token(text: str) -> str:
     return _TOKEN_LOG_PATTERN.sub(r"\1***REDACTED***\2", text)
 
 
-# Configurable timeouts
-CONNECT_TIMEOUT = float(os.getenv("BONK_CONNECT_TIMEOUT", "4"))
-READ_TIMEOUT = float(os.getenv("BONK_READ_TIMEOUT", "8"))
-REQ_TIMEOUT = (CONNECT_TIMEOUT, READ_TIMEOUT)
-
-# Optional background sync toggle
-SYNC_FRIENDS_ON_LOGIN = os.getenv("SYNC_FRIENDS_ON_LOGIN", "1").lower() in ("1", "true", "yes")
+REQ_TIMEOUT = (settings.BONK_CONNECT_TIMEOUT, settings.BONK_READ_TIMEOUT)
 
 BROWSER_HEADERS = {
     "User-Agent": (
@@ -221,7 +215,7 @@ def login_view(request):
                 # my_profile view pops this flag and passes it to the template,
                 # where a small script polls /api/friends-sync-status/ and
                 # updates the toast in place once the sync actually finishes.
-                if SYNC_FRIENDS_ON_LOGIN:
+                if settings.SYNC_FRIENDS_ON_LOGIN:
                     threading.Thread(
                         target=_sync_friends_bg,
                         args=(user, bonk_user_id, bonk_username, token),

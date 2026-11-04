@@ -81,12 +81,12 @@
               </li>
               {% endif %}
               <li>
-                <a href="https://bonkverse.io/skins/share/{{ skin.id }}/{{ skin.uuid }}" target="_blank" rel="noopener">
+                <a href="{% url 'share_skin' skin.id skin.uuid %}" target="_blank" rel="noopener">
                   <i data-lucide="share-2"></i> Share Link
                 </a>
               </li>
               <li>
-                <a href="https://bonkverse.io/skins/detail/{{ skin.id }}">
+                <a href="{% url 'skin_detail' skin.id %}">
                   <i data-lucide="file-text"></i> View Skin Details
                 </a>
               </li>
