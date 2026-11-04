@@ -61,7 +61,7 @@ def limit(tier: str, *, method=ALL):
             )
             if usage is not None and usage["should_limit"]:
                 logger.info("rate limited: tier=%s view=%s", tier, group)
-                return too_many_requests(request, retry_after=usage["time_left"])
+                return too_many_requests(request, retry_after=usage["time_left"], tier=tier)
             return view(request, *args, **kwargs)
 
         # Read by `manage.py audit_rate_limits` to list every route's limit.
@@ -91,12 +91,19 @@ def _describe_wait(seconds: int | None) -> str:
     return f"about {round(seconds / 60)} minutes"
 
 
-def too_many_requests(request, *, retry_after: int | None = None):
+# Tiers whose 429 page also invites the visitor to ask for bulk access. Only
+# someone collecting skins in bulk gets near the media limit (2026-11-03 scrape).
+BULK_ACCESS_TIERS = {"media"}
+
+
+def too_many_requests(request, *, retry_after: int | None = None, tier: str | None = None):
     """Build the 429 response for a rate-limited request.
 
     Args:
         request: The limited request.
         retry_after: Seconds until the visitor's window resets, if known.
+        tier: The rate-limit tier that was exceeded, if known. For the media
+            tier the page asks bulk collectors to contact us instead.
 
     Returns:
         A JsonResponse ({"ok": false, "error": "rate_limited", ...}) for API/AJAX
@@ -108,6 +115,8 @@ def too_many_requests(request, *, retry_after: int | None = None):
         body = {"ok": False, "error": "rate_limited"}
         if retry_after:
             body["retry_after"] = retry_after
+        if tier in BULK_ACCESS_TIERS:
+            body["contact"] = settings.BONKVERSE_DISCORD_URL
         response = JsonResponse(body, status=429)
     else:
         response = render(
@@ -119,6 +128,8 @@ def too_many_requests(request, *, retry_after: int | None = None):
                 # Reloading after a POST would make the browser resubmit the form
                 # (e.g. a login), so only page views reload themselves.
                 "auto_reload": request.method in ("GET", "HEAD"),
+                "bulk_access": tier in BULK_ACCESS_TIERS,
+                "discord_url": settings.BONKVERSE_DISCORD_URL,
             },
             status=429,
         )

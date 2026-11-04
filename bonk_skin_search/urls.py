@@ -18,6 +18,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from skins.rerender import rerender_skin
+from skins.media import serve_media
 from skins.search import search_skins
 from skins.upload import upload_skin
 from django.conf import settings
@@ -45,7 +46,6 @@ from skins.share_skin import share_skin
 from skins.apis.auth.who_am_i import me
 from skins.report_skin import report_skin
 from skins.utils.tools.map_decode import map_decode_page, api_map_decode
-from django.views.static import serve
 from skins.privacy import privacy
 from skins.terms import terms
 from skins import categories
@@ -119,5 +119,5 @@ urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 # Media files (needed for your volume-stored images)
 urlpatterns += [
-    path("media/<path:path>", serve, {"document_root": settings.MEDIA_ROOT}),
+    path("media/<path:path>", serve_media),
 ]

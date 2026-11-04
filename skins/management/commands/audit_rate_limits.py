@@ -12,7 +12,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.urls import URLPattern, URLResolver, get_resolver
 
-SKIP_PREFIXES = ("admin/", "static/", "media/", "^static/", "^media/")
+SKIP_PREFIXES = ("admin/", "static/", "^static/")
 
 
 def _walk(patterns, prefix=""):
