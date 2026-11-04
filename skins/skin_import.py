@@ -1,31 +1,39 @@
 """Importing a BonkLeagues skin that was submitted somewhere other than the upload form.
 
 Owns: turning a BonkLeagues link plus a name, creator and (usually) its skin
-code into a Skin with its SVG, PNG and thumbnail files; treating an
-already-imported link as a duplicate; and cleaning names the upload form would
-have refused.
+code into a Skin with its SVG, PNG and thumbnail files; deciding when a
+submission is a duplicate; and cleaning names the upload form would have refused.
 Used by: the BonxBot submission API (skins/apis/bot_skins.py) and the one-time
-migration (management command import_bonxbot_skins).
+migration (skins/bonxbot_migration.py).
 Does not own: HTTP to the editor or the fetcher (integrations/), authentication,
 or event logging (the caller knows who submitted).
 
 Where the images come from: when the caller already has the skin code, the
 editor renders it and BonkLeagues is never contacted. Only a submission without
 a code falls back to BLSkinFetcher, which reads the link from BonkLeagues.
+
+Duplicates: two links that point at the same BonkLeagues skin are the same
+skin, however they are written (http/https, www., a trailing slash, tracking
+parameters on a short link). New skins store the canonical form; older rows are
+matched in any of the spellings above. Imports of the same link are serialized
+with a Postgres advisory lock, so two at once (the bot's instant push and its
+retry loop, say) produce one skin, not two.
 """
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import os
 import re
 import uuid
+from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Callable
 from urllib.parse import urlparse
 
 from django.conf import settings
-from django.db import transaction
+from django.db import connection, transaction
 
 from core.bonk import SkinCode
 from integrations.bl_skin_fetcher import FetchResult, fetch_skin
@@ -36,15 +44,21 @@ from skins.svg_sanitizer import UnsafeSVGError, validate_svg_upload
 logger = logging.getLogger(__name__)
 
 BONKLEAGUES_HOSTS = {"bonkleagues.io", "www.bonkleagues.io"}
+CANONICAL_ORIGIN = "https://bonkleagues.io"
 LINK_MAX_LENGTH = Skin._meta.get_field("link").max_length
 NAME_MAX_LENGTH = Skin._meta.get_field("name").max_length
 CREATOR_MAX_LENGTH = Skin._meta.get_field("creator").max_length
 DEFAULT_NAME = "UnnamedSkin"
 DEFAULT_CREATOR = "UnknownSkinCreator"
 
+# A BonkLeagues short link: /s/<code>. The code is case-sensitive, so it is never lowercased.
+_SHORT_LINK_PATH = re.compile(r"^/s/([A-Za-z0-9]+)$")
 # Same characters the upload form and the editor accept.
 _NOT_ALLOWED_IN_NAME = re.compile(r"[^A-Za-z0-9 _]")
 _RUNS_OF_SPACES = re.compile(r" {2,}")
+# First half of every advisory lock key taken here, so these locks can't collide
+# with advisory locks anything else takes on the same database.
+_LOCK_NAMESPACE = 0x426B5653  # "BkVS"
 
 
 class ImportFailure:
@@ -94,19 +108,43 @@ def clean_creator(raw: str | None) -> str:
     return raw[:CREATOR_MAX_LENGTH]
 
 
-def link_problem(link: str) -> str | None:
+def canonical_link(raw: str | None) -> str | None:
+    """One spelling per BonkLeagues skin, or None if this is not a BonkLeagues link.
+
+    "http://www.bonkleagues.io/s/AbC1234/?ref=discord" -> "https://bonkleagues.io/s/AbC1234"
+    Any other BonkLeagues URL keeps its path and query (they may carry the skin)
+    but loses the scheme, www., trailing slash and #fragment differences.
+    """
+    parsed = urlparse((raw or "").strip())
+    if parsed.scheme not in ("http", "https"):
+        return None
+    if (parsed.hostname or "").lower() not in BONKLEAGUES_HOSTS:
+        return None
+
+    path = parsed.path.rstrip("/")
+    short = _SHORT_LINK_PATH.match(path)
+    if short:
+        return f"{CANONICAL_ORIGIN}/s/{short.group(1)}"
+    query = f"?{parsed.query}" if parsed.query else ""
+    return f"{CANONICAL_ORIGIN}{path}{query}"
+
+
+def link_problem(raw: str | None) -> str | None:
     """The permanent error for this link, or None if it can be imported."""
-    parsed = urlparse(link)
-    if parsed.scheme != "https" or (parsed.hostname or "").lower() not in BONKLEAGUES_HOSTS:
+    link = canonical_link(raw)
+    if link is None:
         return ImportFailure.INVALID_LINK
     if len(link) > LINK_MAX_LENGTH:
         return ImportFailure.LINK_TOO_LONG
     return None
 
 
-def existing_skin(link: str) -> Skin | None:
-    """The skin already imported from this exact link (the upload form's duplicate rule)."""
-    return Skin.objects.filter(link=link).order_by("id").first()
+def existing_skin(raw: str | None) -> Skin | None:
+    """The skin already imported from this BonkLeagues link, in any spelling (oldest first)."""
+    link = canonical_link(raw)
+    if link is None:
+        return None
+    return Skin.objects.filter(link__in=_stored_spellings(link)).order_by("id").first()
 
 
 def import_bonkleagues_skin(
@@ -120,33 +158,62 @@ def import_bonkleagues_skin(
 ) -> ImportResult:
     """Create a Skin from a BonkLeagues submission, or return the one already imported from it.
 
-    Duplicates are matched on the exact link, so a skin uploaded on the site and
-    later submitted on Discord is stored once, and nothing is rendered for it.
+    A skin uploaded on the site and later submitted on Discord is stored once,
+    and nothing is rendered for the duplicate.
     """
-    link = (link or "").strip()
     problem = link_problem(link)
     if problem:
         return ImportResult(error=problem)
+    link = canonical_link(link)
 
-    existing = existing_skin(link)
-    if existing:
-        return ImportResult(skin=existing, created=False)
+    with _import_lock(link):
+        existing = existing_skin(link)
+        if existing:
+            return ImportResult(skin=existing, created=False)
 
-    media, error, detail = _get_media(link, (skin_code or "").strip(), render, fetch)
-    if error:
-        return ImportResult(error=error, detail=detail)
+        media, error, detail = _get_media(link, (skin_code or "").strip(), render, fetch)
+        if error:
+            return ImportResult(error=error, detail=detail)
 
+        try:
+            validate_svg_upload(media.svg)
+        except UnsafeSVGError as exc:
+            return ImportResult(error=ImportFailure.UNSAFE_SVG, detail=str(exc))
+
+        try:
+            skin = _save(link, clean_skin_name(name), clean_creator(creator), media)
+        except Exception:
+            logger.exception("could not store imported skin %s", link)
+            return ImportResult(error=ImportFailure.STORAGE_FAILED)
+        return ImportResult(skin=skin, created=True)
+
+
+def _stored_spellings(link: str) -> list[str]:
+    """Every way an older row may have stored this canonical link."""
+    rest = link.removeprefix(CANONICAL_ORIGIN)
+    hosts = [f"{scheme}://{host}" for scheme in ("https", "http") for host in BONKLEAGUES_HOSTS]
+    spellings = [f"{origin}{rest}" for origin in hosts]
+    if _SHORT_LINK_PATH.match(rest):
+        spellings += [f"{s}/" for s in spellings]
+    return spellings
+
+
+@contextmanager
+def _import_lock(link: str):
+    """Hold a Postgres advisory lock for this link until the import finishes.
+
+    Session-level (not tied to a transaction) so no transaction stays open while
+    the editor renders; released in `finally`, and by Postgres if the connection drops.
+    """
+    digest = hashlib.blake2b(link.encode("utf-8"), digest_size=4).digest()
+    key = int.from_bytes(digest, "big", signed=True)
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT pg_advisory_lock(%s, %s)", [_LOCK_NAMESPACE, key])
     try:
-        validate_svg_upload(media.svg)
-    except UnsafeSVGError as exc:
-        return ImportResult(error=ImportFailure.UNSAFE_SVG, detail=str(exc))
-
-    try:
-        skin = _save(link, clean_skin_name(name), clean_creator(creator), media)
-    except Exception:
-        logger.exception("could not store imported skin %s", link)
-        return ImportResult(error=ImportFailure.STORAGE_FAILED)
-    return ImportResult(skin=skin, created=True)
+        yield
+    finally:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT pg_advisory_unlock(%s, %s)", [_LOCK_NAMESPACE, key])
 
 
 def _get_media(link, skin_code, render, fetch):

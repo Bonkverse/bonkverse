@@ -6,10 +6,22 @@ import json
 import pytest
 import responses
 
+import threading
+import time
+
+from django.db import connection
+
 from integrations.bonxbot_db import BotSkin
+from integrations.editor_render import RenderedSkin, RenderResult
 from skins.bonxbot_migration import migrate
 from skins.models import Skin, SkinImage, UserEvent
-from skins.skin_import import clean_creator, clean_skin_name
+from skins.skin_import import (
+    canonical_link,
+    clean_creator,
+    clean_skin_name,
+    existing_skin,
+    import_bonkleagues_skin,
+)
 from tests.factories import SkinFactory
 
 pytestmark = pytest.mark.django_db
@@ -116,7 +128,13 @@ def test_refuses_everything_when_no_token_is_configured(client, settings):
 
 @pytest.mark.parametrize(
     "link",
-    ["http://bonkleagues.io/s/AbC1234", "https://evil.example/s/AbC1234", "not a link", ""],
+    [
+        "https://evil.example/s/AbC1234",
+        "https://bonkleagues.io.evil.example/s/AbC1234",
+        "ftp://bonkleagues.io/s/AbC1234",
+        "not a link",
+        "",
+    ],
 )
 def test_non_bonkleagues_links_are_permanent_errors(client, link):
     response = _submit(client, link=link)
@@ -126,7 +144,7 @@ def test_non_bonkleagues_links_are_permanent_errors(client, link):
 
 
 def test_link_longer_than_the_column_is_rejected_before_fetching(client, mocked_http):
-    response = _submit(client, link=LINK + "?x=" + "a" * 300)
+    response = _submit(client, link="https://bonkleagues.io/avatar.svg?skinCode=" + "a" * 300)
 
     assert response.status_code == 422
     assert response.json()["error"] == "link_too_long"
@@ -324,3 +342,149 @@ def test_migration_is_safe_to_rerun(mocked_http):
 
     assert Skin.objects.count() == 1
     assert report.counts == {"duplicate": 1}
+
+
+# ── Duplicates: one skin per BonkLeagues link, however it's written ──────────
+
+
+@pytest.mark.parametrize(
+    ("raw", "canonical"),
+    [
+        ("https://bonkleagues.io/s/AbC1234", "https://bonkleagues.io/s/AbC1234"),
+        ("http://www.BonkLeagues.io/s/AbC1234/", "https://bonkleagues.io/s/AbC1234"),
+        ("https://bonkleagues.io/s/AbC1234?ref=discord#x", "https://bonkleagues.io/s/AbC1234"),
+        ("  https://bonkleagues.io/s/AbC1234  ", "https://bonkleagues.io/s/AbC1234"),
+        # Other pages keep their query: it may be what identifies the skin.
+        (
+            "https://www.bonkleagues.io/avatar.svg?skinCode=Cgc%2B#top",
+            "https://bonkleagues.io/avatar.svg?skinCode=Cgc%2B",
+        ),
+        ("https://evil.example/s/AbC1234", None),
+        ("javascript:alert(1)", None),
+        (None, None),
+    ],
+)
+def test_canonical_link(raw, canonical):
+    assert canonical_link(raw) == canonical
+
+
+def test_short_link_code_stays_case_sensitive():
+    assert canonical_link("https://bonkleagues.io/s/AbC1234") != canonical_link(
+        "https://bonkleagues.io/s/abc1234"
+    )
+
+
+@pytest.mark.parametrize(
+    "stored",
+    [
+        "https://bonkleagues.io/s/AbC1234",
+        "https://bonkleagues.io/s/AbC1234/",
+        "https://www.bonkleagues.io/s/AbC1234",
+        "http://bonkleagues.io/s/AbC1234",
+    ],
+)
+def test_older_rows_match_in_any_spelling(stored):
+    skin = SkinFactory(link=stored)
+
+    assert existing_skin("http://www.bonkleagues.io/s/AbC1234/?utm=x") == skin
+
+
+def test_different_case_is_a_different_skin():
+    SkinFactory(link="https://bonkleagues.io/s/abc1234")
+
+    assert existing_skin(LINK) is None
+
+
+def test_variant_link_returns_existing_skin_without_rendering(client, mocked_http):
+    existing = SkinFactory(link="https://www.bonkleagues.io/s/AbC1234/")
+
+    response = _submit(client, link="http://bonkleagues.io/s/AbC1234?ref=discord", skin_code="C")
+
+    assert response.status_code == 200
+    assert response.json()["skin"]["id"] == existing.id
+    assert len(mocked_http.calls) == 0
+
+
+def test_new_skin_stores_the_canonical_link(client, mocked_http):
+    _editor_renders(mocked_http)
+
+    _submit(client, link="http://www.bonkleagues.io/s/AbC1234/?ref=discord", skin_code="C")
+
+    assert Skin.objects.get().link == LINK
+
+
+def test_migration_rows_that_are_spellings_of_one_link_make_one_skin(mocked_http):
+    _editor_renders(mocked_http)
+    db = FakeBonxBotDB(
+        [
+            BotSkin(1, "A", "https://bonkleagues.io/s/AbC1234", "a", 1, "CODE"),
+            BotSkin(2, "A again", "https://www.bonkleagues.io/s/AbC1234/", "a", 2, "CODE"),
+        ]
+    )
+
+    report = migrate(db, dry_run=False)
+
+    skin = Skin.objects.get()
+    assert db.synced == {1: skin.id, 2: skin.id}
+    assert report.counts == {"created_from_code": 1, "duplicate": 1}
+    assert len(mocked_http.calls) == 1
+
+
+@pytest.mark.django_db(transaction=True)
+def test_two_imports_of_one_link_at_once_make_one_skin(settings, tmp_path):
+    """Regression: the bot's instant push and its retry loop could import the
+    same link at the same moment; both passed the duplicate check before either
+    saved, leaving two skins."""
+    settings.MEDIA_ROOT = tmp_path
+    renders = []
+
+    def slow_render(code):
+        renders.append(code)
+        time.sleep(0.3)  # long enough that both imports overlap without the lock
+        return RenderResult(skin=RenderedSkin(svg=SVG, png=PNG, thumbnail=PNG))
+
+    results = []
+
+    def run(link):
+        try:
+            results.append(
+                import_bonkleagues_skin(link, "A", "a", skin_code="C", render=slow_render)
+            )
+        finally:
+            connection.close()  # each thread has its own connection
+
+    threads = [
+        threading.Thread(target=run, args=(LINK,)),
+        threading.Thread(target=run, args=("https://www.bonkleagues.io/s/AbC1234/",)),
+    ]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert Skin.objects.count() == 1
+    assert len(renders) == 1
+    assert sorted(r.created for r in results) == [False, True]
+    assert len({r.skin.id for r in results}) == 1
+
+
+@pytest.mark.django_db(transaction=True)
+def test_lock_is_released_after_a_failed_import(settings, tmp_path):
+    settings.MEDIA_ROOT = tmp_path
+
+    failed = import_bonkleagues_skin(
+        LINK, "A", "a", skin_code="C", render=lambda _c: RenderResult(error="render_status_503")
+    )
+    ok = import_bonkleagues_skin(
+        LINK,
+        "A",
+        "a",
+        skin_code="C",
+        render=lambda _c: RenderResult(skin=RenderedSkin(svg=SVG, png=PNG, thumbnail=PNG)),
+    )
+
+    assert failed.error == "render_failed"
+    assert ok.created
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT count(*) FROM pg_locks WHERE locktype = 'advisory'")
+        assert cursor.fetchone()[0] == 0
