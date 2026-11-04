@@ -3,7 +3,8 @@
 {% comment %}
   Rendered by core.ratelimits.too_many_requests.
   Context: wait ("42 seconds", server-side fallback), retry_after (seconds or None),
-  auto_reload (True for page views; never for form submissions).
+  auto_reload (True for page views; never for form submissions), bulk_access
+  (True when the media limit was hit) and discord_url.
   static/js/ratelimit.js turns the wait into a live countdown and reloads when it ends.
 {% endcomment %}
 
@@ -18,6 +19,13 @@
         {% if auto_reload %}data-reload="true"{% endif %}>
     {% if auto_reload %}Try again in {{ wait }}.{% else %}Wait {{ wait }}, then submit again.{% endif %}
   </span>
+  {% if bulk_access %}
+  <span class="error-page__note">
+    <strong>Collecting Bonkverse skins?</strong> You've hit the image limit.
+    We're happy to help with bulk access. Reach out on our
+    <a href="{{ discord_url }}" target="_blank" rel="noopener">Discord</a> instead of scraping.
+  </span>
+  {% endif %}
 {% endblock %}
 {% block actions %}
   {% if auto_reload %}
