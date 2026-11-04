@@ -147,7 +147,6 @@ def login_view(request):
                 request.session["bonk_token_expires"] = time.time() + (
                     14 * 24 * 60 * 60
                 )  # 14 days, matches TOKEN_TTL in wear_skin.py
-                # request.session["bonk_token_expires"] = time.time() + 30  # 30 seconds for testing
                 request.session["bonk_username"] = bonk_username
                 request.session["bonk_user_id"] = bonk_user_id
 

@@ -18,18 +18,6 @@ extend-exclude = [
 select = ["E4", "E7", "E9", "F", "B", "ERA"]
 
 [tool.ruff.lint.per-file-ignores]
-# Grandfathered commented-out code. Phase 1 deletes these blocks and
-# removes each line below; do NOT add new files to this list.
-"bonk_skin_search/urls.py" = ["ERA001"]
-"skins/api.py" = ["ERA001"]
-"skins/categories.py" = ["ERA001"]
-"skins/changelog.py" = ["ERA001"]
-"skins/login.py" = ["ERA001"]
-"skins/management/commands/generate_pngs.py" = ["ERA001"]
-"skins/players.py" = ["ERA001"]
-"skins/rerender.py" = ["ERA001"]
-"skins/share_skin.py" = ["ERA001"]
-"skins/wear_skin.py" = ["ERA001"]
 # Tests may use assert-heavy, fixture-shadowing patterns.
 "tests/**" = ["B011"]
 

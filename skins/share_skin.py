@@ -13,11 +13,7 @@ def share_skin(request, skin_id, uuid):
 
     page_url = request.build_absolute_uri()  # absolute URL to this skin page
 
-    # Use the stored image URL (already absolute if it’s bonkleagues). If you ever
-    # serve local images, make it absolute:
-    # image_url = skin.image_url
-    # if image_url and not image_url.startswith('http'):
-    #     image_url = request.build_absolute_uri(image_url)
+    # Social previews need an absolute URL to this site's rendered PNG.
     png_path = f"{settings.MEDIA_URL}skins/{skin.id}.png"
     image_url = request.build_absolute_uri(png_path)
 

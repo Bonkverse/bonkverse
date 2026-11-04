@@ -3,7 +3,6 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVector, SearchVectorField
 from django.utils import timezone
-from datetime import timedelta
 import uuid
 from django.urls import reverse
 
@@ -304,24 +303,6 @@ class PlayerWin(models.Model):
 
     def __str__(self):
         return f"{self.username} win at {self.created_at}"
-
-
-class PlayerSession(models.Model):
-    username = models.CharField(
-        max_length=35, unique=True, db_index=True, validators=[validate_username]
-    )
-    token = models.CharField(max_length=255, unique=True, db_index=True)
-    client_id = models.UUIDField(default=uuid.uuid4, editable=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    last_seen = models.DateTimeField(default=timezone.now)
-    expires_at = models.DateTimeField()
-
-    def is_active(self):
-        now = timezone.now()
-        return self.expires_at > now and (now - self.last_seen) < timedelta(seconds=60)
-
-    def __str__(self):
-        return f"Session for {self.username} (active={self.is_active()})"
 
 
 class PlayerLoss(models.Model):

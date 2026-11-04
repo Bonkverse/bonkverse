@@ -143,10 +143,6 @@ CATEGORIES = {
         "blurb": "Retro pixel and 8-bit style.",
         "keywords": ["pixel", "8-bit", "8 bit"],
     },
-    # "abstract" is the labeler's fallback bucket (huge + low signal).
-    # Uncomment if you want it browsable.
-    # "abstract":   {"label": "Abstract / Other",    "blurb": "Non-representational designs.",
-    #                "keywords": ["abstract"]},
 }
 
 # Fields we treat as category sources (NOT colors).
