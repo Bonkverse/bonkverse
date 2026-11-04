@@ -42,6 +42,7 @@ from skins import discord_views
 from skins.social_stats import social_stats
 from skins.apis.index import index
 from skins.apis.publish_skin import publish_skin
+from skins.apis import bot_skins
 from skins.share_skin import share_skin
 from skins.apis.auth.who_am_i import me
 from skins.report_skin import report_skin
@@ -56,6 +57,7 @@ urlpatterns = [
     path("search/", search_skins, name="search_skins"),
     path("", home.home, name="home"),
     path("api/publish-skin/", publish_skin, name="publish_skin"),
+    path("api/bot/skins/", bot_skins.submit_skin, name="api_bot_submit_skin"),
     path("skins/share/<int:skin_id>/<uuid:uuid>/", share_skin, name="share_skin"),
     path("login/", login_view, name="login"),
     path("api/me/", me, name="api_me"),

@@ -104,10 +104,14 @@ BONKVERSE_RENDER_URL = os.getenv("BONKVERSE_RENDER_URL", "https://editor.bonkver
 # on the media rate-limit page.
 BONKVERSE_DISCORD_URL = os.getenv("BONKVERSE_DISCORD_URL", "https://discord.gg/2Zx7Cwhr4Z")
 
-# BonkLeagues skin fetcher, used by upload.
+# BonkLeagues skin fetcher, used by upload and BonxBot submissions.
 BLSKIN_FETCHER_URL = os.getenv(
     "BLSKIN_FETCHER_URL", "https://blskinfetcher-production.up.railway.app/api/getSkin"
 )
+
+# Shared secret BonxBot sends to POST /api/bot/skins/ (skins/apis/bot_skins.py).
+# Unset = the endpoint refuses every request. Set the same value on the bot.
+BONXBOT_API_TOKEN = os.getenv("BONXBOT_API_TOKEN", "")
 
 # BonkBot API, used by the join-matchmaking pass-through.
 BONKBOT_API_URL = os.getenv(
