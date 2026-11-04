@@ -254,14 +254,6 @@ UNTIERED_ALLOWED = {
     "/api/request_verification/",
     "/api/stop_tracking/",
     "/api/wins/",
-    # Fixed in the Phase 1 crash-fix PR.
-    "/api/join-matchmaking/",
-    "/leaderboards/losses/",
-    "/leaderboards/losses/<str:period>/",
-    "/leaderboards/winrate/",
-    "/leaderboards/winrate/<str:period>/",
-    "/leaderboards/wins/",
-    "/leaderboards/wins/<str:period>/",
 }
 
 
