@@ -50,3 +50,35 @@ def test_media_route_is_covered_by_the_rate_limit_audit():
     tiers = {route: tier for route, _view, tier, _rate, _methods in collect_rows()}
 
     assert tiers["/media/<path:path>"] == "media"
+
+
+class TestBulkAccessNote:
+    """Hitting the media limit invites the collector to ask instead of scraping."""
+
+    @pytest.fixture
+    def limited(self, client, media_file, settings):
+        settings.RATE_LIMITS = {**settings.RATE_LIMITS, "media": "1/m"}
+        client.get(media_file)
+        return client
+
+    def test_media_429_page_points_to_discord(self, limited, media_file, settings):
+        response = limited.get(media_file)
+
+        assert response.status_code == 429
+        assert b"Collecting Bonkverse skins?" in response.content
+        assert settings.BONKVERSE_DISCORD_URL.encode() in response.content
+
+    def test_media_429_json_includes_contact(self, limited, media_file, settings):
+        response = limited.get(media_file, HTTP_ACCEPT="application/json")
+
+        assert response.status_code == 429
+        assert response.json()["contact"] == settings.BONKVERSE_DISCORD_URL
+
+    def test_other_limits_do_not_show_the_note(self, client, settings):
+        settings.RATE_LIMITS = {**settings.RATE_LIMITS, "browse": "1/m"}
+        client.get("/categories/")
+
+        response = client.get("/categories/")
+
+        assert response.status_code == 429
+        assert b"Collecting Bonkverse skins?" not in response.content

@@ -28,6 +28,24 @@
     margin: 0 auto 28px;
 }
 
+/* "Collecting skins?" note on the media rate-limit page. */
+.error-page__note {
+    display: block;
+    margin: 20px auto 0;
+    padding: 14px 18px;
+    max-width: 34rem;
+    border: 1px solid rgba(88, 101, 242, 0.45);
+    border-radius: 10px;
+    background: rgba(88, 101, 242, 0.12);
+    font-size: 1rem;
+    color: #e3e5f5;
+}
+
+.error-page__note a {
+    color: #8ea1ff;
+    font-weight: 600;
+}
+
 .error-page__actions {
     display: flex;
     gap: 12px;

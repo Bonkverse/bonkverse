@@ -100,6 +100,10 @@ BONKVERSE_REPLAYS_URL = os.getenv("BONKVERSE_REPLAYS_URL", "http://localhost:517
 # local development can use production's instead of running the editor's server.
 BONKVERSE_RENDER_URL = os.getenv("BONKVERSE_RENDER_URL", "https://editor.bonkverse.io").rstrip("/")
 
+# Community Discord invite: nav link and the "collecting skins? talk to us" note
+# on the media rate-limit page.
+BONKVERSE_DISCORD_URL = os.getenv("BONKVERSE_DISCORD_URL", "https://discord.gg/2Zx7Cwhr4Z")
+
 # BonkLeagues skin fetcher, used by upload.
 BLSKIN_FETCHER_URL = os.getenv(
     "BLSKIN_FETCHER_URL", "https://blskinfetcher-production.up.railway.app/api/getSkin"
