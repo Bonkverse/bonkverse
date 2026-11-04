@@ -23,14 +23,16 @@ def publish_skin(request):
     """
     Publish a skin from the Bonkverse skin editor.
     Expected POST (multipart/form-data): skin_name, skin_code, svg.
-    `creator` is derived from the authenticated user.
+    `creator` is the authenticated user's username; a `creator` field is ignored.
     """
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"], "Invalid request method")
 
     skin_name = request.POST.get("skin_name", "").strip()
     skin_code = request.POST.get("skin_code", "").strip()
-    creator = (getattr(request.user, "username", "") or request.POST.get("creator", "")).strip()
+    # The signed-in account's bonk.io name, exactly as spelled: never trimmed
+    # (spaces are part of real names), and never taken from the form.
+    creator = request.user.username
 
     svg_file = request.FILES.get("svg")
     svg_text = request.POST.get("svg")
