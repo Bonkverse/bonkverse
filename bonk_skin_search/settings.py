@@ -401,6 +401,10 @@ RATE_LIMITS = {
         "upload": "10/m",  # skin uploads (fetch + render)
         "login": "15/h",  # bonk.io login attempts (POST only)
         "submit": "7/h",  # Discord server submissions
+        # Skin images and SVGs served from /media/. A search page shows 50
+        # thumbnails, so this allows ~12 fast page flips a minute; a scraper
+        # pulling every skin (2026-11-03: ~2,700/min) is stopped.
+        "media": "600/m",
     }.items()
 }
 
