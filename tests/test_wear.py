@@ -83,6 +83,14 @@ class TestWearSkin:
             "newavatar": skin.skin_code,
         }
 
+    def test_debug_log_has_no_username(self, bonk_session_client, user, skin, bonk_accepts, caplog):
+        """Regression: every wear logged the player's username."""
+        with caplog.at_level("DEBUG", logger="skins.wear_skin"):
+            bonk_session_client.post(_wear_url(skin.id))
+
+        assert "[wear-debug]" in caplog.text
+        assert user.username not in caplog.text
+
     def test_success_logs_event(self, bonk_session_client, skin, bonk_accepts):
         bonk_session_client.post(_wear_url(skin.id))
 

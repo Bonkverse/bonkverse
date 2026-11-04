@@ -122,13 +122,6 @@ def login_view(request):
                     headers=BROWSER_HEADERS,
                     timeout=REQ_TIMEOUT,
                 )
-
-                logger.warning(
-                    "[bonkverse] prod bonk login response | status=%s | content_type=%s | body=%s",
-                    resp.status_code,
-                    resp.headers.get("content-type"),
-                    _redact_token(resp.text[:500].replace("\n", " ")),
-                )
             except RequestException as e:
                 messages.error(request, f"Network error talking to Bonk.io: {e}")
                 return render(request, "skins/login.html", {"form": form})
@@ -141,6 +134,14 @@ def login_view(request):
                 logger.warning(
                     "[bonkverse] Non-JSON login response (%s): %s", resp.status_code, snippet
                 )
+
+            # Outcome only: the body holds the player's token, username, id and avatar.
+            logger.info(
+                "bonk login response | status=%s | result=%s | error=%s",
+                resp.status_code,
+                data.get("r") if isinstance(data, dict) else "non-json",
+                data.get("e") or data.get("error") if isinstance(data, dict) else None,
+            )
 
             if data and data.get("r") == "success" and data.get("token"):
                 token = data["token"]

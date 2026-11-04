@@ -80,12 +80,17 @@ class TestSuccessfulLogin:
         assert BonkUser.objects.filter(username="Canonical Name").exists()
         assert not BonkUser.objects.filter(username="canonical name").exists()
 
-    def test_token_is_redacted_in_logs(self, client, caplog):
+    def test_logs_outcome_but_no_player_details(self, client, caplog):
+        """Regression: the full bonk.io response (username, id, XP, avatar) was
+        logged on every login. Only the outcome belongs in the logs."""
         with caplog.at_level(logging.DEBUG, logger="skins.login"):
             _post_login(client)
 
+        [line] = [r.getMessage() for r in caplog.records if "bonk login response" in r.getMessage()]
+        assert "result=success" in line
+        for detail in ("TestPlayer", "1234567", "4200"):
+            assert detail not in line, detail
         assert "SCRUBBED-TEST-TOKEN-abc123" not in caplog.text
-        assert "***REDACTED***" in caplog.text
 
     def test_follows_safe_next_url(self, client):
         response = _post_login(client, next="/categories/")

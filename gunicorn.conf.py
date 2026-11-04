@@ -1,4 +1,4 @@
-"""Gunicorn settings for production (used by the Dockerfile and Procfile).
+"""Gunicorn settings for production (used by the Dockerfile).
 
 Why this file exists: production ran gunicorn's defaults, one sync worker that
 handles one request at a time. A burst of slow searches queued every other
