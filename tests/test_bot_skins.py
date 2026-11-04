@@ -11,6 +11,7 @@ import time
 
 from django.db import connection
 
+from core.bonk import SkinCode
 from integrations.bonxbot_db import BotSkin
 from integrations.editor_render import RenderedSkin, RenderResult
 from skins.bonxbot_migration import migrate
@@ -488,3 +489,115 @@ def test_lock_is_released_after_a_failed_import(settings, tmp_path):
     with connection.cursor() as cursor:
         cursor.execute("SELECT count(*) FROM pg_locks WHERE locktype = 'advisory'")
         assert cursor.fetchone()[0] == 0
+
+
+# ── Older bot rows: no skin_code, but final_url may carry it ─────────────────
+
+REDIRECT = "https://bonkleagues.io/skins.html#Fire%20Dragon%7Csome%20artist%7CCgcDYQAC%2BCQk%3D"
+
+
+@pytest.mark.parametrize(
+    ("url", "code"),
+    [
+        (REDIRECT, "CgcDYQAC+CQk="),
+        ("https://bonkleagues.io/skins.html#Name|Author|CgcDYQ", "CgcDYQ"),
+        ("https://bonkleagues.io/api/avatar.svg?skinCode=CgcDYQAC%252BCQk", "CgcDYQAC+CQk"),
+        ("https://bonkleagues.io/s/AbC1234", None),  # og:url page link: no code in it
+        ("https://bonkleagues.io/skins.html#Name|Author|<script>", None),  # not base64
+        ("https://bonkleagues.io/skins.html#only|two", None),
+        ("", None),
+        (None, None),
+    ],
+)
+def test_skin_code_from_bonkleagues_url(url, code):
+    found = SkinCode.from_bonkleagues_url(url)
+    assert (found.decoded if found else None) == code
+
+
+def test_migration_uses_the_code_in_final_url_instead_of_bonkleagues(mocked_http):
+    _editor_renders(mocked_http)
+    db = FakeBonxBotDB([BotSkin(1, "Fire Dragon", LINK, "artist", 1, None, REDIRECT)])
+
+    report = migrate(db, dry_run=False, sleep=lambda _s: pytest.fail("should not pace"))
+
+    assert report.counts == {"created_from_final_url": 1}
+    assert [c.request.url for c in mocked_http.calls] == [f"{EDITOR}/api/render-bundle"]
+    assert Skin.objects.get().skin_code == "CgcDYQAC+CQk="
+
+
+def test_dry_run_reports_where_each_code_comes_from():
+    db = FakeBonxBotDB(
+        [
+            BotSkin(1, "A", "https://bonkleagues.io/s/AAAAAA1", "a", 1, "CODE"),
+            BotSkin(2, "B", "https://bonkleagues.io/s/AAAAAA2", "b", 2, None, REDIRECT),
+            BotSkin(3, "C", "https://bonkleagues.io/s/AAAAAA3", "c", 3, None, LINK),
+        ]
+    )
+
+    report = migrate(db, dry_run=True)
+
+    assert dict(report.counts) == {
+        "create_from_code": 1,
+        "create_from_final_url": 1,
+        "create_from_bonkleagues": 1,
+    }
+
+
+def test_no_bonkleagues_skips_rows_only_bonkleagues_can_fill(mocked_http):
+    SkinFactory(link="https://bonkleagues.io/s/DUPDUP1")
+    db = FakeBonxBotDB(
+        [
+            BotSkin(1, "Needs BL", "https://bonkleagues.io/s/AAAAAA3", "c", 3, None, None),
+            BotSkin(2, "Dup, no code", "https://bonkleagues.io/s/DUPDUP1", "d", 4, None, None),
+        ]
+    )
+
+    planned = migrate(db, dry_run=True, skip_bonkleagues=True)
+    report = migrate(db, dry_run=False, skip_bonkleagues=True)
+
+    assert dict(planned.counts) == {"skipped_needs_bonkleagues": 1, "duplicate": 1}
+    assert dict(report.counts) == {"skipped_needs_bonkleagues": 1, "duplicate": 1}
+    assert len(mocked_http.calls) == 0
+    assert 1 not in db.synced and 1 not in db.failed  # left for a later run
+    assert 2 in db.synced  # duplicates still get linked; that needs no fetch
+
+
+def test_pace_sets_the_wait_after_each_bonkleagues_fetch(mocked_http):
+    _fetcher_replies(mocked_http)
+    db = FakeBonxBotDB([BotSkin(1, "A", LINK, "a", 1, None, None)])
+    waits = []
+
+    migrate(db, dry_run=False, pace_seconds=7.5, sleep=waits.append)
+
+    assert waits == [7.5]
+
+
+def test_run_stops_after_five_bonkleagues_failures_in_a_row(mocked_http):
+    mocked_http.add(responses.GET, FETCHER, status=403)  # Cloudflare block, say
+    rows = [
+        BotSkin(i, "A", f"https://bonkleagues.io/s/AAAAAA{i}", "a", i, None, None)
+        for i in range(1, 9)
+    ]
+    db = FakeBonxBotDB(rows)
+    messages = []
+
+    report = migrate(db, dry_run=False, sleep=lambda _s: None, progress=messages.append)
+
+    assert report.stopped_early
+    assert report.counts == {"retry_later": 5}
+    assert len(mocked_http.calls) == 5
+    assert (db.synced, db.failed) == ({}, {})  # everything left for a re-run
+    assert "Stopped" in messages[-1]
+
+
+def test_a_success_resets_the_failure_streak(mocked_http):
+    _editor_renders(mocked_http)
+    mocked_http.add(responses.GET, FETCHER, status=503)
+    bad = [BotSkin(i, "A", f"https://bonkleagues.io/s/BADBAD{i}", "a", i, None) for i in range(4)]
+    good = BotSkin(10, "G", "https://bonkleagues.io/s/GOOD001", "g", 10, "CODE")
+    db = FakeBonxBotDB(bad + [good] + bad[:3])
+
+    report = migrate(db, dry_run=False, sleep=lambda _s: None)
+
+    assert not report.stopped_early
+    assert report.counts["created_from_code"] == 1
