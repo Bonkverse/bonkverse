@@ -1,3 +1,4 @@
+from django.conf import settings
 import pandas as pd
 from urllib.parse import urlparse, parse_qs
 from django.core.management.base import BaseCommand
@@ -58,7 +59,7 @@ class Command(BaseCommand):
                     name=row.get("name") or "UnnamedSkin",
                     creator=row.get("creator") or "UnknownSkinCreator",
                     skin_code=skin_code,
-                    image_url=f"https://bonkverse.io/media/skins/{skin_id}.png",  # 🔑 synced to filesystem
+                    image_url=f"{settings.BONKVERSE_BASE_URL}/media/skins/{skin_id}.png",
                     link=row.get("link"),
                 )
 

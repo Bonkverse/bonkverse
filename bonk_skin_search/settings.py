@@ -82,21 +82,43 @@ MEDIA_ROOT = os.getenv(
 # External Services
 # =========================================================
 
-BONKVERSE_EDITOR_URL = os.getenv(
-    "BONKVERSE_EDITOR_URL",
-    "http://localhost:5173",
-)
+# Every URL and key for another service lives here, read from the environment.
+# Code reads these from django.conf.settings; never os.getenv or a hardcoded URL.
+# Defaults are what local development needs; production sets each one in Railway.
 
-BONKVERSE_REPLAYS_URL = os.getenv(
-    "BONKVERSE_REPLAYS_URL",
-    "http://localhost:5173",
-)
+# Public address of this site. Used where an absolute URL is required
+# (Cloudflare cache purges, data restore scripts). Links in pages are relative.
+BONKVERSE_BASE_URL = os.getenv("BONKVERSE_BASE_URL", "https://bonkverse.io").rstrip("/")
 
+# Where the "Skin Editor" and "Replays" links send people. Locally that is your
+# own dev server for those apps.
+BONKVERSE_EDITOR_URL = os.getenv("BONKVERSE_EDITOR_URL", "http://localhost:5173").rstrip("/")
+BONKVERSE_REPLAYS_URL = os.getenv("BONKVERSE_REPLAYS_URL", "http://localhost:5173").rstrip("/")
+
+# Server-side skin renderer (POST {BONKVERSE_RENDER_URL}/api/render-bundle), used by
+# staff re-render. Separate from the editor link: it is a stateless service, so
+# local development can use production's instead of running the editor's server.
+BONKVERSE_RENDER_URL = os.getenv("BONKVERSE_RENDER_URL", "https://editor.bonkverse.io").rstrip("/")
+
+# BonkLeagues skin fetcher, used by upload.
 BLSKIN_FETCHER_URL = os.getenv(
     "BLSKIN_FETCHER_URL", "https://blskinfetcher-production.up.railway.app/api/getSkin"
 )
 
-BONKVERSE_BASE_URL = os.getenv("BONKVERSE_BASE_URL", "https://bonkverse.io")
+# BonkBot API, used by the join-matchmaking pass-through.
+BONKBOT_API_URL = os.getenv(
+    "BONKBOT_API_URL", "https://bonkbot-api-production.up.railway.app"
+).rstrip("/")
+
+# Map decoder service, used by Tools -> Map Decoder. Unset = the tool says it's unavailable.
+DECODER_SERVICE_URL = os.getenv("DECODER_SERVICE_URL", "").rstrip("/")
+DECODER_SERVICE_KEY = os.getenv("DECODER_SERVICE_KEY", "")
+
+# bonk.io calls made during login: (connect, read) timeouts in seconds, and whether
+# to sync the player's friends in the background after logging in.
+BONK_CONNECT_TIMEOUT = float(os.getenv("BONK_CONNECT_TIMEOUT", "4"))
+BONK_READ_TIMEOUT = float(os.getenv("BONK_READ_TIMEOUT", "8"))
+SYNC_FRIENDS_ON_LOGIN = os.getenv("SYNC_FRIENDS_ON_LOGIN", "1").lower() in ("1", "true", "yes")
 
 CLOUDFLARE_ZONE_ID = os.getenv("CLOUDFLARE_ZONE_ID", "")
 CLOUDFLARE_CACHE_API_TOKEN = os.getenv("CLOUDFLARE_CACHE_API_TOKEN", "")
@@ -163,8 +185,6 @@ CORS_ALLOW_HEADERS = [
     "x-csrftoken",
     "x-requested-with",
 ]
-
-DEBUG_PROPAGATE_EXCEPTIONS = True
 
 if IS_PROD:
     ALLOWED_HOSTS = [
@@ -405,3 +425,31 @@ CELERY_ENABLE_UTC = True
 # Longest any single search query may run before Postgres cancels it and the page
 # shows "try a more specific search" instead of tying up a web worker.
 SEARCH_STATEMENT_TIMEOUT_MS = int(os.getenv("SEARCH_STATEMENT_TIMEOUT_MS", "3000"))
+
+# =========================================================
+# Logging
+# =========================================================
+
+# Everything goes to stdout, which Railway collects. Without this, Django's
+# defaults print nothing when DEBUG is off: unhandled errors (logger
+# "django.request") and app INFO lines would never reach the logs.
+# LOG_LEVEL controls this app's own loggers (skins.*, core.*).
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "plain": {"format": "%(levelname)s %(name)s: %(message)s"},
+    },
+    "handlers": {
+        "console": {"class": "logging.StreamHandler", "formatter": "plain"},
+    },
+    "root": {"handlers": ["console"], "level": "WARNING"},
+    "loggers": {
+        # Unhandled exceptions in views (with traceback) and 5xx responses.
+        "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+        "skins": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
+        "core": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
+    },
+}

@@ -62,9 +62,9 @@ def mocked_http(_no_real_http):
 
 
 @pytest.fixture(autouse=True)
-def _no_background_friend_sync(monkeypatch):
+def _no_background_friend_sync(settings):
     """Login normally starts a background thread for friend sync; keep tests synchronous."""
-    monkeypatch.setattr("skins.login.SYNC_FRIENDS_ON_LOGIN", False)
+    settings.SYNC_FRIENDS_ON_LOGIN = False
 
 
 def load_bonk_fixture(name: str) -> dict:
@@ -90,6 +90,12 @@ def skin(db):
 @pytest.fixture
 def logged_in_client(client, user):
     client.force_login(user)
+    return client
+
+
+@pytest.fixture
+def staff_client(client, staff_user):
+    client.force_login(staff_user)
     return client
 
 

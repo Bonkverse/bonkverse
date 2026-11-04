@@ -8,6 +8,7 @@ import json
 import logging
 
 import requests
+from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
@@ -17,7 +18,6 @@ from core.ratelimits import limit
 
 logger = logging.getLogger(__name__)
 
-BONKBOT_JOIN_URL = "https://bonkbot-api-production.up.railway.app/join-matchmaking"
 # (connect, read) seconds. Without a timeout a hung BonkBot held a web worker forever.
 BONKBOT_TIMEOUT = (3, 10)
 
@@ -38,7 +38,9 @@ def join_matchmaking(request):
         return JsonResponse({"error": "invalid_json"}, status=400)
 
     try:
-        response = requests.post(BONKBOT_JOIN_URL, json=payload, timeout=BONKBOT_TIMEOUT)
+        response = requests.post(
+            f"{settings.BONKBOT_API_URL}/join-matchmaking", json=payload, timeout=BONKBOT_TIMEOUT
+        )
         return JsonResponse(response.json(), status=response.status_code, safe=False)
     except (requests.RequestException, ValueError):
         logger.warning("join-matchmaking: BonkBot unreachable or non-JSON reply", exc_info=True)
