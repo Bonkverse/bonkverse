@@ -15,26 +15,11 @@ from django.urls import URLPattern, URLResolver, get_resolver
 # Routes that are not ours or cannot be smoke-tested meaningfully with GET.
 SKIP_PREFIXES = ("admin/", "static/", "media/", "^static/", "^media/")
 
-# Known crashes the RFC found. Each is fixed in Phase 1 with a regression test;
+# Known crashes, each pinned with a strict xfail naming the expected exception.
 # `strict=True` makes the suite fail when the bug is fixed so the mark gets removed.
-_RATELIMIT_BUG = (
-    "RFC-0001 Phase 1: @ratelimit decorates _get_queryset(period), so it receives a str "
-    "instead of a request",
-    AttributeError,
-)
-KNOWN_BROKEN = {
-    "leaderboards/wins/<str:period>/": _RATELIMIT_BUG,
-    "leaderboards/wins/": _RATELIMIT_BUG,
-    "leaderboards/losses/<str:period>/": _RATELIMIT_BUG,
-    "leaderboards/losses/": _RATELIMIT_BUG,
-    "leaderboards/winrate/<str:period>/": _RATELIMIT_BUG,
-    "leaderboards/winrate/": _RATELIMIT_BUG,
-    # Found by this smoke test: GET falls through and the view returns None.
-    "api/join-matchmaking/": (
-        "RFC-0001 Phase 1: join_matchmaking has no require_POST and returns None on GET",
-        ValueError,
-    ),
-}
+# Empty since RFC-0001 Phase 1: the win/loss/winrate leaderboards were removed and
+# join-matchmaking became POST-only.
+KNOWN_BROKEN: dict[str, tuple[str, type[Exception]]] = {}
 
 
 def _walk(patterns, prefix=""):

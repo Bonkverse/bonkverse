@@ -35,9 +35,6 @@ from skins import leaderboards
 from skins import players
 from skins import home
 from skins import api
-from skins import win_leaderboards
-from skins import loss_leaderboards
-from skins import winrate_leaderboards
 from skins import staff
 from skins import discord
 from skins import discord_views
@@ -117,14 +114,6 @@ urlpatterns = [
     # Verification
     path("api/request_verification/", api.request_verification, name="request_verification"),
     path("api/complete_verification/", api.complete_verification, name="complete_verification"),
-    path("leaderboards/wins/<str:period>/", win_leaderboards.wins_hub, name="wins_hub"),
-    path("leaderboards/wins/", win_leaderboards.wins_hub, {"period": "today"}),  # default
-    path("leaderboards/losses/<str:period>/", loss_leaderboards.losses_hub, name="losses_hub"),
-    path("leaderboards/losses/", loss_leaderboards.losses_hub, {"period": "today"}),  # default
-    path(
-        "leaderboards/winrate/<str:period>/", winrate_leaderboards.winrate_hub, name="winrate_hub"
-    ),
-    path("leaderboards/winrate/", winrate_leaderboards.winrate_hub, {"period": "today"}),
     path("serverlist/", discord.server_list, name="list"),
     path("<uuid:server_id>/", discord.server_detail, name="detail"),
     path("submit/", discord.submit_server_page, name="submit_server"),
