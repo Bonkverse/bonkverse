@@ -15,6 +15,7 @@ on Bonkverse comes back as the existing skin without rendering anything.
 
 from __future__ import annotations
 
+import functools
 import time
 from collections import Counter
 from dataclasses import dataclass, field
@@ -32,6 +33,9 @@ from skins.skin_import import (
 
 # Pause between rows that must be read from BonkLeagues (no code anywhere).
 BONKLEAGUES_PAUSE_SECONDS = 2.0
+# This many BonkLeagues fetch failures back to back means we're blocked or it's
+# down, so the run stops rather than marching through every remaining row.
+MAX_FETCH_FAILURES_IN_A_ROW = 5
 
 # Where a row's skin code came from; also the suffix of its report outcome.
 FROM_CODE = "code"
@@ -45,6 +49,7 @@ class MigrationReport:
     counts: Counter = field(default_factory=Counter)
     retry_later: list[tuple[int, str]] = field(default_factory=list)  # (bot id, error)
     failed: list[tuple[int, str]] = field(default_factory=list)  # permanent
+    stopped_early: bool = False
 
     @property
     def total(self) -> int:
@@ -81,32 +86,46 @@ def migrate(
     dry_run: bool,
     limit: int | None = None,
     skip_bonkleagues: bool = False,
+    pace_seconds: float = BONKLEAGUES_PAUSE_SECONDS,
     progress: Callable[[str], None] = lambda _msg: None,
     sleep: Callable[[float], None] = time.sleep,
     importer=import_bonkleagues_skin,
 ) -> MigrationReport:
     report = MigrationReport()
+    pause = functools.partial(sleep, pace_seconds)
     if not dry_run:
         db.ensure_sync_columns()
     rows = db.unsynced_skins(limit=limit)
     progress(f"{len(rows)} BonxBot submission(s) not on Bonkverse yet")
 
+    fetch_failures_in_a_row = 0
     for i, row in enumerate(rows, 1):
         if dry_run:
             report.counts[plan_row(row, skip_bonkleagues=skip_bonkleagues)] += 1
         else:
-            _migrate_row(db, row, report, importer, sleep, skip_bonkleagues)
+            error = _migrate_row(db, row, report, importer, pause, skip_bonkleagues)
+            fetch_failures_in_a_row = (
+                fetch_failures_in_a_row + 1 if error == ImportFailure.FETCH_FAILED else 0
+            )
+            if fetch_failures_in_a_row >= MAX_FETCH_FAILURES_IN_A_ROW:
+                report.stopped_early = True
+                progress(
+                    f"Stopped: {fetch_failures_in_a_row} BonkLeagues fetches failed in a row"
+                    " (likely blocked or down). Re-run later; finished rows are kept."
+                )
+                break
         if i % 25 == 0:
             progress(f"  {i}/{len(rows)}")
     return report
 
 
-def _migrate_row(db, row, report, importer, sleep, skip_bonkleagues):
+def _migrate_row(db, row, report, importer, pause, skip_bonkleagues) -> str | None:
+    """Import one row and record the outcome; returns the import error, if any."""
     code, source = code_for(row)
     if source == FROM_BONKLEAGUES and skip_bonkleagues and not existing_skin(row.link):
         # Left unsynced on the bot: a later run without the flag picks it up.
         report.counts[SKIPPED_NEEDS_BONKLEAGUES] += 1
-        return
+        return None
 
     result = importer(row.link or "", row.name, row.creator, skin_code=code)
 
@@ -138,4 +157,5 @@ def _migrate_row(db, row, report, importer, sleep, skip_bonkleagues):
     was_duplicate = result.skin is not None and not result.created
     rejected_link = result.error in (ImportFailure.INVALID_LINK, ImportFailure.LINK_TOO_LONG)
     if source == FROM_BONKLEAGUES and not was_duplicate and not rejected_link:
-        sleep(BONKLEAGUES_PAUSE_SECONDS)
+        pause()
+    return result.error

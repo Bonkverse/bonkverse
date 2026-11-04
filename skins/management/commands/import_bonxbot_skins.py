@@ -35,8 +35,14 @@ class Command(BaseCommand):
             action="store_true",
             help="Skip rows whose code only BonkLeagues has; a later run picks them up.",
         )
+        parser.add_argument(
+            "--pace",
+            type=float,
+            default=2.0,
+            help="Seconds to wait after each BonkLeagues fetch (default 2).",
+        )
 
-    def handle(self, *args, database_url, dry_run, limit, no_bonkleagues, **options):
+    def handle(self, *args, database_url, dry_run, limit, no_bonkleagues, pace, **options):
         if not database_url:
             raise CommandError("Pass --database-url or set BONXBOT_DATABASE_URL.")
 
@@ -47,12 +53,19 @@ class Command(BaseCommand):
                 dry_run=dry_run,
                 limit=limit,
                 skip_bonkleagues=no_bonkleagues,
+                pace_seconds=pace,
                 progress=self.stdout.write,
             )
         finally:
             db.close()
 
-        heading = "Dry run, nothing written" if dry_run else "Done"
+        heading = (
+            "Dry run, nothing written"
+            if dry_run
+            else "Stopped early"
+            if report.stopped_early
+            else "Done"
+        )
         self.stdout.write(self.style.SUCCESS(f"{heading}: {report.total} row(s)"))
         for outcome, n in sorted(report.counts.items()):
             self.stdout.write(f"  {outcome:<26} {n}")

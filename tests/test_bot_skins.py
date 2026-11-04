@@ -560,3 +560,44 @@ def test_no_bonkleagues_skips_rows_only_bonkleagues_can_fill(mocked_http):
     assert len(mocked_http.calls) == 0
     assert 1 not in db.synced and 1 not in db.failed  # left for a later run
     assert 2 in db.synced  # duplicates still get linked; that needs no fetch
+
+
+def test_pace_sets_the_wait_after_each_bonkleagues_fetch(mocked_http):
+    _fetcher_replies(mocked_http)
+    db = FakeBonxBotDB([BotSkin(1, "A", LINK, "a", 1, None, None)])
+    waits = []
+
+    migrate(db, dry_run=False, pace_seconds=7.5, sleep=waits.append)
+
+    assert waits == [7.5]
+
+
+def test_run_stops_after_five_bonkleagues_failures_in_a_row(mocked_http):
+    mocked_http.add(responses.GET, FETCHER, status=403)  # Cloudflare block, say
+    rows = [
+        BotSkin(i, "A", f"https://bonkleagues.io/s/AAAAAA{i}", "a", i, None, None)
+        for i in range(1, 9)
+    ]
+    db = FakeBonxBotDB(rows)
+    messages = []
+
+    report = migrate(db, dry_run=False, sleep=lambda _s: None, progress=messages.append)
+
+    assert report.stopped_early
+    assert report.counts == {"retry_later": 5}
+    assert len(mocked_http.calls) == 5
+    assert (db.synced, db.failed) == ({}, {})  # everything left for a re-run
+    assert "Stopped" in messages[-1]
+
+
+def test_a_success_resets_the_failure_streak(mocked_http):
+    _editor_renders(mocked_http)
+    mocked_http.add(responses.GET, FETCHER, status=503)
+    bad = [BotSkin(i, "A", f"https://bonkleagues.io/s/BADBAD{i}", "a", i, None) for i in range(4)]
+    good = BotSkin(10, "G", "https://bonkleagues.io/s/GOOD001", "g", 10, "CODE")
+    db = FakeBonxBotDB(bad + [good] + bad[:3])
+
+    report = migrate(db, dry_run=False, sleep=lambda _s: None)
+
+    assert not report.stopped_early
+    assert report.counts["created_from_code"] == 1
