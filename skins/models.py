@@ -6,7 +6,8 @@ from django.utils import timezone
 import uuid
 from django.urls import reverse
 
-import re
+from core.bonk import BonkUsername, InvalidUsername
+
 from django.core.exceptions import ValidationError
 
 # Create your models here.
@@ -299,22 +300,16 @@ class SkinImage(models.Model):
         return f"{self.kind} image for {self.skin.name}"
 
 
-USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9 _]+$")
-
-
 def validate_username(value: str):
-    if not value:
-        raise ValidationError("Username is required.")
-    if len(value) < 3:
-        raise ValidationError("Username must be at least 3 characters long.")
-    if len(value) > 35:
-        raise ValidationError("Username must be at most 35 characters long.")
-    if not USERNAME_PATTERN.match(value):
-        raise ValidationError(
-            "Username can only contain letters, numbers, spaces, and underscores."
-        )
-    if value.lower().startswith("guest") or value.lower().startswith("new player"):
-        raise ValidationError("Guest accounts are not allowed.")
+    """Model-field validator for bonk.io usernames (rules in core/bonk/usernames.py).
+
+    Only used by the archived PlayerWin/PlayerLoss tables; kept because their
+    migrations import it by this path.
+    """
+    try:
+        BonkUsername.validate(value)
+    except InvalidUsername as error:
+        raise ValidationError(str(error)) from None
 
 
 class PlayerWin(models.Model):
