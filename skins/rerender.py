@@ -39,7 +39,7 @@
 #     # POST to /api/render-bundle with the stored skin_code
 #     try:
 #         fetch_res = requests.post(
-#             f"{SKIN_EDITOR_URL}/api/render-bundle",
+#             f"{settings.BONKVERSE_RENDER_URL}/api/render-bundle",
 #             json={"skinCode": skin.skin_code, "size": 512},
 #             timeout=30,
 #         )
@@ -112,8 +112,6 @@ from django.contrib.auth.decorators import login_required
 from skins.events import log_event
 from skins.models import Skin, SkinImage
 
-SKIN_EDITOR_URL = getattr(settings, "BONKVERSE_EDITOR_URL", "https://editor.bonkverse.io")
-
 
 def staff_required(view_func):
     @functools.wraps(view_func)
@@ -134,7 +132,7 @@ def purge_cloudflare_cache(paths: list):
     if not zone_id or not api_token:
         return  # not configured — skip silently
 
-    base_url = getattr(settings, "BONKVERSE_BASE_URL", "https://bonkverse.io")
+    base_url = settings.BONKVERSE_BASE_URL
     files = [f"{base_url}{path}" for path in paths]
 
     try:
@@ -168,7 +166,7 @@ def rerender_skin(request, skin_id):
 
     try:
         fetch_res = requests.post(
-            f"{SKIN_EDITOR_URL}/api/render-bundle",
+            f"{settings.BONKVERSE_RENDER_URL}/api/render-bundle",
             json={"skinCode": skin_code, "size": 512},
             timeout=30,
         )

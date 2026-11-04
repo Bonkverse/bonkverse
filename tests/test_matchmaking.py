@@ -8,9 +8,9 @@ text to the caller.
 import pytest
 import requests
 
-from skins.bonkbot import BONKBOT_JOIN_URL
 
 URL = "/api/join-matchmaking/"
+BONKBOT_JOIN_URL = "https://bonkbot-api-production.up.railway.app/join-matchmaking"
 
 pytestmark = pytest.mark.django_db
 

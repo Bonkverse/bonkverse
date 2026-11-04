@@ -1,0 +1,38 @@
+<!doctype html>
+{% comment %}
+  Shown for unhandled errors. Deliberately standalone: no base template, no
+  {% static %}, no database, no request context. It must render even when the
+  thing that broke is the database, the cache, or the static files manifest.
+{% endcomment %}
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Something went wrong · Bonkverse</title>
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center;
+      background: #0f1220; color: #e8eaf2;
+      font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    main { max-width: 32rem; padding: 2rem 1.25rem; text-align: center; }
+    .code { font-size: 4rem; font-weight: 800; margin: 0; color: #7c8cff; letter-spacing: .05em; }
+    h1 { font-size: 1.5rem; margin: .25rem 0 .75rem; }
+    p { color: #b5bad0; margin: 0 0 1.5rem; }
+    a {
+      display: inline-block; padding: .6rem 1.2rem; border-radius: .5rem;
+      background: #5865f2; color: #fff; text-decoration: none; font-weight: 600;
+    }
+    a:hover { background: #4752c4; }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="code">500</p>
+    <h1>Something went wrong</h1>
+    <p>That's on us, not you. The error has been logged. Try again in a moment.</p>
+    <a href="/">Back to Home</a>
+  </main>
+</body>
+</html>
