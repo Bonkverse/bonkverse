@@ -194,16 +194,15 @@ def _debug_wear(request, label: str, **extra):
     Remove once the cause is found.
     """
     raw_cookie = request.META.get("HTTP_COOKIE", "")
-    logger.warning(
-        "[wear-debug] %s | session_key=%s | has_token=%s | token_expires_in=%s | "
-        "sessionid_cookie_count=%s | host=%s | user=%s | %s",
+    # No username or session key: these lines are about session state, not people.
+    logger.info(
+        "[wear-debug] %s | has_token=%s | token_expires_in=%s | "
+        "sessionid_cookie_count=%s | host=%s | %s",
         label,
-        (request.session.session_key or "none")[:6],
         bool(request.session.get("bonk_token")),
         round(request.session.get("bonk_token_expires", 0) - time.time()),
         raw_cookie.count("sessionid="),
         request.get_host(),
-        getattr(request.user, "username", None),
         extra,
     )
 

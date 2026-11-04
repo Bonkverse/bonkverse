@@ -12,6 +12,8 @@ from dotenv import load_dotenv
 from datetime import timezone as dt_timezone
 import sentry_sdk
 
+from core.config import check_redis_url
+
 load_dotenv()
 
 # =========================================================
@@ -170,6 +172,8 @@ if IS_PROD:
         "bonkverse.io",
         "www.bonkverse.io",
         "editor.bonkverse.io",  # add this — the editor subdomain hits Django too
+        # Railway's deploy healthcheck (railway.json) sends this Host header.
+        "healthcheck.railway.app",
         "127.0.0.1",
         "localhost",
         "http://172.26.90.66",
@@ -321,6 +325,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 REDIS_URL = os.getenv("REDIS_URL")
 
 if REDIS_URL:
+    # Fail at startup, not on every request, if the URL can't be parsed.
+    check_redis_url(REDIS_URL)
     CACHES = {
         "default": {
             "BACKEND": "django_redis.cache.RedisCache",
