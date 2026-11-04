@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVector, SearchVectorField
 from django.utils import timezone
@@ -79,16 +79,36 @@ class Skin(models.Model):
 
 
 class BonkUserManager(BaseUserManager):
-    def create_user(self, username):
+    def create_user(self, username, **extra_fields):
+        """Create a site account for a bonk.io username.
+
+        Accounts never have a usable password: people sign in through bonk.io,
+        and we never store bonk.io passwords.
+        """
         if not username:
             raise ValueError("Bonk.io username is required")
-        user = self.model(username=username)
-        user.set_unusable_password()  # don't store Bonk.io passwords
+        user = self.model(username=username, **extra_fields)
+        user.set_unusable_password()
         user.save(using=self._db)
         return user
 
+    def create_superuser(self, username, password=None, **extra_fields):
+        """Used by `manage.py createsuperuser --noinput --username X`.
 
-class BonkUser(AbstractBaseUser):
+        The password is ignored: admins sign in through bonk.io like everyone
+        else. To promote an existing account, use `manage.py grant_admin`.
+        """
+        extra_fields.update(is_staff=True, is_superuser=True)
+        return self.create_user(username, **extra_fields)
+
+
+class BonkUser(AbstractBaseUser, PermissionsMixin):
+    """A Bonkverse site account, identified by its bonk.io username.
+
+    PermissionsMixin adds is_superuser, groups and user_permissions, which the
+    Django admin needs (has_perm / has_module_perms).
+    """
+
     username = models.CharField(max_length=100, unique=True)
     date_joined = models.DateTimeField(auto_now_add=True)
     is_staff = models.BooleanField(default=False)
