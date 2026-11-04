@@ -101,10 +101,22 @@ Put a skin in one of the account's five avatar slots.
 Request: `task=updateavatar`, `token`, `newavatarslot` (`"1"`–`"5"`),
 `newavatar` (the skin code, as stored).
 
-Success: `{"r": "success"}`. Refusal for a stale token: unknown;
-`avatar_update_token_expired.json` uses `e: "token"` as a placeholder. Every
-refusal is treated as "token probably stale" and logged with its `e` value
-(never the token), so production logs will show the real codes.
+Success: `{"r": "success"}` (recorded 2026-11-03).
+
+A token bonk.io doesn't accept gets `{"r": "fail", "e": "token"}`
+(recorded 2026-11-03 by sending a valid token with its signature altered).
+A genuinely expired token hasn't been recorded and may use another code, so
+every refusal is still treated as "token probably stale" and logged with its
+`e` value (never the token).
+
+The token is a JWT whose payload holds the account id, username, the IP it
+was issued to and an `exp` time. Treat it like a password: it was valid for
+roughly two days when recorded.
+
+Skin codes are sent as stored. A URL-encoded stored code (`%2F` etc.) is
+form-encoded again on the way, and bonk.io still answers success
+(2026-11-03); whether the skin then renders correctly in game is not yet
+checked.
 
 ## Recording a fixture
 
@@ -119,4 +131,4 @@ Most fixtures are synthetic. To replace one with a real body:
    README from `synthetic` to `recorded YYYY-MM-DD`.
 
 The most useful recordings still missing: the `avatar_update.php` and
-`friends.php` replies for an expired token.
+`friends.php` replies for a genuinely expired token.

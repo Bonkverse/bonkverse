@@ -21,5 +21,5 @@ Rules:
 | `login_unknown_username.json` | `login_legacy.php` (HTTP 200 with failure body) | synthetic (community) |
 | `friends_success.json` | `friends.php` (includes a blank name and a bad id on purpose) | synthetic |
 | `friends_token_expired.json` | `friends.php` | synthetic: the real code for a stale token is unknown |
-| `avatar_update_success.json` | `avatar_update.php` | synthetic |
-| `avatar_update_token_expired.json` | `avatar_update.php` | synthetic: the real code for a stale token is unknown |
+| `avatar_update_success.json` | `avatar_update.php` | recorded 2026-11-03 (identical to the old synthetic body) |
+| `avatar_update_token_expired.json` | `avatar_update.php` | recorded 2026-11-03 with a tampered token (bad signature). A genuinely expired token is not recorded yet and may differ. |
