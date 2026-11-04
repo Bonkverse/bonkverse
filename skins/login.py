@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.core import signing
 from django.utils.http import url_has_allowed_host_and_scheme
 
+from core.bonk import BonkSession
 from skins.events import log_event
 
 from .models import BonkUser, BonkPlayer, BonkAccountLink
@@ -143,23 +144,13 @@ def login_view(request):
                 bonk_user_id = data.get("id")
 
                 # Session (no password stored)
-                request.session["bonk_token"] = token
-                request.session["bonk_token_expires"] = time.time() + (
-                    14 * 24 * 60 * 60
-                )  # 14 days, matches TOKEN_TTL in wear_skin.py
-                request.session["bonk_username"] = bonk_username
-                request.session["bonk_user_id"] = bonk_user_id
-
-                # Capture active slot from login response so wear works immediately without modal
-                active_slot = data.get("activeAvatarNumber") or data.get("activeavatarnumber")
-                try:
-                    active_slot = int(active_slot) if active_slot is not None else None
-                except Exception:
-                    active_slot = None
-                if active_slot in (1, 2, 3, 4, 5):
-                    request.session["bonk_active_slot"] = active_slot
-
-                request.session.modified = True
+                bonk = BonkSession(request.session)
+                bonk.store_token(token)
+                bonk.store_identity(bonk_username, bonk_user_id)
+                # Remember the active slot so wear works immediately without the modal.
+                bonk.store_active_slot(
+                    data.get("activeAvatarNumber") or data.get("activeavatarnumber")
+                )
 
                 # Site account
                 user, _ = BonkUser.objects.get_or_create(username=bonk_username)
@@ -250,14 +241,7 @@ def login_view(request):
 
 @limit("write")
 def logout_view(request):
-    for k in (
-        "bonk_token",
-        "bonk_token_expires",
-        "bonk_active_slot",
-        "bonk_username",
-        "bonk_user_id",
-    ):
-        request.session.pop(k, None)
+    BonkSession(request.session).clear()
     logout(request)
     messages.success(request, "Logged out!")
     return redirect("home")

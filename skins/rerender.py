@@ -2,7 +2,6 @@ import functools
 import os
 from core.ratelimits import limit
 import base64
-import urllib.parse
 import requests
 
 from django.http import JsonResponse
@@ -11,6 +10,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 
 from skins.events import log_event
+from core.bonk import SkinCode
 from skins.models import Skin, SkinImage
 
 
@@ -59,11 +59,8 @@ def rerender_skin(request, skin_id):
     if not skin.skin_code:
         return JsonResponse({"error": "No skin_code stored for this skin"}, status=400)
 
-    # Skin codes from BonkLeagues imports may be double URL-encoded
-    # (%252F instead of %2F). Decode until clean base64.
-    skin_code = urllib.parse.unquote(skin.skin_code)
-    if "%" in skin_code:
-        skin_code = urllib.parse.unquote(skin_code)
+    # Stored codes may be URL-encoded once or twice (BonkLeagues imports).
+    skin_code = SkinCode(skin.skin_code).decoded
 
     try:
         fetch_res = requests.post(

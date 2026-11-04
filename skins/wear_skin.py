@@ -1,24 +1,36 @@
-from core.ratelimits import limit
+"""Wearing skins on bonk.io from Bonkverse.
 
+Owns: the wear endpoints (gallery skin by id, unsaved editor skin by code) and
+the in-page bonk.io login used when the player's bonk.io token is missing.
+Does not own: the bonk.io session rules (core/bonk/session.py) or, after
+RFC-0001 Phase 2.2, the HTTP calls to bonk.io (integrations/bonk_api.py).
 
-import time
+JSON contract the frontend relies on (tests/test_wear.py):
+- 401 with auth="bonkverse" -> sign in to the site
+- 401 with auth="bonk"      -> show the bonk.io login modal
+- 401 without auth          -> the bonk.io credentials were wrong
+"""
+
 import logging
-import requests
 from dataclasses import dataclass
-from django.views.decorators.http import require_POST
+
+import requests
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from urllib.parse import urlparse, parse_qs
-from .models import Skin
+from django.views.decorators.http import require_POST
+
+from core.bonk import AvatarSlot, BonkSession
+from core.ratelimits import limit
+
 from .auth_guards import api_login_required, bonk_token_required
 from .events import log_event
+from .models import Skin
 
 logger = logging.getLogger(__name__)
 
 BONK_LOGIN_URL = "https://bonk2.io/scripts/login_legacy.php"
 BONK_AVATAR_UPDATE_URL = "https://bonk2.io/scripts/avatar_update.php"
 TIMEOUT = 10
-TOKEN_TTL = 14 * 24 * 60 * 60  # 14 days
 
 
 def _debug_wear(request, label: str, **extra):
@@ -27,6 +39,7 @@ def _debug_wear(request, label: str, **extra):
     Never logs the token itself — only whether one exists.
     Remove once the cause is found.
     """
+    bonk = BonkSession(request.session)
     raw_cookie = request.META.get("HTTP_COOKIE", "")
     # No username or session key: these lines are about session state, not people.
     logger.info(
@@ -34,51 +47,19 @@ def _debug_wear(request, label: str, **extra):
         "sessionid_cookie_count=%s | host=%s | %s",
         label,
         bool(request.session.get("bonk_token")),
-        round(request.session.get("bonk_token_expires", 0) - time.time()),
+        bonk.expires_in_seconds,
         raw_cookie.count("sessionid="),
         request.get_host(),
         extra,
     )
 
 
-def _extract_skin_code(image_url: str):
-    try:
-        return parse_qs(urlparse(image_url).query).get("skinCode", [None])[0]
-    except Exception:
-        return None
-
-
 @dataclass
 class BonkLoginResult:
     ok: bool
     token: str | None
-    active_slot: int | None
+    active_slot: AvatarSlot | None
     error: str | None
-
-
-def _save_session_token(request, token: str):
-    request.session["bonk_token"] = token
-    request.session["bonk_token_expires"] = time.time() + TOKEN_TTL
-    request.session.modified = True
-
-
-def _save_active_slot(request, slot: int | None):
-    if slot in (1, 2, 3, 4, 5):
-        request.session["bonk_active_slot"] = slot
-        request.session.modified = True
-
-
-def _get_session_token(request):
-    tok = request.session.get("bonk_token")
-    exp = request.session.get("bonk_token_expires", 0)
-    if tok and time.time() < exp:
-        return tok
-    return None
-
-
-def _get_active_slot(request):
-    slot = request.session.get("bonk_active_slot")
-    return slot if slot in (1, 2, 3, 4, 5) else None
 
 
 def _bonk_login(username: str, password: str) -> BonkLoginResult:
@@ -91,18 +72,16 @@ def _bonk_login(username: str, password: str) -> BonkLoginResult:
         r.raise_for_status()
         data = r.json()
         if data.get("r") == "success" and data.get("token"):
-            active = data.get("activeAvatarNumber") or data.get("activeavatarnumber")
-            try:
-                active = int(active) if active is not None else None
-            except Exception:
-                active = None
+            active = AvatarSlot.parse(
+                data.get("activeAvatarNumber") or data.get("activeavatarnumber")
+            )
             return BonkLoginResult(True, data["token"], active, None)
         return BonkLoginResult(False, None, None, data.get("error") or "login_failed")
     except Exception:
         return BonkLoginResult(False, None, None, "network_error")
 
 
-def _bonk_update_avatar(token: str, slot: int, skin_code: str):
+def _bonk_update_avatar(token: str, slot: AvatarSlot, skin_code: str):
     try:
         r = requests.post(
             BONK_AVATAR_UPDATE_URL,
@@ -131,16 +110,9 @@ def _bonk_update_avatar(token: str, slot: int, skin_code: str):
         return (False, "network_error")
 
 
-def _resolve_slot(request):
-    slot = request.POST.get("slot")
-    if slot:
-        try:
-            slot = int(slot)
-        except Exception:
-            slot = None
-    if slot not in (1, 2, 3, 4, 5):
-        slot = _get_active_slot(request) or 3
-    return slot
+def _resolve_slot(request) -> AvatarSlot:
+    """The slot from the form if valid, else the player's active slot, else 3."""
+    return AvatarSlot.choose(request.POST.get("slot"), BonkSession(request.session).active_slot)
 
 
 @api_login_required
@@ -148,21 +120,23 @@ def _resolve_slot(request):
 @limit("login", method="POST")
 def bonk_login_for_wear(request):
     """Mint a bonk.io token from credentials (the rare first-time / expired path)."""
-    u = request.POST.get("bonk_username")
-    p = request.POST.get("bonk_password")
-    if not u or not p:
+    bonk_username = request.POST.get("bonk_username")
+    password = request.POST.get("bonk_password")
+    if not bonk_username or not password:
         return JsonResponse({"ok": False, "error": "missing_params"}, status=400)
 
-    res = _bonk_login(u, p)
-    if not res.ok:
+    result = _bonk_login(bonk_username, password)
+    if not result.ok:
         # Bad bonk credentials — 401 WITHOUT an `auth` tag so the client treats
         # it as a credential error, not a session-expired redirect.
-        return JsonResponse({"ok": False, "error": res.error}, status=401)
+        return JsonResponse({"ok": False, "error": result.error}, status=401)
 
-    _save_session_token(request, res.token)
-    _save_active_slot(request, res.active_slot)
-    _debug_wear(request, "login: token saved", active_slot=res.active_slot)
-    return JsonResponse({"ok": True, "active_slot": res.active_slot})
+    bonk = BonkSession(request.session)
+    bonk.store_token(result.token)
+    bonk.store_active_slot(result.active_slot)
+    _debug_wear(request, "login: token saved", active_slot=result.active_slot)
+    active_slot = result.active_slot.number if result.active_slot else None
+    return JsonResponse({"ok": True, "active_slot": active_slot})
 
 
 @bonk_token_required
@@ -170,7 +144,8 @@ def bonk_login_for_wear(request):
 @limit("write")
 def wear_skin_code(request):
     """Wear an unsaved editor skin from a raw skin_code (no DB row)."""
-    token = _get_session_token(request)  # guaranteed present by decorator
+    bonk = BonkSession(request.session)
+    token = bonk.token  # guaranteed present by decorator
     skin_code = request.POST.get("skin_code")
     if not skin_code:
         return JsonResponse({"ok": False, "error": "skin_code_not_found"}, status=400)
@@ -184,18 +159,19 @@ def wear_skin_code(request):
             {"ok": False, "auth": "bonk", "error": err or "update_failed"}, status=401
         )
 
-    _save_session_token(request, token)  # sliding TTL
+    bonk.store_token(token)  # sliding TTL
     log_event(request.user, "skin_worn", metadata={"source": "editor_unsaved"})
-    return JsonResponse({"ok": True, "slot": slot})
+    return JsonResponse({"ok": True, "slot": slot.number})
 
 
-# ── Existing gallery "wear by id" ────────────────────────────────────────────
 @bonk_token_required
 @require_POST
 @limit("write")
 def wear_skin(request, skin_id: int):
+    """Wear a gallery skin by id in the requested (or active) slot."""
     _debug_wear(request, "wear: passed decorator", skin_id=skin_id)
-    token = _get_session_token(request)  # guaranteed present by decorator
+    bonk = BonkSession(request.session)
+    token = bonk.token  # guaranteed present by decorator
     slot = _resolve_slot(request)
     skin = get_object_or_404(Skin, id=skin_id)
     skin_code = skin.skin_code
@@ -209,6 +185,6 @@ def wear_skin(request, skin_id: int):
             {"ok": False, "auth": "bonk", "error": err or "update_failed"}, status=401
         )
 
-    _save_session_token(request, token)
+    bonk.store_token(token)  # sliding TTL
     log_event(request.user, "skin_worn", skin=skin)
-    return JsonResponse({"ok": True, "slot": slot})
+    return JsonResponse({"ok": True, "slot": slot.number})
