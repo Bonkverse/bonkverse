@@ -5,6 +5,8 @@ Bonkverse
 
 This repository contains the Django backend that powers [bonkverse.io](https://bonkverse.io). The skin editor (`editor.bonkverse.io`) and replay tools live in their own repos.
 
+**Docs:** [docs/](docs/README.md) covers how requests flow, every environment variable, the production runbook, rate limiting, search, past incidents and design decisions.
+
 ## TL;DR — Quick Start (Local Dev)
 
 ```bash
