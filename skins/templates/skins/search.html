@@ -165,6 +165,8 @@
         {% endif %}
 
       </div>
+    {% empty %}
+      <p class="empty-state">{{ search_error|default:"No skins found. Try a different search." }}</p>
     {% endfor %}
   </div>
 

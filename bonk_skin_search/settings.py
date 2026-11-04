@@ -200,6 +200,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.postgres",  # search lookups (trigram_similar, @@ on SearchVectorField)
     # Third-party
     "django_extensions",
     "django_ratelimit",
@@ -316,10 +317,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Redis / Cache
 # =========================================================
 
+# Never print or log REDIS_URL: it contains the Redis password.
 REDIS_URL = os.getenv("REDIS_URL")
-
-print("Using REDIS_URL:", REDIS_URL)
-print("Current ENV:", ENV)
 
 if REDIS_URL:
     CACHES = {
@@ -328,10 +327,17 @@ if REDIS_URL:
             "LOCATION": REDIS_URL,
             "OPTIONS": {
                 "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                # If Redis is slow or down, give up fast and carry on without the
+                # cache instead of hanging or failing the request. Ignored errors
+                # are still logged (logger "django_redis").
+                "SOCKET_CONNECT_TIMEOUT": 1,
+                "SOCKET_TIMEOUT": 1,
+                "IGNORE_EXCEPTIONS": True,
             },
             "KEY_PREFIX": "bonkverse",
         }
     }
+    DJANGO_REDIS_LOG_IGNORED_EXCEPTIONS = True
 else:
     CACHES = {
         "default": {
@@ -341,6 +347,10 @@ else:
     }
 
 RATELIMIT_USE_CACHE = "default"
+# If the cache can't be reached, let requests through rather than blocking everyone
+# (django-ratelimit's default treats a failed count as "over the limit").
+# Cloudflare's rate limiting still applies while Redis is down.
+RATELIMIT_FAIL_OPEN = True
 
 # =========================================================
 # Rate limiting (core/client_ip.py, core/ratelimits.py)
@@ -381,3 +391,11 @@ CELERY_RESULT_SERIALIZER = "json"
 
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_ENABLE_UTC = True
+
+# =========================================================
+# Search: query time limit for skins/search.py
+# =========================================================
+
+# Longest any single search query may run before Postgres cancels it and the page
+# shows "try a more specific search" instead of tying up a web worker.
+SEARCH_STATEMENT_TIMEOUT_MS = int(os.getenv("SEARCH_STATEMENT_TIMEOUT_MS", "3000"))

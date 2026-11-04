@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVector, SearchVectorField
 from django.utils import timezone
 from datetime import timedelta
 import uuid
@@ -9,6 +11,10 @@ import re
 from django.core.exceptions import ValidationError
 
 # Create your models here.
+
+# Text-search language for skins. Stored in Skin.search_vector and used by every
+# SearchQuery against it; the two must match or searches miss.
+SKIN_SEARCH_CONFIG = "english"
 
 
 class Skin(models.Model):
@@ -36,6 +42,35 @@ class Skin(models.Model):
     downvotes = models.PositiveIntegerField(default=0)
     favorited_by = models.ManyToManyField("BonkUser", related_name="favorite_skins", blank=True)
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+
+    # Full-text search data, kept up to date by Postgres on every insert/update.
+    # Same fields and weights the search page always used; storing it lets a GIN
+    # index find matches instead of rebuilding this for every row on every search.
+    search_vector = models.GeneratedField(
+        expression=(
+            SearchVector("labels", weight="A", config=SKIN_SEARCH_CONFIG)
+            + SearchVector("description", weight="A", config=SKIN_SEARCH_CONFIG)
+            + SearchVector("name", weight="B", config=SKIN_SEARCH_CONFIG)
+            + SearchVector("creator", weight="C", config=SKIN_SEARCH_CONFIG)
+        ),
+        output_field=SearchVectorField(),
+        db_persist=True,
+    )
+
+    class Meta:
+        indexes = [
+            # Relevance search: full-text match.
+            GinIndex(fields=["search_vector"], name="skin_search_vector_gin"),
+            # Fuzzy name match (pg_trgm `%`) and name mode (`ilike_contains`).
+            GinIndex(fields=["name"], opclasses=["gin_trgm_ops"], name="skin_name_trgm"),
+            # name / creator / description modes (`ilike_contains`, core/lookups.py).
+            GinIndex(fields=["creator"], opclasses=["gin_trgm_ops"], name="skin_creator_trgm"),
+            GinIndex(
+                fields=["description"], opclasses=["gin_trgm_ops"], name="skin_description_trgm"
+            ),
+            # Newest sort, New Releases, and the "added today" header count.
+            models.Index(fields=["-created_at"], name="skin_created_at_desc"),
+        ]
 
     def __str__(self):
         return f"{self.name} ({self.link})"

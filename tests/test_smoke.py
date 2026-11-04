@@ -116,15 +116,8 @@ def test_smoke_covers_a_reasonable_number_of_routes():
 QUERY_CASES = [
     pytest.param("/search/?q=abc&sort=newest", id="search-query-newest"),
     pytest.param("/search/?mode=creator&q=x", id="search-creator"),
-    pytest.param(
-        "/search/?sort=newest",
-        id="search-empty-newest",
-        marks=pytest.mark.xfail(
-            reason="RFC-0001 Phase 1: empty query slices [:50] before order_by",
-            raises=TypeError,
-            strict=True,
-        ),
-    ),
+    # Fixed: was a 500 (random sample sliced before sorting). See tests/test_search.py.
+    pytest.param("/search/?sort=newest", id="search-empty-newest"),
 ]
 
 
