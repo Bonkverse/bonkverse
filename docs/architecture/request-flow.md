@@ -36,7 +36,7 @@ flowchart LR
    without either (fail open).
 7. **Other services**, each configured in settings
    ([configuration.md](../operations/configuration.md)): bonk.io (login, friends,
-   wearing skins), the render service (staff re-render), BonkBot (matchmaking),
+   wearing skins; all through `integrations/bonk_api.py`), the render service (staff re-render), BonkBot (matchmaking),
    the BonkLeagues fetcher (upload), the map decoder.
 
 ## Errors

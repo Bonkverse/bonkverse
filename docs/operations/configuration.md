@@ -35,11 +35,15 @@ Defaults are chosen so local development works with only the required ones set.
 | `CLOUDFLARE_ZONE_ID`, `CLOUDFLARE_CACHE_API_TOKEN` | unset | Edge cache purge after re-render (skipped when unset) |
 | `SENTRY_DSN` | unset | Error reporting |
 
-## bonk.io login
+## bonk.io account API
+
+Used by login, friend sync and wearing skins (`integrations/bonk_api.py`,
+[bonk/api.md](../bonk/api.md)).
 
 | Variable | Default |
 |---|---|
-| `BONK_CONNECT_TIMEOUT` / `BONK_READ_TIMEOUT` | `4` / `8` seconds |
+| `BONK_API_BASE_URL` | `https://bonk2.io/scripts` |
+| `BONK_CONNECT_TIMEOUT` / `BONK_READ_TIMEOUT` | `4` / `8` seconds, for every call (wear used a flat 10 before Phase 2.2) |
 | `SYNC_FRIENDS_ON_LOGIN` | `1` (sync friends in a background thread after login) |
 
 ## Capacity and limits
