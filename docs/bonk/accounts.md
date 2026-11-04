@@ -55,12 +55,23 @@ What that shows:
   empty, over 64 characters (headroom over the 35 seen), or control characters.
 - The login form doesn't strip spaces (`LoginForm.username` has `strip=False`).
 - Compare names with `BonkUsername.key` (case-insensitive, spaces kept).
+- Display a name with the capitalization bonk.io returned; never re-case it.
+
+## Case
+
+**Usernames are unique case-insensitively.** Verified 2026-11-03: trying to
+register "the saucy tulip" on bonk.io fails with "username taken" because
+"The Saucy Tulip" exists. So two accounts never differ only by capitalization,
+and a case-insensitive match identifies one account. bonk.io keeps the
+capitalization the owner chose; that spelling is what we store and show.
 
 ## Open questions
 
-- # BONK: Does bonk.io treat usernames case-insensitively at login and in
-  friend lists? Not verified. The audit's case-only duplicate check would
-  answer part of it.
+- Does login accept any capitalization of the name? Registration is
+  case-insensitive (above); login probably is too, but that isn't verified.
+- Is "leading space" really a separate account, or bonk.io storing the same
+  account's name with a space? Registration with a leading space isn't
+  possible today, so these are older accounts.
 - Known bug: `apis/publish_skin.py` strips the creator name, so a creator whose
   name has leading/trailing spaces is saved without them.
 

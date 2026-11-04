@@ -34,8 +34,9 @@ class BonkUsername:
     """A bonk.io username, exactly as bonk.io spells it.
 
     Never trimmed or re-cased: " Name" (leading space) and "Name" can be
-    different accounts. Compare with `.key`, which is
-    case-insensitive but keeps spaces.
+    different accounts, while "name" and "NAME" cannot (bonk.io usernames are
+    unique case-insensitively). Compare with `.key`, which ignores case but
+    keeps spaces.
     """
 
     value: str
@@ -61,8 +62,9 @@ class BonkUsername:
     def key(self) -> str:
         """Case-insensitive form for comparing and looking up usernames.
 
-        # BONK: whether bonk.io treats names case-insensitively is not yet
-        # verified; spaces are kept because they distinguish real accounts.
+        # BONK: usernames are unique case-insensitively: registering
+        # "the saucy tulip" fails as taken when "The Saucy Tulip" exists
+        # (verified 2026-11-03). Spaces are kept: they distinguish accounts.
         """
         return self.value.casefold()
 
