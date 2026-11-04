@@ -55,7 +55,6 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("search/", search_skins, name="search_skins"),
     path("", home.home, name="home"),
-    # path("", search_skins, name="home"),  # Home page is now the search page
     path("api/publish-skin/", publish_skin, name="publish_skin"),
     path("skins/share/<int:skin_id>/<uuid:uuid>/", share_skin, name="share_skin"),
     path("login/", login_view, name="login"),
@@ -68,10 +67,7 @@ urlpatterns = [
     path("my-profile/skins-partial/", my_skins_partial, name="my_skins_partial"),
     path("skin/<int:skin_id>/edit/", edit_skin, name="edit_skin"),
     path("matchmaking/", matchmaking_page, name="matchmaking"),
-    # path('skins/<int:skin_id>/', skin_detail, name='skin_detail'),
-    # path("skins/<int:skin_id>/<uuid:uuid>/", skin_detail, name="skin_detail"),
     path("skins/detail/<int:skin_id>", skin_detail, name="skin_detail"),
-    # path("changelog/", changelog_view, name="changelog"),
     path("staff/", staff.staff_page, name="staff"),
     # NEW: AJAX/JSON endpoints used by search cards
     path("api/", index, name="api_index"),
@@ -104,16 +100,7 @@ urlpatterns = [
         "players_search/flash-friends/", flash_friends.flash_friends_page, name="flash_friends_page"
     ),
     path("changelog/add/", add_changelog, name="add_changelog"),
-    path("api/wins/", api.record_win, name="api_record_win"),
-    path("api/losses/", api.record_loss, name="api_record_loss"),
-    path("api/leaderboard/<str:period>/", api.leaderboard, name="api_leaderboard"),
-    path("api/loss-leaderboard/<str:period>/", api.loss_leaderboard, name="api_loss_leaderboard"),
-    path("api/heartbeat/", api.heartbeat, name="heartbeat"),
-    path("api/stop_tracking/", api.stop_tracking, name="stop_tracking"),
     path("api/friends-sync-status/", api.friends_sync_status, name="friends_sync_status"),
-    # Verification
-    path("api/request_verification/", api.request_verification, name="request_verification"),
-    path("api/complete_verification/", api.complete_verification, name="complete_verification"),
     path("serverlist/", discord.server_list, name="list"),
     path("<uuid:server_id>/", discord.server_detail, name="detail"),
     path("submit/", discord.submit_server_page, name="submit_server"),

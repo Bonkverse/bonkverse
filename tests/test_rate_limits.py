@@ -236,25 +236,13 @@ def test_audit_lists_every_route_with_its_tier(settings):
     assert "search" in search_line and "60/m" in search_line
     login_line = next(line for line in text.splitlines() if line.strip().startswith("/login/"))
     assert "login" in login_line and "POST" in login_line
-    # Tracker endpoints are still on the old decorator until they are retired.
-    assert any(line.strip().startswith("/api/wins/") for line in text.splitlines())
+    assert not any(line.strip().startswith("/api/wins/") for line in text.splitlines())
 
 
 # Routes allowed to have no tier, each with the PR that removes it from this list.
 # Shrink only: the guard test fails if a listed route gains a tier (delete it here)
 # or if any route not listed here has no tier (add @limit to it).
-UNTIERED_ALLOWED = {
-    # Retired with the win/loss tracker (RFC-0001 Phase 1, retire PR).
-    "/api/complete_verification/",
-    "/api/friends-sync-status/",
-    "/api/heartbeat/",
-    "/api/leaderboard/<str:period>/",
-    "/api/loss-leaderboard/<str:period>/",
-    "/api/losses/",
-    "/api/request_verification/",
-    "/api/stop_tracking/",
-    "/api/wins/",
-}
+UNTIERED_ALLOWED: set[str] = set()  # every route has a tier since RFC-0001 Phase 1
 
 
 def test_every_route_has_a_rate_limit_tier():

@@ -93,7 +93,7 @@ def test_route_does_not_500(client, user, skin, route, entry, as_user):
 
 def test_smoke_covers_a_reasonable_number_of_routes():
     """Guard against the walker silently finding nothing."""
-    assert len(ROUTES) >= 50
+    assert len(ROUTES) >= 40
 
 
 # Routes whose behavior depends on query parameters. Add a row when a bug is
