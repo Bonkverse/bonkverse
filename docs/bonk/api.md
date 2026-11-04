@@ -65,7 +65,7 @@ Success (`login_success.json`, synthetic):
 | Field | Meaning |
 |---|---|
 | `token` | Session token for the other scripts. Stored in the site session (`BonkSession`), and signed in `BonkAccountLink`. |
-| `username` | The account's name **as bonk.io spells it**. Can differ in capitalization from what was typed. If missing, the typed name is used. |
+| `username` | The account's name **as bonk.io spells it**. Can differ in capitalization from what was typed: login accepts any capitalization (verified 2026-11-03). If missing, the typed name is used. |
 | `id` | Numeric account id; the real identity (`BonkPlayer.bonk_id`). |
 | `activeAvatarNumber` | The account's active avatar slot, 1–5. A lowercase `activeavatarnumber` is also accepted. |
 | `legacyFriends` | Flash-era friends: one string of names separated by `#`. Empty segments are parsing artifacts; whitespace-only names are real. |
@@ -119,5 +119,4 @@ Most fixtures are synthetic. To replace one with a real body:
    README from `synthetic` to `recorded YYYY-MM-DD`.
 
 The most useful recordings still missing: the `avatar_update.php` and
-`friends.php` replies for an expired token, and whether login accepts a
-differently capitalized username (see `accounts.md`).
+`friends.php` replies for an expired token.

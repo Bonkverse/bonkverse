@@ -72,10 +72,13 @@ register "the saucy tulip" on bonk.io fails with "username taken" because
 and a case-insensitive match identifies one account. bonk.io keeps the
 capitalization the owner chose; that spelling is what we store and show.
 
+**Login accepts any capitalization.** Verified 2026-11-03: logging in as
+"the saucy tulip" signs in to "The Saucy Tulip". The login response returns
+the account's own spelling, which is what Bonkverse stores, so a player who
+types a different capitalization still lands on the same site account.
+
 ## Open questions
 
-- Does login accept any capitalization of the name? Registration is
-  case-insensitive (above); login probably is too, but that isn't verified.
 - Is "leading space" really a separate account, or bonk.io storing the same
   account's name with a space? Registration with a leading space isn't
   possible today, so these are older accounts.
