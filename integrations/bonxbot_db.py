@@ -35,6 +35,7 @@ class BotSkin:
     creator: str | None
     submitter_id: int | None
     skin_code: str | None
+    final_url: str | None = None  # where BonkLeagues redirected; may carry the code
 
 
 class BonxBotDB:
@@ -65,7 +66,7 @@ class BonxBotDB:
             else ""
         )
         sql = (
-            "SELECT id, skin_name, skin_url, creator, submitter_id, skin_code"
+            "SELECT id, skin_name, skin_url, creator, submitter_id, skin_code, final_url"
             f" FROM skins {where} ORDER BY id"
         )
         params = ()
