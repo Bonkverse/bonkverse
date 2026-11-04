@@ -1,8 +1,8 @@
-"""Characterization tests for the bonk.io-backed login flow (skins/login.py).
+"""Tests for the bonk.io-backed login flow (skins/login.py).
 
-These pin today's behavior so Phase 2 can move the bonk.io call into
-integrations/bonk_api.py without changing what users see. bonk.io is always
-faked with `responses`; see tests/fixtures/bonk/.
+The bonk.io call goes through integrations/bonk_api.py (tested on its own in
+test_bonk_api.py); these pin what users see. bonk.io is always faked with
+`responses`; see tests/fixtures/bonk/.
 """
 
 import logging
@@ -11,8 +11,9 @@ import pytest
 import requests
 from django.urls import reverse
 
-from skins.models import BonkAccountLink, BonkPlayer, BonkUser, UserEvent
+from skins.models import BonkAccountLink, BonkPlayer, BonkUser, Skin, UserEvent
 from tests.conftest import load_bonk_fixture
+from tests.factories import UserFactory
 
 BONK_LOGIN_URL = "https://bonk2.io/scripts/login_legacy.php"
 LOGIN_URL = "/login/"
@@ -92,6 +93,24 @@ class TestSuccessfulLogin:
             assert detail not in line, detail
         assert "SCRUBBED-TEST-TOKEN-abc123" not in caplog.text
 
+    def test_new_site_account_has_no_usable_password(self, client):
+        _post_login(client)
+
+        assert not BonkUser.objects.get(username="TestPlayer").has_usable_password()
+
+    def test_flash_friends_from_login_response_are_stored(self, client, mocked_http):
+        mocked_http.replace(
+            "POST",
+            BONK_LOGIN_URL,
+            json={**load_bonk_fixture("login_success"), "legacyFriends": "Old Pal# Spaced"},
+        )
+
+        _post_login(client)
+
+        user = BonkUser.objects.get(username="TestPlayer")
+        names = set(user.flash_friendships.values_list("flash_friend__name", flat=True))
+        assert names == {"Old Pal", " Spaced"}
+
     def test_follows_safe_next_url(self, client):
         response = _post_login(client, next="/categories/")
 
@@ -101,6 +120,43 @@ class TestSuccessfulLogin:
         response = _post_login(client, next="https://evil.example.com/")
 
         assert response.url == reverse("my_profile")
+
+
+class TestSiteAccountMatching:
+    """bonk.io names are unique case-insensitively (docs/bonk/accounts.md), so
+    a login finds the existing site account whatever its stored capitalization."""
+
+    @pytest.fixture(autouse=True)
+    def _bonk_accepts(self, mocked_http):
+        mocked_http.post(BONK_LOGIN_URL, json=load_bonk_fixture("login_success"))
+
+    def test_reuses_account_stored_with_other_capitalization(self, client):
+        existing = UserFactory(username="testplayer")
+        Skin.objects.create(name="Mine", creator="testplayer", skin_code="X")
+
+        _post_login(client)
+
+        assert client.session["_auth_user_id"] == str(existing.pk)
+        assert BonkUser.objects.count() == 1
+        # The stored spelling is kept so rows that name it still match.
+        existing.refresh_from_db()
+        assert existing.username == "testplayer"
+
+    def test_exact_spelling_wins_when_old_data_has_both(self, client):
+        UserFactory(username="testplayer")
+        exact = UserFactory(username="TestPlayer")
+
+        _post_login(client)
+
+        assert client.session["_auth_user_id"] == str(exact.pk)
+
+    def test_spaces_still_distinguish_accounts(self, client):
+        UserFactory(username=" TestPlayer")
+
+        _post_login(client)
+
+        assert BonkUser.objects.filter(username="TestPlayer").exists()
+        assert BonkUser.objects.count() == 2
 
 
 class TestFailedLogin:
@@ -114,6 +170,25 @@ class TestFailedLogin:
         assert "_auth_user_id" not in client.session
         assert "bonk_token" not in client.session
         assert not BonkUser.objects.exists()
+
+    @pytest.mark.parametrize(
+        "fixture,message",
+        [
+            ("login_wrong_password", "Bonk.io login failed: Wrong password."),
+            (
+                "login_unknown_username",
+                "Bonk.io login failed: No bonk.io account has that username.",
+            ),
+        ],
+    )
+    def test_says_what_was_wrong(self, client, mocked_http, fixture, message):
+        """Regression: bonk.io's code is in "e", but the view read "error", so
+        every failure said "Bonk.io login failed: fail"."""
+        mocked_http.post(BONK_LOGIN_URL, json=load_bonk_fixture(fixture))
+
+        response = _post_login(client)
+
+        assert [str(m) for m in response.context["messages"]] == [message]
 
     def test_network_error_shows_message_instead_of_500(self, client, mocked_http):
         mocked_http.post(BONK_LOGIN_URL, body=requests.ConnectionError("bonk.io down"))

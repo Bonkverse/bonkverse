@@ -118,8 +118,10 @@ BONKBOT_API_URL = os.getenv(
 DECODER_SERVICE_URL = os.getenv("DECODER_SERVICE_URL", "").rstrip("/")
 DECODER_SERVICE_KEY = os.getenv("DECODER_SERVICE_KEY", "")
 
-# bonk.io calls made during login: (connect, read) timeouts in seconds, and whether
-# to sync the player's friends in the background after logging in.
+# bonk.io account API (integrations/bonk_api.py): where its scripts live, the
+# (connect, read) timeouts in seconds for every call, and whether to sync the
+# player's friends in the background after logging in.
+BONK_API_BASE_URL = os.getenv("BONK_API_BASE_URL", "https://bonk2.io/scripts").rstrip("/")
 BONK_CONNECT_TIMEOUT = float(os.getenv("BONK_CONNECT_TIMEOUT", "4"))
 BONK_READ_TIMEOUT = float(os.getenv("BONK_READ_TIMEOUT", "8"))
 SYNC_FRIENDS_ON_LOGIN = os.getenv("SYNC_FRIENDS_ON_LOGIN", "1").lower() in ("1", "true", "yes")
