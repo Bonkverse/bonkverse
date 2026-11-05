@@ -47,3 +47,17 @@ def test_anonymous_cannot_publish(client):
 
     assert response.status_code == 401
     assert not Skin.objects.exists()
+
+
+def test_oversized_svg_gets_a_size_message_not_unsafe(client):
+    """A skin over the size limit is too detailed, not unsafe: say so."""
+    client.force_login(UserFactory(username="BigSkinMaker"))
+    padding = "<!--" + "x" * 2_000_000 + "-->"
+    big_svg = SVG.replace("</svg>", padding + "</svg>")
+
+    response = _publish(client, svg=big_svg)
+
+    assert response.status_code == 422
+    assert "too detailed" in response.json()["error"]
+    assert "Unsafe" not in response.json()["error"]
+    assert not Skin.objects.exists()

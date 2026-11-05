@@ -39,7 +39,7 @@ from core.bonk import SkinCode
 from integrations.bl_skin_fetcher import FetchResult, fetch_skin
 from integrations.editor_render import RenderResult, render_skin_code
 from skins.models import Skin, SkinImage
-from skins.svg_sanitizer import UnsafeSVGError, validate_svg_upload
+from skins.svg_sanitizer import SVGTooLargeError, UnsafeSVGError, validate_svg_upload
 
 logger = logging.getLogger(__name__)
 
@@ -67,11 +67,12 @@ class ImportFailure:
     INVALID_LINK = "invalid_link"
     LINK_TOO_LONG = "link_too_long"
     UNSAFE_SVG = "unsafe_svg"
+    SVG_TOO_LARGE = "svg_too_large"  # rendered skin is over the size limit
     RENDER_FAILED = "render_failed"  # editor down or could not render the code
     FETCH_FAILED = "fetch_failed"  # no code given; fetcher down or could not read the link
     STORAGE_FAILED = "storage_failed"
 
-    PERMANENT = {INVALID_LINK, LINK_TOO_LONG, UNSAFE_SVG}
+    PERMANENT = {INVALID_LINK, LINK_TOO_LONG, UNSAFE_SVG, SVG_TOO_LARGE}
 
 
 @dataclass(frozen=True)
@@ -177,6 +178,8 @@ def import_bonkleagues_skin(
 
         try:
             validate_svg_upload(media.svg)
+        except SVGTooLargeError as exc:
+            return ImportResult(error=ImportFailure.SVG_TOO_LARGE, detail=str(exc))
         except UnsafeSVGError as exc:
             return ImportResult(error=ImportFailure.UNSAFE_SVG, detail=str(exc))
 
