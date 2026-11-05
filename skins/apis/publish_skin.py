@@ -11,7 +11,12 @@ from django.conf import settings
 from skins.events import log_event
 from skins.models import Skin, SkinImage
 from skins.auth_guards import api_login_required
-from skins.svg_sanitizer import validate_svg_upload, UnsafeSVGError
+from skins.svg_sanitizer import (
+    TOO_LARGE_MESSAGE,
+    SVGTooLargeError,
+    UnsafeSVGError,
+    validate_svg_upload,
+)
 
 # Validation
 SKIN_NAME_PATTERN = re.compile(r"^[A-Za-z0-9 _]+$")
@@ -60,6 +65,8 @@ def publish_skin(request):
     # foreignObject, ...) before anything is written to disk or the DB.
     try:
         validate_svg_upload(svg_content)
+    except SVGTooLargeError:
+        return JsonResponse({"error": TOO_LARGE_MESSAGE}, status=422)
     except UnsafeSVGError as e:
         return JsonResponse({"error": f"Unsafe SVG rejected: {e}"}, status=422)
 

@@ -15,6 +15,12 @@ import xml.etree.ElementTree as ET
 
 MAX_SVG_BYTES = 2_000_000
 
+# Shown to people whose skin is over MAX_SVG_BYTES.
+TOO_LARGE_MESSAGE = (
+    "This skin is too detailed to upload: its image is over the 2 MB limit. "
+    "Try fewer or simpler layers."
+)
+
 # Elements that can execute or smuggle script. <image> is intentionally
 # NOT here — raster image references are fine.
 BLOCKED_ELEMENTS = {
@@ -68,6 +74,14 @@ class UnsafeSVGError(ValueError):
     """Raised when an uploaded SVG fails validation."""
 
 
+class SVGTooLargeError(UnsafeSVGError):
+    """Raised when an SVG is over MAX_SVG_BYTES.
+
+    Not a safety problem: a legitimate skin can render this large, so callers
+    show the person a size message instead of calling the skin unsafe.
+    """
+
+
 def _localname(name):
     # ElementTree namespaces look like '{http://...}href'.
     return name.rsplit("}", 1)[-1].lower() if isinstance(name, str) else ""
@@ -114,7 +128,7 @@ def validate_svg_upload(content):
     if not content:
         raise UnsafeSVGError("empty SVG")
     if len(content) > MAX_SVG_BYTES:
-        raise UnsafeSVGError(f"SVG exceeds {MAX_SVG_BYTES} bytes")
+        raise SVGTooLargeError(f"SVG exceeds {MAX_SVG_BYTES} bytes")
 
     try:
         text = content.decode("utf-8")

@@ -13,7 +13,12 @@ from django.contrib import messages
 
 from skins.events import log_event
 from skins.models import Skin, SkinImage
-from skins.svg_sanitizer import validate_svg_upload, UnsafeSVGError
+from skins.svg_sanitizer import (
+    TOO_LARGE_MESSAGE,
+    SVGTooLargeError,
+    UnsafeSVGError,
+    validate_svg_upload,
+)
 
 
 bonk_url_pattern = r"^https://bonkleagues\.io/s/([A-Za-z0-9]{7})$"
@@ -85,6 +90,9 @@ def upload_skin(request):
         # anything is written to disk or the DB.
         try:
             validate_svg_upload(svg_content)
+        except SVGTooLargeError:
+            messages.error(request, TOO_LARGE_MESSAGE)
+            return render(request, "skins/upload.html")
         except UnsafeSVGError as e:
             messages.error(request, f"Unsafe SVG rejected: {e}")
             return render(request, "skins/upload.html")

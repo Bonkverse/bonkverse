@@ -30,6 +30,7 @@ ERROR_STATUS = {
     ImportFailure.INVALID_LINK: 422,
     ImportFailure.LINK_TOO_LONG: 422,
     ImportFailure.UNSAFE_SVG: 422,
+    ImportFailure.SVG_TOO_LARGE: 422,
     ImportFailure.RENDER_FAILED: 502,
     ImportFailure.FETCH_FAILED: 502,
     ImportFailure.STORAGE_FAILED: 500,

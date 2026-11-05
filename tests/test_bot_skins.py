@@ -173,6 +173,17 @@ def test_unsafe_svg_is_rejected(client, mocked_http, tmp_path):
     assert not (tmp_path / "skins").exists() or not any((tmp_path / "skins").iterdir())
 
 
+def test_oversized_svg_is_rejected_as_too_large(client, mocked_http, tmp_path):
+    padding = "<!--" + "x" * 2_000_000 + "-->"
+    _fetcher_replies(mocked_http, svg=f'<svg xmlns="http://www.w3.org/2000/svg">{padding}</svg>')
+
+    response = _submit(client)
+
+    assert response.status_code == 422
+    assert response.json() == {"error": "svg_too_large", "retryable": False}
+    assert not Skin.objects.exists()
+
+
 def test_get_is_not_allowed(client):
     assert client.get(URL).status_code == 405
 
