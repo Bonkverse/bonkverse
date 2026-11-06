@@ -1,4 +1,6 @@
 // my_profile.js — behavior for the My Profile page (my_profile.html)
+// Card behavior (menu, zoom, Wear) is static/core/js/bv-cards.js; this file
+// adds the tabs, paging, select mode, Edit and Delete.
 // Reads the URLs it needs from data attributes on #profile-routes,
 // since a plain static file can't use Django's {% url %} tag.
 
@@ -9,20 +11,6 @@ const ROUTES = (() => {
     bulkDelete:   el?.dataset.bulkDeleteUrl   || '',
   };
 })();
-
-function showImage(src) {
-  document.getElementById('zoomedImage').src = src;
-  document.getElementById('imageModal').style.display = 'flex';
-}
-function closeImage() {
-  document.getElementById('imageModal').style.display = 'none';
-}
-function handleCardImageClick(e, img) {
-  // In select mode, clicking anywhere on the card (including the
-  // image) should toggle selection, not open the zoom modal.
-  if (getSkinsGrid()?.classList.contains('select-mode')) return;
-  showImage(img.src);
-}
 
 // The My Skins grid is replaced wholesale on every AJAX page swap, so
 // nothing should hold a stale reference to it — always look it up fresh.
@@ -36,25 +24,6 @@ document.querySelectorAll('.profile-tab').forEach(tab => {
     document.querySelectorAll('.profile-tab').forEach(t => t.classList.toggle('active', t === tab));
     document.querySelectorAll('.profile-panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + tab.dataset.tab));
   });
-});
-
-// ── ··· More menu (delegated — works for cards added by AJAX paging too) ──
-document.addEventListener('click', (e) => {
-  const moreBtn = e.target.closest('.card-more-btn');
-  if (moreBtn) {
-    e.stopPropagation();
-    const dropdown = moreBtn.closest('.card-more-menu').querySelector('.card-more-dropdown');
-    document.querySelectorAll('.card-more-dropdown.open').forEach(d => {
-      if (d !== dropdown) d.classList.remove('open');
-    });
-    dropdown.classList.toggle('open');
-    return;
-  }
-  if (e.target.closest('.card-more-dropdown')) {
-    e.stopPropagation();
-    return;
-  }
-  document.querySelectorAll('.card-more-dropdown.open').forEach(d => d.classList.remove('open'));
 });
 
 // ── My Skins: instant pagination (no full page reload) ───────────────
@@ -426,11 +395,3 @@ async function saveEditSkin() {
 }
 
 document.getElementById('edit-save-btn').addEventListener('click', saveEditSkin);
-
-// ── Wear (bonk.io login modal and retry: static/core/js/bv-wear.js) ──
-document.addEventListener('click', e => {
-  if (getSkinsGrid()?.classList.contains('select-mode')) return;
-  const btn = e.target.closest('.wear-card-btn-profile');
-  if (!btn) return;
-  BVWear.wear(btn.closest('.skin-card').dataset.wearUrl);
-});

@@ -57,6 +57,8 @@ Error codes are `snake_case`. `auth` appears only on 401s: `"bonkverse"` means s
 
 **Page scripts** call the server through `BVApi` (`static/core/js/bv-api.js`: `post`, `postJSON`, `postOrLogin`, `getCSRF`) and wear skins through `BVWear.wear(url)` (`static/core/js/bv-wear.js`), which owns the one bonk.io login modal (`skins/partials/_bonk_login_modal.html`). Both load in `base.html`. Don't write a page-local `getCSRF`/`postForm` or login modal; `tests/test_frontend.py` fails if you do.
 
+**Skin cards** come from two partials: `skins/partials/_skin_card.html` (the full card; `mode` is `search`, `mine` or `favorite`) and `_skin_card_compact.html` (the linked tile on the home carousels and browse pages). Feed the full card with `skins.selectors.decorate_skins_for_user(skins, request.user)`, which adds the favorite count and the visitor's vote and favorite in a fixed number of queries. What a card does (⋯ menu, image zoom, broken-image fallback, votes, favorites, Wear) is `static/core/js/bv-cards.js`, loaded in `base.html`; a page script only adds its own menu items (Edit, Delete, Report). Don't write card markup or wire card buttons in a page; `tests/test_frontend.py` fails if you do.
+
 **Config** comes from `settings.py`, read from env. No hardcoded URLs, TTLs or feature flags in modules.
 
 **Background work** goes through Celery, not `threading.Thread`.

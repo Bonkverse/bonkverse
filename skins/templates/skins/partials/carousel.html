@@ -12,23 +12,11 @@
   <div class="carousel" data-speed="{{ speed|default:20 }}">
     <div class="carousel-track">
       {% for s in skins %}
-      <a class="carousel-card" href="{{ s.get_absolute_url }}" title="{{ s.name }}">
-        <img loading="lazy" src="{{ s.image_url }}" alt="{{ s.name }}">
-        <div class="carousel-meta">
-          <div class="name">{{ s.name|truncatechars:22 }}</div>
-          <div class="by">by {{ s.creator|truncatechars:18 }}</div>
-        </div>
-      </a>
+        {% include 'skins/partials/_skin_card_compact.html' with skin=s card_class='carousel-card' %}
       {% endfor %}
-      <!-- duplicate for seamless loop -->
+      {# The same cards again, so the marquee loops without a gap. #}
       {% for s in skins %}
-      <a class="carousel-card" href="{{ s.get_absolute_url }}" title="{{ s.name }}">
-        <img loading="lazy" src="{{ s.image_url }}" alt="{{ s.name }}">
-        <div class="carousel-meta">
-          <div class="name">{{ s.name|truncatechars:22 }}</div>
-          <div class="by">by {{ s.creator|truncatechars:18 }}</div>
-        </div>
-      </a>
+        {% include 'skins/partials/_skin_card_compact.html' with skin=s card_class='carousel-card' %}
       {% endfor %}
     </div>
   </div>

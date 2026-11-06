@@ -20,7 +20,8 @@ from django.utils import timezone
 
 from core.db import time_limited_queries
 from core.ratelimits import limit
-from skins.models import SKIN_SEARCH_CONFIG, Skin, SkinVote
+from skins.models import SKIN_SEARCH_CONFIG, Skin
+from skins.selectors import decorate_skins_for_user
 
 from .pagination_utils import elided_page_range
 
@@ -114,44 +115,9 @@ def search_skins(request):
         search_error = "That search took too long. Try a more specific search term."
         page_obj = Paginator([], PER_PAGE).get_page(1)
         skins_on_page = []
-    skin_ids = [s.id for s in skins_on_page]
-
-    # ── Prefetch votes + favorites in bulk (3 queries total) ──────
-    #
-    # Before this fix, the template called skin.favorited_by.all and
-    # skin.favorited_by.count PER CARD — 100+ extra queries for 50 cards.
-    # Now we do it all here in 2–3 queries regardless of page size.
-
-    # Favorite counts — one query, all cards
-    fav_counts = {
-        row["id"]: row["fav_count"]
-        for row in (
-            Skin.objects.filter(id__in=skin_ids)
-            .annotate(fav_count=Count("favorited_by"))
-            .values("id", "fav_count")
-        )
-    }
-
-    if request.user.is_authenticated:
-        # Which of this page's skins has the user voted on?
-        vote_map = {
-            v.skin_id: v.vote for v in SkinVote.objects.filter(user=request.user, skin__in=skin_ids)
-        }
-
-        # Which of this page's skins has the user favorited?
-        fav_ids = set(
-            request.user.favorite_skins.filter(id__in=skin_ids).values_list("id", flat=True)
-        )
-
-        for skin in skins_on_page:
-            skin.current_vote = vote_map.get(skin.id)
-            skin.is_favorited = skin.id in fav_ids
-            skin.fav_count_val = fav_counts.get(skin.id, 0)
-    else:
-        for skin in skins_on_page:
-            skin.current_vote = None
-            skin.is_favorited = False
-            skin.fav_count_val = fav_counts.get(skin.id, 0)
+    # Favorite counts, and the visitor's own votes and favorites, for the
+    # whole page in a fixed number of queries (skins/selectors.py).
+    decorate_skins_for_user(skins_on_page, request.user)
 
     # ── Daily / total counts for the header ───────────────────────
     now_utc = timezone.now()

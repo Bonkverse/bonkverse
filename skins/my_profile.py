@@ -4,11 +4,19 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.urls import reverse
 from .models import Skin
-from django.db.models import Count, Sum
+from django.db.models import Sum
 from django.core.paginator import Paginator
 import json
 from django.contrib import messages
 from .pagination_utils import elided_page_range
+from .selectors import decorate_skins_for_user
+
+
+def _add_edit_labels(skins):
+    """Pre-serialize labels so the "Edit Skin" menu item can carry them as a
+    data attribute (the template can't JSON-encode a dict itself)."""
+    for skin in skins:
+        skin.labels_json = json.dumps(skin.labels or {})
 
 
 @login_required
@@ -22,35 +30,11 @@ def my_profile(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
-    # ── Bulk-fetch favorite counts for both lists ─────────────────
-    #
-    # my_profile.html was calling skin.favorited_by.count() per card —
-    # one query per skin. With 20 uploaded skins + N favorites that's
-    # 20 + N extra queries. We fetch all counts in 2 queries instead.
-
-    uploaded_ids = [s.id for s in page_obj]
+    # Favorite counts for every card on the page in one query. The cards
+    # here don't show the visitor's own vote or favorite state, so no user.
     favorite_list = list(favorites)
-    favorite_ids = [s.id for s in favorite_list]
-
-    all_ids = list(set(uploaded_ids + favorite_ids))
-    fav_counts = {
-        row["id"]: row["fav_count"]
-        for row in (
-            Skin.objects.filter(id__in=all_ids)
-            .annotate(fav_count=Count("favorited_by"))
-            .values("id", "fav_count")
-        )
-    }
-
-    for skin in page_obj:
-        skin.fav_count_val = fav_counts.get(skin.id, 0)
-        # Pre-serialize labels once here so the "Edit Skin" trigger can
-        # carry the full label set as a data-attribute without the
-        # template trying (and failing) to JSON-encode a dict itself.
-        skin.labels_json = json.dumps(skin.labels or {})
-
-    for skin in favorite_list:
-        skin.fav_count_val = fav_counts.get(skin.id, 0)
+    decorate_skins_for_user([*page_obj, *favorite_list])
+    _add_edit_labels(page_obj)
 
     # ── Profile header stats ───────────────────────────────────────
     # One aggregate query — total upvotes across every skin this user
@@ -99,18 +83,8 @@ def my_skins_partial(request):
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
 
-    ids = [s.id for s in page_obj]
-    fav_counts = {
-        row["id"]: row["fav_count"]
-        for row in (
-            Skin.objects.filter(id__in=ids)
-            .annotate(fav_count=Count("favorited_by"))
-            .values("id", "fav_count")
-        )
-    }
-    for skin in page_obj:
-        skin.fav_count_val = fav_counts.get(skin.id, 0)
-        skin.labels_json = json.dumps(skin.labels or {})
+    decorate_skins_for_user(page_obj)
+    _add_edit_labels(page_obj)
 
     return render(
         request,

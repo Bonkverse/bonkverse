@@ -60,7 +60,7 @@
 /* Checkbox overlay + selected state, select mode only */
 .skins-container.select-mode .skin-card { cursor: pointer; }
 .skins-container.select-mode .card-more-menu,
-.skins-container.select-mode .wear-card-btn-profile {
+.skins-container.select-mode .wear-card-action {
   pointer-events: none; opacity: 0.4;
 }
 .select-check {
@@ -250,3 +250,6 @@ body.bulk-bar-open { padding-bottom: 76px; }
   animation: skins-spin 0.7s linear infinite;
 }
 @keyframes skins-spin { to { transform: rotate(360deg); } }
+
+/* "You haven't uploaded/favorited any skins yet." */
+.profile-empty { color: #9aa4b2; margin: 12px 24px 32px; }

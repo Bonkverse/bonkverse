@@ -1,0 +1,45 @@
+/* =====================
+   Browse pages: New Releases (/new/) and categories (/category/<slug>/)
+   Template: skins/skin_browse.html. Cards: skins/partials/_skin_card_compact.html
+   with card_class "skin-card browse-card" (the .skin-card box from cards.css,
+   but the whole card is one link).
+   ===================== */
+
+.browse-header { text-align: center; margin: 24px auto 20px; }
+.browse-header h1 { margin: 0 0 6px; }
+.browse-blurb { color: #9fb3c8; margin: 0 0 14px; }
+
+.browse-controls { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.browse-controls a {
+  padding: 6px 14px;
+  border-radius: 999px;
+  text-decoration: none;
+  color: #cfe3ee;
+  border: 1px solid rgba(0,150,136,0.4);
+  font-size: .9rem;
+}
+.browse-controls a.active { background: #009688; color: #fff; border-color: #009688; }
+
+.browse-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  text-decoration: none;
+  color: #fff;
+  gap: 6px;
+}
+/* The name, creator and date sit in the card's column like direct children. */
+.browse-card .skin-tile-meta { display: contents; }
+.browse-card img {
+  width: 150px; height: 150px;
+  object-fit: cover;
+  border-radius: 50%;
+  background: #000;
+  border: 2px solid rgba(0,150,136,0.4);
+}
+.browse-card:hover img { border-color: #009688; }
+.browse-card strong { font-size: 1.05rem; }
+.browse-card span { color: #7f93a6; font-size: .85rem; }
+
+.browse-empty { text-align: center; color: #7f93a6; padding: 40px; }
