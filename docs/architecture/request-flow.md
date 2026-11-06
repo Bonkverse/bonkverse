@@ -12,7 +12,7 @@ flowchart LR
     MW --> V[View + @limit tier]
     V --> PG[(Postgres 16)]
     V --> R[(Redis<br/>cache + rate-limit counters)]
-    V --> EXT[bonk.io, render service,<br/>BonkBot, decoder]
+    V --> EXT[integrations/<br/>bonk.io, render service, BLSkinFetcher,<br/>Cloudflare API, Discord, BonkBot, decoder]
 ```
 
 1. **Cloudflare** (dashboard, zone `bonkverse.io`) terminates TLS, serves cached

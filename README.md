@@ -118,7 +118,7 @@ Log in with your real bonk.io account; it creates a user in your **local** datab
 python manage.py shell -c "from skins.models import BonkUser; BonkUser.objects.filter(username='YourBonkName').update(is_staff=True)"
 ```
 
-There is no `createsuperuser`: site accounts have no passwords because login goes through bonk.io. The Django admin (`/admin`) currently crashes for all users because `BonkUser` has no permission methods; see `tests/test_admin.py`.
+There is no `createsuperuser`: site accounts have no passwords because login goes through bonk.io. To make yourself a superuser for `/admin/`, run `python manage.py grant_admin "YourBonkName"` ([ADR 0005](docs/adr/0005-admin-login-through-bonk.md)).
 
 
 Tests, Linting and CI
@@ -135,7 +135,8 @@ pre-commit run --all-files      # everything the commit hook runs
 ```
 
 -   Tests run against **real Postgres**, because search depends on Postgres-only features.
--   Tests never call bonk.io or any other outside service. Fake responses live in `tests/fixtures/bonk/` and are registered with the `mocked_http` fixture; an un-mocked request fails the test.
+-   Tests never call bonk.io or any other outside service. Register fake replies on the `mocked_http` fixture (recorded bonk.io bodies are in `tests/fixtures/bonk/`); an un-mocked request fails the test.
+-   `tests/test_architecture.py` fails if anything outside `integrations/` makes outside HTTP calls ([ADR 0006](docs/adr/0006-outside-calls-through-integrations.md)).
 -   `tests/test_smoke.py` requests every route automatically. Known bugs are marked `xfail(strict=True)`: when you fix one, the test turns red until you remove its mark.
 
 Every push and pull request runs `.github/workflows/ci.yml`: ruff, pytest on Postgres, a migrations check, `pip-audit`, `bandit` and `manage.py check --deploy`. `main` only accepts changes with a green run.
@@ -179,6 +180,8 @@ Project Structure
 ```
 bonkverse/
 ├── bonk_skin_search/       # Django project: settings, root urls, celery app
+├── core/                   # shared helpers; core/bonk/ = bonk.io types (slots, usernames, skin codes, session)
+├── integrations/           # one client per outside service; the only code that makes outside HTTP calls
 ├── skins/                  # the main app (being split into domain apps, see RFC-0001)
 │   ├── models.py
 │   ├── auth_guards.py      # JSON auth decorators (auth="bonkverse" / auth="bonk")
@@ -186,6 +189,7 @@ bonkverse/
 │   ├── static/
 │   └── management/commands/
 ├── tests/                  # pytest suite + recorded bonk.io fixtures
+├── docs/                   # how things work: architecture, operations/runbook, bonk.io reference, incidents, ADRs
 ├── scripts/                # one-off maintenance scripts
 ├── .github/                # CI workflow, Dependabot, PR template
 ├── Dockerfile              # production image (runs collectstatic at build time)
