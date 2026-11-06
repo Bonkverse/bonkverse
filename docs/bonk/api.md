@@ -47,16 +47,25 @@ Wear replies with no `auth` tag carry `message`, a sentence the page shows.
 Wear used to treat every refusal as an expired token and open the login
 modal. Production logs showed what that did: bonk.io refused one skin with
 `avatar_too_big`, the player logged in, the retry was refused again, and the
-modal came back, dozens of times. Of 49 refused wears in the logs, one was
-really `token`. See the
-[incident](../incidents/2026-11-05-bonk-rate-limit.md).
+modal came back, dozens of times. The same happened whenever bonk.io was
+rate-limiting. Of 49 refused wears in one evening's logs, one was really
+`token`. See the [incident](../incidents/2026-11-05-bonk-rate-limit.md).
 
 ### Rate limits and the cooldown
 
 bonk.io answers `{"r": "fail", "e": "ratelimited"}` (seen on both
-`login_legacy.php` and `avatar_update.php`) when one IP sends too much. All
-Bonkverse users reach bonk.io from the same server IP, so one person's
-retries can lock everyone out. On 2026-11-05 most logins failed for hours.
+`login_legacy.php` and `avatar_update.php`). It isn't new: the logs show
+bursts on most days since at least 2026-10-30 (the oldest we could read),
+usually 5–15 per hour for an hour or two. Before #31 players saw them as
+"Bonk.io login failed: fail".
+
+**What triggers it is unknown.** It doesn't track Bonkverse's own traffic:
+bursts happen in hours when Bonkverse sent almost nothing, and the busiest
+hours (including the too-big modal loop) had none. Every Bonkverse user
+reaches bonk.io from the server's outbound IP, and Railway says outbound
+IPs "may be shared with other customers", so the likeliest cause is other
+traffic to bonk.io from the same IP (other services in the Bonkverse project,
+or other Railway customers). Unconfirmed.
 
 So after any `ratelimited`, the client makes **no bonk.io calls for 120 s**
 (`RATE_LIMIT_COOLDOWN`) and answers `rate_limited` itself (`bonk_error` is

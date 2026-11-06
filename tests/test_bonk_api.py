@@ -257,8 +257,8 @@ def test_redact_removes_tokens_from_cut_off_json():
 
 
 class TestRateLimitCooldown:
-    """After bonk.io says "ratelimited", Bonkverse stops calling it for a while,
-    because every user shares the server's IP and retries extend the limit."""
+    """After bonk.io says "ratelimited", Bonkverse stops calling it for a while
+    rather than adding requests while bonk.io is limiting the server's IP."""
 
     def test_ratelimited_login_pauses_every_bonk_call(self, api, mocked_http):
         mocked_http.post(LOGIN, json={"r": "fail", "e": "ratelimited"})

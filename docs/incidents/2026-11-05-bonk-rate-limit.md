@@ -1,54 +1,81 @@
-# 2026-11-05: Login modal loop gets Bonkverse rate-limited by bonk.io
+# 2026-11-05: The reappearing bonk.io login modal, and bonk.io rate limits
 
-**Impact:** from about 22:25 UTC Nov 5 (17:25 EST) into the night, most
-bonk.io logins through Bonkverse failed: 53 of 71 logged attempts in the
-window we read. Wearing skins failed too. For days before that, the bonk.io
-login modal kept reappearing for some players when they wore certain skins.
-**Trigger:** one skin (id 5397, a 1,552-character skin code) that bonk.io
-refuses as `avatar_too_big`.
-**Fixed by:** the PR that adds this file. It handles bonk.io's refusal codes,
-adds a client-side cooldown after `ratelimited`, and adds sentence messages.
+**Impact:** for days (at least since 2026-10-30, the oldest logs we could
+read), some players saw the bonk.io login modal open again after every
+login when they wore certain skins. Separately, bonk.io refused most logins
+through Bonkverse with `ratelimited` in bursts on most days, usually for an
+hour or two at a time.
+**Fixed by:** #39 (the modal). The rate-limit bursts are not fixed; their
+cause is unknown (below).
 
-## What happened
+> This page was first written with the wrong cause: that the modal loop
+> generated enough logins to get Bonkverse rate-limited. A closer read of
+> the logs disproved that (see "Rate limits"). Corrected the same night.
 
-1. A player wore skin 5397. bonk.io answered
-   `{"r": "fail", "e": "avatar_too_big"}`.
-2. Bonkverse treated **every** bonk.io refusal as an expired token (a
-   deliberate fallback from Phase 2.2, when the real codes were unknown), so
-   it answered 401 `auth: "bonk"` and the page opened the bonk.io login modal.
-3. The player logged in. The page retried the wear, bonk.io refused it again,
-   and the modal opened again. The logs show this loop repeating every few
-   seconds, for this skin and others.
-4. Every one of those logins went to bonk.io from Bonkverse's server, which is
-   a single IP for all users. bonk.io started answering `e: "ratelimited"` to
-   logins and avatar updates, and every refusal reopened the modal.
-5. People kept retrying, which kept the limit in place.
+## The modal loop (found and fixed)
 
-`_debug_wear` (kept since Phase 1 for exactly this bug) and the
-`bonk.io refused avatar update | bonk_error=...` line added in #31 are what
-made this visible.
+1. A player wears a skin bonk.io won't accept, e.g. skin 5397 (a
+   1,552-character code). bonk.io answers `{"r": "fail", "e": "avatar_too_big"}`.
+2. Bonkverse treated **every** refusal as an expired token (a fallback from
+   Phase 2.2, when the real codes were unknown), answered 401 `auth: "bonk"`,
+   and the page opened the bonk.io login modal.
+3. The player logs in, the page retries, bonk.io refuses again, and the modal
+   reopens. The same happened for every `ratelimited` refusal.
 
-Of 49 refused wears in the logs, 24 were `avatar_too_big`, 24 `ratelimited`,
-and 1 `token`. Only that one should have opened the modal.
+Of 49 refused wears on the evening of Nov 5, 24 were `avatar_too_big`,
+24 `ratelimited`, and 1 `token`. Only that one should have opened the modal.
 
-## What changed
+`_debug_wear` (kept since Phase 1 for this bug) and the
+`bonk.io refused avatar update | bonk_error=...` line from #31 made it visible.
 
-- `integrations/bonk_api.py` maps each known code: `token` →
-  `token_rejected`, `avatar_too_big`, `ratelimited` → `rate_limited`; anything
-  else is `rejected`.
+## Rate limits (not caused by Bonkverse's traffic, as far as we can tell)
+
+bonk.io's `ratelimited` appears in the logs on most days since at least
+Oct 30. Logged per day: Oct 30: 92, Oct 31: 6, Nov 1: 0, Nov 2: 42,
+Nov 3: 104, Nov 4: 60+, Nov 5: 87+ (counts after Nov 3 are login refusals
+only). Before #31, players saw these as "Bonk.io login failed: fail", the same
+message as every other failure, so they looked like nothing new.
+
+Hour by hour, the bursts **don't follow Bonkverse's own traffic**:
+
+| Hour (UTC) | Successful logins | Too-big refusals (loop) | `ratelimited` |
+|---|---|---|---|
+| Nov 1 21:00 | 7 | 5 | 0 |
+| Nov 3 15:00 | 0 | 0 | 12 |
+| Nov 3 17:00 | 1 | 0 | 12 |
+| Nov 3 19:00 | 8 | 5 | 0 |
+| Oct 30 21:00 | 1 | 0 | 13 |
+
+Each burst is mostly the same people retrying after the first refusal.
+
+**Likeliest cause (unconfirmed):** bonk.io appears to limit by IP. Every
+Bonkverse user reaches bonk.io from the server's outbound IP, and Railway's
+docs say outbound IPs "may be shared with other customers" (even static
+ones). Other traffic to bonk.io from that IP, from other services in the
+Bonkverse Railway project or other Railway customers, would trigger limits
+Bonkverse didn't cause. bonk.io changing its limits is also possible.
+
+## What changed in #39
+
+- `integrations/bonk_api.py` maps each code: `token` → `token_rejected`,
+  `avatar_too_big`, `ratelimited` → `rate_limited`; anything else → `rejected`.
 - **Only `token_rejected` opens the login modal.** Other wear failures return
-  a status (422 / 503 / 502) and a `message` the page shows.
-- After any `ratelimited`, Bonkverse makes no bonk.io calls for 120 s and
-  answers `rate_limited` itself, so retries can't extend the limit.
+  422 / 503 / 502 with a `message` the page shows.
 - Login says "bonk.io is limiting logins from Bonkverse right now" instead of
   "bonk.io didn't accept that login".
-- Details: [bonk/api.md](../bonk/api.md).
+- After any `ratelimited`, Bonkverse makes no bonk.io calls for 120 s, so it
+  doesn't add requests while bonk.io is limiting the IP.
 
 ## Follow-ups
 
+- **Find what triggers the rate limits:**
+  - Check which other services in the Bonkverse project call bonk2.io
+    (ReplayFetcher makes HTTPS calls to Cloudflare-hosted addresses every
+    few minutes; bonk.io is behind Cloudflare, but that's unconfirmed).
+  - During a burst, log in to bonk.io from a home connection. If that works
+    while Bonkverse is refused, the limit is on the server's IP, not the
+    accounts.
 - bonk.io's size limit for skin codes is unknown. If we learn it, warn on the
   skin page before someone tries to wear an oversized skin.
-- The cooldown is per server process. If rate limits keep happening, move it
-  to Redis so all workers share it.
-- Phase 3's single login modal removes the three copies of this flow, so a fix
-  like this lands in one place next time.
+- If bursts continue, share the cooldown across workers (Redis).
+- Phase 3's single login modal removes the three copies of the wear flow.
