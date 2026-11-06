@@ -215,38 +215,6 @@ function closeImage() {
   document.getElementById('imageModal').style.display = 'none';
 }
 
-// ── CSRF + fetch helpers ──────────────────────────────────────
-function getCSRF() {
-  const m = document.cookie.match(/(?:^|;\s*)bv_csrftoken=([^;]+)/);
-  return m ? decodeURIComponent(m[1]) : '';
-}
-
-async function postForm(url, data) {
-  const r = await fetch(url, {
-    method: 'POST',
-    headers: { 'X-CSRFToken': getCSRF(), 'X-Requested-With': 'XMLHttpRequest' },
-    body: new URLSearchParams(data || {})
-  });
-  if (r.status === 401) {
-    const ret = encodeURIComponent(window.location.pathname + window.location.search);
-    window.location.href = `/login/?next=${ret}`;
-    return null;
-  }
-  if (!r.ok) throw new Error('Request failed');
-  return r.json();
-}
-
-async function postFormNoRedirect(url, data) {
-  const r = await fetch(url, {
-    method: 'POST',
-    headers: { 'X-CSRFToken': getCSRF(), 'X-Requested-With': 'XMLHttpRequest' },
-    body: new URLSearchParams(data || {})
-  });
-  let json = {};
-  try { json = await r.json(); } catch(e) {}
-  return { ok: r.ok, status: r.status, json };
-}
-
 // ── Restore vote state on load ────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll('.skin-card').forEach(card => {
@@ -309,7 +277,7 @@ reportModal.addEventListener('click', function(e) {
 });
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeReportModal(); closeBonkLogin(); }
+  if (e.key === 'Escape') closeReportModal();
 });
 
 document.getElementById('report-submit-btn').addEventListener('click', async function() {
@@ -326,7 +294,7 @@ document.getElementById('report-submit-btn').addEventListener('click', async fun
   reportFeedback.textContent = 'Submitting…';
   reportFeedback.className   = 'modal-feedback';
 
-  const { ok, status, json } = await postFormNoRedirect(
+  const { ok, status } = await BVApi.post(
     `/api/skins/${reportSkinId}/report/`,
     { reason, details }
   );
@@ -362,120 +330,34 @@ document.addEventListener('click', async (e) => {
   if (!card) return;
   const id = card.dataset.id;
 
-  // Vote up
-  if (e.target.closest('.vote-up')) {
-    try {
-      const json = await postForm(`/api/skins/${id}/vote/`, { vote: 'up' });
-      if (!json) return;
-      card.querySelector('.up-count').textContent   = json.upvotes;
-      card.querySelector('.down-count').textContent = json.downvotes;
-      card.querySelector('.vote-up').classList.toggle('active',   json.current_vote === 'up');
-      card.querySelector('.vote-down').classList.toggle('active', json.current_vote === 'down');
-    } catch(err) { console.error(err); }
-    return;
-  }
-
-  // Vote down
-  if (e.target.closest('.vote-down')) {
-    try {
-      const json = await postForm(`/api/skins/${id}/vote/`, { vote: 'down' });
-      if (!json) return;
-      card.querySelector('.up-count').textContent   = json.upvotes;
-      card.querySelector('.down-count').textContent = json.downvotes;
-      card.querySelector('.vote-up').classList.toggle('active',   json.current_vote === 'up');
-      card.querySelector('.vote-down').classList.toggle('active', json.current_vote === 'down');
-    } catch(err) { console.error(err); }
+  // Vote up / down
+  const voteBtn = e.target.closest('.vote-up, .vote-down');
+  if (voteBtn) {
+    const vote = voteBtn.classList.contains('vote-up') ? 'up' : 'down';
+    const json = await BVApi.postOrLogin(`/api/skins/${id}/vote/`, { vote });
+    if (!json) return;
+    card.querySelector('.up-count').textContent   = json.upvotes;
+    card.querySelector('.down-count').textContent = json.downvotes;
+    card.querySelector('.vote-up').classList.toggle('active',   json.current_vote === 'up');
+    card.querySelector('.vote-down').classList.toggle('active', json.current_vote === 'down');
     return;
   }
 
   // Favorite
   if (e.target.closest('.fav-toggle')) {
-    try {
-      const json = await postForm(`/api/skins/${id}/favorite/`);
-      if (!json) return;
-      card.querySelector('.fav-count').textContent = json.favorites;
-      card.querySelector('.fav-toggle').classList.toggle('active', json.favorited);
-    } catch(err) { console.error(err); }
+    const json = await BVApi.postOrLogin(`/api/skins/${id}/favorite/`);
+    if (!json) return;
+    card.querySelector('.fav-count').textContent = json.favorites;
+    card.querySelector('.fav-toggle').classList.toggle('active', json.favorited);
     return;
   }
 
-  // Wear
+  // Wear (bonk.io login modal and retry: static/core/js/bv-wear.js)
   if (e.target.closest('.wear-card-action')) {
-    tryWearCard(id, card);
+    BVWear.wear(`/api/skins/${id}/wear/`);
     return;
   }
 });
-
-// ── Wear flow ─────────────────────────────────────────────────
-let pendingWearSkinId = null;
-const loginModal    = document.getElementById('bonk-login-modal');
-const bonkLoginForm = document.getElementById('bonk-login-form');
-const bonkLoginMsg  = document.getElementById('bonk-login-msg');
-
-function openBonkLogin() {
-  if (!loginModal) return;
-  bonkLoginMsg.textContent = '';
-  bonkLoginMsg.className   = 'modal-feedback';
-  loginModal.classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeBonkLogin() {
-  if (!loginModal) return;
-  loginModal.classList.remove('open');
-  document.body.style.overflow = '';
-  bonkLoginForm.reset();
-}
-
-if (loginModal) {
-  document.getElementById('bonk-login-modal-close').addEventListener('click', closeBonkLogin);
-  document.getElementById('bonk-login-cancel-btn').addEventListener('click', closeBonkLogin);
-  loginModal.addEventListener('click', e => { if (e.target === loginModal) closeBonkLogin(); });
-  bonkLoginForm.addEventListener('submit', doBonkLoginFromSearch);
-}
-
-async function tryWearCard(skinId, card) {
-  const { ok, status, json } = await postFormNoRedirect(`/api/skins/${skinId}/wear/`, {});
-  if (ok && json.ok) {
-    BVToast.show('Applied to your active slot.', { type: 'success' });
-    return;
-  }
-  if (status === 401 && (json?.auth === 'bonk' || json?.need_login)) {
-    pendingWearSkinId = skinId;
-    openBonkLogin();
-    return;
-  }
-  BVToast.show(json?.message || 'Failed to apply skin.', { type: 'error' });
-}
-
-async function doBonkLoginFromSearch(e) {
-  e.preventDefault();
-  const fd = new FormData(bonkLoginForm);
-  bonkLoginMsg.textContent = 'Logging in…';
-  bonkLoginMsg.className   = 'modal-feedback';
-  const r = await fetch("{% url 'bonk_login_for_wear' %}", {
-    method: 'POST',
-    headers: { 'X-CSRFToken': getCSRF(), 'X-Requested-With': 'XMLHttpRequest' },
-    body: fd
-  });
-  const json = await r.json().catch(() => ({}));
-  if (!r.ok || !json.ok) {
-    bonkLoginMsg.textContent = '❌ ' + (json.message || json.error || 'Login failed');
-    bonkLoginMsg.className   = 'modal-feedback error';
-    return;
-  }
-  bonkLoginMsg.textContent = '✅ Logged in!';
-  bonkLoginMsg.className   = 'modal-feedback success';
-  setTimeout(() => {
-    closeBonkLogin();
-    if (pendingWearSkinId) {
-      const id   = pendingWearSkinId;
-      pendingWearSkinId = null;
-      const card = document.querySelector(`.skin-card[data-id="${id}"]`);
-      tryWearCard(id, card);
-    }
-  }, 400);
-}
 
 // ── Re-render (staff only) ────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
@@ -491,22 +373,14 @@ document.addEventListener("DOMContentLoaded", () => {
       this.disabled    = true;
       this.textContent = 'Re-rendering…';
 
-      try {
-        const r = await fetch(`/skins/${skinId}/rerender/`, {
-          method:  'POST',
-          headers: { 'X-CSRFToken': getCSRF(), 'X-Requested-With': 'XMLHttpRequest' },
-        });
-        const json = await r.json().catch(() => ({}));
-
-        if (r.ok && json.ok) {
-          if (img) img.src = json.image_url + '?t=' + Date.now();
-          BVToast.show('Skin re-rendered.', { type: 'success' });
-        } else {
-          BVToast.show('Re-render failed: ' + (json.error || 'unknown error'), { type: 'error' });
-        }
-      } catch (err) {
+      const { ok, status, json } = await BVApi.post(`/skins/${skinId}/rerender/`);
+      if (ok && json.ok) {
+        if (img) img.src = json.image_url + '?t=' + Date.now();
+        BVToast.show('Skin re-rendered.', { type: 'success' });
+      } else if (status === 0) {
         BVToast.show('Re-render request failed.', { type: 'error' });
-        console.error(err);
+      } else {
+        BVToast.show('Re-render failed: ' + (json.error || 'unknown error'), { type: 'error' });
       }
 
       this.disabled    = false;

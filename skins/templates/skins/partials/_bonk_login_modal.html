@@ -1,5 +1,5 @@
-<!-- ── Bonk.io Login Modal (wear flow) ───────────────────── -->
-<div class="modal-overlay" id="bonk-login-modal">
+{# The one bonk.io login modal. Behavior: static/core/js/bv-wear.js. #}
+<div class="modal-overlay" id="bonk-login-modal" data-login-url="{% url 'bonk_login_for_wear' %}">
   <div class="modal-box">
     <div class="modal-header">
       <h2 class="modal-title">Bonk.io Login</h2>
@@ -9,7 +9,7 @@
     </div>
 
     <div class="modal-body">
-      <p style="color:#9aa4b2; margin:0 0 14px; font-size:0.9rem;">
+      <p class="modal-hint">
         We don't store your password. It's sent to Bonk.io once to apply the skin.
       </p>
 

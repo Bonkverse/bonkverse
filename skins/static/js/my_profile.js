@@ -7,14 +7,8 @@ const ROUTES = (() => {
   return {
     skinsPartial: el?.dataset.skinsPartialUrl || '',
     bulkDelete:   el?.dataset.bulkDeleteUrl   || '',
-    bonkLogin:    el?.dataset.bonkLoginUrl    || '',
   };
 })();
-
-function getCSRF() {
-  const m = document.cookie.match(/(?:^|;\s*)bv_csrftoken=([^;]+)/);
-  return m ? decodeURIComponent(m[1]) : '';
-}
 
 function showImage(src) {
   document.getElementById('zoomedImage').src = src;
@@ -34,17 +28,6 @@ function handleCardImageClick(e, img) {
 // nothing should hold a stale reference to it — always look it up fresh.
 function getSkinsGrid() {
   return document.getElementById('skins-grid');
-}
-
-async function postFormNoRedirect(url, data) {
-  const r = await fetch(url, {
-    method: 'POST',
-    headers: { 'X-CSRFToken': getCSRF(), 'X-Requested-With': 'XMLHttpRequest' },
-    body: new URLSearchParams(data || {})
-  });
-  let json = {};
-  try { json = await r.json(); } catch(e) {}
-  return { ok: r.ok, status: r.status, json };
 }
 
 // ── Tabs ────────────────────────────────────────────────────
@@ -251,7 +234,7 @@ function closeDeleteModal() {
 document.getElementById('delete-modal-close').addEventListener('click', closeDeleteModal);
 document.getElementById('delete-cancel-btn').addEventListener('click', closeDeleteModal);
 deleteModal.addEventListener('click', e => { if (e.target === deleteModal) closeDeleteModal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDeleteModal(); closeEditModal(); closeBonkLogin(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDeleteModal(); closeEditModal(); } });
 
 // Delegated (not bound at page load) so it works on cards added by
 // AJAX paging, not just the ones present on the very first render.
@@ -286,7 +269,7 @@ function decrementSkinsCount(n) {
 
 deleteConfirmBtn.addEventListener('click', async () => {
   if (deleteMode === 'single') {
-    const { ok, json } = await postFormNoRedirect(deleteActionUrl, {});
+    const { ok, json } = await BVApi.post(deleteActionUrl);
     if (ok && json.ok) {
       removeCardFromDOM(json.deleted_ids[0]);
       selectedIds.delete(String(json.deleted_ids[0]));
@@ -299,13 +282,8 @@ deleteConfirmBtn.addEventListener('click', async () => {
   } else if (deleteMode === 'bulk') {
     const params = new URLSearchParams();
     selectedIds.forEach(id => params.append('skin_ids', id));
-    const r = await fetch(ROUTES.bulkDelete, {
-      method: 'POST',
-      headers: { 'X-CSRFToken': getCSRF(), 'X-Requested-With': 'XMLHttpRequest' },
-      body: params
-    });
-    const json = await r.json().catch(() => ({}));
-    if (r.ok && json.ok) {
+    const { ok, json } = await BVApi.post(ROUTES.bulkDelete, params);
+    if (ok && json.ok) {
       // Removes cards for whichever deleted ids happen to be on the
       // currently displayed page; ids from other pages were still
       // deleted server-side and simply won't be present here.
@@ -416,7 +394,7 @@ async function saveEditSkin() {
     references: getEditTags('references'),
   };
 
-  const { ok, json } = await postFormNoRedirect(editAction, {
+  const { ok, json } = await BVApi.post(editAction, {
     name:        document.getElementById('edit-name').value,
     description: document.getElementById('edit-description').value,
     labels:      JSON.stringify(labels),
@@ -449,74 +427,10 @@ async function saveEditSkin() {
 
 document.getElementById('edit-save-btn').addEventListener('click', saveEditSkin);
 
-// ── Wear flow ───────────────────────────────────────────────
-let pendingWearCard = null;
-const loginModal    = document.getElementById('bonk-login-modal');
-const bonkLoginForm = document.getElementById('bonk-login-form');
-const bonkLoginMsg  = document.getElementById('bonk-login-msg');
-
-function openBonkLogin() {
-  if (!loginModal) return;
-  bonkLoginMsg.textContent = '';
-  bonkLoginMsg.className   = 'modal-feedback';
-  loginModal.classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeBonkLogin() {
-  if (!loginModal) return;
-  loginModal.classList.remove('open');
-  document.body.style.overflow = '';
-  bonkLoginForm.reset();
-}
-
-if (loginModal) {
-  document.getElementById('bonk-login-modal-close').addEventListener('click', closeBonkLogin);
-  document.getElementById('bonk-login-cancel-btn').addEventListener('click', closeBonkLogin);
-  loginModal.addEventListener('click', e => { if (e.target === loginModal) closeBonkLogin(); });
-  bonkLoginForm.addEventListener('submit', doBonkLogin);
-}
-
-async function tryWear(card) {
-  const url = card.dataset.wearUrl;
-  if (!url) { BVToast.show("This skin can't be worn.", { type: "error" }); return; }
-  const { ok, status, json } = await postFormNoRedirect(url, {});
-  if (ok && json.ok) { BVToast.show("Applied to your active slot.", { type: "success" }); return; }
-  if (status === 401 && (json?.auth === 'bonk' || json?.need_login)) { pendingWearCard = card; openBonkLogin(); return; }
-  BVToast.show(json?.message || "Failed to apply skin.", { type: "error" });
-}
-
+// ── Wear (bonk.io login modal and retry: static/core/js/bv-wear.js) ──
 document.addEventListener('click', e => {
   if (getSkinsGrid()?.classList.contains('select-mode')) return;
   const btn = e.target.closest('.wear-card-btn-profile');
   if (!btn) return;
-  tryWear(btn.closest('.skin-card'));
+  BVWear.wear(btn.closest('.skin-card').dataset.wearUrl);
 });
-
-async function doBonkLogin(e) {
-  e.preventDefault();
-  const fd = new FormData(bonkLoginForm);
-  bonkLoginMsg.textContent = 'Logging in…';
-  bonkLoginMsg.className   = 'modal-feedback';
-  const r = await fetch(ROUTES.bonkLogin, {
-    method: 'POST',
-    headers: { 'X-CSRFToken': getCSRF(), 'X-Requested-With': 'XMLHttpRequest' },
-    body: fd
-  });
-  const json = await r.json().catch(() => ({}));
-  if (!r.ok || !json.ok) {
-    bonkLoginMsg.textContent = '❌ ' + (json.message || json.error || 'Login failed');
-    bonkLoginMsg.className   = 'modal-feedback error';
-    return;
-  }
-  bonkLoginMsg.textContent = '✅ Logged in!';
-  bonkLoginMsg.className   = 'modal-feedback success';
-  setTimeout(() => {
-    closeBonkLogin();
-    if (pendingWearCard) {
-      const card = pendingWearCard;
-      pendingWearCard = null;
-      tryWear(card);
-    }
-  }, 400);
-}

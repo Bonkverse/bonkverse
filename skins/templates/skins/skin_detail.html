@@ -159,21 +159,7 @@
 </div>
 
 {% if user.is_authenticated %}
-<dialog id="bonk-login-modal">
-  <form id="bonk-login-form" method="dialog" onsubmit="return doBonkLogin(event)">
-    <h3>Bonk.io Login</h3>
-    <p class="muted">We don't store your password. It's sent to Bonk.io once to apply the skin.</p>
-    <label>Bonk.io Username</label>
-    <input name="bonk_username" required>
-    <label>Bonk.io Password</label>
-    <input name="bonk_password" type="password" required>
-    <div class="row">
-      <button type="submit">Login</button>
-      <button type="button" onclick="closeBonkLogin()">Cancel</button>
-    </div>
-    <p id="bonk-login-msg" class="muted"></p>
-  </form>
-</dialog>
+  {% include 'skins/partials/_bonk_login_modal.html' %}
 {% endif %}
 
 {% endblock %}
@@ -181,51 +167,19 @@
 
 {% block extra_scripts %}
 <script>
-function getCSRF() {
-  const m = document.cookie.match(/(?:^|;\s*)bv_csrftoken=([^;]+)/);
-  return m ? decodeURIComponent(m[1]) : '';
-}
-
-async function postForm(url, data) {
-  const r = await fetch(url, {
-    method: 'POST',
-    headers: { 'X-CSRFToken': getCSRF(), 'X-Requested-With': 'XMLHttpRequest' },
-    body: data instanceof FormData ? data : new URLSearchParams(data || {})
-  });
-  const json = await r.json().catch(() => ({}));
-  return { ok: r.ok, status: r.status, json };
-}
-
 {% if user.is_authenticated %}
-const wearMsg    = document.getElementById('wear-msg');
-const loginModal = document.getElementById('bonk-login-modal');
+const wearMsg = document.getElementById('wear-msg');
 
-async function startWear() {
+// Wear (bonk.io login modal and retry: static/core/js/bv-wear.js)
+function startWear() {
   wearMsg.textContent = 'Applying…';
-  const { ok, status, json } = await postForm("{% url 'wear_skin' skin.id %}", {});
-  if (ok && json.ok) { wearMsg.textContent = '✅ Applied to your active slot!'; return; }
-  if (status === 401 && (json.auth === 'bonk' || json.need_login)) { wearMsg.textContent = ''; openBonkLogin(); return; }
-  wearMsg.textContent = '❌ ' + (json.message || 'Failed to apply.');
-}
-
-function openBonkLogin()  { if (loginModal?.showModal) loginModal.showModal(); else loginModal.style.display='block'; }
-function closeBonkLogin() { if (loginModal?.close) loginModal.close(); else loginModal.style.display='none'; }
-
-async function doBonkLogin(e) {
-  e.preventDefault();
-  const fd  = new FormData(e.target);
-  const msg = document.getElementById('bonk-login-msg');
-  msg.textContent = 'Logging in…';
-  const { ok, json } = await postForm("{% url 'bonk_login_for_wear' %}", fd);
-  if (!ok || !json.ok) { msg.textContent = '❌ ' + (json.message || json.error || 'Login failed'); return false; }
-  msg.textContent = '✅ Logged in!';
-  closeBonkLogin();
-  setTimeout(startWear, 150);
-  return false;
+  BVWear.wear("{% url 'wear_skin' skin.id %}", {
+    onStatus: (text, type) => { wearMsg.textContent = (type === 'success' ? '✅ ' : '❌ ') + text; },
+  });
 }
 
 async function toggleFavorite() {
-  const { ok, json } = await postForm("/api/skins/{{ skin.id }}/favorite/", {});
+  const { ok, json } = await BVApi.post("/api/skins/{{ skin.id }}/favorite/");
   if (!ok) return;
   document.getElementById('fav-count').textContent = json.favorites;
   document.getElementById('fav-label').textContent = json.favorited ? 'Favorited' : 'Favorite';
@@ -233,7 +187,7 @@ async function toggleFavorite() {
 }
 
 async function castVote(dir) {
-  const { ok, json } = await postForm("/api/skins/{{ skin.id }}/vote/", { vote: dir });
+  const { ok, json } = await BVApi.post("/api/skins/{{ skin.id }}/vote/", { vote: dir });
   if (!ok) return;
   document.getElementById('up-count').textContent   = json.upvotes;
   document.getElementById('down-count').textContent = json.downvotes;
@@ -268,7 +222,7 @@ async function submitReport() {
   if (!reason) { fb.textContent = 'Please select a reason.'; fb.className = 'modal-feedback error'; return; }
   fb.textContent = 'Submitting…';
   fb.className   = 'modal-feedback';
-  const { ok, status } = await postForm("/api/skins/{{ skin.id }}/report/", { reason, details });
+  const { ok, status } = await BVApi.post("/api/skins/{{ skin.id }}/report/", { reason, details });
   if (ok) {
     fb.textContent = '✓ Report submitted. Thank you!';
     fb.className   = 'modal-feedback success';

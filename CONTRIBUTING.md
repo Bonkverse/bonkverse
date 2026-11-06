@@ -55,6 +55,8 @@ Apps talk to each other only through another app's `services.py`.
 
 Error codes are `snake_case`. `auth` appears only on 401s: `"bonkverse"` means sign in to the site, `"bonk"` means a bonk.io token is needed.
 
+**Page scripts** call the server through `BVApi` (`static/core/js/bv-api.js`: `post`, `postJSON`, `postOrLogin`, `getCSRF`) and wear skins through `BVWear.wear(url)` (`static/core/js/bv-wear.js`), which owns the one bonk.io login modal (`skins/partials/_bonk_login_modal.html`). Both load in `base.html`. Don't write a page-local `getCSRF`/`postForm` or login modal; `tests/test_frontend.py` fails if you do.
+
 **Config** comes from `settings.py`, read from env. No hardcoded URLs, TTLs or feature flags in modules.
 
 **Background work** goes through Celery, not `threading.Thread`.

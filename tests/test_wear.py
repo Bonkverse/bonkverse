@@ -84,12 +84,17 @@ class TestWearSkin:
             "newavatar": skin.skin_code,
         }
 
-    def test_debug_log_has_no_username(self, bonk_session_client, user, skin, bonk_accepts, caplog):
-        """Regression: every wear logged the player's username."""
-        with caplog.at_level("DEBUG", logger="skins.wear_skin"):
+    def test_logs_never_name_the_player(self, bonk_session_client, user, skin, mocked_http, caplog):
+        """Regression: every wear used to log the player's username. The
+        temporary [wear-debug] lines are gone (#39 fixed the modal loop); a
+        refusal is logged by the bonk.io client, by code only."""
+        mocked_http.post(BONK_AVATAR_UPDATE_URL, json=load_bonk_fixture("avatar_update_too_big"))
+
+        with caplog.at_level("DEBUG"):
             bonk_session_client.post(_wear_url(skin.id))
 
-        assert "[wear-debug]" in caplog.text
+        assert "bonk_error=avatar_too_big" in caplog.text
+        assert "[wear-debug]" not in caplog.text
         assert user.username not in caplog.text
 
     def test_success_logs_event(self, bonk_session_client, skin, bonk_accepts):

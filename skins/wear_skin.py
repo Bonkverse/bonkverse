@@ -17,10 +17,9 @@ JSON contract the frontend relies on (tests/test_wear.py):
 
 Only bonk.io's "token" refusal opens the login modal. Treating every refusal
 as an expired token made the modal reappear forever for a too-big skin, and
-every time bonk.io was rate-limiting the server (docs/bonk/api.md).
+every time bonk.io was rate-limiting the server (docs/bonk/api.md). The pages'
+side of this contract is static/core/js/bv-wear.js.
 """
-
-import logging
 
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -34,29 +33,6 @@ from .auth_guards import api_login_required, bonk_token_required
 from .events import log_event
 from .login import login_failure_message
 from .models import Skin
-
-logger = logging.getLogger(__name__)
-
-
-def _debug_wear(request, label: str, **extra):
-    """
-    TEMPORARY diagnostics for the "login modal keeps reappearing" bug.
-    Never logs the token itself — only whether one exists.
-    Remove once the cause is found.
-    """
-    bonk = BonkSession(request.session)
-    raw_cookie = request.META.get("HTTP_COOKIE", "")
-    # No username or session key: these lines are about session state, not people.
-    logger.info(
-        "[wear-debug] %s | has_token=%s | token_expires_in=%s | "
-        "sessionid_cookie_count=%s | host=%s | %s",
-        label,
-        bool(request.session.get("bonk_token")),
-        bonk.expires_in_seconds,
-        raw_cookie.count("sessionid="),
-        request.get_host(),
-        extra,
-    )
 
 
 def _resolve_slot(request) -> AvatarSlot:
@@ -89,7 +65,7 @@ def _update_failed_response(result: BonkAvatarUpdateResult) -> JsonResponse:
     return JsonResponse({"ok": False, "error": result.error, "message": message}, status=status)
 
 
-def _wear(request, skin_code: str, **debug) -> tuple[AvatarSlot, JsonResponse | None]:
+def _wear(request, skin_code: str) -> tuple[AvatarSlot, JsonResponse | None]:
     """Send `skin_code` to the player's bonk.io account.
 
     Returns the slot used, and an error response if bonk.io didn't apply it.
@@ -99,7 +75,7 @@ def _wear(request, skin_code: str, **debug) -> tuple[AvatarSlot, JsonResponse | 
     slot = _resolve_slot(request)
     result = get_client().update_avatar(token, slot, skin_code)
     if not result.ok:
-        _debug_wear(request, "wear: bonk update failed", err=result.error, slot=slot, **debug)
+        # integrations/bonk_api.py logs bonk.io's refusal code.
         return slot, _update_failed_response(result)
     bonk.store_token(token)  # sliding TTL
     return slot, None
@@ -131,7 +107,6 @@ def bonk_login_for_wear(request):
     bonk = BonkSession(request.session)
     bonk.store_token(result.token)
     bonk.store_active_slot(result.active_slot)
-    _debug_wear(request, "login: token saved", active_slot=result.active_slot)
     active_slot = result.active_slot.number if result.active_slot else None
     return JsonResponse({"ok": True, "active_slot": active_slot})
 
@@ -145,7 +120,7 @@ def wear_skin_code(request):
     if not skin_code:
         return JsonResponse({"ok": False, "error": "skin_code_not_found"}, status=400)
 
-    slot, error_response = _wear(request, skin_code, source="editor_unsaved")
+    slot, error_response = _wear(request, skin_code)
     if error_response:
         return error_response
     log_event(request.user, "skin_worn", metadata={"source": "editor_unsaved"})
@@ -157,12 +132,11 @@ def wear_skin_code(request):
 @limit("write")
 def wear_skin(request, skin_id: int):
     """Wear a gallery skin by id in the requested (or active) slot."""
-    _debug_wear(request, "wear: passed decorator", skin_id=skin_id)
     skin = get_object_or_404(Skin, id=skin_id)
     if not skin.skin_code:
         return JsonResponse({"ok": False, "error": "skin_code_not_found"}, status=400)
 
-    slot, error_response = _wear(request, skin.skin_code, skin_id=skin_id)
+    slot, error_response = _wear(request, skin.skin_code)
     if error_response:
         return error_response
     log_event(request.user, "skin_worn", skin=skin)
