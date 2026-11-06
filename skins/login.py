@@ -35,6 +35,9 @@ logger = logging.getLogger(__name__)
 LOGIN_FAILURE_MESSAGES = {
     BonkError.WRONG_PASSWORD: "Wrong password.",
     BonkError.UNKNOWN_USERNAME: "No bonk.io account has that username.",
+    BonkError.RATE_LIMITED: (
+        "bonk.io is limiting logins from Bonkverse right now. Try again in a few minutes."
+    ),
     BonkError.REJECTED: "bonk.io didn't accept that login.",
     BonkError.UNAVAILABLE: "Network error talking to bonk.io. Try again in a minute.",
 }

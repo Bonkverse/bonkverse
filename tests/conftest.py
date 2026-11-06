@@ -62,6 +62,16 @@ def mocked_http(_no_real_http):
 
 
 @pytest.fixture(autouse=True)
+def _no_bonk_rate_limit_cooldown():
+    """The bonk.io cooldown is process-wide; never let one test's 429 leak into the next."""
+    from integrations.bonk_api import rate_limit_cooldown
+
+    rate_limit_cooldown.reset()
+    yield
+    rate_limit_cooldown.reset()
+
+
+@pytest.fixture(autouse=True)
 def _no_background_friend_sync(settings):
     """Login normally starts a background thread for friend sync; keep tests synchronous."""
     settings.SYNC_FRIENDS_ON_LOGIN = False

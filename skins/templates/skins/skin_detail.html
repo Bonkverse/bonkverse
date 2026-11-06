@@ -205,7 +205,7 @@ async function startWear() {
   const { ok, status, json } = await postForm("{% url 'wear_skin' skin.id %}", {});
   if (ok && json.ok) { wearMsg.textContent = '✅ Applied to your active slot!'; return; }
   if (status === 401 && (json.auth === 'bonk' || json.need_login)) { wearMsg.textContent = ''; openBonkLogin(); return; }
-  wearMsg.textContent = '❌ ' + (json.error === 'network_error' ? "bonk.io isn't responding; try again in a minute." : (json.error || 'Failed to apply.'));
+  wearMsg.textContent = '❌ ' + (json.message || 'Failed to apply.');
 }
 
 function openBonkLogin()  { if (loginModal?.showModal) loginModal.showModal(); else loginModal.style.display='block'; }

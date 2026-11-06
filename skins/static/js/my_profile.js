@@ -483,8 +483,7 @@ async function tryWear(card) {
   const { ok, status, json } = await postFormNoRedirect(url, {});
   if (ok && json.ok) { BVToast.show("Applied to your active slot.", { type: "success" }); return; }
   if (status === 401 && (json?.auth === 'bonk' || json?.need_login)) { pendingWearCard = card; openBonkLogin(); return; }
-  const why = json?.error === 'network_error' ? " bonk.io isn't responding; try again in a minute." : "";
-  BVToast.show("Failed to apply skin." + why, { type: "error" });
+  BVToast.show(json?.message || "Failed to apply skin.", { type: "error" });
 }
 
 document.addEventListener('click', e => {

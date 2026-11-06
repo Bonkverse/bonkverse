@@ -445,8 +445,7 @@ async function tryWearCard(skinId, card) {
     openBonkLogin();
     return;
   }
-  const why = json?.error === 'network_error' ? " bonk.io isn't responding; try again in a minute." : '';
-  BVToast.show('Failed to apply skin.' + why, { type: 'error' });
+  BVToast.show(json?.message || 'Failed to apply skin.', { type: 'error' });
 }
 
 async function doBonkLoginFromSearch(e) {

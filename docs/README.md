@@ -23,6 +23,7 @@ development are in the [README](../README.md); code conventions in
 - [2026-11-03 Search flood stalls the site](incidents/2026-11-03-search-stall.md)
 - [2026-11-03 Redis password rotation takes the site down](incidents/2026-11-03-redis-rotation.md)
 - [2026-11-03 Skin image scrape](incidents/2026-11-03-media-scrape.md)
+- [2026-11-05 Login modal loop gets Bonkverse rate-limited by bonk.io](incidents/2026-11-05-bonk-rate-limit.md)
 
 ## Decisions (ADRs)
 

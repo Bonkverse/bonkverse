@@ -134,8 +134,10 @@ class TestWearSkin:
 
         response = bonk_session_client.post(_wear_url(skin.id))
 
+        # The one refusal a fresh bonk.io login fixes, so the only one that
+        # opens the login modal.
         assert response.status_code == 401
-        assert response.json()["auth"] == "bonk"
+        assert response.json() == {"ok": False, "auth": "bonk", "error": "token_rejected"}
 
     def test_bonk_network_error_does_not_ask_for_bonk_login(
         self, bonk_session_client, skin, mocked_http
@@ -149,8 +151,37 @@ class TestWearSkin:
         response = bonk_session_client.post(_wear_url(skin.id))
 
         assert response.status_code == 502
-        assert response.json() == {"ok": False, "error": "network_error"}
+        assert response.json() == {
+            "ok": False,
+            "error": "network_error",
+            "message": "bonk.io isn't responding. Try again in a minute.",
+        }
         # The token is kept: nothing says it went bad.
+        assert bonk_session_client.session["bonk_token"] == "test-bonk-token"
+
+    @pytest.mark.parametrize(
+        "code,status,message_start",
+        [
+            ("avatar_too_big", 422, "This skin is too big for bonk.io"),
+            ("ratelimited", 503, "bonk.io is limiting requests"),
+            ("something_new", 502, "bonk.io didn't accept this skin."),
+        ],
+    )
+    def test_refusals_a_login_cannot_fix_do_not_open_the_modal(
+        self, bonk_session_client, skin, mocked_http, code, status, message_start
+    ):
+        """Regression for the reappearing login modal (prod logs 2026-11-05):
+        bonk.io said avatar_too_big, Bonkverse answered auth="bonk", the player
+        logged in, the retry was refused again, and the modal came back. The
+        repeated logins then got Bonkverse rate-limited by bonk.io."""
+        mocked_http.post(BONK_AVATAR_UPDATE_URL, json={"r": "fail", "e": code})
+
+        response = bonk_session_client.post(_wear_url(skin.id))
+
+        body = response.json()
+        assert response.status_code == status
+        assert "auth" not in body
+        assert body["message"].startswith(message_start)
         assert bonk_session_client.session["bonk_token"] == "test-bonk-token"
 
     def test_cloudflare_page_from_bonk_does_not_ask_for_bonk_login(
