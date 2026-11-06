@@ -1,25 +1,19 @@
 """Matchmaking: the "coming soon" page and a pass-through to the BonkBot API.
 
 Owns: forwarding a join-matchmaking request to BonkBot and relaying its answer.
-Does not own: matchmaking itself (lives in the BonkBot service).
+Does not own: the HTTP call (integrations/bonkbot.py) or matchmaking itself
+(the BonkBot service).
 """
 
 import json
-import logging
 
-import requests
-from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from core.ratelimits import limit
-
-logger = logging.getLogger(__name__)
-
-# (connect, read) seconds. Without a timeout a hung BonkBot held a web worker forever.
-BONKBOT_TIMEOUT = (3, 10)
+from integrations.bonkbot import join_matchmaking_configured
 
 
 @csrf_exempt
@@ -37,14 +31,10 @@ def join_matchmaking(request):
     except ValueError:
         return JsonResponse({"error": "invalid_json"}, status=400)
 
-    try:
-        response = requests.post(
-            f"{settings.BONKBOT_API_URL}/join-matchmaking", json=payload, timeout=BONKBOT_TIMEOUT
-        )
-        return JsonResponse(response.json(), status=response.status_code, safe=False)
-    except (requests.RequestException, ValueError):
-        logger.warning("join-matchmaking: BonkBot unreachable or non-JSON reply", exc_info=True)
+    reply = join_matchmaking_configured(payload)
+    if not reply.ok:
         return JsonResponse({"error": "matchmaking_unavailable"}, status=502)
+    return JsonResponse(reply.body, status=reply.status, safe=False)
 
 
 @limit("browse")

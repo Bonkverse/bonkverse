@@ -1,14 +1,19 @@
-import logging
+"""The Map Decoder tool page and its API.
 
-import requests
-from django.conf import settings
+Owns: the /tools/map-decode/ page and /api/tools/map-decode/, input checks,
+and what the page is told when decoding fails.
+Does not own: the decoder service call (integrations/map_decoder.py).
+
+The page shows `error` (and `details`, when present) as-is, so both are
+sentences meant for people. Service internals stay in the server log.
+"""
+
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
 
 from core.ratelimits import limit
-
-logger = logging.getLogger(__name__)
+from integrations.map_decoder import DecodeError, decode_map_configured
 
 
 @limit("browse")
@@ -23,32 +28,17 @@ def api_map_decode(request):
     if not encoded:
         return JsonResponse({"error": "Missing encoded map string"}, status=400)
 
-    base_url = settings.DECODER_SERVICE_URL
-    if not base_url:
+    result = decode_map_configured(encoded)
+
+    if result.error == DecodeError.NOT_CONFIGURED:
         return JsonResponse({"error": "Map decoder is not available right now"}, status=503)
-
-    headers = {"Content-Type": "application/json"}
-    key = settings.DECODER_SERVICE_KEY
-    if key:
-        headers["X-Decoder-Key"] = key
-
-    try:
-        r = requests.post(
-            f"{base_url}/decode/map",
-            json={"encoded": encoded},
-            headers=headers,
-            timeout=15,
-        )
-    except requests.RequestException:
-        logger.warning("map decoder unreachable", exc_info=True)
-        return JsonResponse({"error": "Decoder service unreachable"}, status=502)
-
-    # Pass through JSON (and status)
-    try:
-        data = r.json()
-    except ValueError:
+    if result.error == DecodeError.REJECTED:
+        body = {"error": "Couldn't decode that map string."}
+        if result.detail:
+            body["details"] = result.detail
+        return JsonResponse(body, status=400)
+    if result.error:
         return JsonResponse(
-            {"error": "Decoder returned non-JSON", "raw": r.text[:2000]}, status=502
+            {"error": "The map decoder isn't responding. Try again in a minute."}, status=502
         )
-
-    return JsonResponse(data, status=r.status_code)
+    return JsonResponse(result.data, status=200, safe=False)

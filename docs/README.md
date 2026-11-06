@@ -9,6 +9,7 @@ development are in the [README](../README.md); code conventions in
 | Page | Read it when |
 |---|---|
 | [architecture/request-flow.md](architecture/request-flow.md) | You want to know what happens between a click and a response |
+| [architecture/integrations.md](architecture/integrations.md) | Calling another service (bonk.io, the editor, Discord, Cloudflare…), or one of them is failing |
 | [operations/configuration.md](operations/configuration.md) | Adding, changing or looking up an environment variable |
 | [operations/runbook.md](operations/runbook.md) | Something is wrong in production, or you're deploying / rotating a secret |
 | [operations/rate-limiting.md](operations/rate-limiting.md) | Adding a route, changing a limit, or someone hits a 429 / Cloudflare 1015 |

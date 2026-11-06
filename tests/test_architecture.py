@@ -1,7 +1,8 @@
 """Import rules from RFC-0001, checked by reading the source (no imports run).
 
-Only `integrations/` may import `requests`: one client per external system
-owns its URLs, timeouts, parsing and token redaction.
+Only `integrations/` makes outside HTTP calls: one client per external
+system owns its URLs, timeouts, parsing and token redaction. Phase 2.3
+moved the last callers there, so there are no exceptions in the site code.
 """
 
 import ast
@@ -10,13 +11,12 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 SKIP_DIRS = {"tests", "migrations", "staticfiles", "media", "backups", "node_modules", ".git"}
 
-# Modules allowed to import requests for now, each with the phase that moves
-# its calls into integrations/. Shrink only: the test fails if a listed file
-# stops importing requests (delete it here) or an unlisted one starts.
-REQUESTS_ALLOWED = {
-    "skins/bonkbot.py",  # 2.3: integrations/bonkbot.py
-    "skins/discord_invite.py",  # 2.3: integrations/discord_api.py
-    "skins/utils/tools/map_decode.py",  # 2.3: integrations/map_decoder.py
+# Libraries that make outside HTTP calls. Only integrations/ may import them.
+HTTP_CLIENTS = {"requests", "httpx", "aiohttp", "urllib.request", "http.client", "urllib3"}
+
+# Standalone tools run by hand, never by the site. Add here only with a reason.
+HTTP_ALLOWED_OUTSIDE_INTEGRATIONS = {
+    "scripts/load_test_search.py",  # dev load test; refuses to target production
 }
 
 
@@ -27,32 +27,64 @@ def _python_files():
             yield rel
 
 
-def _imports_requests(path: Path) -> bool:
+def _http_imports(path: Path) -> set[str]:
+    """The HTTP client libraries a file imports."""
     tree = ast.parse(path.read_text(encoding="utf-8"))
+    found = set()
     for node in ast.walk(tree):
-        if isinstance(node, ast.Import) and any(
-            a.name.split(".")[0] == "requests" for a in node.names
-        ):
-            return True
-        if isinstance(node, ast.ImportFrom) and (node.module or "").split(".")[0] == "requests":
-            return True
-    return False
+        if isinstance(node, ast.Import):
+            names = [alias.name for alias in node.names]
+        elif isinstance(node, ast.ImportFrom) and node.level == 0:
+            module = node.module or ""
+            # `from urllib import request` imports urllib.request.
+            names = [module] + [f"{module}.{alias.name}" for alias in node.names]
+        else:
+            continue
+        for name in names:
+            for client in HTTP_CLIENTS:
+                if name == client or name.startswith(f"{client}."):
+                    found.add(client)
+    return found
 
 
-def test_only_integrations_import_requests():
-    importers = {
-        rel.as_posix()
+def test_only_integrations_make_http_calls():
+    offenders = {
+        rel.as_posix(): sorted(_http_imports(REPO / rel))
         for rel in _python_files()
-        if rel.parts[0] != "integrations" and _imports_requests(REPO / rel)
+        if rel.parts[0] != "integrations"
+        and rel.as_posix() not in HTTP_ALLOWED_OUTSIDE_INTEGRATIONS
+        and _http_imports(REPO / rel)
     }
 
-    assert importers - REQUESTS_ALLOWED == set(), "move these HTTP calls into integrations/"
-    assert REQUESTS_ALLOWED - importers == set(), "no longer import requests: remove from list"
+    assert offenders == {}, "move these outside calls into integrations/"
+
+
+def test_allowed_list_has_no_stale_entries():
+    for rel in HTTP_ALLOWED_OUTSIDE_INTEGRATIONS:
+        path = REPO / rel
+        assert path.exists() and _http_imports(path), f"remove {rel} from the allowed list"
+
+
+def test_detects_every_import_form(tmp_path):
+    for source in (
+        "import requests",
+        "import requests.adapters",
+        "from requests import post",
+        "import urllib.request",
+        "from urllib import request",
+        "from urllib.request import urlopen",
+        "import httpx",
+    ):
+        path = tmp_path / "m.py"
+        path.write_text(source)
+        assert _http_imports(path), source
+    (tmp_path / "ok.py").write_text("from urllib.parse import urlparse\nimport http\n")
+    assert not _http_imports(tmp_path / "ok.py")
 
 
 def test_login_and_wear_go_through_the_bonk_client():
     for rel in ("skins/login.py", "skins/wear_skin.py", "skins/friends_sync.py"):
-        assert not _imports_requests(REPO / rel), rel
+        assert not _http_imports(REPO / rel), rel
         assert "bonk2.io" not in (REPO / rel).read_text(), rel
 
 
