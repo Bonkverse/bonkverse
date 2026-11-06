@@ -178,9 +178,13 @@ def sleeps(monkeypatch):
     return calls
 
 
-def _server(code, guild_id):
+def _server(code, guild_id, last_fetched_at=None):
     return DiscordServer.objects.create(
-        guild_id=guild_id, invite_code=code, invite_url=f"https://discord.gg/{code}", name=code
+        guild_id=guild_id,
+        invite_code=code,
+        invite_url=f"https://discord.gg/{code}",
+        name=code,
+        last_fetched_at=last_fetched_at,
     )
 
 
@@ -231,14 +235,32 @@ def test_refresh_waits_out_a_429_then_continues(mocked_http, sleeps):
 def test_refresh_stops_when_still_rate_limited(mocked_http, sleeps):
     _server("aaa", "1")
     _server("bbb", "2")
-    mocked_http.get(f"{API}/aaa", json={"retry_after": 600}, status=429)
+    for code in ("aaa", "bbb"):
+        mocked_http.get(f"{API}/{code}", json={"retry_after": 600}, status=429)
 
     stats = refresh_discord_servers()
 
     assert stats["stopped_rate_limited"] is True
     assert sleeps == [60.0]  # capped wait, then stop
-    assert len(mocked_http.calls) == 2  # bbb never tried
+    assert len(mocked_http.calls) == 2  # first server twice; the second never tried
     assert not DiscordServerSnapshot.objects.exists()
+
+
+@pytest.mark.django_db
+def test_refresh_goes_stalest_first(mocked_http, sleeps):
+    """A run stopped by a rate limit shouldn't keep skipping the same servers."""
+    from datetime import datetime, timezone
+
+    _server("fresh", "1", last_fetched_at=datetime(2026, 11, 5, 12, tzinfo=timezone.utc))
+    _server("old", "2", last_fetched_at=datetime(2026, 11, 1, tzinfo=timezone.utc))
+    _server("never", "3")
+    for code, guild in (("fresh", "1"), ("old", "2"), ("never", "3")):
+        mocked_http.get(f"{API}/{code}", json=_invite_body(guild))
+
+    refresh_discord_servers()
+
+    order = [call.request.url.split("/invites/")[1].split("?")[0] for call in mocked_http.calls]
+    assert order == ["never", "old", "fresh"]
 
 
 @pytest.mark.django_db

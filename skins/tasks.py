@@ -9,6 +9,7 @@ import logging
 import time
 
 from celery import shared_task
+from django.db.models import F
 from django.utils import timezone
 
 from integrations.discord_api import InviteError, fetch_invite
@@ -30,7 +31,11 @@ MAX_RATE_LIMIT_WAIT = 60.0
 @shared_task
 def refresh_discord_servers() -> dict:
     stats = {"refreshed": 0, "not_found": 0, "failed": 0, "stopped_rate_limited": False}
-    servers = DiscordServer.objects.filter(status=DiscordServer.Status.ACTIVE).order_by("id")
+    # Stalest first, so a run cut short by a rate limit doesn't keep skipping
+    # the same servers.
+    servers = DiscordServer.objects.filter(status=DiscordServer.Status.ACTIVE).order_by(
+        F("last_fetched_at").asc(nulls_first=True), "id"
+    )
 
     for server in servers.iterator():
         result = fetch_invite(server.invite_code)
