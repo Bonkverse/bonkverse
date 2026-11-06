@@ -14,10 +14,8 @@ SKIP_DIRS = {"tests", "migrations", "staticfiles", "media", "backups", "node_mod
 # its calls into integrations/. Shrink only: the test fails if a listed file
 # stops importing requests (delete it here) or an unlisted one starts.
 REQUESTS_ALLOWED = {
-    "skins/rerender.py",  # 2.3: integrations/editor_render.py (exists) + cloudflare.py
     "skins/bonkbot.py",  # 2.3: integrations/bonkbot.py
     "skins/discord_invite.py",  # 2.3: integrations/discord_api.py
-    "skins/upload.py",  # 2.3: integrations/bl_skin_fetcher.py (exists)
     "skins/utils/tools/map_decode.py",  # 2.3: integrations/map_decoder.py
 }
 

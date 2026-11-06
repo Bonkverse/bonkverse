@@ -14,7 +14,7 @@ from django.views.static import serve
 from core.ratelimits import limit
 
 # Browsers keep a file for an hour; Cloudflare's edge for a week. Re-render
-# purges the edge copy (rerender.purge_cloudflare_cache), so a week is safe.
+# purges the edge copy (integrations/cloudflare.py), so a week is safe.
 MEDIA_CACHE_CONTROL = "public, max-age=3600, s-maxage=604800"
 
 

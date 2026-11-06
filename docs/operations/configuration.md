@@ -32,7 +32,7 @@ Defaults are chosen so local development works with only the required ones set.
 | `BLSKIN_FETCHER_URL` | production fetcher | Upload from BonkLeagues |
 | `BONKBOT_API_URL` | production BonkBot | `/api/join-matchmaking/` |
 | `DECODER_SERVICE_URL`, `DECODER_SERVICE_KEY` | unset | Tools → Map Decoder (503 when unset) |
-| `CLOUDFLARE_ZONE_ID`, `CLOUDFLARE_CACHE_API_TOKEN` | unset | Edge cache purge after re-render (skipped when unset) |
+| `CLOUDFLARE_ZONE_ID`, `CLOUDFLARE_CACHE_API_TOKEN` | unset | Edge cache purge after re-render (`integrations/cloudflare.py`; skipped when unset, failures logged as `cloudflare purge failed`) |
 | `SENTRY_DSN` | unset | Error reporting |
 
 ## bonk.io account API
