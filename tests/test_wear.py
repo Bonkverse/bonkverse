@@ -173,7 +173,7 @@ class TestWearSkin:
         """Regression for the reappearing login modal (prod logs 2026-11-05):
         bonk.io said avatar_too_big, Bonkverse answered auth="bonk", the player
         logged in, the retry was refused again, and the modal came back. The
-        repeated logins then got Bonkverse rate-limited by bonk.io."""
+        same happened for every "ratelimited" refusal."""
         mocked_http.post(BONK_AVATAR_UPDATE_URL, json={"r": "fail", "e": code})
 
         response = bonk_session_client.post(_wear_url(skin.id))

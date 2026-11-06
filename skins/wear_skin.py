@@ -17,7 +17,7 @@ JSON contract the frontend relies on (tests/test_wear.py):
 
 Only bonk.io's "token" refusal opens the login modal. Treating every refusal
 as an expired token made the modal reappear forever for a too-big skin, and
-the repeated logins got Bonkverse rate-limited by bonk.io (2026-11-05).
+every time bonk.io was rate-limiting the server (docs/bonk/api.md).
 """
 
 import logging

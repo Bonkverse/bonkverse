@@ -62,9 +62,9 @@ class BonkError:
     UNKNOWN_USERNAME = "unknown_username"
     TOKEN_REJECTED = "token_rejected"  # expired or invalid token: log in again
     AVATAR_TOO_BIG = "avatar_too_big"  # the skin is over bonk.io's size limit
-    # bonk.io is limiting requests. It limits by IP, and every Bonkverse user
-    # reaches bonk.io from the same server, so one person's retries can lock
-    # everyone out. See RATE_LIMIT_COOLDOWN.
+    # bonk.io is limiting requests. It appears to limit by IP, and every
+    # Bonkverse user reaches bonk.io from the server's IP, which Railway may
+    # share with others. See RATE_LIMIT_COOLDOWN.
     RATE_LIMITED = "rate_limited"
     REJECTED = "rejected"  # a refusal code we don't recognise (see bonk_error)
     # bonk.io didn't give a usable answer: connection failed, timed out,
@@ -84,8 +84,9 @@ _REFUSALS = {
 }
 
 # After bonk.io says "ratelimited", Bonkverse makes no bonk.io calls for this
-# many seconds and answers RATE_LIMITED itself. Retrying straight away only
-# extends the limit for every user (2026-11-05: hours of failed logins).
+# many seconds and answers RATE_LIMITED itself, so we don't add requests while
+# bonk.io is limiting the IP. Bursts have been logged since at least
+# 2026-10-30, mostly when Bonkverse itself sent little (docs/bonk/api.md).
 RATE_LIMIT_COOLDOWN = 120.0
 
 
