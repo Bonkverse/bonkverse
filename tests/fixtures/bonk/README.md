@@ -20,6 +20,6 @@ Rules:
 | `login_wrong_password.json` | `login_legacy.php` (HTTP 200 with failure body) | synthetic (community) |
 | `login_unknown_username.json` | `login_legacy.php` (HTTP 200 with failure body) | synthetic (community) |
 | `friends_success.json` | `friends.php` (includes a blank name and a bad id on purpose) | synthetic |
-| `friends_token_expired.json` | `friends.php` | synthetic: the real code for a stale token is unknown |
+| `friends_token_expired.json` | `friends.php` | synthetic: copies the recorded `avatar_update.php` code |
 | `avatar_update_success.json` | `avatar_update.php` | recorded 2026-11-03 (identical to the old synthetic body) |
-| `avatar_update_token_expired.json` | `avatar_update.php` | recorded 2026-11-03 with a tampered token (bad signature). A genuinely expired token is not recorded yet and may differ. |
+| `avatar_update_token_expired.json` | `avatar_update.php` | recorded: same body for a genuinely expired token (2026-11-05) and a tampered one (2026-11-03) |
