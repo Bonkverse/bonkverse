@@ -331,6 +331,12 @@
     cursor: default;
 }
 
+/* Favorites tab: the visitor's own favorite, so the star is filled. */
+.skin-card .fav-static--favorited i[data-lucide="star"] {
+    fill: #ffc107;
+    color: #ffc107;
+}
+
 /* Vote static (logged out) — no button appearance */
 .vote-static {
     background: none;

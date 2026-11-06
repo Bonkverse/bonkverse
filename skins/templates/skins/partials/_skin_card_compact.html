@@ -1,0 +1,22 @@
+{% comment %}
+The one compact skin card: image, name and creator, linking to the skin page.
+Used by the home carousels and the browse pages (New Releases, categories).
+Unlike the full card (_skin_card.html) it has no buttons: the whole tile is a link.
+
+  {% include 'skins/partials/_skin_card_compact.html' with skin=s card_class='carousel-card' %}
+
+card_class  the container's look: carousel-card (home, css/carousel.css) or
+            browse-card (browse pages, css/browse.css)
+show_date   also show the upload date (browse)
+name_len    characters before the name is cut (default 22)
+{% endcomment %}
+{% with n=name_len|default:22 %}
+<a class="skin-tile {{ card_class }}" href="{{ skin.get_absolute_url }}" title="{{ skin.name }}">
+  <img class="skin-tile-img" loading="lazy" src="{{ skin.image_url|default:'/static/images/default_skin.png' }}" alt="{{ skin.name }}">
+  <div class="skin-tile-meta">
+    <strong class="name">{{ skin.name|truncatechars:n }}</strong>
+    <span class="by">by {{ skin.creator|truncatechars:18 }}</span>
+    {% if show_date %}<span class="date">{{ skin.created_at|date:"M j, Y" }}</span>{% endif %}
+  </div>
+</a>
+{% endwith %}

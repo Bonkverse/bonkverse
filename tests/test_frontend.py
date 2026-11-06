@@ -6,6 +6,9 @@ on rendered pages.
 - Wearing and the bonk.io login go through static/core/js/bv-wear.js and the
   one modal partial: three copies of that flow are how the reappearing-modal
   bug hid for weeks.
+- Skin cards come from two partials (_skin_card.html, _skin_card_compact.html)
+  and behave through static/core/js/bv-cards.js: no page writes its own card
+  or wires its own card buttons.
 """
 
 import re
@@ -21,7 +24,17 @@ STATIC_JS = REPO / "skins" / "static"
 SHARED = {
     STATIC_JS / "core" / "js" / "bv-api.js",
     STATIC_JS / "core" / "js" / "bv-wear.js",
+    STATIC_JS / "core" / "js" / "bv-cards.js",
 }
+PARTIALS = TEMPLATES / "skins" / "partials"
+CARD_PARTIALS = {PARTIALS / "_skin_card.html", PARTIALS / "_skin_card_compact.html"}
+
+# Card markup: an element whose class list names a piece of the card.
+CARD_MARKUP = re.compile(r'class="[^"]*\b(skin-card|skin-tile|card-more-dropdown|vote-row)\b[^"]*"')
+# Card behavior: a script selecting the card's buttons or image.
+CARD_BEHAVIOR = re.compile(
+    r"""['"`][^'"`]*\.(card-more-btn|wear-card-action|vote-up|vote-down|fav-toggle|skin-card-img)\b"""
+)
 MODAL_PARTIAL = TEMPLATES / "skins" / "partials" / "_bonk_login_modal.html"
 
 # Helpers only bv-api.js may define, and the cookie only it may read.
@@ -87,3 +100,50 @@ def test_modal_points_at_the_wear_login_endpoint(logged_in_client):
     html = logged_in_client.get("/search/").content.decode()
 
     assert f'data-login-url="{reverse("bonk_login_for_wear")}"' in html
+
+
+def test_only_the_card_partials_write_card_markup():
+    found = [
+        f"{path.relative_to(REPO)}: {m.group(0)}"
+        for path in TEMPLATES.rglob("*.html")
+        if path not in CARD_PARTIALS
+        for m in CARD_MARKUP.finditer(path.read_text(encoding="utf-8"))
+    ]
+    assert found == [], (
+        "include skins/partials/_skin_card.html or _skin_card_compact.html instead:\n"
+        + "\n".join(found)
+    )
+
+
+def test_only_bv_cards_wires_card_buttons():
+    found = [
+        f"{path.relative_to(REPO)}: {m.group(0)}"
+        for path in _page_sources()
+        for m in CARD_BEHAVIOR.finditer(path.read_text(encoding="utf-8"))
+    ]
+    assert found == [], "card behavior belongs in static/core/js/bv-cards.js:\n" + "\n".join(found)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("page", ["/search/", "/my-profile/", "/new/"])
+def test_card_pages_load_bv_cards(logged_in_client, page):
+    SkinFactory()
+
+    html = logged_in_client.get(page).content.decode()
+
+    assert "core/js/bv-cards" in html
+
+
+@pytest.mark.django_db
+def test_search_card_shows_the_visitors_vote_and_favorite(logged_in_client, user):
+    from skins.models import SkinVote
+
+    skin = SkinFactory(name="Votedskin")
+    SkinVote.objects.create(user=user, skin=skin, vote="down")
+    user.favorite_skins.add(skin)
+
+    html = logged_in_client.get("/search/").content.decode()
+
+    assert 'class="vote-down active"' in html
+    assert 'class="vote-up active"' not in html
+    assert 'class="fav-toggle active"' in html

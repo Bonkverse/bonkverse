@@ -1,0 +1,161 @@
+{% comment %}
+The one full skin card. Every page that shows these includes this partial;
+none writes card markup itself (tests/test_frontend.py checks).
+
+  {% include 'skins/partials/_skin_card.html' with skin=skin mode='search' %}
+
+mode:
+  search    (default) star toggle, voting, Wear; staff Re-render and Report in the menu
+  mine      the visitor's own skins: select checkbox, Edit and Delete in the menu
+  favorite  the visitor's favorites: filled star with the count
+
+The skin needs fav_count_val, current_vote and is_favorited
+(skins.selectors.decorate_skins_for_user). Behavior: static/core/js/bv-cards.js
+(menu, image zoom, votes, favorites, Wear); the page's own script handles Edit,
+Delete, Re-render and Report.
+{% endcomment %}
+{% with mode=mode|default:'search' %}
+<div class="skin-card"
+     data-id="{{ skin.id }}"
+     data-wear-url="{% url 'wear_skin' skin.id %}">
+
+  {% if mode == 'mine' %}
+    <div class="select-check"><i data-lucide="check"></i></div>
+  {% endif %}
+
+  <div class="card-top-left">
+    {% if mode == 'search' %}
+      {% if user.is_authenticated %}
+        <button class="fav-toggle {% if skin.is_favorited %}active{% endif %}" title="Favorite">
+          <i data-lucide="star" class="fav-icon-svg"></i>
+          <span class="fav-count">{{ skin.fav_count_val }}</span>
+        </button>
+      {% else %}
+        <span class="fav-static" title="Login to favorite">
+          <i data-lucide="star"></i>
+          {{ skin.fav_count_val }}
+        </span>
+      {% endif %}
+    {% elif mode == 'favorite' %}
+      <span class="fav-static fav-static--favorited">
+        <i data-lucide="star"></i>
+        {{ skin.fav_count_val }}
+      </span>
+    {% endif %}
+
+    <div class="card-more-menu">
+      <button class="card-more-btn" title="More options">
+        <i data-lucide="more-horizontal"></i>
+      </button>
+      <ul class="card-more-dropdown">
+        {% if mode == 'mine' %}
+          <li>
+            <button type="button"
+                    class="edit-skin-trigger"
+                    data-skin-id="{{ skin.id }}"
+                    data-name="{{ skin.name }}"
+                    data-description="{{ skin.description|default:'' }}"
+                    data-style="{{ skin.labels.style|default:'' }}"
+                    data-labels="{{ skin.labels_json }}"
+                    data-image="{{ skin.image_url|default:'/static/images/default_skin.png' }}"
+                    data-action="{% url 'edit_skin' skin.id %}">
+              <i data-lucide="pencil"></i> Edit Skin
+            </button>
+          </li>
+          <li>
+            <button class="card-delete-btn"
+                    data-action="{% url 'delete_skin' skin.id %}"
+                    data-name="{{ skin.name|escapejs }}">
+              <i data-lucide="trash-2"></i> Delete Skin
+            </button>
+          </li>
+          <li class="more-menu-divider"></li>
+        {% endif %}
+        {% if skin.link %}
+          <li>
+            <a href="{{ skin.link }}" target="_blank" rel="noopener">
+              <i data-lucide="external-link"></i> Open in Bonkleagues
+            </a>
+          </li>
+        {% endif %}
+        {% if user.is_authenticated %}
+          <li>
+            <a href="{{ BONKVERSE_EDITOR_URL }}?skin={{ skin.skin_code|urlencode }}" target="_blank" rel="noopener">
+              <i data-lucide="pencil"></i> Open in Skin Editor
+            </a>
+          </li>
+        {% endif %}
+        <li>
+          <a href="{% url 'share_skin' skin.id skin.uuid %}" target="_blank" rel="noopener">
+            <i data-lucide="share-2"></i> Share Link
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'skin_detail' skin.id %}">
+            <i data-lucide="file-text"></i> View Skin Details
+          </a>
+        </li>
+        {% if mode == 'search' %}
+          {% if user.is_staff %}
+            <li class="more-menu-divider"></li>
+            <li>
+              <button class="card-rerender-btn" data-skin-id="{{ skin.id }}">
+                <i data-lucide="refresh-cw"></i> Re-render Image
+              </button>
+            </li>
+          {% endif %}
+          <li class="more-menu-divider"></li>
+          <li>
+            <button class="card-report-btn card-report-link"
+                    data-skin-id="{{ skin.id }}"
+                    data-skin-name="{{ skin.name|escapejs }}">
+              <i data-lucide="flag"></i> Report
+            </button>
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+
+  {% if mode == 'search' %}
+    <div class="card-top-right"></div>
+  {% endif %}
+
+  <strong title="{{ skin.name }}">{{ skin.name|truncatechars:20 }}</strong>
+  <span title="{{ skin.creator }}">by {{ skin.creator|truncatechars:20 }}</span>
+
+  {# lazy + async decoding + fixed size: 50 cards don't load or reflow at once. #}
+  <img class="skin-card-img"
+       src="{{ skin.image_url|default:'/static/images/default_skin.png' }}"
+       alt="{{ skin.name }}"
+       width="160"
+       height="160"
+       loading="lazy"
+       decoding="async">
+
+  <div class="vote-row">
+    {% if mode == 'search' and user.is_authenticated %}
+      <button class="vote-up {% if skin.current_vote == 'up' %}active{% endif %}" title="Upvote">
+        <i data-lucide="thumbs-up"></i>
+      </button>
+      <span class="up-count">{{ skin.upvotes }}</span>
+      <button class="vote-down {% if skin.current_vote == 'down' %}active{% endif %}" title="Downvote">
+        <i data-lucide="thumbs-down"></i>
+      </button>
+      <span class="down-count">{{ skin.downvotes }}</span>
+    {% else %}
+      <span class="vote-static"><i data-lucide="thumbs-up"></i></span>
+      <span class="up-count">{{ skin.upvotes }}</span>
+      <span class="vote-static"><i data-lucide="thumbs-down"></i></span>
+      <span class="down-count">{{ skin.downvotes }}</span>
+    {% endif %}
+  </div>
+
+  {% if user.is_authenticated %}
+    <button class="card-action-btn wear-card-action">Wear</button>
+  {% else %}
+    <a href="{{ skin.get_absolute_url }}" class="card-action-btn">View Details</a>
+  {% endif %}
+
+</div>
+{% endwith %}

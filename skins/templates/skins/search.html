@@ -42,138 +42,10 @@
 
   <div class="skins-container">
     {% for skin in skins_on_page %}
-      <div class="skin-card"
-           data-id="{{ skin.id }}"
-           data-vote="{{ skin.current_vote|default:'' }}"
-           data-favorited="{{ skin.is_favorited|yesno:'1,0' }}">
-
-        <!-- Top-left: Star + ··· menu -->
-        <div class="card-top-left">
-          {% if user.is_authenticated %}
-            {# is_favorited and fav_count_val are pre-computed in the view — no DB hit here #}
-            <button class="fav-toggle {% if skin.is_favorited %}active{% endif %}" title="Favorite">
-              <i data-lucide="star" class="fav-icon-svg"></i>
-              <span class="fav-count">{{ skin.fav_count_val }}</span>
-            </button>
-          {% else %}
-            <span class="fav-static" title="Login to favorite">
-              <i data-lucide="star"></i>
-              {{ skin.fav_count_val }}
-            </span>
-          {% endif %}
-
-          <!-- ··· More menu -->
-          <div class="card-more-menu">
-            <button class="card-more-btn" title="More options">
-              <i data-lucide="more-horizontal"></i>
-            </button>
-            <ul class="card-more-dropdown">
-              <li>
-                <a href="{{ skin.link }}" target="_blank" rel="noopener">
-                  <i data-lucide="external-link"></i> Open in Bonkleagues
-                </a>
-              </li>
-              {% if user.is_authenticated %}
-              <li>
-                <a href="{{ BONKVERSE_EDITOR_URL }}?skin={{ skin.skin_code }}" target="_blank" rel="noopener">
-                  <i data-lucide="pencil"></i> Open in Skin Editor
-                </a>
-              </li>
-              {% endif %}
-              <li>
-                <a href="{% url 'share_skin' skin.id skin.uuid %}" target="_blank" rel="noopener">
-                  <i data-lucide="share-2"></i> Share Link
-                </a>
-              </li>
-              <li>
-                <a href="{% url 'skin_detail' skin.id %}">
-                  <i data-lucide="file-text"></i> View Skin Details
-                </a>
-              </li>
-              {% if user.is_staff %}
-              <li class="more-menu-divider"></li>
-              <li>
-                <button class="card-rerender-btn"
-                        data-skin-id="{{ skin.id }}">
-                  <i data-lucide="refresh-cw"></i> Re-render Image
-                </button>
-              </li>
-              {% endif %}
-              <li class="more-menu-divider"></li>
-              <li>
-                <button class="card-report-btn card-report-link"
-                        data-skin-id="{{ skin.id }}"
-                        data-skin-name="{{ skin.name|escapejs }}">
-                  <i data-lucide="flag"></i> Report
-                </button>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- Top-right: reserved -->
-        <div class="card-top-right"></div>
-
-        <!-- Skin name + creator -->
-        <strong title="{{ skin.name }}">{{ skin.name|truncatechars:20 }}</strong>
-        <span title="{{ skin.creator }}">by {{ skin.creator|truncatechars:20 }}</span>
-
-        <!-- Skin image
-             loading="lazy"  — only loads images near the viewport, not all 50 at once
-             decoding="async" — image decoding doesn't block the main thread
-             width + height   — browser reserves space so the layout doesn't reflow as images arrive
-             onerror          — falls back to a local default if the image fails, never hits bonkleagues
-        -->
-        <img
-          src="{{ skin.image_url|default:'/static/images/default_skin.png' }}"
-          alt="{{ skin.name }}"
-          width="160"
-          height="160"
-          loading="lazy"
-          decoding="async"
-          onerror="this.onerror=null; this.src='/static/images/default_skin.png';"
-          onclick="showImage(`{{ skin.image_url|default:'/static/images/default_skin.png' }}`)">
-
-        <!-- Vote row -->
-        <div class="vote-row">
-          {% if user.is_authenticated %}
-            <button class="vote-up" title="Upvote">
-              <i data-lucide="thumbs-up"></i>
-            </button>
-            <span class="up-count">{{ skin.upvotes }}</span>
-            <button class="vote-down" title="Downvote">
-              <i data-lucide="thumbs-down"></i>
-            </button>
-            <span class="down-count">{{ skin.downvotes }}</span>
-          {% else %}
-            <span class="vote-static"><i data-lucide="thumbs-up"></i></span>
-            <span class="up-count">{{ skin.upvotes }}</span>
-            <span class="vote-static"><i data-lucide="thumbs-down"></i></span>
-            <span class="down-count">{{ skin.downvotes }}</span>
-          {% endif %}
-        </div>
-
-        <!-- Bottom action button -->
-        {% if skin.id %}
-          {% if user.is_authenticated %}
-            <button class="card-action-btn wear-card-action" data-id="{{ skin.id }}">Wear</button>
-          {% else %}
-            <a href="{{ skin.get_absolute_url }}" class="card-action-btn">View Details</a>
-          {% endif %}
-        {% else %}
-          <span style="color: red;">⚠️ No ID</span>
-        {% endif %}
-
-      </div>
+      {% include 'skins/partials/_skin_card.html' with skin=skin mode='search' %}
     {% empty %}
       <p class="empty-state">{{ search_error|default:"No skins found. Try a different search." }}</p>
     {% endfor %}
-  </div>
-
-  <!-- Image modal -->
-  <div id="imageModal" class="modal" onclick="closeImage()">
-    <span class="close">&times;</span>
-    <img class="modal-content" id="zoomedImage">
   </div>
 
   {% include 'skins/partials/pagination.html' with page_obj=skins elided_range=elided_range base_qs=base_qs %}
@@ -189,6 +61,9 @@
 
 {% block extra_scripts %}
 <script>
+// Card behavior (menu, zoom, votes, favorites, Wear): static/core/js/bv-cards.js.
+// This page adds Report and the staff Re-render.
+
 // ── Auto-submit search filters ────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
   const searchForm = document.getElementById("searchForm");
@@ -205,47 +80,6 @@ document.addEventListener("DOMContentLoaded", () => {
     window.history.replaceState({}, '', url.toString());
   }
 })();
-
-// ── Image modal ───────────────────────────────────────────────
-function showImage(src) {
-  document.getElementById('zoomedImage').src = src;
-  document.getElementById('imageModal').style.display = 'flex';
-}
-function closeImage() {
-  document.getElementById('imageModal').style.display = 'none';
-}
-
-// ── Restore vote state on load ────────────────────────────────
-document.addEventListener("DOMContentLoaded", () => {
-  document.querySelectorAll('.skin-card').forEach(card => {
-    const vote = card.dataset.vote;
-    if (vote === 'up')   card.querySelector('.vote-up')?.classList.add('active');
-    if (vote === 'down') card.querySelector('.vote-down')?.classList.add('active');
-  });
-});
-
-// ── ··· More menu ─────────────────────────────────────────────
-document.addEventListener("DOMContentLoaded", () => {
-  document.querySelectorAll('.card-more-btn').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      const dropdown = this.closest('.card-more-menu').querySelector('.card-more-dropdown');
-      document.querySelectorAll('.card-more-dropdown.open').forEach(d => {
-        if (d !== dropdown) d.classList.remove('open');
-      });
-      dropdown.classList.toggle('open');
-    });
-  });
-
-  document.querySelectorAll('.card-more-dropdown').forEach(dropdown => {
-    dropdown.addEventListener('click', e => e.stopPropagation());
-  });
-});
-
-// Close all menus when clicking anywhere outside
-document.addEventListener('click', () => {
-  document.querySelectorAll('.card-more-dropdown.open').forEach(d => d.classList.remove('open'));
-});
 
 // ── Report modal ──────────────────────────────────────────────
 const reportModal    = document.getElementById('report-modal');
@@ -322,41 +156,6 @@ document.addEventListener("DOMContentLoaded", () => {
       openReportModal(this.dataset.skinId, this.dataset.skinName);
     });
   });
-});
-
-// ── Event delegation: votes + favorites + wear ────────────────
-document.addEventListener('click', async (e) => {
-  const card = e.target.closest('.skin-card');
-  if (!card) return;
-  const id = card.dataset.id;
-
-  // Vote up / down
-  const voteBtn = e.target.closest('.vote-up, .vote-down');
-  if (voteBtn) {
-    const vote = voteBtn.classList.contains('vote-up') ? 'up' : 'down';
-    const json = await BVApi.postOrLogin(`/api/skins/${id}/vote/`, { vote });
-    if (!json) return;
-    card.querySelector('.up-count').textContent   = json.upvotes;
-    card.querySelector('.down-count').textContent = json.downvotes;
-    card.querySelector('.vote-up').classList.toggle('active',   json.current_vote === 'up');
-    card.querySelector('.vote-down').classList.toggle('active', json.current_vote === 'down');
-    return;
-  }
-
-  // Favorite
-  if (e.target.closest('.fav-toggle')) {
-    const json = await BVApi.postOrLogin(`/api/skins/${id}/favorite/`);
-    if (!json) return;
-    card.querySelector('.fav-count').textContent = json.favorites;
-    card.querySelector('.fav-toggle').classList.toggle('active', json.favorited);
-    return;
-  }
-
-  // Wear (bonk.io login modal and retry: static/core/js/bv-wear.js)
-  if (e.target.closest('.wear-card-action')) {
-    BVWear.wear(`/api/skins/${id}/wear/`);
-    return;
-  }
 });
 
 // ── Re-render (staff only) ────────────────────────────────────
