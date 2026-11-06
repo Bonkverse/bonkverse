@@ -14,9 +14,11 @@ import requests
 from core.bonk import AvatarSlot
 from integrations.bonk_api import (
     BROWSER_HEADERS,
+    RATE_LIMIT_COOLDOWN,
     BonkApi,
     BonkError,
     BonkFriend,
+    _Cooldown,
     get_client,
     redact,
 )
@@ -179,7 +181,11 @@ class TestGetFriends:
 
         result = api.get_friends("tok")
 
-        assert (result.ok, result.error, result.bonk_error) == (False, BonkError.REJECTED, "token")
+        assert (result.ok, result.error, result.bonk_error) == (
+            False,
+            BonkError.TOKEN_REJECTED,
+            "token",
+        )
 
     def test_outage(self, api, mocked_http):
         mocked_http.post(FRIENDS, body=requests.Timeout("slow"))
@@ -201,12 +207,22 @@ class TestUpdateAvatar:
             "newavatar": "CODE",
         }
 
-    def test_refusal_is_rejected(self, api, mocked_http):
-        mocked_http.post(AVATAR, json=load_bonk_fixture("avatar_update_token_expired"))
+    @pytest.mark.parametrize(
+        "body,error",
+        [
+            (load_bonk_fixture("avatar_update_token_expired"), BonkError.TOKEN_REJECTED),
+            # Seen in production 2026-11-05 (no recorded body yet; same shape).
+            ({"r": "fail", "e": "avatar_too_big"}, BonkError.AVATAR_TOO_BIG),
+            ({"r": "fail", "e": "ratelimited"}, BonkError.RATE_LIMITED),
+            ({"r": "fail", "e": "something_new"}, BonkError.REJECTED),
+        ],
+    )
+    def test_each_refusal_code(self, api, mocked_http, body, error):
+        mocked_http.post(AVATAR, json=body)
 
         result = api.update_avatar("tok", AvatarSlot(1), "CODE")
 
-        assert (result.ok, result.error, result.bonk_error) == (False, BonkError.REJECTED, "token")
+        assert (result.ok, result.error, result.bonk_error) == (False, error, body["e"])
 
     def test_outage_is_unavailable_not_rejected(self, api, mocked_http):
         """An outage must not look like a stale token, or the wear flow asks
@@ -238,3 +254,43 @@ def test_every_call_sends_browser_headers(api, mocked_http):
 
 def test_redact_removes_tokens_from_cut_off_json():
     assert redact('{"r":"success","token":"abc.def"') == '{"r":"success","token":"***REDACTED***"'
+
+
+class TestRateLimitCooldown:
+    """After bonk.io says "ratelimited", Bonkverse stops calling it for a while,
+    because every user shares the server's IP and retries extend the limit."""
+
+    def test_ratelimited_login_pauses_every_bonk_call(self, api, mocked_http):
+        mocked_http.post(LOGIN, json={"r": "fail", "e": "ratelimited"})
+
+        first = api.login("TestPlayer", "pw")
+        after = [
+            api.login("Someone Else", "pw"),
+            api.get_friends("tok"),
+            api.update_avatar("tok", AvatarSlot(1), "CODE"),
+        ]
+
+        assert (first.error, first.bonk_error) == (BonkError.RATE_LIMITED, "ratelimited")
+        assert [r.error for r in after] == [BonkError.RATE_LIMITED] * 3
+        assert all(r.bonk_error is None for r in after)  # answered locally
+        assert len(mocked_http.calls) == 1  # nothing else reached bonk.io
+
+    def test_calls_resume_after_the_cooldown(self, mocked_http):
+        now = [1000.0]
+        api = BonkApi(BASE, cooldown=_Cooldown(clock=lambda: now[0]))
+        mocked_http.post(LOGIN, json={"r": "fail", "e": "ratelimited"})
+        api.login("TestPlayer", "pw")
+
+        now[0] += RATE_LIMIT_COOLDOWN - 1
+        assert api.login("TestPlayer", "pw").bonk_error is None  # still paused
+        now[0] += 2
+        mocked_http.replace("POST", LOGIN, json=load_bonk_fixture("login_success"))
+        assert api.login("TestPlayer", "pw").ok is True
+
+    def test_other_refusals_do_not_pause(self, api, mocked_http):
+        mocked_http.post(AVATAR, json={"r": "fail", "e": "avatar_too_big"})
+
+        api.update_avatar("tok", AvatarSlot(1), "CODE")
+        api.update_avatar("tok", AvatarSlot(1), "CODE")
+
+        assert len(mocked_http.calls) == 2

@@ -190,6 +190,18 @@ class TestFailedLogin:
 
         assert [str(m) for m in response.context["messages"]] == [message]
 
+    def test_rate_limited_says_so(self, client, mocked_http):
+        """bonk.io rate-limited Bonkverse for hours on 2026-11-05; players saw
+        "bonk.io didn't accept that login", which sounds like their fault."""
+        mocked_http.post(BONK_LOGIN_URL, json={"r": "fail", "e": "ratelimited"})
+
+        response = _post_login(client)
+
+        assert [str(m) for m in response.context["messages"]] == [
+            "Bonk.io login failed: bonk.io is limiting logins from Bonkverse right now. "
+            "Try again in a few minutes."
+        ]
+
     def test_network_error_shows_message_instead_of_500(self, client, mocked_http):
         mocked_http.post(BONK_LOGIN_URL, body=requests.ConnectionError("bonk.io down"))
 

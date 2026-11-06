@@ -34,13 +34,35 @@ instead of raising. `error` is one of Bonkverse's codes (`BonkError`);
 |---|---|---|
 | `wrong_password` | bonk.io `e: "password"` | "Wrong password." |
 | `unknown_username` | bonk.io `e: "username_fail"` | "No bonk.io account has that username." |
-| `rejected` | Any other refusal (unknown `e`) | Login: "bonk.io didn't accept that login." Wear: ask for a bonk.io login (token probably stale) |
-| `network_error` | No usable answer | Login: "Network error talking to bonk.io." Wear: 502, **no** login modal |
+| `token_rejected` | bonk.io `e: "token"` (expired or invalid token) | Wear: 401 `auth: "bonk"`. **The only case that opens the bonk.io login modal.** |
+| `avatar_too_big` | bonk.io `e: "avatar_too_big"` | Wear: 422 "This skin is too big for bonk.io…" |
+| `rate_limited` | bonk.io `e: "ratelimited"`, or Bonkverse is cooling down (below) | Login: "bonk.io is limiting logins from Bonkverse right now…" Wear: 503 |
+| `rejected` | Any other refusal (unknown `e`, logged) | Login: "bonk.io didn't accept that login." Wear: 502 "bonk.io didn't accept this skin." |
+| `network_error` | No usable answer | Login: "Network error talking to bonk.io." Wear: 502 |
 
-Wear used to answer `network_error` with 401 `auth: "bonk"`, which opened the
-bonk.io login modal during any bonk.io outage or timeout even though the
-token was fine. That is one known cause of the "login modal keeps
-reappearing" bug; it may not be the only one, so `_debug_wear` stays.
+Wear replies with no `auth` tag carry `message`, a sentence the page shows.
+
+### The reappearing login modal (fixed 2026-11-05)
+
+Wear used to treat every refusal as an expired token and open the login
+modal. Production logs showed what that did: bonk.io refused one skin with
+`avatar_too_big`, the player logged in, the retry was refused again, and the
+modal came back, dozens of times. Of 49 refused wears in the logs, one was
+really `token`. See the
+[incident](../incidents/2026-11-05-bonk-rate-limit.md).
+
+### Rate limits and the cooldown
+
+bonk.io answers `{"r": "fail", "e": "ratelimited"}` (seen on both
+`login_legacy.php` and `avatar_update.php`) when one IP sends too much. All
+Bonkverse users reach bonk.io from the same server IP, so one person's
+retries can lock everyone out. On 2026-11-05 most logins failed for hours.
+
+So after any `ratelimited`, the client makes **no bonk.io calls for 120 s**
+(`RATE_LIMIT_COOLDOWN`) and answers `rate_limited` itself (`bonk_error` is
+empty for these). The cooldown is per server process. The log line is
+`bonk.io rate-limited <script>; pausing bonk.io calls for 120.0s`.
+How long bonk.io's own limit lasts is unknown.
 
 ## `login_legacy.php`
 
@@ -106,9 +128,12 @@ Success: `{"r": "success"}` (recorded 2026-11-03).
 
 A token bonk.io doesn't accept gets `{"r": "fail", "e": "token"}`, whether
 it has expired (recorded 2026-11-05, a genuine token after its `exp`) or been
-tampered with (recorded 2026-11-03, signature altered). Any other refusal
-code is also treated as "token probably stale", as a safety net, and logged
-with its `e` value (never the token).
+tampered with (recorded 2026-11-03, signature altered).
+
+Other refusals seen in production logs (2026-11-05, no recorded bodies yet):
+`avatar_too_big` (a skin code of 1,552 characters; bonk.io's limit is
+unknown) and `ratelimited`. Every refusal is logged with its `e` value
+(never the token), as `bonk.io refused avatar update | bonk_error=...`.
 
 The token is a JWT whose payload holds the account id, username, the IP it
 was issued to and an `exp` time. Treat it like a password. The one recorded

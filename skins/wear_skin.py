@@ -9,8 +9,15 @@ JSON contract the frontend relies on (tests/test_wear.py):
 - 401 with auth="bonkverse" -> sign in to the site
 - 401 with auth="bonk"      -> show the bonk.io login modal
 - 401 without auth          -> the bonk.io credentials were wrong
-- 502 error="network_error" -> bonk.io couldn't be reached; logging in again
-                               won't help, so no modal
+- any other failure         -> no modal; show `message` (a sentence):
+    422 avatar_too_big   the skin is over bonk.io's size limit
+    503 rate_limited     bonk.io is limiting requests from Bonkverse
+    502 network_error    bonk.io couldn't be reached
+    502 rejected         a refusal code we don't recognise (logged)
+
+Only bonk.io's "token" refusal opens the login modal. Treating every refusal
+as an expired token made the modal reappear forever for a too-big skin, and
+the repeated logins got Bonkverse rate-limited by bonk.io (2026-11-05).
 """
 
 import logging
@@ -57,14 +64,29 @@ def _resolve_slot(request) -> AvatarSlot:
     return AvatarSlot.choose(request.POST.get("slot"), BonkSession(request.session).active_slot)
 
 
+# Failures a new bonk.io login can't fix: (HTTP status, sentence for the player).
+_WEAR_FAILURES = {
+    BonkError.AVATAR_TOO_BIG: (
+        422,
+        "This skin is too big for bonk.io (it has too many shapes), so it can't be worn.",
+    ),
+    BonkError.RATE_LIMITED: (
+        503,
+        "bonk.io is limiting requests from Bonkverse right now. Try again in a few minutes.",
+    ),
+    BonkError.UNAVAILABLE: (502, "bonk.io isn't responding. Try again in a minute."),
+}
+_UNKNOWN_FAILURE = (502, "bonk.io didn't accept this skin.")
+
+
 def _update_failed_response(result: BonkAvatarUpdateResult) -> JsonResponse:
     """The JSON reply when bonk.io didn't apply the skin."""
-    if result.error == BonkError.UNAVAILABLE:
-        # bonk.io is down or slow: a fresh bonk.io login won't fix that, so
-        # don't ask for one (no auth tag means no login modal).
-        return JsonResponse({"ok": False, "error": result.error}, status=502)
-    # bonk.io said no; the usual reason is a token it no longer accepts.
-    return JsonResponse({"ok": False, "auth": "bonk", "error": result.error}, status=401)
+    if result.error == BonkError.TOKEN_REJECTED:
+        # The one case a fresh bonk.io login fixes: open the login modal.
+        return JsonResponse({"ok": False, "auth": "bonk", "error": result.error}, status=401)
+    status, message = _WEAR_FAILURES.get(result.error, _UNKNOWN_FAILURE)
+    # No auth tag, so the page shows `message` and never opens the modal.
+    return JsonResponse({"ok": False, "error": result.error, "message": message}, status=status)
 
 
 def _wear(request, skin_code: str, **debug) -> tuple[AvatarSlot, JsonResponse | None]:
