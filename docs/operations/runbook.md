@@ -82,6 +82,22 @@ The codes mean ([bonk/api.md](../bonk/api.md), [ADR 0008](../adr/0008-bonk-refus
 
 Recent history: [2026-11-05 incident](../incidents/2026-11-05-bonk-rate-limit.md).
 
+## Buttons do nothing, or icons are missing
+
+Page behavior is static JavaScript ([architecture/frontend.md](../architecture/frontend.md)).
+Open the browser console on the broken page:
+
+- **A red script error**: every listener after it on that page is dead. The
+  file and line point at the script; a shared one (`core/js/bv-*.js`) breaks
+  every page that loads it, so check a second page.
+- **404 for `/static/...`**: the deploy's `collectstatic` didn't include the
+  file. Check the build log, then redeploy.
+- **Icons are blank squares or missing, the background has no particles**:
+  unpkg (Lucide) or jsDelivr (particles.js) is down or blocked. Pages still
+  work; `bv-boot.js` skips what didn't load. Nothing to deploy unless it lasts.
+- **Only the GitHub icon on /terms/ is blank**: expected. Lucide dropped
+  brand icons in 1.0.
+
 ## Giving someone admin access
 
 They sign in to Bonkverse with bonk.io once, then, from a shell on the

@@ -9,6 +9,7 @@ development are in the [README](../README.md); code conventions in
 | Page | Read it when |
 |---|---|
 | [architecture/request-flow.md](architecture/request-flow.md) | You want to know what happens between a click and a response |
+| [architecture/frontend.md](architecture/frontend.md) | Changing a page: where its script and styles go, the shared `BV*` helpers, skin cards, what `tests/test_frontend.py` checks |
 | [architecture/integrations.md](architecture/integrations.md) | Calling another service (bonk.io, the editor, Discord, Cloudflare…), or one of them is failing |
 | [operations/configuration.md](operations/configuration.md) | Adding, changing or looking up an environment variable |
 | [operations/runbook.md](operations/runbook.md) | Something is wrong in production, or you're deploying / rotating a secret |
@@ -35,3 +36,4 @@ development are in the [README](../README.md); code conventions in
 - [0006 Every outside call goes through `integrations/`](adr/0006-outside-calls-through-integrations.md)
 - [0007 bonk.io names are stored exactly; identity is case-insensitive](adr/0007-bonk-usernames.md)
 - [0008 How Bonkverse answers bonk.io refusals](adr/0008-bonk-refusals.md)
+- [0009 One copy of each page behavior, in static files](adr/0009-frontend-structure.md)
