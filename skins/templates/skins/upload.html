@@ -8,7 +8,7 @@
   <!-- Who is submitting -->
   <p class="muted">You’re uploading as: <strong>{{ user.username }}</strong></p>
 
-  <div id="loading" style="display:none;">
+  <div id="loading" hidden>
     <p>⏳ Uploading and processing your skin... Please wait!</p>
   </div>
 
@@ -22,7 +22,7 @@
       <label for="bonkleagues_link">Bonkleagues Skin URL</label>
       <input type="url" id="bonkleagues_link" name="bonkleagues_link" placeholder="https://bonkleagues.io/s/ABCDEFG" required>
 
-      <p id="error-message" class="error" style="display:none; color:red;"></p>
+      <p id="error-message" class="error upload-error" hidden></p>
 
       <button type="submit">Upload Skin</button>
     </form>

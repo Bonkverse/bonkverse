@@ -273,3 +273,24 @@ def test_refresh_counts_gone_invites_without_changing_rows(mocked_http, sleeps):
     server.refresh_from_db()
     assert stats["not_found"] == 1
     assert server.status == DiscordServer.Status.ACTIVE
+
+
+# ---------- CSRF ----------
+
+
+@pytest.mark.django_db
+def test_submit_requires_the_csrf_token():
+    """The submit form sends {% csrf_token %}; a cross-site POST without it is refused."""
+    from django.test import Client
+
+    response = Client(enforce_csrf_checks=True).post(SUBMIT_URL, {"invite": "abc"})
+
+    assert response.status_code == 403
+    assert DiscordServer.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_submit_page_form_carries_the_csrf_token(client):
+    html = client.get("/submit/").content.decode()
+
+    assert 'name="csrfmiddlewaretoken"' in html

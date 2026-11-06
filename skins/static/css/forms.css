@@ -275,3 +275,6 @@ form.filter-form {
     opacity: .85;
     font-size: .9rem;
 }
+
+/* Upload page: the reason an upload failed */
+.upload-error { color: red; }

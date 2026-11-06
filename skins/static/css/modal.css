@@ -38,6 +38,8 @@
     position: relative;
 }
 
+.modal-box--narrow { max-width: 400px; }
+
 @keyframes modalFadeIn {
     from { opacity: 0; transform: translateY(-12px) scale(0.98); }
     to   { opacity: 1; transform: translateY(0)    scale(1); }
@@ -153,6 +155,19 @@
     letter-spacing: 0.05em;
     margin-bottom: 6px;
     margin-top: 14px;
+}
+
+/* "(optional)" after a label */
+.modal-label-hint {
+    color: #6b7280;
+    font-weight: 400;
+}
+
+/* The line under the title naming what the modal is about ("Skin name") */
+.modal-subtitle {
+    color: #9aa4b2;
+    font-size: 0.9rem;
+    margin: 0 0 14px;
 }
 
 .modal-label:first-of-type {
