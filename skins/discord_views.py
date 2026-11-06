@@ -13,7 +13,6 @@ from django.db import transaction
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from core.ratelimits import limit
@@ -40,7 +39,6 @@ def extract_invite_code(invite: str) -> str:
     return parts[-1] if parts else ""
 
 
-@csrf_exempt
 @require_POST
 @limit("submit")
 def submit_server(request):

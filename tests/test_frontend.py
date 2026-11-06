@@ -6,6 +6,8 @@ on rendered pages.
 - Wearing and the bonk.io login go through static/core/js/bv-wear.js and the
   one modal partial: three copies of that flow are how the reappearing-modal
   bug hid for weeks.
+- Styles live in static/css/: no style="" attributes (except CSS custom
+  properties carrying a value, like style="--bar: 42%") and no <style> blocks.
 - Skin cards come from two partials (_skin_card.html, _skin_card_compact.html)
   and behave through static/core/js/bv-cards.js: no page writes its own card
   or wires its own card buttons.
@@ -147,3 +149,36 @@ def test_search_card_shows_the_visitors_vote_and_favorite(logged_in_client, user
     assert 'class="vote-down active"' in html
     assert 'class="vote-up active"' not in html
     assert 'class="fav-toggle active"' in html
+
+
+ALL_TEMPLATES = [
+    *TEMPLATES.rglob("*.html"),
+    *(REPO / "bonk_skin_search" / "templates").rglob("*.html"),
+]
+# The 500 page renders without the static files on purpose (see its comment).
+STANDALONE = {TEMPLATES / "500.html"}
+STYLE_ATTR = re.compile(r'\sstyle="([^"]*)"')
+# A declaration that only sets a custom property: the template passes a value
+# (a bar's length), the stylesheet decides how it looks.
+VALUE_ONLY = re.compile(r"^\s*(--[\w-]+\s*:[^;]+;?\s*)+$")
+
+
+def test_no_inline_styles():
+    found = []
+    for path in ALL_TEMPLATES:
+        if path in STANDALONE:
+            continue
+        text = path.read_text(encoding="utf-8")
+        for m in STYLE_ATTR.finditer(text):
+            if not VALUE_ONLY.match(m.group(1)):
+                found.append(f"{path.relative_to(REPO)}: {m.group(0).strip()}")
+        if "<style" in text:
+            found.append(f"{path.relative_to(REPO)}: <style> block")
+    assert found == [], "move these into a stylesheet in skins/static/css/:\n" + "\n".join(found)
+
+
+def test_icon_library_is_pinned():
+    base = (TEMPLATES / "skins" / "base.html").read_text(encoding="utf-8")
+
+    assert "lucide@latest" not in base
+    assert re.search(r"lucide@\d+\.\d+\.\d+/", base)

@@ -1,0 +1,82 @@
+/* Edit skin page (/skin/<id>/edit/). Template: skins/edit_skin.html */
+
+.skin-input-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #009688;
+    border-radius: 6px;
+    background: #0f1923;
+    color: #fff;
+    text-align: center;
+}
+
+.skin-image-wrapper {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.skin-image-large {
+    width: 240px;
+    height: 240px;
+    object-fit: contain;
+    border-radius: 50%;
+    border: 3px solid #009688;
+    background-color: black;
+}
+
+.skin-description-edit {
+    width: 100%;
+    min-height: 150px;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #009688;
+    background: rgba(255,255,255,0.05);
+    color: #fff;
+    margin: 10px auto 20px;
+    line-height: 1.6;
+}
+
+.skin-input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #009688;
+    border-radius: 6px;
+    background: #0f1923;
+    color: #fff;
+}
+
+.tag-bubbles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
+}
+
+.tag-bubble {
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: #4a90e2;
+    font-weight: bold;
+    font-size: 14px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tag-bubble button {
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.submit-btn {
+    margin-top: 20px;
+}

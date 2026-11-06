@@ -3,248 +3,11 @@
 
 {% block title %}Bonkverse — Terms of Service{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/terms.css' %}">
+{% endblock %}
+
 {% block content %}
-<style>
-  .terms-page {
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 0 24px 80px;
-    text-align: left;
-  }
-
-  .terms-hero {
-    text-align: center;
-    padding: 48px 0 36px;
-  }
-
-  .terms-hero h1 {
-    font-size: 2rem;
-    margin: 0 0 8px;
-    color: #fff;
-    text-shadow: 0 0 20px rgba(0, 255, 204, 0.25);
-  }
-
-  .terms-hero p {
-    color: #9aa4b2;
-    margin: 0;
-    font-size: 0.9rem;
-  }
-
-  /* TOC */
-  .terms-toc {
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 10px;
-    padding: 16px 20px;
-    margin-bottom: 28px;
-  }
-
-  .terms-toc p {
-    font-size: 0.78rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: #6b7280;
-    margin: 0 0 10px;
-  }
-
-  .terms-toc ol {
-    margin: 0;
-    padding-left: 18px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4px 20px;
-  }
-
-  .terms-toc li { font-size: 0.82rem; }
-
-  .terms-toc a {
-    color: #9aa4b2;
-    text-decoration: none;
-    transition: color 0.15s ease;
-  }
-
-  .terms-toc a:hover { color: #00e6c3; }
-
-  @media (max-width: 540px) {
-    .terms-toc ol { grid-template-columns: 1fr; }
-  }
-
-  /* Sections */
-  .terms-section {
-    background: hsla(212, 40%, 20%, 0.597);
-    border: 1px solid rgba(0, 150, 136, 0.3);
-    border-radius: 12px;
-    padding: 22px 26px;
-    margin-bottom: 16px;
-  }
-
-  .terms-section-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 1rem;
-    font-weight: 700;
-    color: #00e6c3;
-    margin: 0 0 12px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid rgba(0, 150, 136, 0.2);
-  }
-
-  .terms-section-title i[data-lucide] {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-    opacity: 0.85;
-  }
-
-  .terms-section p,
-  .terms-section li {
-    color: #c9d1d9;
-    font-size: 0.9rem;
-    line-height: 1.7;
-    margin: 0 0 8px;
-  }
-
-  .terms-section p:last-child { margin-bottom: 0; }
-
-  .terms-section ul,
-  .terms-section ol {
-    margin: 6px 0 8px 18px;
-    padding: 0;
-  }
-
-  .terms-section li { margin-bottom: 5px; }
-
-  /* Rule cards (allowed / not allowed) */
-  .rule-cards {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: 4px;
-  }
-
-  .rule-card {
-    background: rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 8px;
-    padding: 14px 16px;
-  }
-
-  .rule-card-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 6px;
-  }
-
-  .rule-tag {
-    display: inline-block;
-    border-radius: 4px;
-    font-size: 0.7rem;
-    font-weight: 700;
-    padding: 2px 7px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    flex-shrink: 0;
-  }
-
-  .rule-tag.allowed {
-    background: rgba(0, 150, 136, 0.18);
-    border: 1px solid rgba(0, 150, 136, 0.4);
-    color: #00e6c3;
-  }
-
-  .rule-tag.prohibited {
-    background: rgba(239, 68, 68, 0.12);
-    border: 1px solid rgba(239, 68, 68, 0.35);
-    color: #f87171;
-  }
-
-  .rule-tag.note {
-    background: rgba(251, 191, 36, 0.12);
-    border: 1px solid rgba(251, 191, 36, 0.35);
-    color: #fbbf24;
-  }
-
-  .rule-card-title {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: #e2e8f0;
-  }
-
-  .rule-card p {
-    font-size: 0.85rem;
-    color: #9aa4b2;
-    margin: 0;
-    line-height: 1.6;
-  }
-
-  /* Contact box */
-  .terms-contact {
-    background: hsla(212, 40%, 20%, 0.597);
-    border: 1px solid rgba(0, 150, 136, 0.4);
-    border-radius: 12px;
-    padding: 22px 26px;
-    margin-top: 8px;
-  }
-
-  .terms-contact .terms-section-title { margin-bottom: 14px; }
-
-  .contact-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 9px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    font-size: 0.875rem;
-    color: #c9d1d9;
-  }
-
-  .contact-row:last-child { border-bottom: none; }
-
-  .contact-row i[data-lucide] {
-    width: 15px;
-    height: 15px;
-    color: #009688;
-    flex-shrink: 0;
-  }
-
-  .contact-row a {
-    color: #00e6c3;
-    text-decoration: none;
-    transition: color 0.15s ease;
-  }
-
-  .contact-row a:hover { color: #fff; }
-
-  /* Disclaimer banner */
-  .terms-disclaimer {
-    background: rgba(251, 191, 36, 0.07);
-    border: 1px solid rgba(251, 191, 36, 0.25);
-    border-radius: 10px;
-    padding: 14px 18px;
-    margin-bottom: 20px;
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-  }
-
-  .terms-disclaimer i[data-lucide] {
-    width: 16px;
-    height: 16px;
-    color: #fbbf24;
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
-
-  .terms-disclaimer p {
-    color: #d4b96a;
-    font-size: 0.85rem;
-    margin: 0;
-    line-height: 1.6;
-  }
-</style>
 
 <div class="terms-page">
 
@@ -282,8 +45,8 @@
   <!-- Intro -->
   <div class="terms-section">
     <p>
-      These Terms of Service govern your use of <strong style="color:#fff;">bonkverse.io</strong> and the
-      <strong style="color:#fff;">Bonkverse browser extension</strong> (collectively, "Bonkverse" or "the platform").
+      These Terms of Service govern your use of <strong>bonkverse.io</strong> and the
+      <strong>Bonkverse browser extension</strong> (collectively, "Bonkverse" or "the platform").
       By accessing or using Bonkverse, you agree to be bound by these terms. If you do not agree, please do not use the platform.
     </p>
   </div>
@@ -302,7 +65,7 @@
     <p>
       Bonkverse is open source. The codebase is publicly available at
       <a href="https://github.com/orgs/Bonkverse/repositories" target="_blank" rel="noopener"
-         style="color:#00e6c3;">github.com/orgs/Bonkverse</a>.
+         class="terms-link">github.com/orgs/Bonkverse</a>.
     </p>
   </div>
 
@@ -542,7 +305,7 @@
     <div class="terms-section-title">
       <i data-lucide="mail"></i> 10. Contact
     </div>
-    <p style="color:#9aa4b2; font-size:0.875rem; margin-bottom:14px;">
+    <p class="terms-contact-intro">
       Questions about these terms, moderation appeals, API access requests, or data inquiries:
     </p>
     <div class="contact-row">

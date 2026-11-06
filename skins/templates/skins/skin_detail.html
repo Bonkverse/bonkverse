@@ -129,7 +129,7 @@
 
 <!-- Report Modal -->
 <div class="modal-overlay" id="report-modal">
-  <div class="modal-box" style="max-width: 480px;">
+  <div class="modal-box">
     <div class="modal-header">
       <h2 class="modal-title">Report Skin</h2>
       <button class="modal-close-btn" onclick="closeReportModal()">
@@ -137,7 +137,7 @@
       </button>
     </div>
     <div class="modal-body">
-      <p style="color:#9aa4b2; font-size:0.9rem; margin-bottom:14px;">"{{ skin.name }}"</p>
+      <p class="modal-subtitle">"{{ skin.name }}"</p>
       <label class="modal-label" for="report-reason">Reason</label>
       <select class="modal-select" id="report-reason">
         <option value="">Select a reason…</option>
@@ -147,7 +147,7 @@
         <option value="broken">Broken / not loading</option>
         <option value="other">Other</option>
       </select>
-      <label class="modal-label" for="report-details">Additional details <span style="color:#6b7280;font-weight:400;">(optional)</span></label>
+      <label class="modal-label" for="report-details">Additional details <span class="modal-label-hint">(optional)</span></label>
       <textarea class="modal-textarea" id="report-details" placeholder="Describe the issue…" maxlength="1000"></textarea>
       <p class="modal-feedback" id="report-feedback"></p>
     </div>
