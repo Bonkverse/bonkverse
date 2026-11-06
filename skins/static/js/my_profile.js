@@ -9,8 +9,51 @@ const ROUTES = (() => {
   return {
     skinsPartial: el?.dataset.skinsPartialUrl || '',
     bulkDelete:   el?.dataset.bulkDeleteUrl   || '',
+    friendSync:   el?.dataset.friendSyncUrl   || '',
   };
 })();
+
+// ── Friend sync progress (right after a login that started a sync) ──
+// The server sets data-friend-sync on #profile-routes when there's one to show.
+if (document.getElementById('profile-routes')?.dataset.friendSync) {
+  const handle = BVToast.show("Syncing your friends\u2026", { type: "info", spinner: true, sticky: true });
+  let attempts = 0;
+  const poll = () => {
+    attempts++;
+    fetch(ROUTES.friendSync, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.status === "done") {
+          let friendsText = "Synced " + data.friends_now + " friends";
+          const extras = [];
+          if (data.added_edges > 0) extras.push(data.added_edges + " new");
+          if (data.removed_edges > 0) extras.push(data.removed_edges + " removed");
+          if (extras.length) friendsText += " : " + extras.join(", ");
+
+          if (data.corrected_count > 0) {
+            // Only this case stays up until the user closes it; every
+            // other toast on the page keeps its normal auto-dismiss.
+            const fixes = data.corrected_usernames.map((c) => '"' + c.old_username + '" → "' + c.new_username + '"');
+            handle.update(
+              friendsText + ". Also fixed " + data.corrected_count +
+              " outdated username(s) from before a data cleanup: " + fixes.join(", "),
+              { type: "success", sticky: true }
+            );
+          } else {
+            handle.update(friendsText, { type: "success" });
+          }
+          return;
+        }
+        if (attempts < 10) {
+          setTimeout(poll, 1200);
+        } else {
+          handle.update("Friend sync is taking longer than usual", { type: "info" });
+        }
+      })
+      .catch(() => handle.dismiss());
+  };
+  setTimeout(poll, 1200);
+}
 
 // The My Skins grid is replaced wholesale on every AJAX page swap, so
 // nothing should hold a stale reference to it — always look it up fresh.

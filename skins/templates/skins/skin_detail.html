@@ -1,4 +1,5 @@
 {% extends 'skins/base.html' %}
+{% load static %}
 
 {% block social_meta %}
   <meta name="theme-color" content="#009688">
@@ -17,7 +18,11 @@
 {% endblock %}
 
 {% block content %}
-<div class="skin-detail-container">
+{# Behavior: static/js/skin_detail.js reads the URLs from here #}
+<div class="skin-detail-container" id="skin-detail"
+     data-wear-url="{% url 'wear_skin' skin.id %}"
+     data-favorite-url="{% url 'api_toggle_favorite' skin.id %}"
+     data-vote-url="{% url 'api_vote_skin' skin.id %}">
 
   <a href="{% url 'search_skins' %}" class="skin-back-link">
     <i data-lucide="arrow-left"></i> Back to search
@@ -27,9 +32,8 @@
 
     <!-- Left: image -->
     <div class="skin-image-panel">
-      <img src="{{ skin.image_url }}" alt="{{ skin.name }}" class="skin-image-large"
-           width="512" height="512"
-           onerror="this.onerror=null; this.src='/static/images/default_skin.png';">
+      <img src="{{ skin.image_url }}" alt="{{ skin.name }}" class="skin-image-large" data-fallback
+           width="512" height="512">
     </div>
 
     <!-- Right: meta + actions -->
@@ -41,7 +45,7 @@
       </div>
 
       {% if user.is_authenticated %}
-        <button class="skin-wear-btn" id="wear-btn" onclick="startWear()">
+        <button class="skin-wear-btn" id="wear-btn">
           <i data-lucide="shirt"></i>
           Wear This Skin
         </button>
@@ -57,20 +61,20 @@
         {# is_favorited, fav_count, current_vote are all pre-computed in the view — no DB hits here #}
         <div class="skin-action-row">
           <button class="skin-fav-btn {% if is_favorited %}active{% endif %}"
-                  id="fav-btn" onclick="toggleFavorite()">
+                  id="fav-btn">
             <i data-lucide="star"></i>
             <span id="fav-label">{% if is_favorited %}Favorited{% else %}Favorite{% endif %}</span>
             <span class="skin-fav-count" id="fav-count">{{ fav_count }}</span>
           </button>
 
           <button class="skin-vote-btn vote-up {% if current_vote == 'up' %}active{% endif %}"
-                  id="btn-up" onclick="castVote('up')">
+                  id="btn-up" data-vote="up">
             <i data-lucide="thumbs-up"></i>
             <span id="up-count">{{ skin.upvotes }}</span>
           </button>
 
           <button class="skin-vote-btn vote-down {% if current_vote == 'down' %}active{% endif %}"
-                  id="btn-down" onclick="castVote('down')">
+                  id="btn-down" data-vote="down">
             <i data-lucide="thumbs-down"></i>
             <span id="down-count">{{ skin.downvotes }}</span>
           </button>
@@ -97,7 +101,8 @@
             <i data-lucide="share-2"></i> Share
           </a>
         {% endif %}
-        <button class="skin-link-chip skin-link-chip--danger" onclick="openReportModal()">
+        <button class="skin-link-chip skin-link-chip--danger"
+                data-report-skin="{{ skin.id }}" data-skin-name="{{ skin.name }}">
           <i data-lucide="flag"></i> Report
         </button>
       </div>
@@ -127,36 +132,7 @@
 
 </div>
 
-<!-- Report Modal -->
-<div class="modal-overlay" id="report-modal">
-  <div class="modal-box">
-    <div class="modal-header">
-      <h2 class="modal-title">Report Skin</h2>
-      <button class="modal-close-btn" onclick="closeReportModal()">
-        <i data-lucide="x"></i>
-      </button>
-    </div>
-    <div class="modal-body">
-      <p class="modal-subtitle">"{{ skin.name }}"</p>
-      <label class="modal-label" for="report-reason">Reason</label>
-      <select class="modal-select" id="report-reason">
-        <option value="">Select a reason…</option>
-        <option value="inappropriate">Inappropriate content</option>
-        <option value="stolen">Stolen / reposted without credit</option>
-        <option value="spam">Spam or low-effort</option>
-        <option value="broken">Broken / not loading</option>
-        <option value="other">Other</option>
-      </select>
-      <label class="modal-label" for="report-details">Additional details <span class="modal-label-hint">(optional)</span></label>
-      <textarea class="modal-textarea" id="report-details" placeholder="Describe the issue…" maxlength="1000"></textarea>
-      <p class="modal-feedback" id="report-feedback"></p>
-    </div>
-    <div class="modal-footer">
-      <button class="modal-btn modal-btn-ghost" onclick="closeReportModal()">Cancel</button>
-      <button class="modal-btn modal-btn-danger" onclick="submitReport()">Submit Report</button>
-    </div>
-  </div>
-</div>
+{% include 'skins/partials/_report_skin_modal.html' %}
 
 {% if user.is_authenticated %}
   {% include 'skins/partials/_bonk_login_modal.html' %}
@@ -166,71 +142,5 @@
 
 
 {% block extra_scripts %}
-<script>
-{% if user.is_authenticated %}
-const wearMsg = document.getElementById('wear-msg');
-
-// Wear (bonk.io login modal and retry: static/core/js/bv-wear.js)
-function startWear() {
-  wearMsg.textContent = 'Applying…';
-  BVWear.wear("{% url 'wear_skin' skin.id %}", {
-    onStatus: (text, type) => { wearMsg.textContent = (type === 'success' ? '✅ ' : '❌ ') + text; },
-  });
-}
-
-async function toggleFavorite() {
-  const { ok, json } = await BVApi.post("/api/skins/{{ skin.id }}/favorite/");
-  if (!ok) return;
-  document.getElementById('fav-count').textContent = json.favorites;
-  document.getElementById('fav-label').textContent = json.favorited ? 'Favorited' : 'Favorite';
-  document.getElementById('fav-btn').classList.toggle('active', json.favorited);
-}
-
-async function castVote(dir) {
-  const { ok, json } = await BVApi.post("/api/skins/{{ skin.id }}/vote/", { vote: dir });
-  if (!ok) return;
-  document.getElementById('up-count').textContent   = json.upvotes;
-  document.getElementById('down-count').textContent = json.downvotes;
-  document.getElementById('btn-up').classList.toggle('active',   json.current_vote === 'up');
-  document.getElementById('btn-down').classList.toggle('active', json.current_vote === 'down');
-}
-{% endif %}
-
-const reportModal = document.getElementById('report-modal');
-
-function openReportModal() {
-  document.getElementById('report-reason').value  = '';
-  document.getElementById('report-details').value = '';
-  document.getElementById('report-feedback').textContent = '';
-  document.getElementById('report-feedback').className   = 'modal-feedback';
-  reportModal.classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeReportModal() {
-  reportModal.classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-reportModal.addEventListener('click', e => { if (e.target === reportModal) closeReportModal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeReportModal(); });
-
-async function submitReport() {
-  const reason  = document.getElementById('report-reason').value;
-  const details = document.getElementById('report-details').value.trim();
-  const fb      = document.getElementById('report-feedback');
-  if (!reason) { fb.textContent = 'Please select a reason.'; fb.className = 'modal-feedback error'; return; }
-  fb.textContent = 'Submitting…';
-  fb.className   = 'modal-feedback';
-  const { ok, status } = await BVApi.post("/api/skins/{{ skin.id }}/report/", { reason, details });
-  if (ok) {
-    fb.textContent = '✓ Report submitted. Thank you!';
-    fb.className   = 'modal-feedback success';
-    setTimeout(closeReportModal, 1600);
-    return;
-  }
-  fb.textContent = status === 409 ? 'You have already reported this skin.' : 'Something went wrong. Please try again.';
-  fb.className   = 'modal-feedback error';
-}
-</script>
+<script src="{% static 'js/skin_detail.js' %}"></script>
 {% endblock %}

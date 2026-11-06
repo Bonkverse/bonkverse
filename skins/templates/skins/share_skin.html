@@ -1,4 +1,5 @@
 {% extends 'skins/base.html' %}
+{% load static %}
 
 {% block social_meta %}
   <meta name="theme-color" content="#009688">
@@ -29,8 +30,12 @@
 
     {% if user.is_authenticated %}
       <div class="wear-inline">
-        <button class="wear-btn" onclick="addToCollection()" title="Add this skin to your collection">
-          ⭐ Add to Collection
+        {# Adds the skin to your favorites: static/js/share_skin.js #}
+        <button class="wear-btn" id="collect-btn"
+                data-favorite-url="{% url 'api_toggle_favorite' skin.id %}"
+                title="Add this skin to your collection"
+                {% if is_favorited %}disabled{% endif %}>
+          {% if is_favorited %}⭐ In your collection{% else %}⭐ Add to Collection{% endif %}
         </button>
       </div>
     {% else %}
@@ -42,13 +47,7 @@
 
   <!-- Big image -->
   <div class="skin-image-wrapper">
-    <img src="{{ skin.image_url }}" alt="Skin image" class="skin-image-large" onclick="showImage(`{{ skin.image_url }}`)">
-  </div>
-
-  <!-- 🔹 Modal (Hidden by Default) -->
-  <div id="imageModal" class="modal" onclick="closeImage()">
-    <span class="close">&times;</span>
-    <img class="modal-content" id="zoomedImage">
+    <img src="{{ skin.image_url }}" alt="Skin image" class="skin-image-large" data-zoom>
   </div>
 
   <!-- Primary actions -->
@@ -73,7 +72,7 @@
 
   <!-- Minimal stats -->
   <div class="skin-stats">
-    <p>⭐ Favorites: {{ skin.favorited_by.count }}</p>
+    <p>⭐ Favorites: <span id="fav-count">{{ skin.favorited_by.count }}</span></p>
   </div>
 
 </div>
@@ -81,18 +80,5 @@
 
 
 {% block extra_scripts %}
-<script>
-  // ---- Modal helpers
-  function showImage(src) {
-    const modal = document.getElementById('imageModal');
-    const img = document.getElementById('zoomedImage');
-    img.src = src;
-    modal.style.display = 'block';
-  }
-  function closeImage() {
-    const modal = document.getElementById('imageModal');
-    modal.style.display = 'none';
-  }
-
-</script>
+<script src="{% static 'js/share_skin.js' %}"></script>
 {% endblock %}

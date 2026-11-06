@@ -39,6 +39,7 @@
     <script src="{% static 'core/js/bv-api.js' %}"></script>
     <script src="{% static 'core/js/bv-wear.js' %}"></script>
     <script src="{% static 'core/js/bv-cards.js' %}"></script>
+    <script src="{% static 'core/js/bv-report.js' %}"></script>
 
 </head>
 <body>
@@ -46,13 +47,12 @@
     {% include 'skins/navbar.html' %}
 
     {% if messages %}
-    <script>
+    {# Shown as toasts by core/js/bv-boot.js #}
+    <ul id="bv-messages" hidden>
       {% for message in messages %}
-        BVToast.show("{{ message.message|escapejs }}", {
-          type: "{% if message.tags == 'error' %}error{% elif message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}info{% endif %}"
-        });
+        <li data-type="{% if message.tags == 'error' %}error{% elif message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}info{% endif %}">{{ message.message }}</li>
       {% endfor %}
-    </script>
+    </ul>
     {% endif %}
 
     <div id="particles-js"></div>
@@ -61,27 +61,8 @@
         {% block content %}{% endblock %}
     </div>
 
-    <script>
-        particlesJS("particles-js", {
-          "particles": {
-            "number": { "value": 120, "density": { "enable": true, "value_area": 1000 } },
-            "color": { "value": ["#ffffff", "#00c3ff", "#ff99ff", "#ffcc00"] },
-            "shape": { "type": "circle" },
-            "opacity": { "value": 0.9, "random": true },
-            "size": { "value": 2.5, "random": true },
-            "line_linked": { "enable": false },
-            "move": { "enable": true, "speed": 0.8, "direction": "none", "random": true, "straight": false, "out_mode": "out" }
-          },
-          "interactivity": {
-            "detect_on": "canvas",
-            "events": { "onhover": { "enable": false }, "onclick": { "enable": false } }
-          },
-          "retina_detect": true
-        });
-    </script>
-
-    <!-- Initialize Lucide icons -->
-    <script>lucide.createIcons();</script>
+    {# Messages to toasts, particle background, icons #}
+    <script src="{% static 'core/js/bv-boot.js' %}"></script>
 
     {% block extra_scripts %}{% endblock %}
 

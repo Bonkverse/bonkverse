@@ -8,6 +8,8 @@ on rendered pages.
   bug hid for weeks.
 - Styles live in static/css/: no style="" attributes (except CSS custom
   properties carrying a value, like style="--bar: 42%") and no <style> blocks.
+- Scripts live in static/ too: no inline <script> (data for a script goes
+  in a json_script or data- attributes) and no onclick=""-style handlers.
 - Skin cards come from two partials (_skin_card.html, _skin_card_compact.html)
   and behave through static/core/js/bv-cards.js: no page writes its own card
   or wires its own card buttons.
@@ -205,3 +207,44 @@ def test_icon_library_is_pinned():
 )
 def test_inline_style_exception_is_only_custom_properties(style, allowed):
     assert _sets_only_custom_properties(style) is allowed
+
+
+SCRIPT_TAG = re.compile(r"<script\b([^>]*)>")
+HANDLER_ATTR = re.compile(r"\son[a-z]+\s*=\s*[\"']")
+
+
+def _is_inline_code(attrs):
+    """A <script> that runs code written in the template. Allowed: src=
+    (a static file) and type="application/json" (data, from json_script)."""
+    return "src=" not in attrs and 'type="application/json"' not in attrs
+
+
+def test_no_inline_scripts_or_handlers():
+    found = []
+    for path in ALL_TEMPLATES:
+        text = path.read_text(encoding="utf-8")
+        for m in SCRIPT_TAG.finditer(text):
+            if _is_inline_code(m.group(1)):
+                found.append(f"{path.relative_to(REPO)}: inline <script>")
+        for m in HANDLER_ATTR.finditer(text):
+            found.append(f"{path.relative_to(REPO)}: {m.group(0).strip()} handler")
+    assert found == [], "move these into a script in skins/static/js/:\n" + "\n".join(found)
+
+
+def test_only_the_partial_defines_the_report_modal():
+    defining = [
+        path.relative_to(REPO).as_posix()
+        for path in TEMPLATES.rglob("*.html")
+        if 'id="report-modal"' in path.read_text(encoding="utf-8")
+    ]
+    assert defining == ["skins/templates/skins/partials/_report_skin_modal.html"]
+
+
+@pytest.mark.django_db
+def test_messages_are_data_not_code(client):
+    """Django messages reach the page as text in #bv-messages (bv-boot.js
+    shows them), not inside a <script> where a quote could break out."""
+    html = client.post("/api/discords/submit/", {"invite": ""}, follow=True).content.decode()
+
+    assert '<ul id="bv-messages" hidden>' in html
+    assert '<li data-type="error">❌ Discord invite link is required.</li>' in html

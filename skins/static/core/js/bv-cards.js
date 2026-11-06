@@ -7,6 +7,10 @@
 //
 //   ⋯ menu       opens/closes; one open at a time; a click elsewhere closes it
 //   image        click zooms it; a broken image falls back to the default
+//   img[data-zoom]  any other image that should zoom on click (leaderboards,
+//                   the share page) gets the same overlay
+//   img[data-fallback]  any other skin image that should fall back when broken
+//                       (the skin page)
 //   votes, star  POST and update the counts (sends logged-out visitors to log in)
 //   Wear         BVWear.wear(card.dataset.wearUrl)
 //
@@ -62,7 +66,7 @@
   document.addEventListener("error", function (e) {
     var img = e.target;
     if (!(img instanceof HTMLImageElement)) return;
-    if (!img.matches(".skin-card-img, .skin-tile-img")) return;
+    if (!img.matches(".skin-card-img, .skin-tile-img, img[data-fallback]")) return;
     if (img.dataset.fellBack) return;
     img.dataset.fellBack = "1";
     img.src = FALLBACK_IMG;
@@ -107,6 +111,9 @@
     // Clicks inside an open menu are the page's (links, Edit, Report...).
     if (t.closest(".card-more-dropdown")) return;
     closeMenus(null);
+
+    var zoomable = t.closest("img[data-zoom]");
+    if (zoomable) { openZoom(zoomable.src); return; }
 
     var card = t.closest(".skin-card[data-id]");
     if (!card || inSelectMode(card)) return;

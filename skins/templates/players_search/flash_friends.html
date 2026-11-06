@@ -16,10 +16,10 @@
   <div class="search-row">
 
     <!-- Same neon search bar as skin search -->
-    <form id="flash-search-form" onsubmit="return false;" class="hero-search">
+    <form id="flash-search-form" data-role="search-form" class="hero-search">
       <input
         type="text"
-        id="flash-query"
+        id="flash-query" data-role="query"
         placeholder="Search flash friends..."
         autocomplete="off"
       />
@@ -29,102 +29,14 @@
   </div>
 </div>
 
-<section class="skins-container" id="flash-results"></section>
-<div id="flash-pagination"></div>
+<section class="skins-container" id="flash-results" data-role="results"></section>
+<div id="flash-pagination" data-role="pagination"></div>
 
-<div id="route-refs" data-search-url="{% url 'flash_friends_search' %}"></div>
+<div id="route-refs" data-kind="flash" data-search-url="{% url 'flash_friends_search' %}"></div>
 
-<script>
-  const $ = (sel) => document.querySelector(sel);
 
-  function escapeHtml(s) {
-    return String(s)
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
+{% endblock %}
 
-  const searchUrl = $("#route-refs")?.dataset.searchUrl || "";
-  const loadingEl = $("#loading");
-  const qInput = $("#flash-query");
-  const results = $("#flash-results");
-  const paginationEl = $("#flash-pagination");
-
-  let lastFetchAbort = null;
-
-  // ENTER triggers search
-  qInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      runSearch();
-    }
-  });
-
-  // BUTTON triggers search
-  $("#flash-search-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    runSearch();
-  });
-
-  function runSearch(page=1) {
-    const q = qInput.value.trim();
-    doSearch(q, page);
-  }
-
-  async function doSearch(q, page=1) {
-    try {
-      setLoading(true);
-      if (lastFetchAbort) lastFetchAbort.abort();
-      lastFetchAbort = new AbortController();
-
-      const resp = await fetch(`${searchUrl}?q=${encodeURIComponent(q)}&page=${page}`, {
-        signal: lastFetchAbort.signal
-      });
-      if (!resp.ok) {
-        const message = resp.status === 429
-          ? "You're searching too fast. Wait a moment and try again."
-          : "Search failed. Please try again.";
-        BVToast.show(message, { type: "error" });
-        return;
-      }
-      const data = await resp.json();
-      renderResults(data.results);
-      BVPagination.render(paginationEl, {
-        page: data.page,
-        pageSize: data.page_size,
-        total: data.total,
-        onNavigate: (p) => doSearch(q, p)
-      });
-    } catch (err) {
-      if (err.name !== "AbortError") console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function renderResults(items) {
-    if (!items.length) {
-      results.innerHTML = "<p>No flash friends found.</p>";
-      return;
-    }
-    results.innerHTML = items.map(f => `
-      <div class="player-card" tabindex="0">
-        <strong>${escapeHtml(f.name)}</strong>
-        <span>${f.bonk_player_id ? "Linked Bonk ID: " + f.bonk_player_id : "Legacy only (unlinked)"}</span>
-      </div>
-    `).join("");
-  }
-
-  function setLoading(is) {
-    loadingEl.style.display = is ? "block" : "none";
-  }
-
-  // Auto-load page 1
-  document.addEventListener("DOMContentLoaded", () => {
-    doSearch("", 1);
-  });
-</script>
-
+{% block extra_scripts %}
+<script src="{% static 'js/player_search.js' %}"></script>
 {% endblock %}
