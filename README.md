@@ -120,6 +120,16 @@ python manage.py shell -c "from skins.models import BonkUser; BonkUser.objects.f
 
 There is no `createsuperuser`: site accounts have no passwords because login goes through bonk.io. To make yourself a superuser for `/admin/`, run `python manage.py grant_admin "YourBonkName"` ([ADR 0005](docs/adr/0005-admin-login-through-bonk.md)).
 
+### 6. Background jobs (optional)
+
+Scheduled jobs (the hourly Discord refresh) and work queued after login run on a Celery worker. In a second terminal:
+
+```bash
+celery -A bonk_skin_search worker --beat --loglevel INFO
+```
+
+Or set `CELERY_TASK_ALWAYS_EAGER=1` in `.env` to run queued jobs inline without a worker. See [docs/architecture/background-work.md](docs/architecture/background-work.md).
+
 
 Tests, Linting and CI
 ------------------------

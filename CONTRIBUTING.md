@@ -36,11 +36,13 @@ views -> services / selectors -> models
 | `selectors.py` | Read-only queries shaped for pages | Writes |
 | `views/*.py` | Parse input → call service → return response (≤ 40 lines, nesting ≤ 2) | ORM queries beyond `get_object_or_404`, `requests` |
 | `integrations/*.py` | URLs, headers, timeouts, parsing, token redaction for one system | Models, request objects |
-| `tasks.py` | Celery entry points that call services | Business logic |
+| `tasks.py` | Celery entry points that call services ([background-work.md](docs/architecture/background-work.md)) | Business logic |
 | `management/commands/` | Thin, idempotent CLI wrappers with `--dry-run` for writes | One-off logic that belongs in a service |
 | `templates/` | Markup, partials (`_name.html`), `json_script` data | Inline JS logic, inline `style=""` |
 
 Apps talk to each other only through another app's `services.py`.
+
+**Background work** goes to the Celery worker, queued with `core.background.enqueue` (never `.delay()`, never a thread); tasks set their own time limits, take ids, and are safe to run twice. Standard and checklist: [docs/architecture/background-work.md](docs/architecture/background-work.md) (enforced by `tests/test_background.py`).
 
 ## Conventions
 

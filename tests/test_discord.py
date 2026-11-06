@@ -275,6 +275,30 @@ def test_refresh_counts_gone_invites_without_changing_rows(mocked_http, sleeps):
     assert server.status == DiscordServer.Status.ACTIVE
 
 
+@pytest.mark.django_db
+def test_refresh_stops_cleanly_at_its_time_limit(mocked_http, monkeypatch):
+    """Celery raises SoftTimeLimitExceeded inside the run; it ends with its stats logged."""
+    from celery.exceptions import SoftTimeLimitExceeded
+
+    _server("aaa", "1")
+    _server("bbb", "2")
+    mocked_http.get(f"{API}/aaa", json=_invite_body("1"))
+    mocked_http.get(f"{API}/bbb", json=_invite_body("2"))
+
+    def sleep_then_time_out(seconds):
+        # The limit lands while pausing after the first server.
+        raise SoftTimeLimitExceeded()
+
+    monkeypatch.setattr("skins.tasks.time.sleep", sleep_then_time_out)
+
+    stats = refresh_discord_servers()
+
+    assert stats["refreshed"] == 1
+    assert stats["stopped_time_limit"] is True
+    assert DiscordServerSnapshot.objects.count() == 1
+    assert len(mocked_http.calls) == 1
+
+
 # ---------- CSRF ----------
 
 
