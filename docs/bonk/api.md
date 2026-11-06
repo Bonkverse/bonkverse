@@ -91,8 +91,9 @@ friend sync has guarded against since before 2.2 (not yet recorded):
   the friendship isn't pruned just because this response had no name.
 - Names are stored exactly as sent, spaces included.
 
-Refusal for a stale token: unknown. `friends_token_expired.json` uses
-`e: "token"` as a placeholder.
+Refusal for a stale token: not recorded. `friends_token_expired.json` uses
+`e: "token"`, the code `avatar_update.php` gives (recorded), on the
+assumption the scripts share token checking.
 
 ## `avatar_update.php`
 
@@ -103,15 +104,15 @@ Request: `task=updateavatar`, `token`, `newavatarslot` (`"1"`–`"5"`),
 
 Success: `{"r": "success"}` (recorded 2026-11-03).
 
-A token bonk.io doesn't accept gets `{"r": "fail", "e": "token"}`
-(recorded 2026-11-03 by sending a valid token with its signature altered).
-A genuinely expired token hasn't been recorded and may use another code, so
-every refusal is still treated as "token probably stale" and logged with its
-`e` value (never the token).
+A token bonk.io doesn't accept gets `{"r": "fail", "e": "token"}`, whether
+it has expired (recorded 2026-11-05, a genuine token after its `exp`) or been
+tampered with (recorded 2026-11-03, signature altered). Any other refusal
+code is also treated as "token probably stale", as a safety net, and logged
+with its `e` value (never the token).
 
 The token is a JWT whose payload holds the account id, username, the IP it
-was issued to and an `exp` time. Treat it like a password: it was valid for
-roughly two days when recorded.
+was issued to and an `exp` time. Treat it like a password. The one recorded
+was valid for about two days, and bonk.io refused it once `exp` passed.
 
 Skin codes are sent as stored. A URL-encoded stored code (`%2F` etc.) is
 form-encoded again on the way, and bonk.io still answers success
@@ -130,5 +131,5 @@ Most fixtures are synthetic. To replace one with a real body:
 4. Save it under `tests/fixtures/bonk/` and change its row in that folder's
    README from `synthetic` to `recorded YYYY-MM-DD`.
 
-The most useful recordings still missing: the `avatar_update.php` and
-`friends.php` replies for a genuinely expired token.
+The most useful recordings still missing: `friends.php` (success and
+expired token) and a real `login_legacy.php` success body.
