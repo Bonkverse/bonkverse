@@ -209,14 +209,46 @@ def test_inline_style_exception_is_only_custom_properties(style, allowed):
     assert _sets_only_custom_properties(style) is allowed
 
 
-SCRIPT_TAG = re.compile(r"<script\b([^>]*)>")
-HANDLER_ATTR = re.compile(r"\son[a-z]+\s*=\s*[\"']")
+# HTML tag and attribute names are case-insensitive: <SCRIPT>, OnClick= count.
+SCRIPT_TAG = re.compile(r"<script\b([^>]*)>", re.IGNORECASE)
+HANDLER_ATTR = re.compile(r"\son[a-z]+\s*=", re.IGNORECASE)
+ALLOWED_SCRIPT = re.compile(r"\bsrc\s*=|\btype\s*=\s*[\"']?application/json\b", re.IGNORECASE)
 
 
 def _is_inline_code(attrs):
     """A <script> that runs code written in the template. Allowed: src=
     (a static file) and type="application/json" (data, from json_script)."""
-    return "src=" not in attrs and 'type="application/json"' not in attrs
+    return not ALLOWED_SCRIPT.search(attrs)
+
+
+@pytest.mark.parametrize(
+    "html,flagged",
+    [
+        ("<script>alert(1)</script>", True),
+        ("<SCRIPT>alert(1)</SCRIPT>", True),
+        ('<Script type="module">x()</Script>', True),
+        ('<script src="/static/js/search.js"></script>', False),
+        ("<SCRIPT SRC='/static/js/search.js'></SCRIPT>", False),
+        ('<script id="tags" type="application/json">[]</script>', False),
+    ],
+)
+def test_inline_script_check_ignores_case(html, flagged):
+    m = SCRIPT_TAG.search(html)
+    assert m and _is_inline_code(m.group(1)) is flagged
+
+
+@pytest.mark.parametrize(
+    "html,flagged",
+    [
+        ('<img onclick="x()">', True),
+        ("<img OnError='x()'>", True),
+        ("<img onload=x()>", True),
+        ('<img data-zoom src="a.png">', False),
+        ('<div class="online">', False),
+    ],
+)
+def test_handler_check_ignores_case(html, flagged):
+    assert bool(HANDLER_ATTR.search(html)) is flagged
 
 
 def test_no_inline_scripts_or_handlers():
