@@ -25,7 +25,8 @@ cause is unknown (below).
 Of 49 refused wears on the evening of Nov 5, 24 were `avatar_too_big`,
 24 `ratelimited`, and 1 `token`. Only that one should have opened the modal.
 
-`_debug_wear` (kept since Phase 1 for this bug) and the
+`_debug_wear` (kept since Phase 1 for this bug; removed in Phase 3.2 once
+production logs showed the loop gone) and the
 `bonk.io refused avatar update | bonk_error=...` line from #31 made it visible.
 
 ## Rate limits (not caused by Bonkverse's traffic, as far as we can tell)
@@ -79,3 +80,8 @@ Bonkverse didn't cause. bonk.io changing its limits is also possible.
   skin page before someone tries to wear an oversized skin.
 - If bursts continue, share the cooldown across workers (Redis).
 - Phase 3's single login modal removes the three copies of the wear flow.
+  Done in Phase 3.2: `static/core/js/bv-wear.js` retries once after a login
+  and never reopens the modal, so a future wrong answer can't loop.
+- **Confirmed fixed (2026-11-06 logs, after #39 deployed):** a real expired
+  token opened the modal once and the retry succeeded; skin 5397 was refused
+  as too big with no login after it; the rate-limit burst ended at 01:59 UTC.

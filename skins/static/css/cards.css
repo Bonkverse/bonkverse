@@ -423,15 +423,7 @@
 
 .muted { color: #9aa4b2; font-size: .9rem; }
 
-dialog {
-    border: 1px solid rgba(255,255,255,.2);
-    border-radius: 12px;
-    padding: 16px;
-    background: #111;
-    color: #fff;
-}
-dialog form { display: flex; flex-direction: column; gap: 8px; min-width: 260px; }
-dialog .row  { display: flex; gap: 8px; justify-content: flex-end; }
+
 
 
 /* =====================

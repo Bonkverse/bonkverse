@@ -211,3 +211,10 @@
     all: unset;
     display: contents; /* makes the form invisible to the flex layout */
 }
+
+/* Small explanatory line under a modal title (e.g. the bonk.io login modal). */
+.modal-hint {
+  color: #9aa4b2;
+  margin: 0 0 14px;
+  font-size: 0.9rem;
+}
