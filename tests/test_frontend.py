@@ -158,9 +158,16 @@ ALL_TEMPLATES = [
 # The 500 page renders without the static files on purpose (see its comment).
 STANDALONE = {TEMPLATES / "500.html"}
 STYLE_ATTR = re.compile(r'\sstyle="([^"]*)"')
-# A declaration that only sets a custom property: the template passes a value
-# (a bar's length), the stylesheet decides how it looks.
-VALUE_ONLY = re.compile(r"^\s*(--[\w-]+\s*:[^;]+;?\s*)+$")
+# One custom-property declaration ("--bar: 42%"). Checked per declaration,
+# not with one repeating pattern, which can backtrack exponentially.
+CUSTOM_PROPERTY = re.compile(r"--[\w-]+\s*:[^:]+")
+
+
+def _sets_only_custom_properties(style):
+    """True for style="--bar: 42%" (the template passes a value and the
+    stylesheet decides how it looks); False for anything that styles directly."""
+    declarations = [d.strip() for d in style.split(";") if d.strip()]
+    return bool(declarations) and all(CUSTOM_PROPERTY.fullmatch(d) for d in declarations)
 
 
 def test_no_inline_styles():
@@ -170,7 +177,7 @@ def test_no_inline_styles():
             continue
         text = path.read_text(encoding="utf-8")
         for m in STYLE_ATTR.finditer(text):
-            if not VALUE_ONLY.match(m.group(1)):
+            if not _sets_only_custom_properties(m.group(1)):
                 found.append(f"{path.relative_to(REPO)}: {m.group(0).strip()}")
         if "<style" in text:
             found.append(f"{path.relative_to(REPO)}: <style> block")
@@ -182,3 +189,19 @@ def test_icon_library_is_pinned():
 
     assert "lucide@latest" not in base
     assert re.search(r"lucide@\d+\.\d+\.\d+/", base)
+
+
+@pytest.mark.parametrize(
+    "style,allowed",
+    [
+        ("--bar: 42%", True),
+        ("--bar: {{ row.bar_width }}%", True),
+        ("--a: 1; --b: 2;", True),
+        ("width: 42%", False),
+        ("--bar: 42%; color: red", False),
+        ("", False),
+        ("---:" + ":---:" * 5000, False),  # the CodeQL case: answers quickly
+    ],
+)
+def test_inline_style_exception_is_only_custom_properties(style, allowed):
+    assert _sets_only_custom_properties(style) is allowed
