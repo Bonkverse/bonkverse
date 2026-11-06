@@ -15,10 +15,10 @@
   <div class="search-row">
 
     <!-- MAIN SEARCH BAR -->
-    <form id="player-search-form" onsubmit="return false;" class="hero-search">
+    <form id="player-search-form" data-role="search-form" class="hero-search">
       <input
         type="text"
-        id="player-query"
+        id="player-query" data-role="query"
         placeholder="Search players..."
         autocomplete="off"
       />
@@ -28,7 +28,7 @@
     <!-- SEARCH BY CONTROLS -->
     <div class="search-controls-inline">
       <label>Search By:</label>
-      <select id="player-mode">
+      <select id="player-mode" data-role="mode">
         <option value="username">Username</option>
         <option value="id">Bonk ID</option>
       </select>
@@ -37,109 +37,13 @@
   </div>
 </div>
 
-<section class="skins-container" id="results"></section>
-<div id="pagination"></div>
+<section class="skins-container" id="results" data-role="results"></section>
+<div id="pagination" data-role="pagination"></div>
 
-<div id="route-refs"
-     data-search-url="{% url 'players_search' %}">
-</div>
+<div id="route-refs" data-kind="players" data-search-url="{% url 'players_search' %}"></div>
 
-<script>
-  const $ = (sel) => document.querySelector(sel);
+{% endblock %}
 
-  function escapeHtml(s) {
-    return String(s)
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
-
-  const searchUrl = $("#route-refs")?.dataset.searchUrl || "";
-  const loadingEl = $("#loading");
-  const qInput = $("#player-query");
-  const results = $("#results");
-  const paginationEl = $("#pagination");
-
-  let lastFetchAbort = null;
-
-  // ENTER triggers search
-  qInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      runSearch();
-    }
-  });
-
-  // BUTTON triggers search
-  $("#player-search-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    runSearch();
-  });
-
-  // DROPDOWN triggers search
-  $("#player-mode").addEventListener("change", runSearch);
-
-  function runSearch(page=1) {
-    const q = qInput.value.trim();
-    const mode = $("#player-mode").value;
-    doSearch(q, page, mode);
-  }
-
-  async function doSearch(q, page=1, mode="username") {
-    try {
-      setLoading(true);
-      if (lastFetchAbort) lastFetchAbort.abort();
-      lastFetchAbort = new AbortController();
-
-      const resp = await fetch(`${searchUrl}?q=${encodeURIComponent(q)}&page=${page}&mode=${mode}`, {
-        signal: lastFetchAbort.signal
-      });
-      if (!resp.ok) {
-        const message = resp.status === 429
-          ? "You're searching too fast. Wait a moment and try again."
-          : "Search failed. Please try again.";
-        BVToast.show(message, { type: "error" });
-        return;
-      }
-      const data = await resp.json();
-      renderResults(data.results);
-      BVPagination.render(paginationEl, {
-        page: data.page,
-        pageSize: data.page_size,
-        total: data.total,
-        onNavigate: (p) => doSearch(q, p, mode)
-      });
-    } catch (err) {
-      if (err.name !== "AbortError") console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function renderResults(items) {
-    if (!items.length) {
-      results.innerHTML = "<p>No players found.</p>";
-      return;
-    }
-    results.innerHTML = items.map(p => `
-      <div class="player-card" tabindex="0">
-        <strong>${escapeHtml(p.username)}</strong>
-        <span>Bonk.io ID: ${p.bonk_id}</span>
-        <span>Friends (last sync): ${p.last_friend_count ?? "—"}</span>
-        <span>Flash Friends: ${p.flash_friend_count ?? 0}</span>
-      </div>
-    `).join("");
-  }
-
-  function setLoading(is) {
-    loadingEl.style.display = is ? "block" : "none";
-  }
-
-  // Auto-load newest players
-  document.addEventListener("DOMContentLoaded", () => {
-    doSearch("", 1);
-  });
-</script>
+{% block extra_scripts %}
+<script src="{% static 'js/player_search.js' %}"></script>
 {% endblock %}

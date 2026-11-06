@@ -80,3 +80,10 @@
 .submit-btn {
     margin-top: 20px;
 }
+
+/* The text box at the end of each tag group (made by static/js/edit_skin.js) */
+.tag-input {
+  background: transparent;
+  border: none;
+  color: #ddd;
+}

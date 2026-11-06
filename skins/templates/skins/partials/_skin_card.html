@@ -11,8 +11,8 @@ mode:
 
 The skin needs fav_count_val, current_vote and is_favorited
 (skins.selectors.decorate_skins_for_user). Behavior: static/core/js/bv-cards.js
-(menu, image zoom, votes, favorites, Wear); the page's own script handles Edit,
-Delete, Re-render and Report.
+(menu, image zoom, votes, favorites, Wear); Report is static/core/js/bv-report.js;
+the page's own script handles Edit, Delete and Re-render.
 {% endcomment %}
 {% with mode=mode|default:'search' %}
 <div class="skin-card"
@@ -65,7 +65,7 @@ Delete, Re-render and Report.
           <li>
             <button class="card-delete-btn"
                     data-action="{% url 'delete_skin' skin.id %}"
-                    data-name="{{ skin.name|escapejs }}">
+                    data-name="{{ skin.name }}">
               <i data-lucide="trash-2"></i> Delete Skin
             </button>
           </li>
@@ -107,8 +107,8 @@ Delete, Re-render and Report.
           <li class="more-menu-divider"></li>
           <li>
             <button class="card-report-btn card-report-link"
-                    data-skin-id="{{ skin.id }}"
-                    data-skin-name="{{ skin.name|escapejs }}">
+                    data-report-skin="{{ skin.id }}"
+                    data-skin-name="{{ skin.name }}">
               <i data-lucide="flag"></i> Report
             </button>
           </li>

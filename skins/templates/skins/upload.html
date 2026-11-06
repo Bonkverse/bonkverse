@@ -1,4 +1,5 @@
 {% extends 'skins/base.html' %}
+{% load static %}
 
 {% block title %}Upload a Bonk.io Skin{% endblock %}
 
@@ -13,7 +14,7 @@
   </div>
 
   <div class="form-container">
-    <form id="upload-form" method="POST" action="{% url 'upload_skin' %}" onsubmit="return validateForm()">
+    <form id="upload-form" method="POST" action="{% url 'upload_skin' %}">
       {% csrf_token %}
 
       <label for="skin_name">Skin Name</label>
@@ -28,39 +29,8 @@
     </form>
   </div>
 
-  <script>
-    function validateForm() {
-      const skinName = document.getElementById("skin_name").value.trim();
-      const bonkleaguesLink = document.getElementById("bonkleagues_link").value.trim();
-      const errorMessage = document.getElementById("error-message");
+{% endblock %}
 
-      const bonkRegex = /^https:\/\/bonkleagues\.io\/s\/[A-Za-z0-9]{7}$/;
-
-      if (!skinName || !bonkleaguesLink) {
-        errorMessage.innerText = "All fields are required.";
-        errorMessage.style.display = "block";
-        return false;
-      }
-
-      if (skinName.length > 1000) {
-        errorMessage.innerText = "Skin name must be under 1000 characters.";
-        errorMessage.style.display = "block";
-        return false;
-      }
-
-      if (!bonkRegex.test(bonkleaguesLink)) {
-        errorMessage.innerText = "Invalid Bonkleagues link format.";
-        errorMessage.style.display = "block";
-        return false;
-      }
-
-      showLoading();
-      return true;
-    }
-
-    function showLoading() {
-      document.getElementById("loading").style.display = "block";
-      document.getElementById("upload-form").style.display = "none";
-    }
-  </script>
+{% block extra_scripts %}
+<script src="{% static 'js/upload.js' %}"></script>
 {% endblock %}

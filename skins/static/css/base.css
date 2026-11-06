@@ -1,3 +1,6 @@
+/* The hidden attribute always hides, whatever display a class sets. */
+[hidden] { display: none !important; }
+
 body {
     font-family: "Oxanium", sans-serif;
     margin: 0;

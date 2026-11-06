@@ -9,58 +9,12 @@
 
 {% block content %}
 
-  {% if show_friend_sync_toast %}
-  <script>
-  (function () {
-    var handle = BVToast.show("Syncing your friends\u2026", { type: "info", spinner: true, sticky: true });
-    var attempts = 0;
-    function poll() {
-      attempts++;
-      fetch("/api/friends-sync-status/", { headers: { "X-Requested-With": "XMLHttpRequest" } })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          if (data.status === "done") {
-            var friendsText = "Synced " + data.friends_now + " friends";
-            var extras = [];
-            if (data.added_edges > 0) extras.push(data.added_edges + " new");
-            if (data.removed_edges > 0) extras.push(data.removed_edges + " removed");
-            if (extras.length) friendsText += " : " + extras.join(", ");
-
-            if (data.corrected_count > 0) {
-              // Only this case stays up until the user closes it — every
-              // other toast on the page keeps its normal auto-dismiss.
-              var fixes = data.corrected_usernames.map(function (c) {
-                return '"' + c.old_username + '" → "' + c.new_username + '"';
-              });
-              handle.update(
-                friendsText + ". Also fixed " + data.corrected_count +
-                " outdated username(s) from before a data cleanup: " + fixes.join(", "),
-                { type: "success", sticky: true }
-              );
-            } else {
-              handle.update(friendsText, { type: "success" });
-            }
-            return;
-          }
-          if (attempts < 10) {
-            setTimeout(poll, 1200);
-          } else {
-            handle.update("Friend sync is taking longer than usual", { type: "info" });
-          }
-        })
-        .catch(function () {
-          handle.dismiss();
-        });
-    }
-    setTimeout(poll, 1200);
-  })();
-  </script>
-  {% endif %}
-
   {# Route data for my_profile.js, which can't use the url tag directly #}
   <div id="profile-routes"
        data-skins-partial-url="{% url 'my_skins_partial' %}"
        data-bulk-delete-url="{% url 'bulk_delete_skins' %}"
+       data-friend-sync-url="{% url 'friends_sync_status' %}"
+       {% if show_friend_sync_toast %}data-friend-sync="1"{% endif %}
        hidden></div>
 
   {% include 'skins/partials/_profile_header.html' %}

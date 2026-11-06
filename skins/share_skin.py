@@ -29,4 +29,13 @@ def share_skin(request, skin_id, uuid):
         "site_name": "Bonkverse",
     }
 
-    return render(request, "skins/share_skin.html", {"skin": skin, "og": og})
+    # "Add to Collection" adds the skin to the visitor's favorites.
+    is_favorited = (
+        request.user.is_authenticated and skin.favorited_by.filter(pk=request.user.pk).exists()
+    )
+
+    return render(
+        request,
+        "skins/share_skin.html",
+        {"skin": skin, "og": og, "is_favorited": is_favorited},
+    )
