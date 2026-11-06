@@ -23,3 +23,5 @@ Rules:
 | `friends_token_expired.json` | `friends.php` | synthetic: copies the recorded `avatar_update.php` code |
 | `avatar_update_success.json` | `avatar_update.php` | recorded 2026-11-03 (identical to the old synthetic body) |
 | `avatar_update_token_expired.json` | `avatar_update.php` | recorded: same body for a genuinely expired token (2026-11-05) and a tampered one (2026-11-03) |
+| `avatar_update_too_big.json` | `avatar_update.php` | from production logs 2026-11-03 (old code logged bonk.io's raw body; no token in it) |
+| `ratelimited.json` | `login_legacy.php` and `avatar_update.php` | from production logs, Oct 30 onward (same source) |

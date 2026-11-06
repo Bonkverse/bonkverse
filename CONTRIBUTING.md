@@ -17,7 +17,7 @@ Boy-scout rule: a file you touch for a feature gets brought up to these conventi
 
 The repo is moving from one `skins` app to six domain apps (`accounts`, `skins`, `players`, `stats`, `communities`, `site_pages`) plus two shared packages:
 
-- `integrations/` — one client per external system (bonk.io, editor render service, BonkBot, Discord, Cloudflare). **Only these files import `requests`.**
+- `integrations/` — one client per external system (bonk.io, editor render service, BLSkinFetcher, BonkBot, Discord, Cloudflare, map decoder). **Only these files make outside HTTP calls** (any HTTP library; enforced by `tests/test_architecture.py`). How to add one: [docs/architecture/integrations.md](docs/architecture/integrations.md).
 - `core/` — cross-cutting helpers: auth guards, event logging, pagination, the one definition of today/week/month periods, JSON response helpers.
 
 Until a phase lands, put new code where its future home will be, or as close as the current layout allows.

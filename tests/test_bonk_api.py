@@ -211,9 +211,8 @@ class TestUpdateAvatar:
         "body,error",
         [
             (load_bonk_fixture("avatar_update_token_expired"), BonkError.TOKEN_REJECTED),
-            # Seen in production 2026-11-05 (no recorded body yet; same shape).
-            ({"r": "fail", "e": "avatar_too_big"}, BonkError.AVATAR_TOO_BIG),
-            ({"r": "fail", "e": "ratelimited"}, BonkError.RATE_LIMITED),
+            (load_bonk_fixture("avatar_update_too_big"), BonkError.AVATAR_TOO_BIG),
+            (load_bonk_fixture("ratelimited"), BonkError.RATE_LIMITED),
             ({"r": "fail", "e": "something_new"}, BonkError.REJECTED),
         ],
     )

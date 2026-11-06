@@ -32,3 +32,6 @@ development are in the [README](../README.md); code conventions in
 - [0003 Rate limits: named tiers, real client IP, fail open](adr/0003-rate-limit-tiers.md)
 - [0004 Railway builds from the Dockerfile, behind a healthcheck](adr/0004-dockerfile-build-and-healthcheck.md)
 - [0005 Admins sign in through bonk.io](adr/0005-admin-login-through-bonk.md)
+- [0006 Every outside call goes through `integrations/`](adr/0006-outside-calls-through-integrations.md)
+- [0007 bonk.io names are stored exactly; identity is case-insensitive](adr/0007-bonk-usernames.md)
+- [0008 How Bonkverse answers bonk.io refusals](adr/0008-bonk-refusals.md)

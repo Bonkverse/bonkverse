@@ -139,9 +139,10 @@ A token bonk.io doesn't accept gets `{"r": "fail", "e": "token"}`, whether
 it has expired (recorded 2026-11-05, a genuine token after its `exp`) or been
 tampered with (recorded 2026-11-03, signature altered).
 
-Other refusals seen in production logs (2026-11-05, no recorded bodies yet):
-`avatar_too_big` (a skin code of 1,552 characters; bonk.io's limit is
-unknown) and `ratelimited`. Every refusal is logged with its `e` value
+Other refusals, copied from production logs (before #31 the code logged
+bonk.io's raw reply): `avatar_too_big` (`avatar_update_too_big.json`; a skin
+code of 1,552 characters; bonk.io's limit is unknown) and `ratelimited`
+(`ratelimited.json`, also on `login_legacy.php`). Every refusal is logged with its `e` value
 (never the token), as `bonk.io refused avatar update | bonk_error=...`.
 
 The token is a JWT whose payload holds the account id, username, the IP it

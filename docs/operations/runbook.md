@@ -25,6 +25,11 @@ Work top to bottom; stop when you find it.
    - `WORKER TIMEOUT`: a request ran 30 s. Find which view.
    - `django_redis` warnings: Redis unreachable; the site keeps working without
      the cache and without rate limits (fail open). Fix Redis soon.
+   - Outside services log their own failures (one module each in
+     `integrations/`, see [integrations.md](../architecture/integrations.md)):
+     `bonk.io ... unreachable`, `bonk.io refused avatar update | bonk_error=`,
+     `render service ...`, `skin fetcher ...`, `cloudflare purge failed`,
+     `discord refresh ...`, `map decoder ...`, `bonkbot ...`.
 4. **Is Postgres or Redis struggling?** Railway → service → Metrics (CPU,
    memory). Postgres connections in use are at most workers × threads (16).
 5. **Roll back** if a deploy caused it: Railway → Deployments → previous
@@ -54,6 +59,28 @@ It does not work on the old Bitnami-based Redis image
 
 Never type a Redis password by hand. A `/`, `#`, `?` or `@` in it breaks the URL
 ([incident](../incidents/2026-11-03-redis-rotation.md)).
+
+## bonk.io logins or wearing skins are failing
+
+Railway → bonkverse → Logs, filter
+`"bonk login response" OR "refused avatar update" OR "pausing bonk.io calls"`.
+The codes mean ([bonk/api.md](../bonk/api.md), [ADR 0008](../adr/0008-bonk-refusals.md)):
+
+- `bonk_error=ratelimited` / `pausing bonk.io calls for 120.0s`: bonk.io is
+  limiting the server's IP. Everyone is affected; Bonkverse pauses its own
+  calls for 2 minutes at a time. Nothing to deploy. Note the time and whether
+  a bonk.io login from your own connection works meanwhile (that tells us the
+  limit is on our IP). Bursts usually clear within an hour or two.
+- `bonk_error=avatar_too_big`: one skin is over bonk.io's size limit. Players
+  get a message; nothing is broken.
+- `bonk_error=token`: an expired bonk.io token; the player is asked to log in
+  again. Normal.
+- `bonk.io ... unreachable` / `gave no usable answer`: bonk.io is down or
+  showing a Cloudflare page. Players see "bonk.io isn't responding".
+- `bonk_error=<anything else>`: a code we haven't seen. Add it to the table in
+  `integrations/bonk_api.py` and [bonk/api.md](../bonk/api.md).
+
+Recent history: [2026-11-05 incident](../incidents/2026-11-05-bonk-rate-limit.md).
 
 ## Giving someone admin access
 
