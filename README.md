@@ -185,8 +185,10 @@ bonkverse/
 ├── skins/                  # the main app (being split into domain apps, see RFC-0001)
 │   ├── models.py
 │   ├── auth_guards.py      # JSON auth decorators (auth="bonkverse" / auth="bonk")
-│   ├── templates/skins/
-│   ├── static/
+│   ├── selectors.py        # read-only page queries (decorate_skins_for_user for skin cards)
+│   ├── templates/skins/    # pages; partials/ holds the skin cards and shared modals
+│   ├── static/core/js/     # shared page helpers: BVApi, BVWear, BVCards, BVReport, bv-boot
+│   ├── static/js/, css/    # one script / stylesheet per page (docs/architecture/frontend.md)
 │   └── management/commands/
 ├── tests/                  # pytest suite + recorded bonk.io fixtures
 ├── docs/                   # how things work: architecture, operations/runbook, bonk.io reference, incidents, ADRs
