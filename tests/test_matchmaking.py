@@ -68,7 +68,7 @@ def test_bonkbot_call_has_a_timeout(client, mocked_http, monkeypatch):
         seen.update(kwargs)
         raise requests.Timeout
 
-    monkeypatch.setattr("skins.bonkbot.requests.post", fake_post)
+    monkeypatch.setattr("integrations.bonkbot.requests.post", fake_post)
 
     _post(client)
 
