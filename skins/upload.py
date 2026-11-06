@@ -1,181 +1,92 @@
-import uuid
-from core.ratelimits import limit
+"""The upload form: adding a skin from a BonkLeagues short link.
+
+Owns: the /upload/ page, the form's own rules (required fields, which name
+characters are allowed, the short-link format) and the messages people see.
+Does not own: fetching, checking and storing the skin. That is
+skins/skin_import.py, shared with BonxBot submissions, which also matches a
+link already on the site in any spelling.
+"""
+
+import logging
 import re
-import os
-import base64
-import requests
+from urllib.parse import urlencode
 
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
-from django.conf import settings
-from django.urls import reverse
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect, render
+from django.urls import reverse
 
+from core.ratelimits import limit
 from skins.events import log_event
-from skins.models import Skin, SkinImage
-from skins.svg_sanitizer import (
-    TOO_LARGE_MESSAGE,
-    SVGTooLargeError,
-    UnsafeSVGError,
-    validate_svg_upload,
-)
+from skins.skin_import import NAME_MAX_LENGTH, ImportFailure, import_bonkleagues_skin
+from skins.svg_sanitizer import TOO_LARGE_MESSAGE
 
+logger = logging.getLogger(__name__)
 
 bonk_url_pattern = r"^https://bonkleagues\.io/s/([A-Za-z0-9]{7})$"
 skin_name_pattern = r"^[A-Za-z0-9_ ]+$"
+
+TEMPLATE = "skins/upload.html"
+
+# What people see when an import fails, by ImportFailure code. Details stay
+# in the server log.
+FAILURE_MESSAGES = {
+    ImportFailure.FETCH_FAILED: (
+        "Couldn't get that skin from BonkLeagues right now. "
+        "Check the link opens on BonkLeagues, then try again in a minute."
+    ),
+    ImportFailure.SVG_TOO_LARGE: TOO_LARGE_MESSAGE,
+    ImportFailure.UNSAFE_SVG: "This skin's image failed our SVG safety check, so it wasn't added.",
+    ImportFailure.STORAGE_FAILED: "Something went wrong saving the skin. Please try again.",
+    ImportFailure.INVALID_LINK: "Invalid Bonkleagues link format.",
+    ImportFailure.LINK_TOO_LONG: "Invalid Bonkleagues link format.",
+}
+FALLBACK_MESSAGE = "Couldn't add that skin. Please try again."
 
 
 @login_required(login_url="/login/")
 @limit("upload")
 def upload_skin(request):
-    if request.method == "POST":
-        skin_name = request.POST.get("skin_name", "").strip()
-        bonkleagues_link = request.POST.get("bonkleagues_link", "").strip()
+    if request.method != "POST":
+        return render(request, TEMPLATE)
 
-        # --- Validation ---
-        if not skin_name or not bonkleagues_link:
-            messages.error(request, "All fields are required.")
-            return render(request, "skins/upload.html")
+    skin_name = request.POST.get("skin_name", "").strip()
+    bonkleagues_link = request.POST.get("bonkleagues_link", "").strip()
 
-        if not re.match(skin_name_pattern, skin_name):
-            messages.error(
-                request, "Skin name can only contain letters, numbers, spaces, and underscores."
-            )
-            return render(request, "skins/upload.html")
+    if not skin_name or not bonkleagues_link:
+        messages.error(request, "All fields are required.")
+        return render(request, TEMPLATE)
 
-        if not re.match(bonk_url_pattern, bonkleagues_link):
-            messages.error(request, "Invalid Bonkleagues link format.")
-            return render(request, "skins/upload.html")
-
-        if Skin.objects.filter(link=bonkleagues_link).exists():
-            messages.error(request, "This Bonkleagues link has already been submitted!")
-            return redirect("upload_skin")
-
-        if len(skin_name) > 1000:
-            messages.error(request, "Skin name must be under 1000 characters.")
-            return render(request, "skins/upload.html")
-
-        # --- Step 1: Ask BLSkinFetcher for skin data + rendered media ---
-        try:
-            fetch_res = requests.get(
-                settings.BLSKIN_FETCHER_URL,
-                params={
-                    "link": bonkleagues_link,
-                    "media": "true",
-                },
-                timeout=30,
-            )
-            fetch_res.raise_for_status()
-            data = fetch_res.json()
-        except Exception as e:
-            messages.error(request, f"Could not fetch/render skin: {e}")
-            return render(request, "skins/upload.html")
-
-        skin_code = data.get("skinCode")
-        media = data.get("media") or {}
-
-        svg_content = media.get("svg")
-        png_base64 = media.get("pngBase64")
-        thumb_base64 = media.get("thumbnailBase64")
-
-        if not skin_code:
-            messages.error(request, "Skin Fetcher did not return a skin code.")
-            return render(request, "skins/upload.html")
-
-        if not svg_content or not png_base64:
-            messages.error(request, "Skin Fetcher did not return rendered SVG/PNG media.")
-            return render(request, "skins/upload.html")
-
-        # The SVG comes from an external fetcher service — validate before
-        # anything is written to disk or the DB.
-        try:
-            validate_svg_upload(svg_content)
-        except SVGTooLargeError:
-            messages.error(request, TOO_LARGE_MESSAGE)
-            return render(request, "skins/upload.html")
-        except UnsafeSVGError as e:
-            messages.error(request, f"Unsafe SVG rejected: {e}")
-            return render(request, "skins/upload.html")
-
-        # --- Step 2: Decode PNG/thumbnail from base64 ---
-        try:
-            png_content = base64.b64decode(png_base64)
-
-            if thumb_base64:
-                thumb_content = base64.b64decode(thumb_base64)
-            else:
-                thumb_content = png_content
-
-        except Exception as e:
-            messages.error(request, f"Could not decode rendered media: {e}")
-            return render(request, "skins/upload.html")
-
-        # --- Step 3: Create DB entry first ---
-        skin = Skin.objects.create(
-            name=skin_name,
-            creator=request.user.username,
-            link=bonkleagues_link,
-            image_url="",
-            uuid=uuid.uuid4(),
-            skin_code=skin_code,
+    if not re.match(skin_name_pattern, skin_name):
+        messages.error(
+            request, "Skin name can only contain letters, numbers, spaces, and underscores."
         )
+        return render(request, TEMPLATE)
 
-        skin_dir = os.path.join(settings.MEDIA_ROOT, "skins")
-        os.makedirs(skin_dir, exist_ok=True)
+    if len(skin_name) > NAME_MAX_LENGTH:
+        messages.error(request, f"Skin name must be under {NAME_MAX_LENGTH} characters.")
+        return render(request, TEMPLATE)
 
-        svg_rel_path = f"skins/{skin.id}.svg"
-        png_rel_path = f"skins/{skin.id}.png"
-        thumb_rel_path = f"skins/{skin.id}_thumb.png"
+    if not re.match(bonk_url_pattern, bonkleagues_link):
+        messages.error(request, "Invalid Bonkleagues link format.")
+        return render(request, TEMPLATE)
 
-        svg_path = os.path.join(settings.MEDIA_ROOT, svg_rel_path)
-        png_path = os.path.join(settings.MEDIA_ROOT, png_rel_path)
-        thumb_path = os.path.join(settings.MEDIA_ROOT, thumb_rel_path)
+    result = import_bonkleagues_skin(bonkleagues_link, skin_name, request.user.username)
 
-        # --- Step 4: Save SVG + PNG + thumbnail from Skin Fetcher ---
-        try:
-            with open(svg_path, "w", encoding="utf-8") as f:
-                f.write(svg_content)
+    if result.error:
+        logger.warning(
+            "upload failed | error=%s | detail=%s | link=%s",
+            result.error,
+            result.detail,
+            bonkleagues_link,
+        )
+        messages.error(request, FAILURE_MESSAGES.get(result.error, FALLBACK_MESSAGE))
+        return render(request, TEMPLATE)
 
-            with open(png_path, "wb") as f:
-                f.write(png_content)
+    if not result.created:
+        messages.error(request, "This Bonkleagues link has already been submitted!")
+        return redirect("upload_skin")
 
-            with open(thumb_path, "wb") as f:
-                f.write(thumb_content)
-
-            skin.image_url = f"{settings.MEDIA_URL}{svg_rel_path}"
-            skin.save()
-
-        except Exception as e:
-            messages.error(request, f"Failed to save rendered media: {e}")
-
-            for file_path in (svg_path, png_path, thumb_path):
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-
-            skin.delete()
-            return render(request, "skins/upload.html")
-
-        # --- Step 5: Save SkinImage records ---
-        try:
-            SkinImage.objects.bulk_create(
-                [
-                    SkinImage(skin=skin, kind="svg", path=svg_rel_path),
-                    SkinImage(skin=skin, kind="png", path=png_rel_path),
-                    SkinImage(skin=skin, kind="thumbnail", path=thumb_rel_path),
-                ]
-            )
-        except Exception as e:
-            messages.error(request, f"Failed to save skin image records: {e}")
-
-            for file_path in (svg_path, png_path, thumb_path):
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-
-            skin.delete()
-            return render(request, "skins/upload.html")
-
-        messages.success(request, "Skin uploaded successfully!")
-        log_event(request.user, "skin_uploaded", skin=skin, source="bonkleagues")
-        return redirect(reverse("search_skins") + f"?q={skin_name}")
-
-    return render(request, "skins/upload.html")
+    messages.success(request, "Skin uploaded successfully!")
+    log_event(request.user, "skin_uploaded", skin=result.skin, source="bonkleagues")
+    return redirect(reverse("search_skins") + "?" + urlencode({"q": result.skin.name}))

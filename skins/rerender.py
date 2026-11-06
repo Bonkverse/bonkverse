@@ -1,17 +1,39 @@
-import functools
-import os
-from core.ratelimits import limit
-import base64
-import requests
+"""Re-rendering a gallery skin's images from its stored code (staff only).
 
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
+Owns: the /skins/<id>/rerender/ endpoint, overwriting the skin's SVG, PNG and
+thumbnail files, updating its image rows, and asking Cloudflare to drop the
+old cached copies.
+Does not own: rendering (integrations/editor_render.py), the cache purge
+request (integrations/cloudflare.py) or SVG safety rules (svg_sanitizer.py).
+
+Replies are JSON for the button on the search page, which shows `error` to
+staff as-is, so `error` is always a readable sentence. Service details go to
+the server log only.
+"""
+
+import functools
+import logging
+import os
+
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 
-from skins.events import log_event
 from core.bonk import SkinCode
+from core.ratelimits import limit
+from integrations.cloudflare import purge_media_paths
+from integrations.editor_render import render_skin_code
+from skins.events import log_event
 from skins.models import Skin, SkinImage
+from skins.svg_sanitizer import (
+    TOO_LARGE_MESSAGE,
+    SVGTooLargeError,
+    UnsafeSVGError,
+    validate_svg_upload,
+)
+
+logger = logging.getLogger(__name__)
 
 
 def staff_required(view_func):
@@ -25,26 +47,8 @@ def staff_required(view_func):
     return wrapper
 
 
-def purge_cloudflare_cache(paths: list):
-    """Purge specific file paths from Cloudflare's edge cache."""
-    zone_id = getattr(settings, "CLOUDFLARE_ZONE_ID", "")
-    api_token = getattr(settings, "CLOUDFLARE_CACHE_API_TOKEN", "")
-
-    if not zone_id or not api_token:
-        return  # not configured — skip silently
-
-    base_url = settings.BONKVERSE_BASE_URL
-    files = [f"{base_url}{path}" for path in paths]
-
-    try:
-        requests.post(
-            f"https://api.cloudflare.com/client/v4/zones/{zone_id}/purge_cache",
-            headers={"Authorization": f"Bearer {api_token}"},
-            json={"files": files},
-            timeout=10,
-        )
-    except Exception:
-        pass  # non-fatal — cache will expire on its own eventually
+def _error(message: str, status: int) -> JsonResponse:
+    return JsonResponse({"ok": False, "error": message}, status=status)
 
 
 @staff_required
@@ -54,93 +58,57 @@ def rerender_skin(request, skin_id):
     try:
         skin = Skin.objects.get(id=skin_id)
     except Skin.DoesNotExist:
-        return JsonResponse({"error": "Skin not found"}, status=404)
+        return _error("Skin not found.", 404)
 
     if not skin.skin_code:
-        return JsonResponse({"error": "No skin_code stored for this skin"}, status=400)
+        return _error("This skin has no stored skin code to render.", 400)
 
     # Stored codes may be URL-encoded once or twice (BonkLeagues imports).
-    skin_code = SkinCode(skin.skin_code).decoded
+    result = render_skin_code(SkinCode(skin.skin_code).decoded)
+    if result.error:
+        logger.warning("rerender skin %s: render failed: %s", skin.id, result.error)
+        return _error("The render service couldn't render this skin. Try again later.", 502)
+    rendered = result.skin
 
+    # Same check as every other way a skin's SVG reaches /media/.
     try:
-        fetch_res = requests.post(
-            f"{settings.BONKVERSE_RENDER_URL}/api/render-bundle",
-            json={"skinCode": skin_code, "size": 512},
-            timeout=30,
-        )
-    except Exception as e:
-        return JsonResponse({"error": f"Could not reach render service: {e}"}, status=502)
+        validate_svg_upload(rendered.svg)
+    except SVGTooLargeError:
+        return _error(TOO_LARGE_MESSAGE, 422)
+    except UnsafeSVGError as exc:
+        logger.warning("rerender skin %s: rendered SVG rejected: %s", skin.id, exc)
+        return _error("The rendered image failed the SVG safety check; nothing was changed.", 422)
 
-    if not fetch_res.ok:
-        try:
-            editor_error = fetch_res.json()
-        except Exception:
-            editor_error = fetch_res.text
-        return JsonResponse(
-            {
-                "error": f"Render service returned {fetch_res.status_code}",
-                "detail": editor_error,
-            },
-            status=502,
-        )
-
-    data = fetch_res.json()
-
-    if not data.get("ok"):
-        return JsonResponse({"error": data.get("error", "render_failed")}, status=502)
-
-    svg_content = data.get("svg")
-    png_base64 = data.get("pngBase64")
-    thumb_base64 = data.get("thumbnailBase64")
-
-    if not svg_content or not png_base64:
-        return JsonResponse({"error": "Render bundle missing SVG/PNG"}, status=502)
-
+    files = {
+        "svg": (f"skins/{skin.id}.svg", rendered.svg.encode("utf-8")),
+        "png": (f"skins/{skin.id}.png", rendered.png),
+        "thumbnail": (f"skins/{skin.id}_thumb.png", rendered.thumbnail),
+    }
+    # Overwrites the files in place (Railway volume; persists across deploys).
     try:
-        png_content = base64.b64decode(png_base64)
-        thumb_content = base64.b64decode(thumb_base64) if thumb_base64 else png_content
-    except Exception as e:
-        return JsonResponse({"error": f"Decode error: {e}"}, status=500)
+        os.makedirs(os.path.join(settings.MEDIA_ROOT, "skins"), exist_ok=True)
+        for rel_path, content in files.values():
+            with open(os.path.join(settings.MEDIA_ROOT, rel_path), "wb") as f:
+                f.write(content)
+    except OSError:
+        logger.exception("rerender skin %s: could not write media files", skin.id)
+        return _error("Couldn't save the new images. Try again later.", 500)
 
-    # Overwrite files on disk (Railway volume — persists across deploys)
-    skin_dir = os.path.join(settings.MEDIA_ROOT, "skins")
-    os.makedirs(skin_dir, exist_ok=True)
-
-    svg_rel = f"skins/{skin.id}.svg"
-    png_rel = f"skins/{skin.id}.png"
-    thumb_rel = f"skins/{skin.id}_thumb.png"
-
-    try:
-        with open(os.path.join(settings.MEDIA_ROOT, svg_rel), "w", encoding="utf-8") as f:
-            f.write(svg_content)
-        with open(os.path.join(settings.MEDIA_ROOT, png_rel), "wb") as f:
-            f.write(png_content)
-        with open(os.path.join(settings.MEDIA_ROOT, thumb_rel), "wb") as f:
-            f.write(thumb_content)
-    except Exception as e:
-        return JsonResponse({"error": f"File write error: {e}"}, status=500)
-
-    skin.image_url = f"{settings.MEDIA_URL}{svg_rel}"
+    skin.image_url = f"{settings.MEDIA_URL}{files['svg'][0]}"
     skin.save(update_fields=["image_url"])
-
-    for kind, rel_path in [("svg", svg_rel), ("png", png_rel), ("thumbnail", thumb_rel)]:
+    for kind, (rel_path, _) in files.items():
         SkinImage.objects.update_or_create(skin=skin, kind=kind, defaults={"path": rel_path})
 
-    # Purge Cloudflare's cached copies so the new files are served immediately
-    purge_cloudflare_cache(
-        [
-            f"/media/{svg_rel}",
-            f"/media/{png_rel}",
-            f"/media/{thumb_rel}",
-        ]
-    )
+    # Drop Cloudflare's cached copies so the new files show immediately. A
+    # failure is logged by the client; the copies expire on their own anyway.
+    purge = purge_media_paths([f"/media/{rel_path}" for rel_path, _ in files.values()])
 
     log_event(request.user, "skin_rerendered", skin=skin)
-
     return JsonResponse(
         {
             "ok": True,
             "image_url": skin.image_url,
             "skin_id": skin.id,
+            "cache_purged": purge.ok,
         }
     )
