@@ -422,15 +422,66 @@ RATE_LIMITS = {
 # Celery
 # =========================================================
 
+# Background work. Standards: docs/architecture/background-work.md (ADR 0010).
+# The worker is the Railway `worker` service (railway.worker.json); it runs the
+# beat scheduler too, so there must only ever be one worker replica.
 CELERY_BROKER_URL = REDIS_URL
-CELERY_RESULT_BACKEND = REDIS_URL
+# No task returns a result anyone reads; tasks report through logs and rows.
+CELERY_TASK_IGNORE_RESULT = True
+CELERY_RESULT_BACKEND = None
+# With no results stored, Celery's daily "celery.backend_cleanup" job has nothing to do.
+CELERY_RESULT_EXPIRES = None
 
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
-CELERY_RESULT_SERIALIZER = "json"
 
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_ENABLE_UTC = True
+
+# A task is acknowledged after it finishes, so one cut off by a deploy or a
+# crash runs again. Tasks must be safe to run twice, or opt out with
+# acks_late=False (refresh_discord_servers does).
+CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_REJECT_ON_WORKER_LOST = True
+# Take one task at a time, so a long task doesn't hold others hostage.
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_WORKER_CONCURRENCY = int(os.getenv("CELERY_CONCURRENCY", "2"))
+
+# Every task sets its own limits; these catch any that forget (a test fails too).
+CELERY_TASK_SOFT_TIME_LIMIT = 60
+CELERY_TASK_TIME_LIMIT = 90
+
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    # An unacknowledged task is handed out again after this long, so it must be
+    # longer than any acks_late task's time limit (a test checks).
+    "visibility_timeout": 3600,
+    # Fail fast when Redis is down, so queueing never stalls a request.
+    "socket_connect_timeout": 2,
+    "socket_timeout": 5,
+}
+
+# Run tasks inline instead of queueing them (local development without a
+# worker; tests set this themselves). Never in production.
+CELERY_TASK_ALWAYS_EAGER = os.getenv("CELERY_TASK_ALWAYS_EAGER", "0").lower() in (
+    "1",
+    "true",
+    "yes",
+)
+
+# Keep Django's LOGGING (one format, task context on every line).
+CELERY_WORKER_HIJACK_ROOT_LOGGER = False
+
+# Schedules live here, in code. django-celery-beat's DatabaseScheduler copies
+# them into its PeriodicTask table at startup (the Discord page reads
+# last_run_at from there); edit them here, not in /admin.
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+CELERY_BEAT_SCHEDULE = {
+    "refresh-discord-servers": {
+        "task": "skins.tasks.refresh_discord_servers",
+        "schedule": 60 * 60,
+    },
+}
 
 # =========================================================
 # Search: query time limit for skins/search.py
@@ -454,10 +505,18 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "plain": {"format": "%(levelname)s %(name)s: %(message)s"},
+        # %(task)s is " [task_name id]" inside a Celery task, empty elsewhere.
+        "plain": {"format": "%(levelname)s %(name)s%(task)s: %(message)s"},
+    },
+    "filters": {
+        "task_context": {"()": "core.background.TaskContextFilter"},
     },
     "handlers": {
-        "console": {"class": "logging.StreamHandler", "formatter": "plain"},
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "plain",
+            "filters": ["task_context"],
+        },
     },
     "root": {"handlers": ["console"], "level": "WARNING"},
     "loggers": {
@@ -465,5 +524,7 @@ LOGGING = {
         "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
         "skins": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
         "core": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
+        # Worker lifecycle: "Task ... received", "succeeded in 1.2s", failures with tracebacks.
+        "celery": {"handlers": ["console"], "level": "INFO", "propagate": False},
     },
 }
