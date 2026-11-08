@@ -6,7 +6,7 @@
 {% block tab %}
 <div class="pv-duo">
 
-  <section class="pv-card" aria-labelledby="modes-title" data-ring>
+  <section class="pv-open" aria-labelledby="modes-title" data-ring>
     <h2 id="modes-title" class="pv-card__title">Modes</h2>
     {% if ring.slices %}
       <div class="pv-ring">
@@ -38,7 +38,7 @@
     {% endif %}
   </section>
 
-  <section class="pv-card" aria-labelledby="rooms-title">
+  <section class="pv-open" aria-labelledby="rooms-title">
     <h2 id="rooms-title" class="pv-card__title">Rooms they play in</h2>
     {% if rooms %}
       {% include 'players/partials/_room_split.html' with rooms=rooms %}

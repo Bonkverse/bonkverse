@@ -4,11 +4,13 @@
 {% block title %}XP &amp; Level calculator · Bonkverse{% endblock %}
 
 {% block social_meta %}
-<meta name="description" content="bonk.io XP and level calculator: convert level and XP, plan a goal, see how your level compares, compare players and estimate when an account was made.">
+<meta name="description" content="bonk.io XP and level calculator: plan a level goal, compare players, see where a level stands and when an account was made.">
 {% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/player_profile.css' %}">
+<link rel="stylesheet" href="{% static 'css/charts.css' %}">
+<link rel="stylesheet" href="{% static 'css/controls.css' %}">
 <link rel="stylesheet" href="{% static 'css/xp_calculator.css' %}">
 {% endblock %}
 
@@ -16,12 +18,12 @@
 {{ constants|json_script:"xc-constants" }}
 <main class="pv xc" id="main" data-xc data-prefill-player="{{ prefill_player }}" data-prefill-goal="{{ prefill_goal }}">
 
-  <header class="xc-head">
-    <div>
+  <header class="xc-hero">
+    <div class="xc-hero__text">
       <h1 class="xc-title">XP &amp; Level calculator</h1>
-      <p class="pv-muted">bonk.io's own formulas: level <var>L</var> needs 100·(<var>L</var>−1)² XP in total, a won round gives {{ constants.xp_per_win }} XP and a day tops out at {{ constants.daily_cap|floatformat:"0g" }} XP.</p>
+      <p class="pv-muted">bonk.io's own numbers: level <var>L</var> takes 100·(<var>L</var>−1)² XP in total, a won round gives {{ constants.xp_per_win }} XP, and a day tops out at {{ constants.daily_cap|floatformat:"0g" }} XP.</p>
     </div>
-    <form class="xc-load" data-load-form>
+    <form class="xc-load" data-load-form role="search">
       <label class="pv-dir__field">
         <i data-lucide="user" aria-hidden="true"></i>
         <span class="pv-visually-hidden">Player name</span>
@@ -31,95 +33,108 @@
     </form>
   </header>
 
-  <p class="pv-note" data-load-status hidden></p>
+  <p class="xc-status" data-load-status hidden></p>
 
   <section class="xc-player" data-player hidden aria-live="polite">
-    <span class="pv-initials pv-initials--lg" data-player-initials></span>
+    <span class="pv-initials xc-player__avatar" data-player-initials aria-hidden="true"></span>
     <div class="xc-player__who">
       <a class="xc-player__name" data-player-link></a>
       <span class="pv-muted pv-small" data-player-facts></span>
     </div>
-    <dl class="xc-player__stats">
+    <dl class="xc-stats xc-stats--inline">
       <div><dt>Level</dt><dd data-player-level>—</dd></div>
       <div><dt data-player-xp-label>XP</dt><dd data-player-xp>—</dd></div>
-      <div><dt>Lately</dt><dd data-player-pace>—</dd></div>
+      <div><dt>Last 90 days</dt><dd data-player-pace>—</dd></div>
     </dl>
   </section>
 
   <noscript><p class="pv-note">The calculator needs JavaScript.</p></noscript>
 
-  <div class="xc-grid">
+  <nav class="pv-tabs xc-tabs" role="tablist" aria-label="Calculator">
+    <a class="pv-tab" href="#plan" role="tab" data-tab="plan">Plan a goal</a>
+    <a class="pv-tab" href="#compare" role="tab" data-tab="compare">Compare players</a>
+    <a class="pv-tab" href="#spread" role="tab" data-tab="spread">Level spread</a>
+    <a class="pv-tab" href="#age" role="tab" data-tab="age">Account age</a>
+  </nav>
 
-    <section class="pv-card" aria-labelledby="conv-title">
-      <h2 id="conv-title" class="pv-card__title">Level ↔ XP</h2>
-      <div class="xc-pair">
-        <label class="xc-field">Level<input type="number" min="1" max="5000" inputmode="numeric" data-conv-level></label>
-        <span class="xc-pair__arrow" aria-hidden="true">⇄</span>
-        <label class="xc-field">Total XP<input type="number" min="0" inputmode="numeric" data-conv-xp></label>
+  {# ── Plan ─────────────────────────────────────────────── #}
+  <section class="xc-panel" id="plan" role="tabpanel" data-panel="plan">
+    <div class="xc-plan">
+      <div class="xc-plan__inputs">
+        <div class="xc-pair">
+          <span class="xc-pair__name">From</span>
+          <label class="bv-num">
+            <span class="bv-num__label">Level</span>
+            <span class="bv-num__box">
+              <button type="button" class="bv-num__step" data-step="-1" aria-label="One level less">−</button>
+              <input type="number" min="1" max="5000" inputmode="numeric" data-start-level>
+              <button type="button" class="bv-num__step" data-step="1" aria-label="One level more">+</button>
+            </span>
+          </label>
+          <label class="bv-num">
+            <span class="bv-num__label">Total XP</span>
+            <span class="bv-num__box"><input type="number" min="0" step="100" inputmode="numeric" data-start-xp><span class="bv-num__unit">XP</span></span>
+          </label>
+        </div>
+        <div class="xc-levelbar" data-start-progress hidden>
+          <div class="xc-levelbar__track"><span class="xc-levelbar__fill" data-start-fill></span></div>
+          <p class="pv-small pv-muted" data-start-progress-text></p>
+        </div>
+
+        <div class="xc-pair">
+          <span class="xc-pair__name">To</span>
+          <label class="bv-num">
+            <span class="bv-num__label">Level</span>
+            <span class="bv-num__box">
+              <button type="button" class="bv-num__step" data-step="-1" aria-label="One level less">−</button>
+              <input type="number" min="1" max="5000" inputmode="numeric" data-goal-level>
+              <button type="button" class="bv-num__step" data-step="1" aria-label="One level more">+</button>
+            </span>
+          </label>
+          <label class="bv-num">
+            <span class="bv-num__label">Total XP</span>
+            <span class="bv-num__box"><input type="number" min="0" step="100" inputmode="numeric" data-goal-xp><span class="bv-num__unit">XP</span></span>
+          </label>
+        </div>
+        <div class="xc-quick" data-quick-goals aria-label="Quick goals"></div>
+
+        <label class="xc-pace">
+          <span class="xc-pace__row"><span class="bv-num__label">Wins a day</span><output data-pace-out>50</output></span>
+          <input type="range" class="bv-range" min="1" max="180" value="50" data-pace>
+          <span class="bv-range__scale" aria-hidden="true"><span>1</span><span>45</span><span>90</span><span>135</span><span>180 · the daily max</span></span>
+        </label>
       </div>
-      <div class="xc-progress" data-conv-progress hidden>
-        <div class="xc-progress__labels pv-small"><span data-conv-from></span><span data-conv-pct></span><span data-conv-to></span></div>
-        <div class="xc-bar"><span class="xc-bar__fill" data-conv-fill></span></div>
-        <p class="pv-muted pv-small" data-conv-left></p>
+
+      <div class="xc-plan__out" aria-live="polite">
+        <dl class="xc-stats">
+          <div><dt>XP to go</dt><dd data-goal-xp-needed>—</dd></div>
+          <div><dt>Won rounds</dt><dd data-goal-wins>—</dd></div>
+          <div><dt>Days at the daily max</dt><dd data-goal-days-cap>—</dd></div>
+        </dl>
+        <ul class="xc-etas">
+          <li data-eta-pace><span class="xc-etas__sw xc-sw--pace"></span><span data-goal-eta>Enter a start and a goal, or load a player.</span></li>
+          <li data-eta-player hidden><span class="xc-etas__sw xc-sw--player"></span><span data-goal-eta-player></span></li>
+          <li data-eta-cap hidden><span class="xc-etas__sw xc-sw--cap"></span><span data-goal-eta-cap></span></li>
+        </ul>
       </div>
-      <h3 class="pv-sub">Next milestones</h3>
-      <ul class="xc-milestones" data-conv-milestones></ul>
-    </section>
+    </div>
 
-    <section class="pv-card" aria-labelledby="goal-title">
-      <h2 id="goal-title" class="pv-card__title">Plan a goal</h2>
-      <div class="xc-goalrows">
-        <span class="xc-goalrows__lbl">Start</span>
-        <label class="xc-field">Level<input type="number" min="1" max="5000" data-start-level></label>
-        <label class="xc-field">XP<input type="number" min="0" data-start-xp></label>
-        <span class="xc-goalrows__lbl">Goal</span>
-        <label class="xc-field">Level<input type="number" min="1" max="5000" data-goal-level></label>
-        <label class="xc-field">XP<input type="number" min="0" data-goal-xp></label>
+    <div class="xc-chartbar">
+      <h2 class="xc-h2">How it plays out</h2>
+      <div class="bv-seg" role="group" aria-label="Chart" data-plan-view>
+        <button type="button" data-view="ahead" aria-pressed="true">From today</button>
+        <button type="button" data-view="history" aria-pressed="false" disabled>With their history</button>
       </div>
-      <div class="xc-bar xc-bar--goal" aria-hidden="true"><span class="xc-bar__fill" data-goal-fill></span></div>
-      <p class="pv-muted pv-small" data-goal-bar-text></p>
+    </div>
+    <div class="xc-chart" data-plan-chart></div>
 
-      <dl class="xc-results">
-        <div><dt>XP to go</dt><dd data-goal-xp-needed>—</dd></div>
-        <div><dt>Won rounds</dt><dd data-goal-wins>—</dd></div>
-        <div><dt>Days at the daily max</dt><dd data-goal-days-cap>—</dd></div>
-      </dl>
+    <h2 class="xc-h2 xc-h2--spaced">Next milestones</h2>
+    <ol class="xc-milestones" data-milestones></ol>
+  </section>
 
-      <label class="xc-slider">
-        <span class="xc-slider__row"><span>Wins a day</span><output data-pace-out>50</output></span>
-        <input type="range" min="1" max="180" value="50" data-pace>
-      </label>
-      <p class="xc-eta" data-goal-eta></p>
-      <p class="xc-eta xc-eta--player" data-goal-eta-player hidden></p>
-
-      <figure class="xc-chart xc-chart--projection" data-proj>
-        <svg viewBox="0 0 600 220" preserveAspectRatio="none" aria-hidden="true" data-proj-svg></svg>
-        <span class="xc-chart__cross" data-proj-cross hidden></span>
-        <div class="xc-tip" data-proj-tip hidden></div>
-        <figcaption class="xc-legend pv-small">
-          <span><span class="pv-swatch xc-sw--cap"></span>Every day at the max</span>
-          <span><span class="pv-swatch xc-sw--pace"></span>At <span data-pace-legend>50</span> wins a day</span>
-          <span data-proj-player-legend hidden><span class="pv-swatch xc-sw--player"></span>At their recent pace</span>
-        </figcaption>
-      </figure>
-    </section>
-
-    <section class="pv-card xc-wide" aria-labelledby="stand-title" data-stand>
-      <div class="pv-card__head">
-        <h2 id="stand-title" class="pv-card__title">Where a level stands</h2>
-        <span class="pv-muted pv-small" data-stand-source>Players seen in replays</span>
-      </div>
-      <p class="xc-stand__headline" data-stand-headline>Loading the level spread…</p>
-      <div class="xc-hist" data-hist role="img" aria-label="Players by level"></div>
-      <div class="xc-hist__axis pv-small pv-muted" data-hist-axis></div>
-      <p class="pv-muted pv-small" data-hist-tip>Point at a bar to see how many players are at those levels.</p>
-    </section>
-
-    <section class="pv-card xc-wide" aria-labelledby="cmp-title" data-compare>
-      <div class="pv-card__head">
-        <h2 id="cmp-title" class="pv-card__title">Compare players</h2>
-        <span class="pv-muted pv-small">Up to 4 · levels over time from replays</span>
-      </div>
+  {# ── Compare ──────────────────────────────────────────── #}
+  <section class="xc-panel" id="compare" role="tabpanel" data-panel="compare" hidden>
+    <div class="xc-chartbar">
       <form class="xc-addplayer" data-cmp-form>
         <label class="pv-dir__field">
           <i data-lucide="user-plus" aria-hidden="true"></i>
@@ -128,58 +143,87 @@
         </label>
         <button type="submit" class="pv-btn pv-btn--ghost">Add</button>
       </form>
-      <p class="pv-muted pv-small" data-cmp-status></p>
-      <ul class="xc-chips" data-cmp-chips></ul>
-      <figure class="xc-chart xc-chart--compare" data-cmp-chart hidden>
-        <svg viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true" data-cmp-svg></svg>
-        <span class="xc-chart__cross" data-cmp-cross hidden></span>
-        <div class="xc-tip" data-cmp-tip hidden></div>
-        <figcaption class="xc-chart__axis pv-small pv-muted"><span data-cmp-from></span><span data-cmp-to></span></figcaption>
-      </figure>
-      <div class="pv-tablewrap" data-cmp-tablewrap hidden>
-        <table class="pv-table xc-table">
-          <thead>
-            <tr>
-              <th scope="col">Player</th>
-              <th scope="col" class="pv-num">Level</th>
-              <th scope="col" class="pv-num">XP</th>
-              <th scope="col">Account made</th>
-              <th scope="col" class="pv-num">Levels / 30 days</th>
-              <th scope="col">Reaches <span data-cmp-goal-label>goal</span></th>
-            </tr>
-          </thead>
-          <tbody data-cmp-rows></tbody>
-        </table>
+      <div class="bv-seg" role="group" aria-label="Show" data-cmp-view>
+        <button type="button" data-view="level" aria-pressed="true">Level</button>
+        <button type="button" data-view="xp" aria-pressed="false">XP</button>
       </div>
-    </section>
+    </div>
+    <p class="xc-status" data-cmp-status></p>
+    <ul class="xc-chips" data-cmp-chips></ul>
+    <div class="xc-chart" data-cmp-chart></div>
+    <div class="pv-tablewrap">
+      <table class="pv-table xc-table" data-cmp-table hidden>
+        <thead>
+          <tr>
+            <th scope="col">Player</th>
+            <th scope="col" class="pv-num">Level</th>
+            <th scope="col" class="pv-num">XP</th>
+            <th scope="col">Account made</th>
+            <th scope="col" class="pv-num">Levels / 30 days</th>
+            <th scope="col">Reaches <span data-cmp-goal-label>goal</span></th>
+          </tr>
+        </thead>
+        <tbody data-cmp-rows></tbody>
+      </table>
+    </div>
+  </section>
 
-    <section class="pv-card xc-wide" aria-labelledby="dbid-title" data-dbid>
-      <div class="pv-card__head">
-        <h2 id="dbid-title" class="pv-card__title">When was an account made?</h2>
-        <span class="pv-muted pv-small">Account IDs count up, so an ID dates an account</span>
-      </div>
-      <div class="xc-dbid">
-        <label class="xc-field">Account ID<input type="number" min="1" inputmode="numeric" placeholder="e.g. 13159907" data-dbid-input></label>
-        <div class="xc-dbid__out" aria-live="polite">
-          <span class="xc-dbid__date" data-dbid-date>—</span>
-          <span class="pv-muted pv-small" data-dbid-age></span>
+  {# ── Level spread ─────────────────────────────────────── #}
+  <section class="xc-panel" id="spread" role="tabpanel" data-panel="spread" hidden>
+    <p class="xc-headline" data-spread-headline>Loading the level spread…</p>
+    <dl class="xc-stats xc-stats--row" data-spread-stats hidden>
+      <div><dt>Players</dt><dd data-spread-players>—</dd></div>
+      <div><dt>Middle player</dt><dd data-spread-median>—</dd></div>
+      <div><dt>Top 10% from</dt><dd data-spread-p90>—</dd></div>
+      <div><dt>Top 1% from</dt><dd data-spread-p99>—</dd></div>
+    </dl>
+    <div class="xc-chartbar">
+      <h2 class="xc-h2">Players by level</h2>
+      <div class="xc-chartbar__controls">
+        <div class="bv-seg" role="group" aria-label="Group by" data-spread-bucket>
+          <button type="button" data-bucket="5" aria-pressed="false">5 levels</button>
+          <button type="button" data-bucket="10" aria-pressed="true">10</button>
+          <button type="button" data-bucket="25" aria-pressed="false">25</button>
+        </div>
+        <div class="bv-seg" role="group" aria-label="Scale" data-spread-scale>
+          <button type="button" data-scale="linear" aria-pressed="true">Linear</button>
+          <button type="button" data-scale="log" aria-pressed="false">Log</button>
         </div>
       </div>
-      <figure class="xc-chart xc-chart--dbid" data-dbid-chart>
-        <svg viewBox="0 0 1000 260" preserveAspectRatio="none" aria-hidden="true" data-dbid-svg></svg>
-        <span class="xc-chart__cross" data-dbid-cross hidden></span>
-        <span class="xc-chart__dot" data-dbid-dot hidden></span>
-        <div class="xc-tip" data-dbid-tip hidden></div>
-        <figcaption class="xc-chart__axis pv-small pv-muted"><span data-dbid-first></span><span data-dbid-last></span></figcaption>
-      </figure>
-      <p class="pv-fine">An estimate: a straight line between the two nearest accounts with a known creation date. Known dates collected by the community (<a href="https://github.com/shaunx777/dbid2date">shaunx777/dbid2date</a>, <a href="https://bonkonauts.github.io/">bonkonauts</a>).</p>
-    </section>
+    </div>
+    <div class="xc-chart" data-spread-chart></div>
+    <p class="pv-fine">Every registered player seen in replays, counted once at the highest level a replay shows. The "From" level in Plan a goal is marked.</p>
+  </section>
 
-  </div>
-  <p class="pv-fine">Replays show levels, not XP, so a player's XP is only exact when they've signed in to Bonkverse; otherwise it's the least XP their level needs. Paces come from level-ups in their last 90 days of replays.</p>
+  {# ── Account age ──────────────────────────────────────── #}
+  <section class="xc-panel" id="age" role="tabpanel" data-panel="age" hidden>
+    <div class="xc-age">
+      <label class="bv-num xc-age__input">
+        <span class="bv-num__label">Account ID</span>
+        <span class="bv-num__box"><span class="bv-num__unit">#</span><input type="number" min="1" inputmode="numeric" placeholder="13159907" data-dbid-input></span>
+      </label>
+      <div class="xc-age__out" aria-live="polite">
+        <span class="xc-age__date" data-dbid-date>—</span>
+        <span class="pv-muted" data-dbid-age>Type an account ID to date it.</span>
+      </div>
+    </div>
+    <div class="xc-chartbar">
+      <h2 class="xc-h2">bonk.io accounts over time</h2>
+      <div class="bv-seg" role="group" aria-label="Chart" data-age-view>
+        <button type="button" data-view="timeline" aria-pressed="true">IDs by date</button>
+        <button type="button" data-view="yearly" aria-pressed="false">New accounts a year</button>
+      </div>
+    </div>
+    <div class="xc-chart" data-age-chart></div>
+    <p class="pv-fine">Account IDs count up as accounts are made, so an ID is dated by a straight line between the two nearest accounts with a known creation date (collected by the community: <a href="https://github.com/shaunx777/dbid2date">shaunx777/dbid2date</a>, <a href="https://bonkonauts.github.io/">bonkonauts</a>). Loaded and compared players are marked.</p>
+  </section>
+
+  <p class="pv-fine xc-foot">Replays show levels, not XP, so a player's XP is exact only when they've signed in to Bonkverse; otherwise it's the least XP their level needs. Paces come from level-ups in their last 90 days of replays.</p>
 </main>
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="{% static 'core/js/bv-chart.js' %}"></script>
+<script src="{% static 'core/js/bv-controls.js' %}"></script>
 <script src="{% static 'js/xp_calculator.js' %}"></script>
 {% endblock %}

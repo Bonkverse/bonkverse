@@ -3,73 +3,54 @@
 
 {% block tab_title %} · Level{% endblock %}
 
+{% block tab_head %}
+<link rel="stylesheet" href="{% static 'css/charts.css' %}">
+<link rel="stylesheet" href="{% static 'css/controls.css' %}">
+{% endblock %}
+
 {% block tab %}
 {{ script_data|json_script:"level-data" }}
 
-<section class="pv-card" aria-labelledby="lx-title" data-level>
-  <div class="pv-card__head pv-card__head--wrap">
+<section class="pv-open" aria-labelledby="lx-title" data-level>
+  <div class="pv-open__head">
     <div>
-      <h2 id="lx-title" class="pv-card__title">Level explorer</h2>
-      <span class="pv-muted pv-small" data-range-label>
+      <h2 id="lx-title" class="pv-section__title">Level over time</h2>
+      <span class="pv-muted" data-range-label>
         {% if sparkline %}{{ sparkline.first_day|date:"M j, Y" }} – {{ sparkline.last_day|date:"M j, Y" }}{% endif %}
       </span>
     </div>
-    <div class="pv-seg" role="group" aria-label="Zoom" data-presets hidden>
-      <button type="button" data-days="7">1W</button>
-      <button type="button" data-days="30">1M</button>
-      <button type="button" data-days="90">3M</button>
-      <button type="button" data-days="365">1Y</button>
+    <div class="bv-seg" role="group" aria-label="Show the last" data-presets hidden>
+      <button type="button" data-days="7" aria-pressed="false">Week</button>
+      <button type="button" data-days="30" aria-pressed="false">Month</button>
+      <button type="button" data-days="90" aria-pressed="false">3 months</button>
+      <button type="button" data-days="365" aria-pressed="false">Year</button>
       <button type="button" data-days="all" aria-pressed="true">All</button>
     </div>
   </div>
 
-  <div class="pv-readout" aria-live="polite">
-    <span class="pv-readout__num" data-read-level>{% if summary %}Level {{ summary.current_level }}{% endif %}</span>
-    <span class="pv-muted" data-read-day>{% if sparkline %}{{ sparkline.last_day|date:"M j, Y" }}{% endif %}</span>
-  </div>
-
-  <div class="pv-plot" data-plot>
+  <div class="pv-levelchart" data-level-chart>
     {% if sparkline %}
-      <svg class="pv-plot__svg" viewBox="0 0 1000 280" preserveAspectRatio="none" aria-hidden="true" data-plot-svg>
-        <polygon class="pv-spark__area" points="{{ sparkline.area }}" data-plot-area></polygon>
-        <polyline class="pv-spark__line" points="{{ sparkline.line }}" data-plot-line></polyline>
+      <svg class="pv-levelchart__fallback" viewBox="0 0 1000 280" preserveAspectRatio="none" role="img"
+           aria-label="Level {{ sparkline.low }} on {{ sparkline.first_day|date:'M j, Y' }} to {{ sparkline.high }} on {{ sparkline.last_day|date:'M j, Y' }}">
+        <polygon class="pv-spark__area" points="{{ sparkline.area }}"></polygon>
+        <polyline class="pv-spark__line" points="{{ sparkline.line }}"></polyline>
       </svg>
-      <span class="pv-plot__axis pv-plot__axis--top pv-small" data-plot-hi>Level {{ sparkline.high }}</span>
-      <span class="pv-plot__axis pv-plot__axis--bottom pv-small" data-plot-lo>Level {{ sparkline.low }}</span>
-      <span class="pv-plot__cross" data-cross hidden></span>
-      <span class="pv-plot__dot" data-dot hidden></span>
     {% else %}
-      <p class="pv-muted pv-plot__empty">Not enough days with replays to draw a line yet.</p>
+      <p class="pv-muted">Not enough days with replays to draw a line yet.</p>
     {% endif %}
   </div>
 
-  <div class="pv-brush" data-brush hidden>
-    <p class="pv-small pv-muted">Drag the handles to pick any stretch of days</p>
-    <div class="pv-brush__mini">
-      <svg viewBox="0 0 1000 56" preserveAspectRatio="none" aria-hidden="true"><polyline data-mini-line></polyline></svg>
-      <span class="pv-brush__window" data-mini-window></span>
-    </div>
-    <div class="pv-brush__inputs">
-      <label>From <span data-from-label></span>
-        <input type="range" min="0" value="0" data-from>
-      </label>
-      <label>To <span data-to-label></span>
-        <input type="range" min="0" value="0" data-to>
-      </label>
-    </div>
-  </div>
+  <dl class="pv-statrow" data-range-stats hidden>
+    <div><dt>Levels gained</dt><dd data-t-gained>—</dd></div>
+    <div><dt>Replays</dt><dd data-t-replays>—</dd></div>
+    <div><dt>Replays per level</dt><dd data-t-per-level>—</dd></div>
+    <div><dt>Time per level</dt><dd data-t-days-per-level>—</dd></div>
+  </dl>
 </section>
 
-<section class="pv-tiles" aria-label="In this range" data-range-tiles hidden>
-  <div class="pv-tile"><span class="pv-tile__val" data-t-gained></span><span class="pv-tile__lbl">Levels gained</span></div>
-  <div class="pv-tile"><span class="pv-tile__val" data-t-replays></span><span class="pv-tile__lbl">Replays in range</span></div>
-  <div class="pv-tile"><span class="pv-tile__val" data-t-per-level></span><span class="pv-tile__lbl">Replays per level</span></div>
-  <div class="pv-tile"><span class="pv-tile__val" data-t-days-per-level></span><span class="pv-tile__lbl">Average time per level</span></div>
-</section>
-
-<div class="pv-split">
-  <section class="pv-card pv-split__main" aria-labelledby="ups-title">
-    <h2 id="ups-title" class="pv-card__title">Level-ups <span class="pv-muted pv-small" data-ups-scope>(latest)</span></h2>
+<div class="pv-open-split">
+  <section class="pv-open" aria-labelledby="ups-title">
+    <h2 id="ups-title" class="pv-section__title">Level-ups <span class="pv-muted pv-small" data-ups-scope>latest</span></h2>
     <div class="pv-tablewrap">
       <table class="pv-table">
         <thead>
@@ -92,16 +73,16 @@
     <p class="pv-fine">Replays show a player's level, not their XP, so a level-up is dated by the first replay that shows it. Older replays have estimated days.</p>
   </section>
 
-  <section class="pv-card pv-card--accent pv-split__side" aria-labelledby="next-title" data-next>
-    <i data-lucide="trending-up" class="pv-card__icon" aria-hidden="true"></i>
-    <h2 id="next-title" class="pv-card__title">What's next</h2>
-    <p data-next-text>Pick a range above to see the pace.</p>
-    <p class="pv-muted pv-small">An estimate from this range's pace, not a promise.</p>
-    <a class="pv-btn" href="{% url 'xp_calculator' %}?player={{ username|urlencode }}">Plan it in the XP calculator</a>
+  <section class="pv-open pv-next" aria-labelledby="next-title" data-next>
+    <h2 id="next-title" class="pv-section__title">What's next</h2>
+    <p class="pv-next__text" data-next-text>Pick a stretch of the chart to see the pace.</p>
+    <p class="pv-muted pv-small">An estimate from the pace in the stretch you're looking at, not a promise.</p>
+    <a class="pv-btn" href="{% url 'xp_calculator' %}?player={{ username|urlencode }}#plan">Plan it in the XP calculator</a>
   </section>
 </div>
 {% endblock %}
 
 {% block tab_scripts %}
+<script src="{% static 'core/js/bv-chart.js' %}"></script>
 <script src="{% static 'js/player_level.js' %}"></script>
 {% endblock %}

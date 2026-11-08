@@ -175,35 +175,6 @@
 .pv-spark__area { fill: var(--pv-action); fill-opacity: 0.12; }
 .pv-spark__line { fill: none; stroke: var(--pv-action); stroke-width: 3; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 
-.pv-readout { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
-.pv-readout__num { font-size: 2rem; font-weight: 700; }
-.pv-plot {
-  position: relative; height: 280px; border-radius: 12px; overflow: hidden;
-  background: var(--pv-inset) repeating-linear-gradient(to bottom, transparent 0 69px, var(--pv-panel-2) 69px 70px);
-  touch-action: pan-y; cursor: crosshair;
-}
-.pv-plot__svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.pv-plot__axis { position: absolute; right: 12px; color: var(--pv-muted); pointer-events: none; }
-.pv-plot__axis--top { top: 8px; }
-.pv-plot__axis--bottom { bottom: 8px; }
-.pv-plot__empty { padding: 24px; margin: 0; }
-.pv-plot__cross { position: absolute; top: 0; bottom: 0; width: 2px; left: var(--x); background: var(--pv-warm); pointer-events: none; }
-.pv-plot__dot {
-  position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -6px; left: var(--x); top: var(--y);
-  border-radius: 50%; background: var(--pv-warm); border: 2px solid var(--pv-inset); pointer-events: none;
-}
-.pv-brush { margin-top: 18px; }
-.pv-brush p { margin: 0 0 6px; }
-.pv-brush__mini { position: relative; height: 56px; background: var(--pv-inset); border-radius: 10px; overflow: hidden; }
-.pv-brush__mini svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.pv-brush__mini polyline { fill: none; stroke: #5d7891; stroke-width: 2; vector-effect: non-scaling-stroke; }
-.pv-brush__window {
-  position: absolute; top: 0; bottom: 0; left: var(--from, 0%); right: calc(100% - var(--to, 100%));
-  background: rgba(71, 216, 196, 0.18); border-left: 2px solid var(--pv-action); border-right: 2px solid var(--pv-action);
-}
-.pv-brush__inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px 20px; margin-top: 8px; }
-.pv-brush__inputs label { display: flex; flex-direction: column; gap: 2px; color: var(--pv-muted); font-size: 0.85rem; }
-.pv-brush__inputs input { width: 100%; min-height: 32px; accent-color: var(--pv-action); }
 
 .pv-seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 12px; background: var(--pv-inset); border: 1px solid var(--pv-outline); }
 .pv-seg button, .pv-seg a {
@@ -417,7 +388,6 @@ button.pv-heat__week:hover, button.pv-heat__week[aria-pressed="true"] { outline:
   .pv-week__label { min-width: 0; flex: 1; font-size: 1.05rem; }
   .pv-week__nav { width: 100%; }
   .pv-hours { height: 120px; gap: 2px; }
-  .pv-plot { height: 220px; }
   .pv-thumb { width: 72px; height: 48px; }
   .pv-ranked__row { grid-template-columns: minmax(0, 1fr) 64px auto; }
   .pv-duo, .pv-trio { grid-template-columns: minmax(0, 1fr); }
@@ -499,3 +469,39 @@ button.pv-heat__week:hover, button.pv-heat__week[aria-pressed="true"] { outline:
 .pv-levelfacts { display: flex; flex-direction: column; gap: 4px; }
 .pv-levelfacts .pv-meter { margin: 0 0 4px; }
 .pv-chip i[data-lucide], .pv-chip svg.lucide { width: 14px; height: 14px; vertical-align: -2px; }
+
+/* Search fields: one focus ring on the field, none on the input inside it
+   (the site-wide input rules in forms.css and .pv :focus-visible otherwise
+   draw a second highlighted box). */
+.pv .pv-dir__field { transition: border-color 0.15s, box-shadow 0.15s; }
+.pv .pv-dir__field:focus-within { border-color: var(--pv-action); box-shadow: 0 0 0 3px rgba(71, 216, 196, 0.18); }
+.pv .pv-dir__field input,
+.pv .pv-dir__field input:focus,
+.pv .pv-dir__field input:focus-visible { outline: none; border: 0; box-shadow: none; background: transparent; }
+
+/* ── Open sections ─────────────────────────────────────────────────
+   Charts and lists sit on the page instead of in boxes: a hairline and
+   space separate sections; small linked tiles keep their cards. */
+.pv-open { padding: 24px 0 28px; border-top: 1px solid rgba(53, 74, 95, 0.7); min-width: 0; }
+.pv-tabs + .pv-open, .pv-tabs + script + .pv-open { border-top: 0; padding-top: 4px; }
+.pv-open > .pv-card__title, .pv-open > .pv-section__title { margin: 0 0 16px; }
+.pv-open__head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px 20px; flex-wrap: wrap; margin-bottom: 16px; }
+.pv-open__head .pv-section__title { margin: 0 0 2px; }
+.pv-open-split { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 0 48px; }
+.pv-duo > .pv-open, .pv-trio > .pv-open { border-top: 1px solid rgba(53, 74, 95, 0.7); }
+.pv-levelchart { min-height: 320px; }
+.pv-levelchart__fallback { display: block; width: 100%; height: 320px; }
+.pv-statrow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 28px; margin: 24px 0 0; }
+.pv-statrow div { display: flex; flex-direction: column-reverse; gap: 2px; }
+.pv-statrow dt { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8fa3b8; }
+.pv-statrow dd { margin: 0; font-size: 2rem; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.pv-next__text { font-size: 1.2rem; line-height: 1.45; margin: 0 0 8px; }
+.pv-next .pv-btn { margin-top: 12px; }
+@media (max-width: 760px) {
+  .pv-open-split { grid-template-columns: minmax(0, 1fr); }
+  .pv-statrow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pv-statrow dd { font-size: 1.5rem; }
+}
+.pv-tiles--open { padding: 8px 0 24px; border-top: 1px solid rgba(53, 74, 95, 0.7); }
+.pv-tiles--open .pv-tile { background: none; border: 0; padding: 16px 0 0; }
+.pv-tiles--open .pv-tile__val { font-size: 1.9rem; }
