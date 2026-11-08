@@ -16,7 +16,7 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 from skins.rerender import rerender_skin
 from skins.media import serve_media
 from skins.search import search_skins
@@ -111,6 +111,7 @@ urlpatterns = [
     path("api/tools/map-decode/", api_map_decode, name="api_map_decode"),
     path("api/skins/<int:skin_id>/report/", report_skin, name="report_skin"),
     path("social-stats/", social_stats, name="social_stats"),
+    path("", include("players.urls")),
     path("skins/<int:skin_id>/rerender/", rerender_skin, name="rerender_skin"),
     path("privacy/", privacy, name="privacy"),
     path("terms/", terms, name="terms"),

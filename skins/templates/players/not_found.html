@@ -1,0 +1,21 @@
+{% extends 'skins/base.html' %}
+{% load static %}
+
+{% block title %}Player not found · Bonkverse{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/player_profile.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="pv" id="main">
+  <div class="pv-card pv-empty">
+    <h1>No profile for “{{ username }}”</h1>
+    <p class="pv-muted">
+      There are no replays with this registered bonk.io player yet, and no Bonkverse account by this name.
+      Guest players don't get profiles because their names aren't unique.
+    </p>
+    <p><a class="pv-btn" href="{{ BONKVERSE_REPLAYS_URL }}">Search replays</a></p>
+  </div>
+</main>
+{% endblock %}

@@ -1,0 +1,187 @@
+{% comment %}
+A player's replay stats: the profile page and the Replays tab on My Profile.
+
+replays         charts.build(...) output, or None
+replays_error   "not_found" / "unavailable" / "not_configured" when replays is None
+shown           {section: bool} from ProfileVisibility (everything for the owner)
+username        the player's name
+{% endcomment %}
+{% if replays %}
+  {% with s=replays.summary %}
+  <section class="pv-tiles" aria-label="Summary">
+    {% if shown.level_history %}
+      <div class="pv-tile"><span class="pv-tile__val">{{ s.current_level }}</span><span class="pv-tile__lbl">Level</span></div>
+      <div class="pv-tile"><span class="pv-tile__val">{{ s.peak_level }}</span><span class="pv-tile__lbl">Highest level seen</span></div>
+    {% endif %}
+    {% if shown.activity %}
+      <div class="pv-tile"><span class="pv-tile__val">{{ s.games }}</span><span class="pv-tile__lbl">Replays</span></div>
+      <div class="pv-tile"><span class="pv-tile__val">{{ s.active_days }}</span><span class="pv-tile__lbl">Days played</span></div>
+      {% if s.first_day %}<div class="pv-tile"><span class="pv-tile__val">{{ s.first_day|date:"M j, Y" }}</span><span class="pv-tile__lbl">First replay</span></div>{% endif %}
+      {% if s.last_day %}<div class="pv-tile"><span class="pv-tile__val">{{ s.last_day|date:"M j, Y" }}</span><span class="pv-tile__lbl">Latest replay</span></div>{% endif %}
+    {% endif %}
+  </section>
+  {% endwith %}
+
+  {% if shown.level_history and replays.level_chart %}
+    {% with c=replays.level_chart %}
+    <section class="pv-card" aria-labelledby="pv-level-h">
+      <div class="pv-card__head">
+        <h2 id="pv-level-h">Level history</h2>
+        {% if c.gained %}<span class="pv-muted">+{{ c.gained }} level{{ c.gained|pluralize }} since {{ c.first_day|date:"M Y" }}</span>{% endif %}
+      </div>
+      <figure class="pv-line">
+        <svg viewBox="0 0 {{ c.width }} {{ c.height }}" preserveAspectRatio="none" role="img"
+             aria-label="Level {{ c.low }} to {{ c.high }}, {{ c.first_day|date:'M j, Y' }} to {{ c.last_day|date:'M j, Y' }}">
+          <polyline class="pv-line__path" points="{{ c.points }}"></polyline>
+        </svg>
+        <figcaption class="pv-line__axis">
+          <span>{{ c.first_day|date:"M j, Y" }} · level {{ c.low }}</span>
+          <span>{{ c.last_day|date:"M j, Y" }} · level {{ c.high }}</span>
+        </figcaption>
+      </figure>
+      <p class="pv-fine">From the level shown in each replay. Older replays have estimated dates.</p>
+    </section>
+    {% endwith %}
+  {% endif %}
+
+  {% if shown.activity %}
+    <section class="pv-card" aria-labelledby="pv-activity-h">
+      <div class="pv-card__head"><h2 id="pv-activity-h">Activity</h2></div>
+
+      {% if replays.months %}
+        <h3 class="pv-sub">Replays per month</h3>
+        <ol class="pv-cols">
+          {% for m in replays.months %}
+            <li title="{{ m.label|date:'F Y' }}: {{ m.games }} replays">
+              <span class="pv-cols__bar" style="--bar: {{ m.bar }}%"></span>
+              <span class="pv-cols__lbl">{{ m.label|date:"M" }}{% if m.label.month == 1 or forloop.first %}<br>{{ m.label|date:"Y" }}{% endif %}</span>
+            </li>
+          {% endfor %}
+        </ol>
+      {% endif %}
+
+      <div class="pv-split">
+        <div>
+          <h3 class="pv-sub">By weekday</h3>
+          <ol class="pv-cols pv-cols--short">
+            {% for d in replays.weekdays %}
+              <li title="{{ d.label }}: {{ d.games }} replays">
+                <span class="pv-cols__bar" style="--bar: {{ d.bar }}%"></span>
+                <span class="pv-cols__lbl">{{ d.label }}</span>
+              </li>
+            {% endfor %}
+          </ol>
+        </div>
+        {% if replays.hours %}
+          <div>
+            <h3 class="pv-sub">By hour (UTC)</h3>
+            <ol class="pv-cols pv-cols--short pv-cols--dense">
+              {% for h in replays.hours.bars %}
+                <li title="{{ h.hour }}:00 UTC: {{ h.games }} replays">
+                  <span class="pv-cols__bar" style="--bar: {{ h.bar }}%"></span>
+                  <span class="pv-cols__lbl">{% if h.hour|divisibleby:6 %}{{ h.hour }}{% endif %}</span>
+                </li>
+              {% endfor %}
+            </ol>
+            <p class="pv-fine">From {{ replays.hours.sample }} replays collected live; older replays only have a date.</p>
+          </div>
+        {% endif %}
+      </div>
+    </section>
+  {% endif %}
+
+  {% if shown.maps_and_modes %}
+    <section class="pv-card pv-split" aria-label="Modes and maps">
+      <div>
+        <h2>Modes</h2>
+        <ul class="pv-rows">
+          {% for m in replays.modes %}
+            <li>
+              <span class="pv-rows__name">{{ m.label }}</span>
+              <span class="pv-rows__bar" style="--bar: {{ m.bar }}%"></span>
+              <span class="pv-rows__num">{{ m.bar|floatformat:0 }}%</span>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div>
+        <h2>Most played maps</h2>
+        <ul class="pv-rows">
+          {% for m in replays.maps %}
+            <li>
+              <a class="pv-rows__name" href="{{ m.url }}">{{ m.name }}</a>
+              <span class="pv-rows__bar" style="--bar: {{ m.bar }}%"></span>
+              <span class="pv-rows__num">{{ m.games }}</span>
+            </li>
+          {% empty %}
+            <li class="pv-muted">No maps yet.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </section>
+  {% endif %}
+
+  {% if shown.play_partners %}
+    <section class="pv-card pv-split" aria-label="Play partners">
+      <div>
+        <h2>Plays with most</h2>
+        <ul class="pv-people">
+          {% for p in replays.played_with %}
+            <li>
+              <a href="{{ p.profile_path }}">{{ p.username }}</a>
+              <a class="pv-muted" href="{{ p.replays_url }}">{{ p.games }} replay{{ p.games|pluralize }}</a>
+            </li>
+          {% empty %}
+            <li class="pv-muted">No registered players seen together yet.</li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div>
+        <h2>Teams with most</h2>
+        <ul class="pv-people">
+          {% for p in replays.teammates %}
+            <li>
+              <a href="{{ p.profile_path }}">{{ p.username }}</a>
+              <a class="pv-muted" href="{{ p.replays_url }}">{{ p.games }} team game{{ p.games|pluralize }}</a>
+            </li>
+          {% empty %}
+            <li class="pv-muted">No team games with registered players yet.</li>
+          {% endfor %}
+        </ul>
+      </div>
+      <p class="pv-fine pv-split__full">Registered players only. Guests' names aren't unique, so they aren't counted.</p>
+    </section>
+  {% endif %}
+
+  {% if shown.recent_replays %}
+    <section class="pv-card" aria-labelledby="pv-recent-h">
+      <div class="pv-card__head">
+        <h2 id="pv-recent-h">Recent replays</h2>
+        <a class="pv-link" href="{{ replays.all_replays_url }}">All replays ›</a>
+      </div>
+      <ul class="pv-replays">
+        {% for r in replays.recent %}
+          <li>
+            <a href="{{ r.url }}">
+              <span class="pv-replays__map">{{ r.map }}</span>
+              <span class="pv-muted">{{ r.mode }} · {{ r.players }} player{{ r.players|pluralize }}{% if r.day %} · {% if r.estimated %}≈ {% endif %}{{ r.day|date:"M j, Y" }}{% endif %}</span>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
+  <p class="pv-fine">Built from replays on <a href="{{ replays_url }}">Bonkverse Replays</a>. Replays don't record who won, so there's no win rate.</p>
+
+{% elif replays_error == "not_found" %}
+  <div class="pv-card pv-empty">
+    <p>No replays found for <strong>{{ username }}</strong> as a registered player yet.</p>
+    <p class="pv-muted">Replays come from bonk.io's public replay list and new ones arrive every few minutes.</p>
+  </div>
+{% else %}
+  <div class="pv-card pv-empty">
+    <p>Replay stats can't be loaded right now.</p>
+    <p class="pv-muted">Please try again in a few minutes.</p>
+  </div>
+{% endif %}

@@ -1,0 +1,44 @@
+{% extends 'skins/base.html' %}
+{% load static %}
+
+{% block title %}Profile settings · Bonkverse{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/player_profile.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="pv pv--narrow" id="main">
+  <header class="pv-hero">
+    <div class="pv-hero__text">
+      <h1>Profile settings</h1>
+      <p class="pv-muted">Choose what other people see on your public profile. You always see everything on your own.</p>
+    </div>
+    <div class="pv-hero__actions">
+      <a class="pv-btn pv-btn--ghost" href="{% url 'player_profile' user.username %}">View my profile</a>
+    </div>
+  </header>
+
+  <form method="post" class="pv-card pv-settings">
+    {% csrf_token %}
+    <fieldset>
+      <legend>Public sections</legend>
+      {% for s in sections %}
+        <label class="pv-switch">
+          <span class="pv-switch__text">
+            <span class="pv-switch__label">{{ s.label }}</span>
+            <span class="pv-muted">{{ s.help }}</span>
+          </span>
+          <input type="checkbox" role="switch" name="{{ s.field }}" {% if s.on %}checked{% endif %}>
+          <span class="pv-switch__track" aria-hidden="true"></span>
+        </label>
+      {% endfor %}
+    </fieldset>
+    <p class="pv-fine">
+      Replays themselves stay public on Bonkverse Replays, the same as on bonk.io.
+      These switches hide the stats built from them on your profile.
+    </p>
+    <button type="submit" class="pv-btn">Save</button>
+  </form>
+</main>
+{% endblock %}
