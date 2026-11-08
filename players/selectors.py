@@ -10,18 +10,31 @@ visitors; the owner always sees everything.
 from __future__ import annotations
 
 import hashlib
+from urllib.parse import urlencode
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.paginator import Paginator
+from django.db.models.functions import Lower
 from django.utils import timezone
 
-from integrations.replays import PlayerError, get_player_configured, get_player_map_configured
+from integrations.replays import (
+    PlayerError,
+    get_player_configured,
+    get_player_map_configured,
+    lookup_players_configured,
+    search_players_configured,
+)
 from skins.pagination_utils import elided_page_range
 from skins.selectors import (
     SKIN_SORTS,
+    account_links_for,
+    bonk_players_matching,
+    bonk_players_named,
     creator_stats,
+    flash_friend_counts,
+    flash_friends_matching,
     decorate_skins_for_user,
     favorites_of,
     skins_created_by,
@@ -272,3 +285,135 @@ def skins(base, viewer, view, sort, page):
         "elided_range": elided_page_range(page_obj),
         "base_qs": f"view={view}&sort={sort}",
     }
+
+
+# ── Player directory (the "Players" page) ────────────────────────
+
+DIRECTORY_PAGE_SIZE = 24
+DIRECTORY_VIEWS = [
+    ("all", "All players"),
+    ("replays", "Most active"),
+    ("flash", "Flash friends"),
+]
+
+
+def replay_lookup(names):
+    """{lower name: {username, games, level}} for names with replays, cached
+    per name set; {} (and error) when the replay site can't be reached."""
+    names = sorted({n for n in names if n}, key=str.lower)
+    return _cached(_cache_key("lookup", *names), lambda: lookup_players_configured(names))
+
+
+def _accounts_named(names):
+    lowered = {n.lower() for n in names}
+    if not lowered:
+        return set()
+    return set(
+        get_user_model()
+        .objects.annotate(lname=Lower("username"))
+        .filter(lname__in=lowered)
+        .values_list("lname", flat=True)
+    )
+
+
+def _card(name, *, stats, member, bonk_player=None, flash_friends=None, listed_by=None):
+    """One player card. It links to the profile only when there is one
+    (replays or a Bonkverse account)."""
+    has_profile = bool(stats) or member
+    return {
+        "username": name,
+        "initials": name.strip()[:2].upper() or "?",
+        "profile_url": charts.profile_path(name) if has_profile else None,
+        "member": member,
+        "level": (stats or {}).get("level") or None,
+        "games": (stats or {}).get("games"),
+        "bonk_id": bonk_player.bonk_id if bonk_player else None,
+        "friends": bonk_player.last_friend_count if bonk_player else None,
+        "flash_friends": flash_friends,
+        "listed_by": listed_by,
+    }
+
+
+def directory(query, view, page):
+    """Context for players/directory.html: one search over Bonk players
+    (synced from bonk.io friend lists), replay players and legacy flash
+    friends, as cards that open player profiles."""
+    query = (query or "").strip()[:100]
+    view = view if view in dict(DIRECTORY_VIEWS) else "all"
+    ctx = {
+        "query": query,
+        "view": view,
+        "views": DIRECTORY_VIEWS,
+        "cards": [],
+        "page_obj": None,
+        "replays_error": None,
+        "base_qs": urlencode_qs(query, view),
+    }
+
+    if view == "replays":
+        if len(query) < 3:
+            ctx["needs_query"] = True
+            return ctx
+        found, error = _cached(
+            _cache_key("search", query), lambda: search_players_configured(query)
+        )
+        ctx["replays_error"] = error
+        rows = found or []
+        names = [r["username"] for r in rows]
+        players = bonk_players_named(names)
+        members = _accounts_named(names)
+        ctx["cards"] = [
+            _card(
+                r["username"],
+                stats=r,
+                member=r["username"].lower() in members,
+                bonk_player=players.get(r["username"].lower()),
+            )
+            for r in rows
+        ]
+        return ctx
+
+    if view == "flash":
+        page_obj = Paginator(flash_friends_matching(query), DIRECTORY_PAGE_SIZE).get_page(page)
+        names = [f.bonk_player.username if f.bonk_player else f.name for f in page_obj]
+        stats, ctx["replays_error"] = replay_lookup(names)
+        members = _accounts_named(names)
+        ctx["cards"] = [
+            _card(
+                n,
+                stats=(stats or {}).get(n.lower()),
+                member=n.lower() in members,
+                bonk_player=f.bonk_player,
+                listed_by=f.listed_by,
+            )
+            for f, n in zip(page_obj, names, strict=True)
+        ]
+        ctx.update(page_obj=page_obj, elided_range=elided_page_range(page_obj))
+        return ctx
+
+    page_obj = Paginator(bonk_players_matching(query), DIRECTORY_PAGE_SIZE).get_page(page)
+    players = list(page_obj)
+    names = [p.username for p in players]
+    stats, ctx["replays_error"] = replay_lookup(names)
+    links = account_links_for(players)
+    flash = flash_friend_counts(links.values())
+    members = _accounts_named(names)
+    ctx["cards"] = [
+        _card(
+            p.username,
+            stats=(stats or {}).get(p.username.lower()),
+            member=p.linked or p.username.lower() in members,
+            bonk_player=p,
+            flash_friends=flash.get(links.get(p.id)),
+        )
+        for p in players
+    ]
+    ctx.update(page_obj=page_obj, elided_range=elided_page_range(page_obj))
+    return ctx
+
+
+def urlencode_qs(query, view):
+    params = {"view": view}
+    if query:
+        params["q"] = query
+    return urlencode(params)

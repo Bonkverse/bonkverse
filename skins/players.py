@@ -1,17 +1,8 @@
 # skins/players.py
-from django.shortcuts import render
 from core.ratelimits import limit
 from django.http import JsonResponse
 from django.db.models import Count
 from .models import BonkPlayer, FlashFriendship, BonkAccountLink
-
-
-# @login_required
-@limit("browse")
-def players_page(request):
-    """Render the search UI page."""
-    total_players = BonkPlayer.objects.count()
-    return render(request, "players_search/players.html", {"total_players": total_players})
 
 
 # @login_required

@@ -1,0 +1,73 @@
+{% extends 'skins/base.html' %}
+{% load static %}
+
+{% block title %}{% if query %}“{{ query }}” · {% endif %}Players · Bonkverse{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/player_profile.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="pv" id="main">
+
+  <header class="pv-dir__head">
+    <h1 class="pv-dir__title">Players</h1>
+    <p class="pv-muted">Find anyone on bonk.io and open their profile: replays, level, maps, people and skins.</p>
+  </header>
+
+  <form class="pv-dir__search" method="get" action="{% url 'players_directory' %}" role="search">
+    <input type="hidden" name="view" value="{{ view }}">
+    <label class="pv-dir__field">
+      <i data-lucide="search" aria-hidden="true"></i>
+      <span class="pv-visually-hidden">Search players</span>
+      <input type="search" name="q" value="{{ query }}" placeholder="{% if view == 'flash' %}Search flash friend names{% elif view == 'replays' %}Name starts with… (3+ letters){% else %}Search by name or bonk.io ID{% endif %}" autocomplete="off" maxlength="100">
+    </label>
+    <button type="submit" class="pv-btn">Search</button>
+  </form>
+
+  <nav class="pv-seg pv-dir__views" aria-label="Show">
+    {% for key, label in views %}
+      <a href="?view={{ key }}{% if query %}&amp;q={{ query|urlencode }}{% endif %}"{% if view == key %} aria-current="page"{% endif %}>{{ label }}</a>
+    {% endfor %}
+  </nav>
+  <p class="pv-fine pv-dir__explain">
+    {% if view == 'replays' %}
+      Registered players seen in replays whose name starts with your search, most replays first.
+    {% elif view == 'flash' %}
+      Friends imported from the old Flash bonk and TinyTanks, most listed first. Names link to a profile when we know who they are now.
+    {% else %}
+      Every bonk.io account Bonkverse has seen through friend lists, Bonkverse members first.
+    {% endif %}
+  </p>
+
+  {% if replays_error and replays_error != "not_found" %}
+    <p class="pv-note"><i data-lucide="info" aria-hidden="true"></i> Replay stats can't be loaded right now, so levels and replay counts are missing.</p>
+  {% endif %}
+
+  {% if needs_query %}
+    <div class="pv-card pv-empty">
+      <p>Type at least 3 letters of a name to find the most active players.</p>
+    </div>
+  {% elif cards %}
+    {% if page_obj %}
+      <p class="pv-muted pv-small pv-dir__count">{{ page_obj.paginator.count }} player{{ page_obj.paginator.count|pluralize }}</p>
+    {% endif %}
+    <ul class="pv-pcards">
+      {% for c in cards %}
+        <li>{% include 'players/partials/_player_card.html' with card=c %}</li>
+      {% endfor %}
+    </ul>
+    {% if page_obj %}
+      {% include 'skins/partials/pagination.html' with page_obj=page_obj elided_range=elided_range base_qs=base_qs %}
+    {% endif %}
+  {% else %}
+    <div class="pv-card pv-empty">
+      <p>No players match “{{ query }}”.</p>
+      {% if view != 'replays' and query|length >= 3 %}
+        <p><a class="pv-link" href="?view=replays&amp;q={{ query|urlencode }}">Look for it among replay players</a></p>
+      {% endif %}
+    </div>
+  {% endif %}
+
+</main>
+{% endblock %}

@@ -1,7 +1,7 @@
 """The replay site's player API (ReplayRenderer, replays.bonkverse.io).
 
-Owns: the `GET /api/player/<name>` and `/api/player/<name>/map/<mapid>`
-requests, URL-encoding the username, the
+Owns: the `GET /api/player/<name>`, `/api/player/<name>/map/<mapid>`,
+`/api/players/lookup` and `/api/players?q=` requests, URL-encoding the username, the
 timeout, and sorting the reply into found / no such player / no usable
 answer. Every call returns a `PlayerResult` instead of raising.
 Does not own: what a profile page shows or who may see it (players/), or
@@ -102,6 +102,62 @@ def get_player_map(
     return PlayerResult(data=data)
 
 
+LOOKUP_MAX = 60
+
+
+def _get_json(url, params, what, timeout):
+    """(data, error) for a GET that should answer with a JSON object."""
+    try:
+        response = requests.get(url, params=params, timeout=timeout)
+    except requests.RequestException as exc:
+        logger.warning("replays api (%s): unreachable: %s", what, type(exc).__name__)
+        return None, PlayerError.UNAVAILABLE
+    try:
+        data = response.json()
+    except ValueError:
+        logger.warning("replays api (%s): non-JSON reply, http=%s", what, response.status_code)
+        return None, PlayerError.UNAVAILABLE
+    if not response.ok or not isinstance(data, dict) or not isinstance(data.get("results"), list):
+        logger.warning("replays api (%s): http=%s", what, response.status_code)
+        return None, PlayerError.UNAVAILABLE
+    return data, None
+
+
+def lookup_players(base_url: str, names, *, timeout=DEFAULT_TIMEOUT) -> PlayerResult:
+    """Replay totals for exact registered names: data is {lower name: {username,
+    games, level}}; names with no replays are missing from it."""
+    if not base_url:
+        return PlayerResult(error=PlayerError.NOT_CONFIGURED)
+    names = [n for n in dict.fromkeys(names) if n and len(n) <= MAX_USERNAME_LENGTH][:LOOKUP_MAX]
+    if not names:
+        return PlayerResult(data={})
+    data, error = _get_json(f"{base_url}/api/players/lookup", {"names": names}, "lookup", timeout)
+    if error:
+        return PlayerResult(error=error)
+    return PlayerResult(
+        data={
+            str(r["username"]).lower(): r
+            for r in data["results"]
+            if isinstance(r, dict) and r.get("username")
+        }
+    )
+
+
+def search_players(base_url: str, query: str, *, timeout=DEFAULT_TIMEOUT) -> PlayerResult:
+    """Up to 10 registered names starting with `query`, most played first:
+    data is [{username, games, level}]. Needs at least 3 characters."""
+    if not base_url:
+        return PlayerResult(error=PlayerError.NOT_CONFIGURED)
+    if len(query) < 3 or len(query) > MAX_USERNAME_LENGTH:
+        return PlayerResult(data=[])
+    data, error = _get_json(f"{base_url}/api/players", {"q": query}, "search", timeout)
+    if error:
+        return PlayerResult(error=error)
+    return PlayerResult(
+        data=[r for r in data["results"] if isinstance(r, dict) and r.get("username")]
+    )
+
+
 def get_player_configured(username: str) -> PlayerResult:
     """`get_player` against settings.BONKVERSE_REPLAYS_URL."""
     from django.conf import settings
@@ -114,3 +170,17 @@ def get_player_map_configured(username: str, mapid: str) -> PlayerResult:
     from django.conf import settings
 
     return get_player_map(settings.BONKVERSE_REPLAYS_URL, username, mapid)
+
+
+def lookup_players_configured(names) -> PlayerResult:
+    """`lookup_players` against settings.BONKVERSE_REPLAYS_URL."""
+    from django.conf import settings
+
+    return lookup_players(settings.BONKVERSE_REPLAYS_URL, names)
+
+
+def search_players_configured(query: str) -> PlayerResult:
+    """`search_players` against settings.BONKVERSE_REPLAYS_URL."""
+    from django.conf import settings
+
+    return search_players(settings.BONKVERSE_REPLAYS_URL, query)

@@ -27,7 +27,7 @@ Setting names and defaults: [configuration.md](../operations/configuration.md).
 | Discord invite API (public, no auth) | `discord_api.py` | `skins/discord_views.py` (submit), `skins/tasks.py` (hourly refresh) | Invalid / inaccessible invite, "Couldn't reach Discord right now" |
 | BonkBot API | `bonkbot.py` | `skins/bonkbot.py` (`/api/join-matchmaking/`) | `{"error": "matchmaking_unavailable"}` (502) |
 | Map decoder service | `map_decoder.py` | `skins/utils/tools/map_decode.py` | "Couldn't decode that map string" (400, with the decoder's reason) or "isn't responding" (502) |
-| Replay site player API (`/api/player/<name>`, `/api/player/<name>/map/<mapid>`) | `replays.py` | `players/selectors.py` (every profile tab) | "Replay stats can't be loaded right now" (page still renders); unknown name → 404 page |
+| Replay site player API (`/api/player/<name>`, `/api/player/<name>/map/<mapid>`, `/api/players/lookup`, `/api/players?q=`) | `replays.py` | `players/selectors.py` (profile tabs, Players page cards) | "Replay stats can't be loaded right now" (page still renders); unknown name → 404 page |
 | BonxBot's Postgres (one-time migration) | `bonxbot_db.py` | `import_bonxbot_skins` command | Command output |
 
 ## Discord: pace your calls
