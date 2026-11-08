@@ -84,8 +84,8 @@ def test_pull_adds_new_names_without_a_dbid(mocked_http):
     mocked_http.get(NAMES_URL, json=names_page(["(%)", "Later"], "6:7", True))
     result = replay_sync.pull_replay_names(max_batches=5)
     assert result == {"added": 3, "batches": 2, "done": True, "error": None}
-    new = BonkPlayer.objects.filter(bonk_id__isnull=True).order_by("username")
-    assert [p.username for p in new] == ["  spaced  ", "(%)", "Later"]
+    new = BonkPlayer.objects.filter(bonk_id__isnull=True).values_list("username", flat=True)
+    assert sorted(new) == ["  spaced  ", "(%)", "Later"]  # sorted here: database collations differ
     assert SyncCursor.objects.get(name=replay_sync.NAMES_CURSOR).value == "6:7"
     # The next run starts after the cursor.
     mocked_http.get(NAMES_URL, json=names_page([], "6:7", True))
