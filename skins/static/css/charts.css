@@ -1,6 +1,6 @@
 /* charts.css — the shared chart component (core/js/bv-chart.js).
-   Charts sit straight on the page (no card around them) and take the full
-   width they're given. Series colors arrive as --c. */
+   Each chart sits on its own dark panel (so the particle background doesn't
+   show through) and takes the full width it's given. Series colors arrive as --c. */
 
 .bv-chart { position: relative; width: 100%; min-height: 200px; user-select: none; -webkit-user-select: none; }
 .bv-chart--zoom { padding-top: 44px; }
@@ -50,3 +50,13 @@
 .bv-chart__hint { margin-top: 4px; font-size: 0.78rem; color: #8fa3b8; text-align: right; }
 .bv-chart__empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #8fa3b8; }
 @media (hover: none) { .bv-chart__hint { display: none; } }
+
+/* Charts sit on a solid panel so the site's particle background doesn't
+   show through the plot. */
+.bv-chart {
+  box-sizing: border-box; padding: 16px 16px 10px; border-radius: 16px;
+  background: #101a25; border: 1px solid #22364c;
+}
+.bv-chart--zoom { padding-top: 56px; }
+.bv-chart__reset { top: 12px; right: 12px; }
+.bv-chart__tip { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
