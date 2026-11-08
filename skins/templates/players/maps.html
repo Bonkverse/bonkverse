@@ -1,0 +1,138 @@
+{% extends 'players/_layout.html' %}
+{% load static %}
+
+{% block tab_title %} · Maps &amp; modes{% endblock %}
+
+{% block tab %}
+<div class="pv-duo">
+
+  <section class="pv-card" aria-labelledby="modes-title" data-ring>
+    <h2 id="modes-title" class="pv-card__title">Modes</h2>
+    {% if ring.slices %}
+      <div class="pv-ring">
+        <div class="pv-ring__chart">
+          <svg viewBox="0 0 {{ ring.size }} {{ ring.size }}" role="img" aria-label="Replays by mode">
+            {% for s in ring.slices %}
+              <path class="pv-ring__slice" d="{{ s.d }}" style="--slice: {{ s.color }}" data-slice="{{ forloop.counter0 }}"></path>
+            {% endfor %}
+          </svg>
+          <div class="pv-ring__center" aria-hidden="true">
+            <span class="pv-ring__pct" data-ring-pct>{{ ring.slices.0.share }}%</span>
+            <span class="pv-ring__name" data-ring-name>{{ ring.slices.0.label }}</span>
+          </div>
+        </div>
+        <ul class="pv-legend">
+          {% for s in ring.slices %}
+            <li>
+              <button type="button" class="pv-legend__item" data-slice="{{ forloop.counter0 }}" data-share="{{ s.share }}" data-label="{{ s.label }}" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}">
+                <span class="pv-swatch" style="--slice: {{ s.color }}"></span>
+                <span class="pv-legend__name">{{ s.label }}</span>
+                <span class="pv-muted pv-small">{{ s.games }} · {{ s.share }}%</span>
+              </button>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% else %}
+      <p class="pv-muted">No mode information yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="pv-card" aria-labelledby="rooms-title">
+    <h2 id="rooms-title" class="pv-card__title">Rooms they play in</h2>
+    {% if rooms %}
+      {% include 'players/partials/_room_split.html' with rooms=rooms %}
+      <div class="pv-split-bar__row">
+        <div class="pv-stack" aria-label="Custom rooms {{ rooms.custom_share }}%, quick play {{ rooms.quickplay_share }}%">
+          <span class="pv-stack__part" style="--bar: {{ rooms.custom_share }}%; --slice: #47d8c4"></span>
+          <span class="pv-stack__part" style="--bar: {{ rooms.quickplay_share }}%; --slice: #90b7ff"></span>
+        </div>
+        <div class="pv-legend-inline pv-small">
+          <span><span class="pv-swatch" style="--slice: #47d8c4"></span>Custom rooms {{ rooms.custom_share|floatformat:0 }}%</span>
+          <span><span class="pv-swatch" style="--slice: #90b7ff"></span>Quick play {{ rooms.quickplay_share|floatformat:0 }}%</span>
+        </div>
+      </div>
+      <div class="pv-minitiles">
+        <div class="pv-minitile"><span class="pv-tile__val">{{ rooms.median_players|floatformat:"-1"|default:"—" }}</span><span class="pv-tile__lbl">Players in a typical room</span></div>
+        <div class="pv-minitile"><span class="pv-tile__val">{{ rooms.distinct_maps|default:"—" }}</span><span class="pv-tile__lbl">Different maps played</span></div>
+      </div>
+    {% else %}
+      <p class="pv-muted">No room information yet.</p>
+    {% endif %}
+  </section>
+</div>
+
+<section class="pv-section" aria-labelledby="maps-title">
+  <div class="pv-section__head">
+    <h2 id="maps-title" class="pv-section__title">Maps</h2>
+    <span class="pv-muted pv-small">Top {{ maps|length }} by replays · pick one for details</span>
+  </div>
+  <div class="pv-maps">
+    <ol class="pv-maplist">
+      {% for m in maps %}
+        <li>
+          <a class="pv-maprow" href="?map={{ m.mapid }}#map-detail"{% if selected.mapid == m.mapid %} aria-current="true"{% endif %}>
+            <span class="pv-maprow__rank">{{ forloop.counter }}</span>
+            <img class="pv-thumb" src="{{ m.thumbnail }}" alt="" loading="lazy" width="88" height="58">
+            <span class="pv-maprow__text">
+              <span class="pv-maprow__name">{{ m.name }}</span>
+              <span class="pv-muted pv-small">{% if m.last_day %}last played {{ m.last_day|date:"M j, Y" }}{% endif %}</span>
+            </span>
+            <span class="pv-maprow__games">{{ m.games }}</span>
+          </a>
+        </li>
+      {% empty %}
+        <li class="pv-muted">No maps yet.</li>
+      {% endfor %}
+    </ol>
+
+    {% if selected %}
+      <article class="pv-card pv-mapdetail" id="map-detail" aria-labelledby="md-title">
+        <img class="pv-mapdetail__img" src="{{ selected.thumbnail }}" alt="Map preview of {{ selected.name }}" loading="lazy" width="640" height="360">
+        <div class="pv-mapdetail__body">
+          <div class="pv-card__head pv-card__head--wrap">
+            <div>
+              <h3 id="md-title" class="pv-mapdetail__name">{{ selected.name }}</h3>
+              {% if detail %}<span class="pv-muted pv-small">First played {{ detail.first_day|date:"M j, Y" }} · last {{ detail.last_day|date:"M j, Y" }}</span>{% endif %}
+            </div>
+            {% if detail %}
+              <a class="pv-btn pv-btn--ghost" href="{{ detail.replays_url }}"><i data-lucide="external-link" aria-hidden="true"></i> Their replays here</a>
+            {% endif %}
+          </div>
+          {% if detail %}
+            <div class="pv-minitiles pv-minitiles--3">
+              <div class="pv-minitile"><span class="pv-tile__val">{{ detail.games }}</span><span class="pv-tile__lbl">Replays</span></div>
+              <div class="pv-minitile"><span class="pv-tile__val">{{ detail.share }}%</span><span class="pv-tile__lbl">Of all their replays</span></div>
+              <div class="pv-minitile"><span class="pv-tile__val">{{ detail.modes.0.0|default:"—" }}</span><span class="pv-tile__lbl">Mode played most</span></div>
+            </div>
+            {% if detail.rooms %}
+              <h4 class="pv-sub">How they play it</h4>
+              {% include 'players/partials/_room_split.html' with rooms=detail.rooms %}
+            {% endif %}
+            <h4 class="pv-sub">Plays it with</h4>
+            <ul class="pv-people">
+              {% for p in detail.people %}
+                <li>
+                  <a class="pv-person" href="{{ p.profile_path }}">
+                    <span class="pv-initials" aria-hidden="true">{{ p.initials }}</span>
+                    <span class="pv-person__name">{{ p.username }}</span>
+                    <span class="pv-muted pv-small">{{ p.games }} replay{{ p.games|pluralize }}</span>
+                  </a>
+                </li>
+              {% empty %}
+                <li class="pv-muted">Usually with guests or alone.</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="pv-muted">Details for this map can't be loaded right now.</p>
+          {% endif %}
+        </div>
+      </article>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
+
+{% block tab_scripts %}
+<script src="{% static 'js/player_maps.js' %}"></script>
+{% endblock %}

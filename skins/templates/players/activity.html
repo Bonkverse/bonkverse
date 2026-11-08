@@ -1,0 +1,71 @@
+{% extends 'players/_layout.html' %}
+{% load static %}
+
+{% block tab_title %} · Activity{% endblock %}
+
+{% block tab %}
+{{ script_data|json_script:"activity-data" }}
+
+<section class="pv-card" aria-labelledby="wk-title" data-activity>
+  <div class="pv-week__head">
+    <div class="pv-week__nav">
+      <button type="button" class="pv-iconbtn" data-prev aria-label="Previous week"><i data-lucide="chevron-left" aria-hidden="true"></i></button>
+      <h2 id="wk-title" class="pv-week__label" data-week-label>This week</h2>
+      <button type="button" class="pv-iconbtn" data-next aria-label="Next week"><i data-lucide="chevron-right" aria-hidden="true"></i></button>
+    </div>
+    <dl class="pv-week__stats">
+      <div><dt>Replays</dt><dd data-week-total>—</dd></div>
+      <div><dt>Daily average</dt><dd data-week-avg>—</dd></div>
+      <div><dt>vs week before</dt><dd data-week-delta>—</dd></div>
+    </dl>
+  </div>
+  <div class="pv-week__chart">
+    <div class="pv-week__avg" data-week-avgline hidden><span>avg</span></div>
+    <div class="pv-week__bars" data-week-bars></div>
+  </div>
+  <noscript><p class="pv-muted">Turn on JavaScript to browse week by week.</p></noscript>
+</section>
+
+<section class="pv-card" aria-labelledby="day-title" data-day>
+  <div class="pv-card__head">
+    <h2 id="day-title" class="pv-card__title" data-day-title>Pick a day</h2>
+    <span class="pv-muted pv-small" data-day-summary></span>
+  </div>
+  <div class="pv-hours" data-day-hours></div>
+  <div class="pv-hours__axis pv-small pv-muted" aria-hidden="true"><span>12 am</span><span>6 am</span><span>12 pm</span><span>6 pm</span></div>
+  <p class="pv-fine" data-day-note>Times are in your time zone.</p>
+</section>
+
+<section class="pv-tiles" aria-label="Habits">
+  <div class="pv-tile">
+    <span class="pv-tile__val">{{ streaks.current }} day{{ streaks.current|pluralize }}</span>
+    <span class="pv-tile__lbl">Current streak</span>
+  </div>
+  <div class="pv-tile">
+    <span class="pv-tile__val">{{ streaks.longest }} day{{ streaks.longest|pluralize }}</span>
+    <span class="pv-tile__lbl">Longest streak{% if streaks.longest_end %} · ended {{ streaks.longest_end|date:"M Y" }}{% endif %}</span>
+  </div>
+  <div class="pv-tile">
+    <span class="pv-tile__val">{{ sessions.typical|default:"—" }}</span>
+    <span class="pv-tile__lbl">Typical session{% if sessions.longest %} · longest {{ sessions.longest }}{% endif %}</span>
+  </div>
+  <div class="pv-tile">
+    <span class="pv-tile__val" data-peak-name>—</span>
+    <span class="pv-tile__lbl" data-peak-hours>When they play most</span>
+  </div>
+</section>
+
+<section class="pv-card" aria-labelledby="yr-title">
+  <div class="pv-card__head">
+    <h2 id="yr-title" class="pv-card__title">Past year</h2>
+    <span class="pv-muted pv-small">Pick a week to see it above</span>
+  </div>
+  {% include 'players/partials/_heatmap.html' with heatmap=heatmap interactive=True %}
+</section>
+
+<p class="pv-fine">Hours and sessions come from replays collected live. Older replays only have an estimated day, so they count toward days but not hours.</p>
+{% endblock %}
+
+{% block tab_scripts %}
+<script src="{% static 'js/player_activity.js' %}"></script>
+{% endblock %}

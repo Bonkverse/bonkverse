@@ -10,7 +10,6 @@ const ROUTES = (() => {
     skinsPartial: el?.dataset.skinsPartialUrl || '',
     bulkDelete:   el?.dataset.bulkDeleteUrl   || '',
     friendSync:   el?.dataset.friendSyncUrl   || '',
-    replaysPartial: el?.dataset.replaysPartialUrl || '',
   };
 })();
 
@@ -67,27 +66,8 @@ document.querySelectorAll('.profile-tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.profile-tab').forEach(t => t.classList.toggle('active', t === tab));
     document.querySelectorAll('.profile-panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + tab.dataset.tab));
-    if (tab.dataset.tab === 'replays') loadReplayStats();
   });
 });
-
-// ── Replays tab: stats from the replay site, fetched on first open ──
-// The replay service can take a few seconds for a busy player, so the rest
-// of My Profile never waits on it.
-let replayStatsRequested = false;
-async function loadReplayStats() {
-  const body = document.getElementById('replays-panel-body');
-  if (!body || replayStatsRequested || !ROUTES.replaysPartial) return;
-  replayStatsRequested = true;
-  try {
-    const r = await fetch(ROUTES.replaysPartial, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    body.innerHTML = await r.text();
-  } catch (err) {
-    replayStatsRequested = false; // let the next click try again
-    body.textContent = "Your replay stats couldn't be loaded. Open the tab again to retry.";
-  }
-}
 
 // ── My Skins: instant pagination (no full page reload) ───────────────
 //

@@ -1,0 +1,14 @@
+{% comment %}
+1v1 / free-for-all / teams / alone as one stacked bar with a legend
+(players/charts.py room_split).
+{% endcomment %}
+<div class="pv-split-bar__row">
+  <div class="pv-stack" role="img" aria-label="{% for p in rooms.parts %}{{ p.label }} {{ p.share|floatformat:0 }}%{% if not forloop.last %}, {% endif %}{% endfor %}">
+    {% for p in rooms.parts %}<span class="pv-stack__part" style="--bar: {{ p.share }}%; --slice: {{ p.color }}"></span>{% endfor %}
+  </div>
+  <div class="pv-legend-inline pv-small">
+    {% for p in rooms.parts %}
+      <span><span class="pv-swatch" style="--slice: {{ p.color }}"></span>{{ p.label }} {{ p.share|floatformat:0 }}%</span>
+    {% endfor %}
+  </div>
+</div>

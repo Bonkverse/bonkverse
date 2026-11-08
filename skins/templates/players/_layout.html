@@ -1,0 +1,84 @@
+{% extends 'skins/base.html' %}
+{% load static %}
+{% comment %}
+Shared frame for every player profile tab (players/views.py): the player
+header, the owner's privacy note and the tab bar. Each tab fills
+{% block tab %} and can add {% block tab_head %} / {% block tab_scripts %}.
+{% endcomment %}
+
+{% block title %}{{ username }}{% block tab_title %}{% endblock %} · Bonkverse{% endblock %}
+
+{% block social_meta %}
+<meta name="description" content="{{ username }}'s bonk.io profile on Bonkverse: activity, level, maps, people{% if account %} and skins{% endif %}.">
+<meta property="og:title" content="{{ username }} · Bonkverse">
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/player_profile.css' %}">
+{% block tab_head %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+<main class="pv" id="main">
+
+  <header class="pv-hero{% if active_tab %} pv-hero--compact{% endif %}">
+    <a class="pv-avatar" href="{% url 'player_profile' username %}" aria-label="{{ username }}'s overview">{{ username|slice:":2"|upper }}</a>
+    <div class="pv-hero__text">
+      {% if active_tab %}
+        <p class="pv-hero__name">{{ username }}</p>
+      {% else %}
+        <h1 class="pv-hero__name">{{ username }}</h1>
+      {% endif %}
+      <div class="pv-chips">
+        {% if summary and shown.level_history %}<span class="pv-chip">Level {{ summary.current_level }}</span>{% endif %}
+        {% if account %}
+          <span class="pv-chip">On Bonkverse since {{ account.date_joined|date:"M Y" }}</span>
+        {% else %}
+          <span class="pv-chip pv-chip--quiet">Profile built from replays</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="pv-hero__actions">
+      {% if summary %}
+        <a class="pv-btn" href="{{ all_replays_url }}">Watch replays</a>
+      {% endif %}
+      {% if is_owner %}
+        <a class="pv-btn pv-btn--ghost" href="{% url 'profile_settings' %}">
+          <i data-lucide="settings" aria-hidden="true"></i> Profile settings
+        </a>
+      {% endif %}
+    </div>
+  </header>
+
+  {% if is_owner and hidden_labels %}
+    <p class="pv-note">
+      <i data-lucide="eye-off" aria-hidden="true"></i>
+      Only you can see: {{ hidden_labels|join:", " }}.
+      <a class="pv-link" href="{% url 'profile_settings' %}">Change</a>
+    </p>
+  {% endif %}
+
+  <nav class="pv-tabs" aria-label="Profile">
+    {% for t in tabs %}
+      <a class="pv-tab" href="{{ t.url }}"{% if t.active %} aria-current="page"{% endif %}>
+        {{ t.label }}
+        {% if is_owner and t.private %}<i data-lucide="lock" class="pv-tab__lock" aria-label="Only you can see this"></i>{% endif %}
+      </a>
+    {% endfor %}
+  </nav>
+
+  {% if not summary and replays_error and replays_error != "not_found" %}
+    <div class="pv-card pv-empty">
+      <p>Replay stats can't be loaded right now.</p>
+      <p class="pv-muted">Please try again in a few minutes.</p>
+    </div>
+  {% endif %}
+
+  {% block tab %}{% endblock %}
+
+</main>
+{% endblock %}
+
+{% block extra_scripts %}
+{% block tab_scripts %}{% endblock %}
+{% endblock %}

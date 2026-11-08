@@ -4,11 +4,11 @@ decorate_skins_for_user: everything a skin card (skins/partials/_skin_card.html)
 shows beyond the Skin row itself, for a whole page of cards in a fixed number
 of queries. tests/test_query_budgets.py fails if a page starts asking per card.
 
-skins_created_by / favorites_of: a player's skins for their profile page
-(players/), most upvoted and most recently favorited first.
+skins_created_by / favorites_of / creator_stats: a player's skins for the
+Skins tab of their profile (players/).
 """
 
-from django.db.models import Count
+from django.db.models import Count, Sum
 
 from .models import Skin, SkinVote
 
@@ -49,13 +49,35 @@ def decorate_skins_for_user(skins, user=None):
     return skins
 
 
-def skins_created_by(username, limit):
-    """(up to `limit` skins `username` created, most upvoted first; how many in all)."""
-    qs = Skin.objects.filter(creator__iexact=username)
-    return list(qs.order_by("-upvotes", "-id")[:limit]), qs.count()
+# Sort orders for a player's skins (profile Skins tab): key -> order_by fields.
+SKIN_SORTS = {
+    "top": ("-upvotes", "-id"),
+    "new": ("-created_at", "-id"),
+    "az": ("name", "id"),
+}
 
 
-def favorites_of(user, limit):
-    """(up to `limit` skins `user` favorited, newest skins first; how many in all)."""
-    qs = user.favorite_skins.all()
-    return list(qs.order_by("-created_at")[:limit]), qs.count()
+def skins_created_by(username, sort="top"):
+    """Skins `username` created, as a queryset in one of SKIN_SORTS' orders."""
+    order = SKIN_SORTS.get(sort, SKIN_SORTS["top"])
+    return Skin.objects.filter(creator__iexact=username).order_by(*order)
+
+
+def favorites_of(user, sort="new"):
+    """Skins `user` favorited, as a queryset in one of SKIN_SORTS' orders."""
+    order = SKIN_SORTS.get(sort, SKIN_SORTS["new"])
+    return user.favorite_skins.all().order_by(*order)
+
+
+def creator_stats(username):
+    """How many skins `username` made, and the upvotes and favorites they got."""
+    totals = Skin.objects.filter(creator__iexact=username).aggregate(
+        skins=Count("id", distinct=True),
+        upvotes=Sum("upvotes"),
+    )
+    favorited = Skin.favorited_by.through.objects.filter(skin__creator__iexact=username).count()
+    return {
+        "skins": totals["skins"] or 0,
+        "upvotes": totals["upvotes"] or 0,
+        "favorited": favorited,
+    }

@@ -4,6 +4,10 @@
     <div>
       <h1 class="profile-name">{{ user.username }}</h1>
       <div class="profile-joined">Member since {{ user.date_joined|date:"F Y" }}</div>
+      <div class="profile-links">
+        <a class="profile-link-btn" href="{% url 'player_profile' user.username %}">View public profile</a>
+        <a class="profile-link-btn profile-link-btn--ghost" href="{% url 'profile_settings' %}">Profile settings</a>
+      </div>
       <div class="profile-stats">
         <div class="profile-stat"><span class="val" id="stat-total-skins">{{ total_skins }}</span><span class="lbl">Skins created</span></div>
         <div class="profile-stat"><span class="val">{{ total_favorites }}</span><span class="lbl">Favorites</span></div>
@@ -19,10 +23,6 @@
     </button>
     <button class="profile-tab" data-tab="favorites">
       Favorites <span class="tab-count">{{ total_favorites }}</span>
-      <span class="tab-indicator"></span>
-    </button>
-    <button class="profile-tab" data-tab="replays">
-      Replays
       <span class="tab-indicator"></span>
     </button>
   </div>
