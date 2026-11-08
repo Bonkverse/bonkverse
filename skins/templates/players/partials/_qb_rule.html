@@ -1,0 +1,52 @@
+{% comment %}
+One line of the advanced-search rule builder (players/directory.html):
+[Where / AND / OR] [field] [condition] [value] [Aa] [remove]. Field names are
+numbered (c0 f0 o0 v0 w0 k0) as players/search.py reads them. With
+JavaScript, js/players_directory.js redraws these lines from the same schema
+and changes the conditions and value box when the field changes.
+{% endcomment %}
+<li class="pv-qb__rule" data-rule>
+  <div class="pv-qb__conn">
+    {% if row.i == 0 %}
+      <span class="pv-qb__where">Where</span>
+    {% else %}
+      <label class="pv-qb__select pv-qb__select--conn">
+        <span class="pv-visually-hidden">Join with</span>
+        <select name="c{{ row.i }}">
+          <option value="and"{% if row.conn == "and" %} selected{% endif %}>AND</option>
+          <option value="or"{% if row.conn == "or" %} selected{% endif %}>OR</option>
+        </select>
+      </label>
+    {% endif %}
+  </div>
+  <label class="pv-qb__select pv-qb__field">
+    <span class="pv-visually-hidden">Field</span>
+    <select name="f{{ row.i }}">
+      {% for fld in builder_fields %}<option value="{{ fld.key }}"{% if fld.key == row.field %} selected{% endif %}>{{ fld.label }}</option>{% endfor %}
+    </select>
+  </label>
+  <label class="pv-qb__select pv-qb__op">
+    <span class="pv-visually-hidden">Condition</span>
+    <select name="o{{ row.i }}">
+      {% for op in row.spec.ops %}<option value="{{ op.key }}"{% if op.key == row.op %} selected{% endif %}>{{ op.label }}</option>{% endfor %}
+    </select>
+  </label>
+  <div class="pv-qb__value">
+    {% if row.spec.value == "text" %}
+      <label class="pv-qb__input"><span class="pv-visually-hidden">Value</span><input type="text" name="v{{ row.i }}" value="{{ row.value }}" placeholder="Text" maxlength="100" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+      <label class="pv-qb__case" title="Match case"><input type="checkbox" name="k{{ row.i }}" value="1"{% if row.case %} checked{% endif %}><span>Aa</span><span class="pv-visually-hidden">Match case</span></label>
+    {% elif row.spec.value == "number" %}
+      <label class="pv-qb__input pv-qb__input--num"><span class="pv-visually-hidden">Value</span><input type="number" name="v{{ row.i }}" value="{{ row.value }}" min="{{ row.spec.min }}" max="{{ row.spec.max }}" inputmode="numeric"></label>
+      {% if row.op == "between" %}<span class="pv-qb__and">and</span><label class="pv-qb__input pv-qb__input--num"><span class="pv-visually-hidden">Second value</span><input type="number" name="w{{ row.i }}" value="{{ row.value2 }}" min="{{ row.spec.min }}" max="{{ row.spec.max }}" inputmode="numeric"></label>{% endif %}
+      {% if row.spec.unit %}<span class="pv-qb__unit">{{ row.spec.unit }}</span>{% endif %}
+    {% elif row.spec.value == "year" or row.spec.value == "choice" %}
+      <label class="pv-qb__select"><span class="pv-visually-hidden">Value</span>
+        <select name="v{{ row.i }}">{% for c in row.spec.choices %}<option value="{{ c.key }}"{% if c.key == row.value %} selected{% endif %}>{{ c.label }}</option>{% endfor %}</select>
+      </label>
+      {% if row.op == "between" %}<span class="pv-qb__and">and</span><label class="pv-qb__select"><span class="pv-visually-hidden">Second value</span>
+        <select name="w{{ row.i }}">{% for c in row.spec.choices %}<option value="{{ c.key }}"{% if c.key == row.value2 %} selected{% endif %}>{{ c.label }}</option>{% endfor %}</select>
+      </label>{% endif %}
+    {% endif %}
+  </div>
+  <button type="button" class="pv-qb__remove" data-remove hidden aria-label="Remove this rule"><i data-lucide="x" aria-hidden="true"></i></button>
+</li>

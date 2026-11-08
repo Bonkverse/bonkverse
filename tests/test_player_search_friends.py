@@ -3,6 +3,7 @@ Friends tab on profiles (players.selectors.friends)."""
 
 import json
 from datetime import date
+from urllib.parse import urlencode
 
 import pytest
 from django.http import QueryDict
@@ -46,18 +47,48 @@ def roster(db):
     return rows
 
 
+def rules(*lines, sort=None, **extra):
+    """A query string from rule lines: (field, op, value[, value2]) or
+    ("or", field, op, value…) to join with OR instead of AND."""
+    params = {}
+    for i, line in enumerate(lines):
+        conn = "and"
+        if line[0] in ("and", "or"):
+            conn, line = line[0], line[1:]
+        field, op, *values = line
+        params.update({f"c{i}": conn, f"f{i}": field, f"o{i}": op})
+        if values:
+            params[f"v{i}"] = values[0]
+        if len(values) > 1:
+            params[f"w{i}"] = values[1]
+    if sort:
+        params["sort"] = sort
+    params.update(extra)
+    return urlencode(params)
+
+
 # ── Parsing ───────────────────────────────────────────────────────
 
 
-def test_plain_box_trims_but_advanced_keeps_spaces():
-    assert search.parse(QueryDict("q=  ab  ")).text == "ab"
-    assert search.parse(QueryDict("q=  ab  &match=exact")).text == "  ab  "
-    assert search.parse(QueryDict("q=%20%20&lead_space=1")).text == "  "
+def test_rule_text_keeps_spaces_but_the_box_trims():
+    q = search.parse(QueryDict("q=  ab  &" + rules(("name", "is", "  ab  "))))
+    assert q.text == "ab" and q.rules[0].value == "  ab  "
 
 
-def test_bad_values_are_ignored_and_ranges_swapped():
-    f = search.parse(QueryDict("match=evil&len_min=9&len_max=3&digits=maybe&sort=drop"))
-    assert (f.match, f.len_min, f.len_max, f.kinds, f.sort) == ("contains", 3, 9, {}, "")
+def test_unusable_rules_are_dropped():
+    q = search.parse(
+        QueryDict(
+            rules(
+                ("name", "starts", ""),  # no value
+                ("evil", "is", "x"),  # no such field
+                ("length", "between", "9"),  # between needs two
+                ("chars", "only", "emoji"),  # no such choice
+                ("listed", "gte", "2"),  # Flash friends only
+                ("length", "between", "9", "3"),
+            )
+        )
+    )
+    assert [(r.field, r.value, r.value2) for r in q.rules] == [("length", "3", "9")]
 
 
 def test_pattern_wildcards_and_escaping():
@@ -66,15 +97,21 @@ def test_pattern_wildcards_and_escaping():
 
 
 def test_chips_and_params_round_trip():
-    f = search.parse(QueryDict("q=ab&match=starts&len_min=3&len_max=3&digits=no&sort=short"))
-    assert f.chips() == ["Starts with “ab”", "3 characters", "No digits", "Sort: Shortest first"]
-    assert search.parse(QueryDict(mutable=True) | {"q": "ab", **f.params()}).params() == f.params()
+    qs = rules(("name", "starts", "_"), ("or", "length", "eq", "3"), sort="short")
+    q = search.parse(QueryDict(qs))
+    assert q.chips() == [("", "Name starts with “_”"), ("OR", "Length is 3 characters")]
+    assert search.parse(QueryDict(urlencode(q.params()))).params() == q.params()
 
 
 def test_id_for_day_is_the_inverse_of_estimate():
     day = date(2023, 4, 28)
     assert abs((dbid.estimate(dbid.id_for_day(day)).day - day).days) <= 1
     assert dbid.id_for_day(date(2000, 1, 1)) == 1
+
+
+def test_examples_fit_their_list():
+    labels = [label for label, _ in search.example_links("flash")]
+    assert "Joined in 2014" not in labels and "Only digits" in labels
 
 
 # ── Players page ──────────────────────────────────────────────────
@@ -84,27 +121,38 @@ def test_id_for_day_is_the_inverse_of_estimate():
 @pytest.mark.parametrize(
     "qs,expected",
     [
-        ("q=ab&match=starts&sort=az", ["ab_c", "ABC", "abc"]),
-        ("q=c&match=ends&sort=az", ["ab_c", "ABC", "abc"]),
-        ("q=abc&match=exact&case=1", ["abc"]),
-        ("q=abc&match=exact", ["ABC", "abc"]),  # same name: most friends first
-        ("q=a??&match=pattern&sort=az", ["ABC", "abc"]),
-        ("q=?_?&match=pattern", []),
-        ("q=a*c&match=pattern&sort=az", ["ab_c", "ABC", "abc"]),
-        ("digits=yes&letters=no&symbols=no&spaces=no&underscore=no", ["123"]),
-        ("symbols=yes", ["x.y"]),
-        ("underscore=yes", ["ab_c"]),
-        ("lead_space=1&sort=az", ["      ", " lead"]),
-        ("trail_space=1&sort=az", ["      ", "trail "]),
-        ("double_space=1&letters=yes", ["two  sp"]),
-        ("letters=no&digits=no&symbols=no&underscore=no", ["      "]),
-        ("len_min=6&len_max=6&sort=az", ["      ", "trail "]),
-        ("min_friends=8&sort=friends", ["zz", "ABC"]),
-        ("sort=old&len_max=2", ["zz"]),
-        ("sort=long&len_min=7", ["two  sp"]),
+        # Several rules on the name: starts with … AND ends with …
+        (rules(("name", "starts", "a"), ("name", "ends", "c"), sort="az"), ["ab_c", "ABC", "abc"]),
+        (rules(("name", "starts", "a"), ("name", "not_contains", "_"), sort="az"), ["ABC", "abc"]),
+        (rules(("name", "is", "abc")), ["ABC", "abc"]),
+        (rules(("name", "is", "abc"), k0="1"), ["abc"]),
+        (rules(("name", "pattern", "a??"), sort="az"), ["ABC", "abc"]),
+        (rules(("name", "pattern", "a*c"), sort="az"), ["ab_c", "ABC", "abc"]),
+        # AND before OR: (starts with z) OR (has symbols AND 3 characters)
+        (
+            rules(
+                ("name", "starts", "z"),
+                ("or", "chars", "has", "symbols"),
+                ("length", "eq", "3"),
+                sort="az",
+            ),
+            ["x.y", "zz"],
+        ),
+        (rules(("chars", "only", "digits")), ["123"]),
+        (rules(("chars", "only", "spaces")), ["      "]),
+        (rules(("chars", "has", "symbols")), ["x.y"]),
+        (rules(("chars", "none", "letters"), sort="az"), ["      ", "123"]),
+        (rules(("spaces", "has", "lead"), sort="az"), ["      ", " lead"]),
+        (rules(("spaces", "has", "trail"), sort="az"), ["      ", "trail "]),
+        (rules(("spaces", "has", "double"), ("chars", "has", "letters")), ["two  sp"]),
+        (rules(("length", "between", "6", "6"), sort="az"), ["      ", "trail "]),
+        (rules(("length", "gte", "7"), sort="long"), ["two  sp"]),
+        (rules(("friends", "gte", "8"), sort="friends"), ["zz", "ABC"]),
+        (rules(("bonk_id", "lt", "1002"), sort="old"), ["abc", "ab_c"]),
+        (rules(("length", "lte", "2"), sort="old"), ["zz"]),
     ],
 )
-def test_advanced_filters(client, mocked_http, roster, qs, expected):
+def test_rules(client, mocked_http, roster, qs, expected):
     mock_lookup(mocked_http)
     assert names_found(client, qs) == expected
 
@@ -112,49 +160,59 @@ def test_advanced_filters(client, mocked_http, roster, qs, expected):
 @pytest.mark.django_db
 def test_name_of_only_spaces_is_found_and_drawn(client, mocked_http, roster):
     mock_lookup(mocked_http)
-    response = client.get(reverse("players_directory") + "?q=%20%20%20%20%20%20&match=exact")
+    response = client.get(reverse("players_directory") + "?" + rules(("name", "is", "      ")))
     assert [c["username"] for c in response.context["cards"]] == ["      "]
     assert "␣␣␣␣␣␣" in response.content.decode()
 
 
 @pytest.mark.django_db
 def test_joined_years_use_account_ids(client, mocked_http):
-    old = BonkPlayer.objects.create(bonk_id=dbid.id_for_day(date(2015, 6, 1)), username="old")
+    BonkPlayer.objects.create(bonk_id=dbid.id_for_day(date(2015, 6, 1)), username="old")
     BonkPlayer.objects.create(bonk_id=dbid.id_for_day(date(2023, 6, 1)), username="new")
     mock_lookup(mocked_http)
-    assert names_found(client, "joined_from=2014&joined_to=2016") == [old.username]
-    assert names_found(client, "joined_from=2022") == ["new"]
+    assert names_found(client, rules(("joined", "between", "2014", "2016"))) == ["old"]
+    assert names_found(client, rules(("joined", "after", "2021"))) == ["new"]
+    assert names_found(client, rules(("joined", "in", "2015"))) == ["old"]
+    assert names_found(client, rules(("joined", "before", "2016"))) == ["old"]
 
 
 @pytest.mark.django_db
-def test_members_only(client, mocked_http, roster):
+def test_members(client, mocked_http, roster):
     BonkAccountLink.objects.create(user=UserFactory(username="zz"), bonk_player=roster["zz"])
     mock_lookup(mocked_http)
-    assert names_found(client, "members=1") == ["zz"]
+    assert names_found(client, rules(("member", "yes"))) == ["zz"]
+    assert "zz" not in names_found(client, rules(("member", "no")))
 
 
 @pytest.mark.django_db
-def test_paging_keeps_the_filters(client, mocked_http):
+def test_paging_keeps_the_rules(client, mocked_http):
     for i in range(30):
         BonkPlayer.objects.create(bonk_id=5000 + i, username=f"n{i:02d}")
     mock_lookup(mocked_http)
-    response = client.get(reverse("players_directory") + "?match=starts&q=n&sort=za")
-    assert "match=starts" in response.context["base_qs"]
-    assert "sort=za" in response.context["base_qs"]
-    assert "Advanced search" in response.content.decode()
-    assert "Starts with “n”" in response.content.decode()
+    response = client.get(
+        reverse("players_directory") + "?" + rules(("name", "starts", "n"), sort="za")
+    )
+    assert "o0=starts" in response.context["base_qs"] and "sort=za" in response.context["base_qs"]
+    html = response.content.decode()
+    assert "Advanced search" in html and "Name starts with “n”" in html
+    assert 'name="f0"' in html and 'id="qb-state"' in html
 
 
 @pytest.mark.django_db
-def test_flash_view_takes_name_filters(client, mocked_http):
+def test_flash_view_takes_name_rules(client, mocked_http):
     user = UserFactory()
     for name in ["aa", "a_a", "1"]:
         FlashFriendship.objects.create(
             user=user, flash_friend=FlashFriend.objects.create(name=name)
         )
     mock_lookup(mocked_http)
-    assert names_found(client, "view=flash&underscore=yes") == ["a_a"]
-    assert names_found(client, "view=flash&letters=no") == ["1"]
+    assert names_found(client, "view=flash&" + rules(("chars", "has", "underscore"))) == ["a_a"]
+    assert names_found(client, "view=flash&" + rules(("chars", "none", "letters"))) == ["1"]
+    assert names_found(client, "view=flash&" + rules(("listed", "gte", "1"), sort="az")) == [
+        "1",
+        "a_a",
+        "aa",
+    ]
 
 
 @pytest.mark.django_db

@@ -525,7 +525,7 @@ def _players_base(f):
         linked=Exists(BonkAccountLink.objects.filter(bonk_player=OuterRef("pk"), active=True))
     )
     if f.text:
-        exact = Q(username=f.text) if f.case else Q(username__iexact=f.text)
+        exact = Q(username__iexact=f.text)
         qs = qs.annotate(
             exact=Case(When(exact, then=Value(0)), default=Value(1), output_field=IntegerField())
         )
@@ -536,7 +536,7 @@ def _players_base(f):
 def _flash_base(f):
     qs = FlashFriend.objects.select_related("bonk_player").annotate(listed_by=Count("friend_of"))
     if f.text:
-        exact = Q(name=f.text) if f.case else Q(name__iexact=f.text)
+        exact = Q(name__iexact=f.text)
         qs = qs.annotate(
             exact=Case(When(exact, then=Value(0)), default=Value(1), output_field=IntegerField())
         )
@@ -560,14 +560,15 @@ def _exact_replay_card(query, cards):
 def directory(get):
     """Context for players/directory.html: one search over Bonk players
     (synced from bonk.io friend lists), replay players and legacy flash
-    friends, as cards that open player profiles. Advanced filters
-    (players/search.py) narrow the Bonk players and flash friend views."""
+    friends, as cards that open player profiles. The advanced-search rule
+    builder (players/search.py) narrows the Bonk players and flash friend
+    views."""
     view = get.get("view")
     view = view if view in dict(DIRECTORY_VIEWS) else "all"
     page = get.get("page", 1)
-    f = search.parse(get)
+    f = search.parse(get, view)
     query = f.text
-    players = view != "flash"
+    advanced = view != "replays"
     ctx = {
         "query": query,
         "view": view,
@@ -575,18 +576,17 @@ def directory(get):
         "cards": [],
         "page_obj": None,
         "replays_error": None,
-        "filters": f,
-        "advanced": view != "replays",
-        "adv_active": f.active and view != "replays",
-        "chips": f.chips(players=players) if view != "replays" else [],
-        "form": _advanced_form(f, players=players),
-        "base_qs": urlencode_qs(query, view, f.params() if view != "replays" else None),
-        "clear_qs": urlencode_qs(query.strip(), view),
+        "advanced": advanced,
+        "adv_active": f.active and advanced,
+        "chips": f.chips() if advanced else [],
+        "sort": f.sort,
+        "base_qs": urlencode_qs(query, view, f.params() if advanced else None),
+        "clear_qs": urlencode_qs(query, view),
     }
+    if advanced:
+        ctx.update(_builder(f, view))
 
     if view == "replays":
-        query = query.strip()
-        ctx["query"] = query
         if len(query) < 3:
             ctx["needs_query"] = True
             return ctx
@@ -646,7 +646,7 @@ def directory(get):
         )
         for p in rows
     ]
-    if not f.active and page_obj.number == 1:
+    if not f.rules and page_obj.number == 1:
         pinned = _exact_replay_card(query, ctx["cards"])
         if pinned:
             ctx["cards"].insert(0, pinned)
@@ -655,22 +655,51 @@ def directory(get):
     return ctx
 
 
-def _advanced_form(f, *, players):
-    """What the advanced-search form needs to show the current values."""
-    year = timezone.now().year
+def _builder(f, view):
+    """What the rule builder needs: the field schema for its script, the
+    rows to draw now (one blank "Name contains" row when there are none),
+    sorts and example links."""
+    fields = search.schema(view, timezone.now().date())
+    by_key = {spec["key"]: spec for spec in fields}
+    rules = f.rules or [search.Rule("and", "name", "contains")]
+    rows = []
+    for i, rule in enumerate(rules):
+        spec = by_key[rule.field]
+        rows.append(
+            {
+                "i": i,
+                "conn": rule.conn,
+                "field": rule.field,
+                "op": rule.op,
+                "value": rule.value,
+                "value2": rule.value2,
+                "case": rule.case,
+                "spec": spec,
+            }
+        )
     return {
-        "matches": search.MATCHES,
-        "kinds": [
-            {"key": key, "label": label, "state": f.kinds.get(key, "")}
-            for key, label, _ in search.KINDS
+        "builder_fields": fields,
+        "builder_rows": rows,
+        "builder_state": {
+            "fields": fields,
+            "rules": [
+                {
+                    "conn": r["conn"],
+                    "field": r["field"],
+                    "op": r["op"],
+                    "value": r["value"],
+                    "value2": r["value2"],
+                    "case": r["case"],
+                }
+                for r in rows
+            ],
+            "max": search.MAX_RULES,
+        },
+        "sorts": [(k, label) for k, label, lists in search.SORTS if view in lists],
+        "examples": [
+            (label, urlencode_qs(f.text, view, params))
+            for label, params in search.example_links(view)
         ],
-        "kind_states": search.KIND_STATES,
-        "spaces": [{"key": k, "label": label, "on": k in f.spaces} for k, label in search.SPACES],
-        "sorts": [
-            (k, label) for k, label in search.SORTS if players or k not in search.PLAYER_ONLY_SORTS
-        ],
-        "years": list(range(year, search.FIRST_YEAR - 1, -1)),
-        "players": players,
     }
 
 

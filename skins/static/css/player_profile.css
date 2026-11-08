@@ -524,10 +524,13 @@ button.pv-heat__week:hover, button.pv-heat__week[aria-pressed="true"] { outline:
 }
 .pv-open-split > .pv-next { align-self: start; }
 
-/* ── Advanced player search (players/directory.html, players/search.py) ── */
-.pv-dir__form { max-width: 760px; margin: 0 auto; }
-.pv-dir__form .pv-dir__search { max-width: none; }
-.pv-adv { margin-top: 12px; }
+/* ── Advanced search: the rule builder (players/directory.html,
+   partials/_qb_rule.html, js/players_directory.js, players/search.py) ── */
+.pv-dir__form { max-width: 980px; margin: 0 auto; }
+.pv-dir__form .pv-dir__search { max-width: 640px; margin: 0 auto; }
+.pv-adv { margin: 12px auto 0; max-width: 640px; }
+.pv-adv[open] { max-width: none; }
+.pv-adv > summary { display: flex; width: fit-content; margin: 0 auto; }
 .pv-adv__toggle {
   display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px;
   border-radius: 999px; border: 1px solid var(--pv-outline); background: rgba(16, 26, 37, 0.85);
@@ -541,38 +544,93 @@ button.pv-heat__week:hover, button.pv-heat__week[aria-pressed="true"] { outline:
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--pv-action); color: var(--pv-inset); font-size: 0.75rem; font-weight: 700;
 }
-.pv-adv__panel {
-  margin-top: 12px; padding: 20px; border-radius: 18px;
-  background: rgba(20, 31, 43, 0.95); border: 1px solid rgba(53, 74, 95, 0.8);
-  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 24px;
-}
-.pv-adv__hint { grid-column: 1 / -1; margin: 0; }
-.pv-adv__group { margin: 0; padding: 0; border: 0; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
-.pv-adv__group--wide { grid-column: 1 / -1; }
-.pv-adv__group legend {
-  padding: 0; margin-bottom: 10px; font-size: 0.75rem; font-weight: 700;
-  letter-spacing: 0.08em; text-transform: uppercase; color: var(--pv-muted);
-}
-.pv-adv__note { margin: 0; line-height: 1.45; }
-.pv-adv__note code { padding: 1px 5px; border-radius: 5px; background: var(--pv-inset); color: var(--pv-text); }
-.pv-adv__actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px; }
 
-.pv-radioseg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 12px; background: var(--pv-inset); border: 1px solid var(--pv-outline); width: fit-content; max-width: 100%; box-sizing: border-box; }
-.pv-radioseg label { position: relative; display: inline-flex; }
-.pv-radioseg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
-.pv-radioseg span {
-  display: inline-flex; align-items: center; min-height: 34px; padding: 0 12px; border-radius: 9px;
-  color: var(--pv-muted); font-size: 0.88rem; font-weight: 500; white-space: nowrap;
+.pv-qb {
+  margin-top: 12px; padding: 20px 22px; border-radius: 18px; text-align: left;
+  background: rgba(20, 31, 43, 0.96); border: 1px solid rgba(53, 74, 95, 0.8);
 }
-.pv-radioseg input:checked + span { background: var(--pv-panel-2); color: var(--pv-text); box-shadow: inset 0 0 0 1px var(--pv-action); }
-.pv-radioseg input:focus-visible + span { outline: 2px solid var(--pv-link); outline-offset: 1px; }
-.pv-radioseg label:hover span { color: var(--pv-text); }
-.pv-radioseg--sm span { min-height: 30px; padding: 0 10px; font-size: 0.82rem; }
+.pv-qb__head { margin-bottom: 14px; }
+.pv-qb__title { font-size: 1.1rem; margin: 0 0 4px; }
+.pv-qb__head p { margin: 0; line-height: 1.45; }
 
-.pv-adv__kinds { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px 20px; }
-.pv-adv__kind { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.pv-adv__kind-label { font-weight: 600; font-size: 0.92rem; }
+.pv-qb__rules { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.pv-qb__rule {
+  display: grid; grid-template-columns: 76px minmax(130px, 0.9fr) minmax(150px, 1fr) minmax(200px, 1.6fr) 40px;
+  align-items: center; gap: 8px; padding: 8px; border-radius: 14px;
+  background: var(--pv-inset); border: 1px solid var(--pv-rule);
+}
+.pv-qb__rule:focus-within { border-color: rgba(71, 216, 196, 0.55); }
+.pv-qb__conn { display: flex; justify-content: center; }
+.pv-qb__where { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--pv-muted); }
 
+.pv-qb__select { display: inline-flex; align-items: center; gap: 8px; min-width: 0; position: relative; }
+.pv-qb__select select, .pv-qb__input input {
+  width: 100%; height: 42px; box-sizing: border-box; margin: 0; padding: 0 12px; border-radius: 10px;
+  border: 1px solid var(--pv-outline); background: #16263a; color: var(--pv-text);
+  font: inherit; font-size: 0.95rem; box-shadow: none;
+}
+.pv-qb__select select {
+  -webkit-appearance: none; appearance: none; padding-right: 32px; cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, #aec1d3 50%), linear-gradient(135deg, #aec1d3 50%, transparent 50%);
+  background-position: calc(100% - 17px) 50%, calc(100% - 12px) 50%;
+  background-size: 5px 5px; background-repeat: no-repeat;
+}
+.pv-qb__select select:focus, .pv-qb__input input:focus { outline: none; border-color: var(--pv-action); box-shadow: 0 0 0 3px rgba(71, 216, 196, 0.18); }
+.pv-qb__select--conn select {
+  height: 30px; padding: 0 26px 0 12px; border-radius: 999px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em;
+  color: var(--pv-action); border-color: rgba(71, 216, 196, 0.5); background-color: rgba(71, 216, 196, 0.1);
+  background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50%;
+}
+.pv-qb__field select { font-weight: 600; }
+.pv-qb__field, .pv-qb__op { width: 100%; }
+
+.pv-qb__value { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.pv-qb__value > .pv-qb__select { flex: 1; }
+.pv-qb__input { flex: 1; min-width: 0; display: flex; }
+.pv-qb__input--num { flex: 0 1 120px; }
+.pv-qb__input input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+.pv-qb__input input::-webkit-outer-spin-button, .pv-qb__input input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.pv-qb__input input { white-space: pre; }
+.pv-qb__and, .pv-qb__unit { color: var(--pv-muted); font-size: 0.85rem; white-space: nowrap; }
+.pv-qb__case { position: relative; flex-shrink: 0; display: inline-flex; cursor: pointer; }
+.pv-qb__case input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.pv-qb__case span[aria-hidden], .pv-qb__case > span:not(.pv-visually-hidden) {
+  display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; box-sizing: border-box;
+  border-radius: 10px; border: 1px solid var(--pv-outline); color: var(--pv-muted); font-weight: 700; font-size: 0.9rem;
+}
+.pv-qb__case input:checked + span { background: rgba(71, 216, 196, 0.16); border-color: var(--pv-action); color: var(--pv-action); }
+.pv-qb__case input:focus-visible + span { outline: 2px solid var(--pv-link); outline-offset: 2px; }
+
+.pv-qb__remove {
+  width: 40px; height: 40px; padding: 0; margin: 0; border-radius: 10px; border: 1px solid transparent;
+  background: transparent; color: var(--pv-muted); font: inherit; font-size: 1.4rem; line-height: 1; cursor: pointer;
+}
+.pv-qb__remove:hover { color: #ff8f8f; background: rgba(255, 143, 143, 0.1); }
+.pv-qb__remove:focus-visible { outline: 2px solid var(--pv-link); }
+
+.pv-qb__bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: 14px; }
+.pv-qb__add, .pv .pv-qb__clear {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 4px; border: 0; background: none;
+  font: inherit; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; text-decoration: none;
+}
+.pv-qb__add { color: var(--pv-action); }
+.pv .pv-qb__clear { color: var(--pv-warm); }
+.pv-qb__add:hover, .pv .pv-qb__clear:hover { text-decoration: underline; }
+.pv-qb__spacer { flex: 1; }
+.pv-qb__sort select { width: auto; min-width: 150px; }
+
+.pv-qb__examples { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--pv-rule); }
+.pv .pv-qb__example {
+  display: inline-flex; align-items: center; min-height: 30px; padding: 0 12px; border-radius: 999px;
+  border: 1px dashed var(--pv-outline); color: var(--pv-text); font-size: 0.82rem; text-decoration: none;
+}
+.pv .pv-qb__example:hover { border-style: solid; border-color: var(--pv-action); color: var(--pv-action); }
+
+.pv-adv__chips { list-style: none; padding: 0; margin: 14px auto 0; max-width: 980px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; }
+.pv-adv__conn { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; color: var(--pv-action); }
+.pv-pcard__name { white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+
+/* Checkbox and select used by the Friends tab. */
 .pv-check { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.92rem; width: fit-content; }
 .pv-check input {
   -webkit-appearance: none; appearance: none; margin: 0; flex-shrink: 0; width: 22px; height: 22px; border-radius: 7px;
@@ -582,27 +640,25 @@ button.pv-heat__week:hover, button.pv-heat__week[aria-pressed="true"] { outline:
 .pv-check input:checked { background: var(--pv-action); border-color: var(--pv-action); }
 .pv-check input:checked::after { opacity: 1; }
 .pv-check input:focus-visible { outline: 2px solid var(--pv-link); outline-offset: 2px; }
-.pv-adv__checks { display: flex; flex-direction: column; gap: 10px; }
-
-.pv-adv__range { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
-.pv-adv__num, .pv-adv__select { display: inline-flex; align-items: center; gap: 8px; }
-.pv .pv-adv__num input, .pv .pv-adv__select select {
-  height: 42px; box-sizing: border-box; padding: 0 12px; border-radius: 10px;
-  border: 1px solid var(--pv-outline); background: var(--pv-inset); color: var(--pv-text);
-  font: inherit; font-size: 0.95rem; box-shadow: none; margin: 0;
+.pv-adv__select { display: inline-flex; align-items: center; gap: 8px; }
+.pv .pv-adv__select select {
+  height: 42px; box-sizing: border-box; padding: 0 32px 0 12px; border-radius: 10px; margin: 0;
+  border: 1px solid var(--pv-outline); background: var(--pv-inset); color: var(--pv-text); font: inherit; font-size: 0.95rem; cursor: pointer;
 }
-.pv .pv-adv__num input { width: 84px; -moz-appearance: textfield; appearance: textfield; }
-.pv .pv-adv__num--wide input { width: 110px; }
-.pv .pv-adv__num input::-webkit-outer-spin-button, .pv .pv-adv__num input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.pv .pv-adv__num input:focus, .pv .pv-adv__select select:focus { outline: none; border-color: var(--pv-action); box-shadow: 0 0 0 3px rgba(71, 216, 196, 0.18); }
-.pv .pv-adv__select select { padding-right: 32px; cursor: pointer; }
+.pv .pv-adv__select select:focus { outline: none; border-color: var(--pv-action); box-shadow: 0 0 0 3px rgba(71, 216, 196, 0.18); }
 
-.pv-adv__chips { list-style: none; padding: 0; margin: 14px auto 0; max-width: 760px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.pv-pcard__name { white-space: pre; overflow: hidden; text-overflow: ellipsis; }
-
-@media (max-width: 700px) {
-  .pv-adv__panel { grid-template-columns: minmax(0, 1fr); padding: 16px 14px; }
-  .pv-adv__kind { flex-wrap: wrap; }
+/* Phones: each rule becomes a small card, like the library's search lines:
+   [AND/OR] [field] [×] on top, [condition] [value] below. */
+@media (max-width: 760px) {
+  .pv-qb { padding: 16px 12px; }
+  .pv-qb__rule { grid-template-columns: auto minmax(0, 1fr) 40px; grid-template-areas: "conn field remove" "op op op" "value value value"; padding: 10px; }
+  .pv-qb__conn { grid-area: conn; justify-content: flex-start; }
+  .pv-qb__field { grid-area: field; }
+  .pv-qb__op { grid-area: op; }
+  .pv-qb__value { grid-area: value; flex-wrap: wrap; }
+  .pv-qb__remove { grid-area: remove; }
+  .pv-qb__spacer { display: none; }
+  .pv-qb__bar .pv-btn { flex: 1; }
 }
 
 /* ── Friends tab (players/friends.html, js/player_friends.js) ── */
@@ -650,6 +706,5 @@ a.pv-friend:focus-visible { outline: 2px solid var(--pv-link); outline-offset: 2
   .pv-friends__lists { width: 100%; }
   .pv-friends__lists button { flex: 1; justify-content: center; }
 }
-.pv-adv__note code { white-space: nowrap; }
 .pv-friendlist { grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); }
 .pv-friends__lists { box-sizing: border-box; max-width: 100%; }
