@@ -95,7 +95,6 @@ def xp_calculator(request):
         "dbid_points": dbid.timeline(),
         "player_url": reverse("xp_calculator_player"),
         "levels_url": reverse("xp_calculator_levels"),
-        "profile_url": reverse("player_profile", args=["__name__"]),
     }
     return render(
         request,

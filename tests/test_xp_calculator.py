@@ -202,3 +202,13 @@ def test_player_cards_show_join_date_and_hide_impossible_levels(client, mocked_h
 def test_navbar_has_tools(client, mocked_http):
     html = client.get(reverse("players_directory")).content.decode()
     assert reverse("xp_calculator") in html
+
+
+def test_calculator_script_builds_profile_links_like_the_url_conf():
+    """xp_calculator.js hard-codes the profile path (so links never come from
+    page data); keep it in step with players/urls.py."""
+    from pathlib import Path
+
+    script = Path("skins/static/js/xp_calculator.js").read_text(encoding="utf-8")
+    assert reverse("player_profile", args=["x"]) == "/player/x/"
+    assert "`/player/${encodeURIComponent(String(name))}/`" in script
