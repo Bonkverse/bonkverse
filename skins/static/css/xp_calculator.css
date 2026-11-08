@@ -130,3 +130,15 @@
 }
 @media (prefers-reduced-motion: reduce) { .xc-levelbar__fill { transition: none; } }
 .xc-panel > .xc-chartbar:first-child { margin-top: 16px; }
+
+/* A soft panel behind each tab and the player strip, so everything stays
+   readable over the particle background. */
+.xc-panel, .xc-player {
+  padding: 24px; margin-top: 16px; border-radius: 20px;
+  background: rgba(20, 31, 43, 0.92); border: 1px solid rgba(53, 74, 95, 0.6);
+}
+.xc-player { padding: 16px 20px; }
+.xc-tabs { margin-bottom: 0; }
+.xc-foot { border-top: 0; }
+@media (max-width: 560px) { .xc-panel { padding: 16px 14px; } }
+.xc-panel .xc-h2--spaced { margin-top: 32px; }

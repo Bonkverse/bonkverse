@@ -505,3 +505,21 @@ button.pv-heat__week:hover, button.pv-heat__week[aria-pressed="true"] { outline:
 .pv-tiles--open { padding: 8px 0 24px; border-top: 1px solid rgba(53, 74, 95, 0.7); }
 .pv-tiles--open .pv-tile { background: none; border: 0; padding: 16px 0 0; }
 .pv-tiles--open .pv-tile__val { font-size: 1.9rem; }
+
+/* Open sections get a soft panel behind them so text and charts stay
+   readable over the particle background. */
+.pv-open {
+  padding: 22px 22px 24px; margin-bottom: 20px; border-radius: 18px;
+  background: rgba(20, 31, 43, 0.92); border: 1px solid rgba(53, 74, 95, 0.6);
+}
+.pv-tabs + .pv-open, .pv-tabs + script + .pv-open { padding-top: 22px; border-top: 1px solid rgba(53, 74, 95, 0.6); }
+.pv-duo > .pv-open, .pv-trio > .pv-open { border-top: 1px solid rgba(53, 74, 95, 0.6); margin-bottom: 0; }
+.pv-tiles--open { padding: 4px 22px 20px; border-radius: 18px; background: rgba(20, 31, 43, 0.92); border: 1px solid rgba(53, 74, 95, 0.6); margin-bottom: 20px; }
+.pv-open-split { gap: 0 20px; }
+@media (max-width: 640px) {
+  .pv-open { padding: 16px 14px 18px; }
+  .pv-tiles--open { padding: 4px 14px 16px; }
+  .bv-chart { padding: 12px 8px 8px; }
+  .bv-chart--zoom { padding-top: 52px; }
+}
+.pv-open-split > .pv-next { align-self: start; }
