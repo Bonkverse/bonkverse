@@ -316,7 +316,10 @@
     cache.set(key, res.data);
     return res.data;
   }
-  const profileUrl = (name) => C.profile_url.replace("__name__", encodeURIComponent(name));
+  // A player's profile path (players/urls.py: player/<name>/). Built here
+  // rather than from the page's data so it is always a same-site path; the
+  // name is percent-encoded, so it can't become a different URL.
+  const profileUrl = (name) => `/player/${encodeURIComponent(String(name))}/`;
   const playerXp = (p) => (p.xp != null ? p.xp : p.xp_floor);
 
   async function loadPlayer(name, { setGoal = true } = {}) {
