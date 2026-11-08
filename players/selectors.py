@@ -23,7 +23,8 @@ SKINS_SHOWN = 12
 
 
 def _cache_key(username):
-    digest = hashlib.sha1(username.lower().encode("utf-8")).hexdigest()
+    # Hashed only to keep any username (spaces, symbols) a safe cache key.
+    digest = hashlib.sha256(username.lower().encode("utf-8")).hexdigest()
     return f"players:profile:v1:{digest}"
 
 
