@@ -23,6 +23,7 @@ from integrations.replays import (
     PlayerError,
     get_player_configured,
     get_player_map_configured,
+    level_distribution_configured,
     lookup_players_configured,
     search_players_configured,
 )
@@ -40,7 +41,7 @@ from skins.selectors import (
     skins_created_by,
 )
 
-from . import charts
+from . import calculator, charts
 from .models import ProfileVisibility
 
 FEATURED_SKINS = 4
@@ -135,7 +136,10 @@ def profile_base(username, viewer, active=""):
         )
 
     links = charts.ReplayLinks(settings.BONKVERSE_REPLAYS_URL)
+    bonk_player = bonk_players_named([name]).get(name.lower())
     return {
+        "bonk_player": bonk_player,
+        "account_age": calculator.account_age(bonk_player.bonk_id) if bonk_player else None,
         "username": name,
         "account": account,
         "is_owner": is_owner,
@@ -167,6 +171,12 @@ def overview(base):
             if shown["maps_and_modes"]
             else None,
             heatmap=charts.heatmap(profile.get("days", []), today) if shown["activity"] else None,
+            level_card=calculator.level_card(
+                profile["summary"].get("current_level"),
+                xp=base["bonk_player"].xp if base["bonk_player"] else None,
+            )
+            if shown["level_history"]
+            else None,
             streaks=charts.streaks(profile.get("days", []), today) if shown["activity"] else None,
             partners=charts.people_rows(
                 (profile.get("played_with") or [])[:4], links, base["username"]
@@ -320,15 +330,17 @@ def _card(name, *, stats, member, bonk_player=None, flash_friends=None, listed_b
     """One player card. It links to the profile only when there is one
     (replays or a Bonkverse account)."""
     has_profile = bool(stats) or member
+    age = calculator.account_age(bonk_player.bonk_id) if bonk_player else None
     return {
         "username": name,
         "initials": name.strip()[:2].upper() or "?",
         "profile_url": charts.profile_path(name) if has_profile else None,
         "member": member,
-        "level": (stats or {}).get("level") or None,
+        "level": calculator.sane_level((stats or {}).get("level")),
         "games": (stats or {}).get("games"),
         "bonk_id": bonk_player.bonk_id if bonk_player else None,
         "friends": bonk_player.last_friend_count if bonk_player else None,
+        "joined": age,
         "flash_friends": flash_friends,
         "listed_by": listed_by,
     }
@@ -417,3 +429,44 @@ def urlencode_qs(query, view):
     if query:
         params["q"] = query
     return urlencode(params)
+
+
+# ── XP & Level calculator ────────────────────────────────────────
+
+DISTRIBUTION_CACHE_SECONDS = 6 * 60 * 60
+
+
+def level_distribution():
+    """(data, error): players per highest level seen in replays."""
+    key = _cache_key("levels-distribution")
+    found = cache.get(key)
+    if found is not None:
+        return found, None
+    result = level_distribution_configured()
+    if result.error:
+        return None, result.error
+    data = {"levels": result.data["levels"], "players": result.data.get("players")}
+    cache.set(key, data, DISTRIBUTION_CACHE_SECONDS)
+    return data, None
+
+
+def calculator_player(username, viewer):
+    """(summary, error) for the calculator: level, XP when known, account
+    age, level history and recent pace. Error is "not_found", "private"
+    (the player hides their level) or "unavailable"."""
+    username = (username or "")[:100]
+    base = profile_base(username, viewer) if username else None
+    if base is None or base["profile"] is None:
+        error = (base or {}).get("replays_error") or PlayerError.NOT_FOUND
+        return None, "unavailable" if error == PlayerError.UNAVAILABLE else "not_found"
+    if not base["shown"]["level_history"]:
+        return None, "private"
+    player = base["bonk_player"]
+    return (
+        calculator.player_summary(
+            base["profile"],
+            bonk_id=player.bonk_id if player else None,
+            xp=player.xp if player else None,
+        ),
+        None,
+    )

@@ -27,6 +27,19 @@
         <polygon class="pv-spark__area" points="{{ sparkline.area }}"></polygon>
         <polyline class="pv-spark__line" points="{{ sparkline.line }}"></polyline>
       </svg>
+      {% if level_card %}
+        <div class="pv-levelfacts">
+          {% if level_card.exact %}
+            <div class="pv-levelfacts__bar" role="img" aria-label="{{ level_card.percent }}% of the way to level {{ level_card.level|add:1 }}">
+              <span class="pv-meter" style="--bar: {{ level_card.percent }}%"></span>
+              <span class="pv-small pv-muted">{{ level_card.xp|floatformat:"0g" }} XP · {{ level_card.percent }}% to level {{ level_card.level|add:1 }}</span>
+            </div>
+          {% else %}
+            <span class="pv-small pv-muted">At least {{ level_card.xp_floor|floatformat:"0g" }} XP (level {{ level_card.level }} starts there)</span>
+          {% endif %}
+          <span class="pv-small pv-muted">Level {{ level_card.milestone }}: {{ level_card.milestone_goal.wins_needed|floatformat:"0g" }} wins, {{ level_card.milestone_goal.days_at_cap|floatformat:"0g" }} days at the daily max</span>
+        </div>
+      {% endif %}
     </a>
   {% endif %}
 

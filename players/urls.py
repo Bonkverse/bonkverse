@@ -19,4 +19,7 @@ urlpatterns = [
     path("player/<str:username>/people/", views.people, name="player_people"),
     path("player/<str:username>/skins/", views.skins, name="player_skins"),
     path("settings/profile/", views.profile_settings, name="profile_settings"),
+    path("tools/xp/", views.xp_calculator, name="xp_calculator"),
+    path("tools/xp/player.json", views.xp_calculator_player, name="xp_calculator_player"),
+    path("tools/xp/levels.json", views.xp_calculator_levels, name="xp_calculator_levels"),
 ]

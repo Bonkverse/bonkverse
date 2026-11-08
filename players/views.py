@@ -1,8 +1,10 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 
+from core.bonk import dbid, levels
 from core.ratelimits import limit
 
 from . import selectors, services
@@ -82,6 +84,54 @@ def legacy_flash_friends_page(request):
 def _redirect_to_directory(request, view):
     query = request.GET.get("q", "")
     return redirect(f"{reverse('players_directory')}?{selectors.urlencode_qs(query, view)}")
+
+
+@limit("browse")
+def xp_calculator(request):
+    """The public XP & Level calculator. `?player=` and `?goal=` prefill it."""
+    constants = {
+        "xp_per_win": levels.XP_PER_WIN,
+        "daily_cap": levels.DAILY_XP_CAP,
+        "dbid_points": dbid.timeline(),
+        "player_url": reverse("xp_calculator_player"),
+        "levels_url": reverse("xp_calculator_levels"),
+        "profile_url": reverse("player_profile", args=["__name__"]),
+    }
+    return render(
+        request,
+        "players/xp_calculator.html",
+        {
+            "constants": constants,
+            "prefill_player": request.GET.get("player", "")[:100],
+            "prefill_goal": request.GET.get("goal", "")[:6],
+        },
+    )
+
+
+_PLAYER_ERROR_STATUS = {"not_found": 404, "private": 403, "unavailable": 502}
+
+
+@limit("search")
+def xp_calculator_player(request):
+    """JSON for one player in the calculator: level, XP when known, account
+    age, level history and recent pace."""
+    data, error = selectors.calculator_player(request.GET.get("name", ""), request.user)
+    if error:
+        return JsonResponse({"ok": False, "error": error}, status=_PLAYER_ERROR_STATUS[error])
+    return JsonResponse({"ok": True, "data": data})
+
+
+@limit("browse")
+def xp_calculator_levels(request):
+    """JSON: how many replay players have each level (for "higher than N%")."""
+    data, error = selectors.level_distribution()
+    if error:
+        # 200, not 5xx: the spread is an optional extra on the page, which
+        # says it can't load it and keeps working.
+        return JsonResponse({"ok": False, "error": "unavailable"})
+    response = JsonResponse({"ok": True, "data": data})
+    response["Cache-Control"] = "public, max-age=3600"
+    return response
 
 
 @login_required

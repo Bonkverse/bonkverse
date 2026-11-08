@@ -31,6 +31,12 @@ header, the owner's privacy note and the tab bar. Each tab fills
       {% endif %}
       <div class="pv-chips">
         {% if summary and shown.level_history %}<span class="pv-chip">Level {{ summary.current_level }}</span>{% endif %}
+        {% if account_age %}
+          <span class="pv-chip" title="Estimated from account ID {{ bonk_player.bonk_id }}">
+            <i data-lucide="cake" aria-hidden="true"></i>
+            Joined bonk.io {% if account_age.extrapolated %}around{% else %}≈{% endif %} {{ account_age.day|date:"M Y" }}
+          </span>
+        {% endif %}
         {% if account %}
           <span class="pv-chip">On Bonkverse since {{ account.date_joined|date:"M Y" }}</span>
         {% else %}

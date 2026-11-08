@@ -92,11 +92,12 @@
     <p class="pv-fine">Replays show a player's level, not their XP, so a level-up is dated by the first replay that shows it. Older replays have estimated days.</p>
   </section>
 
-  <section class="pv-card pv-card--accent pv-split__side" aria-labelledby="next-title" data-next hidden>
+  <section class="pv-card pv-card--accent pv-split__side" aria-labelledby="next-title" data-next>
     <i data-lucide="trending-up" class="pv-card__icon" aria-hidden="true"></i>
     <h2 id="next-title" class="pv-card__title">What's next</h2>
-    <p data-next-text></p>
+    <p data-next-text>Pick a range above to see the pace.</p>
     <p class="pv-muted pv-small">An estimate from this range's pace, not a promise.</p>
+    <a class="pv-btn" href="{% url 'xp_calculator' %}?player={{ username|urlencode }}">Plan it in the XP calculator</a>
   </section>
 </div>
 {% endblock %}

@@ -60,7 +60,7 @@ def test_all_players_cards_show_replay_stats_and_link_profiles(client, mocked_ht
     mock_lookup(mocked_http, [{"username": "Saucy Tulip", "games": 2052, "level": 206}])
 
     html = client.get(reverse("players_directory") + "?q=sau").content.decode()
-    assert "Level 206" in html and "2052 replays" in html and "45 friends" in html
+    assert ">206<" in html and ">2,052<" in html and ">45<" in html
     assert reverse("player_profile", args=["Saucy Tulip"]) in html
     # No replays and no Bonkverse account: no profile to open
     assert reverse("player_profile", args=["saucepan"]) not in html
@@ -77,7 +77,7 @@ def test_exact_name_and_members_come_first(client, mocked_http):
 
     html = client.get(reverse("players_directory") + "?q=tulip").content.decode()
     assert html.index(">tulip<") < html.index("tulip_member") < html.index("tulipfan")
-    assert "Bonkverse</span>" in html
+    assert 'aria-label="Bonkverse member"' in html
 
 
 @pytest.mark.django_db
@@ -93,7 +93,7 @@ def test_most_active_view_uses_replay_search(client, mocked_http):
     BonkPlayer.objects.create(bonk_id=7, username="The Saucy Tulip", last_friend_count=45)
     mock_search(mocked_http, [{"username": "The Saucy Tulip", "games": 2052, "level": 206}])
     html = client.get(reverse("players_directory") + "?view=replays&q=the").content.decode()
-    assert "The Saucy Tulip" in html and "45 friends" in html and "Level 206" in html
+    assert "The Saucy Tulip" in html and ">45<" in html and ">206<" in html
 
 
 @pytest.mark.django_db
@@ -116,7 +116,7 @@ def test_flash_view_links_resolved_names(client, mocked_http):
 
     html = client.get(reverse("players_directory") + "?view=flash").content.decode()
     assert reverse("player_profile", args=["NowCalledThis"]) in html
-    assert "lostpal" in html and "Listed by 1 member" in html
+    assert "lostpal" in html and "Listed by" in html
 
 
 @pytest.mark.django_db

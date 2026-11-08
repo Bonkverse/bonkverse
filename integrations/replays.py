@@ -1,7 +1,8 @@
 """The replay site's player API (ReplayRenderer, replays.bonkverse.io).
 
 Owns: the `GET /api/player/<name>`, `/api/player/<name>/map/<mapid>`,
-`/api/players/lookup` and `/api/players?q=` requests, URL-encoding the username, the
+`/api/players/lookup`, `/api/players?q=` and `/api/levels/distribution`
+requests, URL-encoding the username, the
 timeout, and sorting the reply into found / no such player / no usable
 answer. Every call returns a `PlayerResult` instead of raising.
 Does not own: what a profile page shows or who may see it (players/), or
@@ -158,6 +159,28 @@ def search_players(base_url: str, query: str, *, timeout=DEFAULT_TIMEOUT) -> Pla
     )
 
 
+def level_distribution(base_url: str, *, timeout=(3.0, 30.0)) -> PlayerResult:
+    """How many registered players have each level as their highest seen in
+    replays: data is {"levels": [[level, players], ...], "players": total}.
+    The replay site works this out over its whole archive, hence the long
+    read timeout the first time."""
+    if not base_url:
+        return PlayerResult(error=PlayerError.NOT_CONFIGURED)
+    try:
+        response = requests.get(f"{base_url}/api/levels/distribution", timeout=timeout)
+        data = response.json()
+    except requests.RequestException as exc:
+        logger.warning("replays api (levels): unreachable: %s", type(exc).__name__)
+        return PlayerResult(error=PlayerError.UNAVAILABLE)
+    except ValueError:
+        logger.warning("replays api (levels): non-JSON reply, http=%s", response.status_code)
+        return PlayerResult(error=PlayerError.UNAVAILABLE)
+    if not response.ok or not isinstance(data, dict) or not isinstance(data.get("levels"), list):
+        logger.warning("replays api (levels): http=%s", response.status_code)
+        return PlayerResult(error=PlayerError.UNAVAILABLE)
+    return PlayerResult(data=data)
+
+
 def get_player_configured(username: str) -> PlayerResult:
     """`get_player` against settings.BONKVERSE_REPLAYS_URL."""
     from django.conf import settings
@@ -184,3 +207,10 @@ def search_players_configured(query: str) -> PlayerResult:
     from django.conf import settings
 
     return search_players(settings.BONKVERSE_REPLAYS_URL, query)
+
+
+def level_distribution_configured() -> PlayerResult:
+    """`level_distribution` against settings.BONKVERSE_REPLAYS_URL."""
+    from django.conf import settings
+
+    return level_distribution(settings.BONKVERSE_REPLAYS_URL)
