@@ -1,34 +1,36 @@
 // xp_calculator.js — the XP & Level calculator (players/xp_calculator.html)
 //
-// Everything updates as you type: level ↔ XP, a goal planner with a
-// projection chart, where a level stands among replay players, a
-// level-over-time comparison of up to four players, and an account's
-// creation date from its ID. bonk.io's formulas (core/bonk/levels.py):
-//   total XP at level L = 100·(L−1)², a won round = 100 XP, 18,000 XP a day max.
+// Four tabs: Plan a goal, Compare players, Level spread, Account age. Every
+// chart is a BVChart (core/js/bv-chart.js): big, with a tooltip at the
+// pointer and drag-to-zoom on the line charts. bonk.io's formulas
+// (core/bonk/levels.py): total XP at level L = 100·(L−1)², a won round =
+// 100 XP, 18,000 XP a day at most.
 //
-// Data: #xc-constants (json_script) has the formulas' constants, the known
-// account-ID dates and the JSON endpoints for players and the level spread.
+// Data: #xc-constants (json_script): the constants, known account-ID dates
+// and the JSON endpoints for players and the level spread.
 
 (function () {
   "use strict";
 
   const root = document.querySelector("[data-xc]");
   const constEl = document.getElementById("xc-constants");
-  if (!root || !constEl) return;
+  if (!root || !constEl || !window.BVChart) return;
   const C = JSON.parse(constEl.textContent);
 
   const XP_PER_WIN = C.xp_per_win;
   const DAILY_CAP = C.daily_cap;
   const MAX_LEVEL = 5000;
-  const DAY_MS = 86400000;
+  const DAY = 86400000;
   const COLORS = ["#47d8c4", "#90b7ff", "#ffb454", "#c79bff"];
+  const PACE = { cap: "#47d8c4", pace: "#90b7ff", player: "#ffb454", history: "#edf4fb" };
 
   const $ = (sel, el = root) => el.querySelector(sel);
+  const $$ = (sel, el = root) => [...el.querySelectorAll(sel)];
   const num = (n) => Math.round(n).toLocaleString();
   const fmtDay = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" });
   const fmtMonth = new Intl.DateTimeFormat(undefined, { month: "short", year: "numeric" });
-  const parseDay = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
-  const today = new Date(new Date().toDateString());
+  const parseDay = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d).getTime(); };
+  const today = new Date(new Date().toDateString()).getTime();
 
   const xpFor = (level) => 100 * Math.pow(Math.max(1, Math.floor(level)) - 1, 2);
   const levelFor = (xp) => Math.floor(Math.sqrt(Math.floor(Math.max(0, xp) / 100))) + 1;
@@ -38,266 +40,212 @@
     return Number.isFinite(v) ? v : null;
   };
   const daysLabel = (d) => (d < 1 ? "today" : d === 1 ? "1 day" : `${num(d)} days`);
-  const svgEl = (tag, attrs) => {
-    const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
-    for (const k in attrs) el.setAttribute(k, attrs[k]);
-    return el;
-  };
+  const when = (days) => (days > 36500 ? "more than a century away" : fmtMonth.format(today + days * DAY));
+  // A player's profile path (players/urls.py: player/<name>/), built here so
+  // links never come from page data; the name is percent-encoded.
+  const profileUrl = (name) => `/player/${encodeURIComponent(String(name))}/`;
 
-  // Show a tooltip box near the pointer inside a chart figure.
-  function placeTip(tip, fig, clientX, lines) {
-    const r = fig.getBoundingClientRect();
-    const x = clientX - r.left;
-    tip.replaceChildren(...lines.map(([text, color]) => {
-      const row = document.createElement("div");
-      if (color) {
-        const sw = document.createElement("span");
-        sw.className = "pv-swatch";
-        sw.style.setProperty("--slice", color);
-        row.append(sw);
-      }
-      row.append(text);
-      return row;
-    }));
-    tip.hidden = false;
-    tip.style.setProperty("--x", `${Math.min(Math.max(x, 70), r.width - 70)}px`);
-  }
-
-  // ── Level ↔ XP ──────────────────────────────────────────────
-  const conv = {
-    level: $("[data-conv-level]"),
-    xp: $("[data-conv-xp]"),
-    progress: $("[data-conv-progress]"),
-  };
-  let convExact = false; // true when the XP box was typed (not derived)
-
-  function renderConverter() {
-    const level = readInt(conv.level);
-    const xp = readInt(conv.xp);
-    const list = $("[data-conv-milestones]");
-    if (!level) { conv.progress.hidden = true; list.replaceChildren(); return; }
-    const from = xpFor(level), to = xpFor(level + 1);
-    conv.progress.hidden = !convExact;
-    if (convExact && xp != null) {
-      const into = xp - from;
-      $("[data-conv-from]").textContent = `Level ${level}`;
-      $("[data-conv-to]").textContent = `Level ${level + 1}`;
-      $("[data-conv-pct]").textContent = `${((into / (to - from)) * 100).toFixed(2)}%`;
-      $("[data-conv-fill]").style.setProperty("--bar", `${(into / (to - from)) * 100}%`);
-      $("[data-conv-left]").textContent =
-        `${num(into)} / ${num(to - from)} XP into this level · ${num(to - xp)} XP (${num(Math.ceil((to - xp) / XP_PER_WIN))} wins) to level ${level + 1}`;
+  // ── Tabs ─────────────────────────────────────────────────────
+  const TABS = ["plan", "compare", "spread", "age"];
+  function showTab(name, push) {
+    if (!TABS.includes(name)) name = "plan";
+    for (const p of $$("[data-panel]")) p.hidden = p.dataset.panel !== name;
+    for (const t of $$("[data-tab]")) {
+      const on = t.dataset.tab === name;
+      t.setAttribute("aria-selected", String(on));
+      if (on) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current");
     }
-    const base = convExact && xp != null ? xp : from;
-    const marks = [];
-    for (let m = Math.floor(level / 50) * 50 + 50; marks.length < 3 && m <= MAX_LEVEL; m += 50) marks.push(m);
-    list.replaceChildren(...marks.map((m) => {
-      const need = xpFor(m) - base;
-      const li = document.createElement("li");
-      const strong = document.createElement("strong");
-      strong.textContent = `Level ${m}`;
-      const meta = document.createElement("span");
-      meta.className = "pv-muted pv-small";
-      meta.textContent = `${num(xpFor(m))} XP · ${num(need)} to go · ${num(Math.ceil(need / XP_PER_WIN))} wins · ${daysLabel(Math.ceil(need / DAILY_CAP))} at the max`;
-      li.append(strong, meta);
-      return li;
+    if (push) history.replaceState(null, "", `${location.pathname}${location.search}#${name}`);
+  }
+  $$("[data-tab]").forEach((t) => t.addEventListener("click", (e) => { e.preventDefault(); showTab(t.dataset.tab, true); }));
+  window.addEventListener("hashchange", () => showTab(location.hash.slice(1)));
+  showTab(location.hash.slice(1));
+
+  function segment(group, onPick) {
+    group.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+      if (b.disabled) return;
+      group.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      onPick(b);
     }));
   }
-  conv.level.addEventListener("input", () => {
-    const level = readInt(conv.level);
-    convExact = false;
-    conv.xp.value = level ? xpFor(clampLevel(level)) : "";
-    renderConverter();
-  });
-  conv.xp.addEventListener("input", () => {
-    const xp = readInt(conv.xp);
-    convExact = xp != null;
-    conv.level.value = xp != null ? levelFor(xp) : "";
-    renderConverter();
-  });
 
-  // ── Goal planner ─────────────────────────────────────────────
-  const g = {
-    startLevel: $("[data-start-level]"),
-    startXp: $("[data-start-xp]"),
-    goalLevel: $("[data-goal-level]"),
-    goalXp: $("[data-goal-xp]"),
-    pace: $("[data-pace]"),
+  // ── Plan a goal ──────────────────────────────────────────────
+  const plan = {
+    startLevel: $("[data-start-level]"), startXp: $("[data-start-xp]"),
+    goalLevel: $("[data-goal-level]"), goalXp: $("[data-goal-xp]"),
+    pace: $("[data-pace]"), view: "ahead",
   };
-  function pair(levelInput, xpInput, onChange) {
+  let startXpTyped = false;
+
+  function pair(levelInput, xpInput, isStart) {
     levelInput.addEventListener("input", () => {
       const lv = readInt(levelInput);
       xpInput.value = lv ? xpFor(clampLevel(lv)) : "";
-      onChange();
+      if (isStart) startXpTyped = false;
+      update();
     });
     xpInput.addEventListener("input", () => {
       const xp = readInt(xpInput);
       levelInput.value = xp != null ? levelFor(xp) : "";
-      onChange();
+      if (isStart) startXpTyped = xp != null;
+      update();
     });
   }
-  pair(g.startLevel, g.startXp, () => { renderGoal(); renderStand(); renderCompareTable(); });
-  pair(g.goalLevel, g.goalXp, () => { renderGoal(); renderCompareTable(); });
-  g.pace.addEventListener("input", renderGoal);
+  pair(plan.startLevel, plan.startXp, true);
+  pair(plan.goalLevel, plan.goalXp, false);
+  plan.pace.addEventListener("input", () => { renderPlan(); });
+  segment($("[data-plan-view]"), (b) => { plan.view = b.dataset.view; renderPlanChart(); });
 
-  function goalState() {
-    const startXp = readInt(g.startXp);
-    const goalXp = readInt(g.goalXp);
+  function setGoal(level) {
+    plan.goalLevel.value = clampLevel(level);
+    plan.goalXp.value = xpFor(clampLevel(level));
+    update();
+  }
+
+  function state() {
+    const startXp = readInt(plan.startXp);
+    const goalXp = readInt(plan.goalXp);
     if (startXp == null || goalXp == null) return null;
     const need = Math.max(0, goalXp - startXp);
-    const wins = Number(g.pace.value);
+    const wins = Number(plan.pace.value);
+    const playerRate = player && player.pace && player.pace.xp_per_day > 0 ? player.pace.xp_per_day : null;
     return {
-      startXp, goalXp, need,
+      startXp, goalXp, need, wins, playerRate,
       startLevel: levelFor(startXp), goalLevel: levelFor(goalXp),
       winsNeeded: Math.ceil(need / XP_PER_WIN),
       daysCap: Math.ceil(need / DAILY_CAP),
       daysPace: Math.ceil(need / Math.min(DAILY_CAP, wins * XP_PER_WIN)),
-      playerXpDay: player && player.pace && player.pace.xp_per_day > 0 ? player.pace.xp_per_day : null,
-      wins,
+      daysPlayer: playerRate ? Math.ceil(need / playerRate) : null,
     };
   }
 
-  function renderGoal() {
-    $("[data-pace-out]").textContent = g.pace.value;
-    $("[data-pace-legend]").textContent = g.pace.value;
-    const s = goalState();
-    const out = (sel, text) => { $(sel).textContent = text; };
-    if (!s) {
-      ["[data-goal-xp-needed]", "[data-goal-wins]", "[data-goal-days-cap]"].forEach((sel) => out(sel, "—"));
-      out("[data-goal-eta]", "Enter a start and a goal, or load a player.");
-      $("[data-goal-eta-player]").hidden = true;
-      drawProjection(null);
-      return;
-    }
-    out("[data-goal-xp-needed]", num(s.need));
-    out("[data-goal-wins]", num(s.winsNeeded));
-    out("[data-goal-days-cap]", num(s.daysCap));
-    const pct = s.goalXp > 0 ? Math.min(100, (s.startXp / s.goalXp) * 100) : 0;
-    $("[data-goal-fill]").style.setProperty("--bar", `${pct}%`);
-    out("[data-goal-bar-text]", `${num(s.startXp)} / ${num(s.goalXp)} XP · ${pct.toFixed(2)}% of the way to level ${s.goalLevel}`);
-    if (s.need === 0) {
-      out("[data-goal-eta]", "Already there.");
-    } else {
-      out("[data-goal-eta]", `At ${s.wins} wins a day: ${daysLabel(s.daysPace)}, around ${fmtDay.format(new Date(today.getTime() + s.daysPace * DAY_MS))}.`);
-    }
-    const playerEta = $("[data-goal-eta-player]");
-    if (s.playerXpDay && s.need > 0) {
-      const d = Math.ceil(s.need / s.playerXpDay);
-      playerEta.hidden = false;
-      playerEta.textContent = `At ${player.username}'s pace lately (≈${player.pace.wins_per_day} wins a day): ${daysLabel(d)}, around ${d > 36500 ? "a century from now" : fmtMonth.format(new Date(today.getTime() + d * DAY_MS))}.`;
-    } else {
-      playerEta.hidden = true;
-    }
-    drawProjection(s);
-  }
-
-  // Projection: level over the coming days at the daily max, at the chosen
-  // pace and (with a player loaded) at their recent pace.
-  const proj = { fig: $("[data-proj]"), svg: $("[data-proj-svg]"), cross: $("[data-proj-cross]"), tip: $("[data-proj-tip]") };
-  let projState = null;
-  function projLines(s) {
-    const lines = [
-      { name: "At the max", color: "#47d8c4", rate: DAILY_CAP },
-      { name: `At ${s.wins} wins a day`, color: "#90b7ff", rate: Math.min(DAILY_CAP, s.wins * XP_PER_WIN) },
-    ];
-    if (s.playerXpDay) lines.push({ name: `${player.username}'s pace`, color: "#ffb454", rate: s.playerXpDay });
-    return lines;
-  }
-  function drawProjection(s) {
-    proj.svg.replaceChildren();
-    $("[data-proj-player-legend]").hidden = !(s && s.playerXpDay);
-    projState = null;
-    if (!s || s.need === 0) { proj.fig.hidden = true; return; }
-    proj.fig.hidden = false;
-    const lines = projLines(s);
-    const slowest = Math.max(...lines.map((l) => s.need / l.rate));
-    const span = Math.min(Math.max(7, slowest * 1.08), 3650);
-    const lo = s.startLevel, hi = s.goalLevel + Math.max(1, Math.round((s.goalLevel - s.startLevel) * 0.04));
-    const x = (d) => (d / span) * 600;
-    const y = (lv) => 210 - ((lv - lo) / Math.max(1, hi - lo)) * 200;
-    proj.svg.append(svgEl("line", { x1: 0, x2: 600, y1: y(s.goalLevel), y2: y(s.goalLevel), class: "xc-goalline" }));
-    for (const l of lines) {
-      const pts = [];
-      for (let i = 0; i <= 120; i++) {
-        const d = (span * i) / 120;
-        const lv = Math.min(s.goalLevel, levelFor(s.startXp + l.rate * d));
-        pts.push(`${x(d).toFixed(1)},${y(lv).toFixed(1)}`);
-      }
-      proj.svg.append(svgEl("polyline", { points: pts.join(" "), class: "xc-line", style: `--line: ${l.color}` }));
-    }
-    projState = { s, lines, span };
-  }
-  function projHover(e) {
-    if (!projState) return;
-    const r = proj.fig.getBoundingClientRect();
-    const f = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
-    const d = Math.round(projState.span * f);
-    proj.cross.hidden = false;
-    proj.cross.style.setProperty("--x", `${f * 100}%`);
-    placeTip(proj.tip, proj.fig, e.clientX, [
-      [`In ${daysLabel(d)} (${fmtDay.format(new Date(today.getTime() + d * DAY_MS))})`],
-      ...projState.lines.map((l) => [`${l.name}: level ${Math.min(projState.s.goalLevel, levelFor(projState.s.startXp + l.rate * d))}`, l.color]),
-    ]);
-  }
-  proj.fig.addEventListener("pointermove", projHover);
-  proj.fig.addEventListener("pointerdown", projHover);
-  proj.fig.addEventListener("pointerleave", () => { proj.cross.hidden = true; proj.tip.hidden = true; });
-
-  // ── Where a level stands ────────────────────────────────────
-  let spread = null; // {levels: [[level, players]], players}
-  const BUCKET = 10;
-  function renderStand() {
-    const hist = $("[data-hist]");
-    const headline = $("[data-stand-headline]");
-    if (!spread) return;
-    const level = readInt(g.startLevel) || (player && player.level) || null;
-    const buckets = new Map();
-    let total = 0, below = 0, top = 0;
-    for (const [lv, n] of spread.levels) {
-      const b = Math.floor(lv / BUCKET) * BUCKET;
-      buckets.set(b, (buckets.get(b) || 0) + n);
-      total += n;
-      if (level && lv < level) below += n;
-    }
-    const maxB = Math.max(...buckets.keys(), 0);
-    for (const v of buckets.values()) top = Math.max(top, v);
-    const bars = [];
-    for (let b = 0; b <= maxB; b += BUCKET) {
-      const n = buckets.get(b) || 0;
-      const bar = document.createElement("span");
-      bar.className = "xc-hist__bar";
-      // Square-root scale so the long tail of high levels stays visible.
-      bar.style.setProperty("--bar", `${n ? Math.max(2, Math.sqrt(n / top) * 100) : 0}%`);
-      if (level && level >= b && level < b + BUCKET) bar.dataset.here = "";
-      const label = `Levels ${Math.max(1, b)}–${b + BUCKET - 1}: ${num(n)} player${n === 1 ? "" : "s"}`;
-      bar.setAttribute("aria-label", label);
-      bar.addEventListener("pointerenter", () => { $("[data-hist-tip]").textContent = label; });
-      bars.push(bar);
-    }
-    hist.replaceChildren(...bars);
-    const axis = $("[data-hist-axis]");
-    axis.replaceChildren(...[0, Math.round(maxB / 2 / 50) * 50, maxB].map((v) => {
-      const s = document.createElement("span");
-      s.textContent = `Level ${Math.max(1, v)}`;
-      return s;
+  function renderQuickGoals() {
+    const box = $("[data-quick-goals]");
+    const start = readInt(plan.startLevel) || 1;
+    const options = [...new Set([start + 10, Math.floor(start / 50) * 50 + 50, Math.floor(start / 100) * 100 + 100, 250, 300, 400, 500])]
+      .filter((l) => l > start && l <= MAX_LEVEL).sort((a, b) => a - b).slice(0, 5);
+    box.replaceChildren(...options.map((l) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "xc-quick__btn";
+      b.textContent = l === start + 10 ? `+10 (${l})` : `Level ${l}`;
+      b.addEventListener("click", () => setGoal(l));
+      return b;
     }));
-    $("[data-stand-source]").textContent = `${num(total)} players seen in replays`;
-    if (level) {
-      const pct = total ? (below / total) * 100 : 0;
-      headline.textContent = `Level ${level} is higher than ${pct >= 99.9 ? pct.toFixed(2) : pct.toFixed(1)}% of players seen in replays.`;
-    } else {
-      headline.textContent = "Enter a start level (or load a player) to see where it stands.";
-    }
   }
-  fetch(C.levels_url, { headers: { Accept: "application/json" } })
-    .then((r) => r.json())
-    .then((res) => {
-      if (!res.ok) throw new Error(res.error);
-      spread = res.data;
-      renderStand();
-    })
-    .catch(() => { $("[data-stand-headline]").textContent = "The level spread can't be loaded right now."; });
 
-  // ── Players: load and compare ───────────────────────────────
+  function renderStartProgress() {
+    const xp = readInt(plan.startXp);
+    const box = $("[data-start-progress]");
+    if (xp == null) { box.hidden = true; return; }
+    const level = levelFor(xp), from = xpFor(level), to = xpFor(level + 1);
+    const pct = ((xp - from) / (to - from)) * 100;
+    box.hidden = !startXpTyped;
+    $("[data-start-fill]").style.setProperty("--bar", `${pct}%`);
+    $("[data-start-progress-text]").textContent =
+      `${pct.toFixed(2)}% through level ${level} · ${num(to - xp)} XP (${num(Math.ceil((to - xp) / XP_PER_WIN))} wins) to level ${level + 1}`;
+  }
+
+  function renderPlan() {
+    $("[data-pace-out]").textContent = `${plan.pace.value} (${num(plan.pace.value * XP_PER_WIN)} XP)`;
+    renderStartProgress();
+    renderQuickGoals();
+    const s = state();
+    const set = (sel, text) => { $(sel).textContent = text; };
+    if (!s) {
+      ["[data-goal-xp-needed]", "[data-goal-wins]", "[data-goal-days-cap]"].forEach((sel) => set(sel, "—"));
+      set("[data-goal-eta]", "Enter where you are and where you want to be, or load a player.");
+      $("[data-eta-player]").hidden = $("[data-eta-cap]").hidden = true;
+    } else {
+      set("[data-goal-xp-needed]", num(s.need));
+      set("[data-goal-wins]", num(s.winsNeeded));
+      set("[data-goal-days-cap]", num(s.daysCap));
+      if (s.need === 0) {
+        set("[data-goal-eta]", "Already there.");
+        $("[data-eta-player]").hidden = $("[data-eta-cap]").hidden = true;
+      } else {
+        set("[data-goal-eta]", `At ${s.wins} wins a day: ${daysLabel(s.daysPace)}, around ${fmtDay.format(today + s.daysPace * DAY)}.`);
+        $("[data-eta-cap]").hidden = false;
+        set("[data-goal-eta-cap]", `Every day at the max: ${daysLabel(s.daysCap)}, around ${fmtDay.format(today + s.daysCap * DAY)}.`);
+        $("[data-eta-player]").hidden = !s.daysPlayer;
+        if (s.daysPlayer) {
+          set("[data-goal-eta-player]", `At ${player.username}'s pace lately (≈${player.pace.wins_per_day} wins a day): ${daysLabel(s.daysPlayer)}, around ${when(s.daysPlayer)}.`);
+        }
+      }
+    }
+    renderMilestones();
+    renderPlanChart();
+  }
+
+  function renderMilestones() {
+    const list = $("[data-milestones]");
+    const xp = readInt(plan.startXp);
+    if (xp == null) { list.replaceChildren(); return; }
+    const level = levelFor(xp);
+    const marks = [];
+    for (let m = Math.floor(level / 50) * 50 + 50; marks.length < 4 && m <= MAX_LEVEL; m += 50) marks.push(m);
+    const s = state();
+    list.replaceChildren(...marks.map((m) => {
+      const need = xpFor(m) - xp;
+      const li = document.createElement("li");
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "xc-milestone";
+      btn.setAttribute("aria-label", `Plan for level ${m}`);
+      const big = document.createElement("span");
+      big.className = "xc-milestone__lvl";
+      big.textContent = m;
+      const meta = document.createElement("span");
+      meta.className = "xc-milestone__meta";
+      const pace = s && s.playerRate ? ` · ${when(Math.ceil(need / s.playerRate))} at their pace` : "";
+      meta.textContent = `${num(need)} XP · ${num(Math.ceil(need / XP_PER_WIN))} wins · ${num(Math.ceil(need / DAILY_CAP))} days at the max${pace}`;
+      btn.append(big, meta);
+      btn.addEventListener("click", () => { setGoal(m); $("[data-plan-chart]").scrollIntoView({ behavior: "smooth", block: "center" }); });
+      li.append(btn);
+      return li;
+    }));
+  }
+
+  const planChart = BVChart.line($("[data-plan-chart]"), {
+    xType: "time", height: 420, zoom: true, series: [], yFloor: 1,
+    label: "Level over time towards the goal",
+    yFormat: (v) => `${Math.round(v)}`,
+    tipValue: (v) => `Level ${Math.floor(v)}`,
+    emptyText: "Enter a start and a goal to see how it plays out.",
+  });
+
+  function paceLine(name, color, rate, s, from, span) {
+    const pts = [];
+    const steps = 160;
+    for (let i = 0; i <= steps; i++) {
+      const d = (span * i) / steps;
+      pts.push([from + d * DAY, Math.min(s.goalLevel, levelFor(s.startXp + rate * d))]);
+    }
+    return { name, color, points: pts, step: true, extend: true };
+  }
+
+  function renderPlanChart() {
+    const s = state();
+    if (!s || s.need === 0) { planChart.update({ series: [], hlines: [] }); return; }
+    const rates = [
+      ["Every day at the max", PACE.cap, DAILY_CAP],
+      [`At ${s.wins} wins a day`, PACE.pace, Math.min(DAILY_CAP, s.wins * XP_PER_WIN)],
+    ];
+    if (s.playerRate) rates.push([`${player.username}'s pace`, PACE.player, s.playerRate]);
+    const longest = Math.max(...rates.map(([, , r]) => s.need / r));
+    const span = Math.min(Math.max(14, longest * 1.06), 3650);
+    const series = rates.map(([n, c, r]) => paceLine(n, c, r, s, today, span));
+    const markers = [];
+    if (plan.view === "history" && player && player.series && player.series.length) {
+      series.unshift({ name: `${player.username} so far`, color: PACE.history, points: player.series.map(([d, l]) => [parseDay(d), l]), step: true });
+      markers.push({ x: today, y: s.startLevel, color: PACE.history, label: "Today" });
+    }
+    planChart.domain = null;
+    planChart.update({ series, markers, hlines: [{ y: s.goalLevel, label: `Level ${s.goalLevel}` }] });
+    planChart.reset_.hidden = true;
+  }
+
+  // ── Players ──────────────────────────────────────────────────
   let player = null;
   const compare = [];
   const cache = new Map();
@@ -306,23 +254,19 @@
     private: "That player keeps their level private.",
     unavailable: "Replay stats can't be loaded right now.",
   };
+  const playerXp = (p) => (p.xp != null ? p.xp : p.xp_floor);
 
   async function fetchPlayer(name) {
-    const key = name.toLowerCase();
+    const key = name.trim().toLowerCase();
     if (cache.has(key)) return cache.get(key);
-    const r = await fetch(`${C.player_url}?name=${encodeURIComponent(name)}`, { headers: { Accept: "application/json" } });
+    const r = await fetch(`${C.player_url}?name=${encodeURIComponent(name.trim())}`, { headers: { Accept: "application/json" } });
     const res = await r.json().catch(() => ({ ok: false, error: "unavailable" }));
     if (!res.ok) throw new Error(ERRORS[res.error] || ERRORS.unavailable);
     cache.set(key, res.data);
     return res.data;
   }
-  // A player's profile path (players/urls.py: player/<name>/). Built here
-  // rather than from the page's data so it is always a same-site path; the
-  // name is percent-encoded, so it can't become a different URL.
-  const profileUrl = (name) => `/player/${encodeURIComponent(String(name))}/`;
-  const playerXp = (p) => (p.xp != null ? p.xp : p.xp_floor);
 
-  async function loadPlayer(name, { setGoal = true } = {}) {
+  async function loadPlayer(name, { keepGoal = false } = {}) {
     const status = $("[data-load-status]");
     status.hidden = false;
     status.textContent = `Loading ${name}…`;
@@ -344,56 +288,58 @@
     $("[data-player-level]").textContent = player.level ?? "—";
     $("[data-player-xp-label]").textContent = player.xp != null ? "XP" : "XP (at least)";
     $("[data-player-xp]").textContent = player.xp_floor != null ? num(playerXp(player)) : "—";
-    $("[data-player-pace]").textContent = !player.pace
-      ? "—"
-      : player.pace.levels > 0
-        ? `+${player.pace.levels} level${player.pace.levels === 1 ? "" : "s"} in ${player.pace.days} days`
-        : "No level-ups";
+    $("[data-player-pace]").textContent = !player.pace ? "—"
+      : player.pace.levels > 0 ? `+${player.pace.levels} level${player.pace.levels === 1 ? "" : "s"}` : "No level-ups";
 
+    const historyBtn = $("[data-plan-view] [data-view=history]");
+    historyBtn.disabled = !(player.series && player.series.length);
     if (player.level) {
-      g.startXp.value = playerXp(player);
-      g.startLevel.value = player.level;
-      conv.level.value = player.level;
-      conv.xp.value = playerXp(player);
-      convExact = player.xp != null;
-      if (setGoal || !readInt(g.goalLevel)) {
+      plan.startXp.value = playerXp(player);
+      plan.startLevel.value = player.level;
+      startXpTyped = player.xp != null;
+      if (!keepGoal || !readInt(plan.goalLevel)) {
         const goal = Math.floor(player.level / 50) * 50 + 50;
-        g.goalLevel.value = goal;
-        g.goalXp.value = xpFor(goal);
+        plan.goalLevel.value = goal;
+        plan.goalXp.value = xpFor(goal);
       }
       if (player.pace && player.pace.wins_per_day > 0) {
-        g.pace.value = String(Math.min(180, Math.max(1, Math.round(player.pace.wins_per_day))));
+        plan.pace.value = String(Math.min(180, Math.max(1, Math.round(player.pace.wins_per_day))));
+        window.BVControls && window.BVControls.fill(plan.pace);
       }
     }
-    if (player.bonk_id) {
-      $("[data-dbid-input]").value = player.bonk_id;
-      renderDbid();
-    }
+    if (player.bonk_id) { $("[data-dbid-input]").value = player.bonk_id; }
     addCompare(player);
-    renderConverter();
-    renderGoal();
-    renderStand();
+    update();
     const url = new URL(window.location.href);
     url.searchParams.set("player", player.username);
     history.replaceState(null, "", url);
   }
-
   $("[data-load-form]").addEventListener("submit", (e) => {
     e.preventDefault();
-    const name = $("[data-load-input]").value;
+    const name = $("[data-load-input]").value.trim();
     if (name) loadPlayer(name);
   });
 
+  // ── Compare ──────────────────────────────────────────────────
+  let cmpView = "level";
+  const cmpChart = BVChart.line($("[data-cmp-chart]"), {
+    xType: "time", height: 440, zoom: true, series: [],
+    label: "Players' levels over time",
+    emptyText: "Add players to compare their levels over time.",
+  });
+  segment($("[data-cmp-view]"), (b) => { cmpView = b.dataset.view; renderCompare(); });
+
   function addCompare(p) {
-    if (compare.some((c) => c.username.toLowerCase() === p.username.toLowerCase())) return renderCompare();
-    if (compare.length >= 4) compare.shift();
-    compare.push(p);
+    if (!compare.some((c) => c.username.toLowerCase() === p.username.toLowerCase())) {
+      if (compare.length >= 4) compare.shift();
+      compare.push(p);
+    }
     renderCompare();
   }
   $("[data-cmp-form]").addEventListener("submit", async (e) => {
     e.preventDefault();
     const input = $("[data-cmp-input]");
-    const name = input.value;
+    const name = input.value.trim();
     if (!name) return;
     const status = $("[data-cmp-status]");
     status.textContent = `Loading ${name}…`;
@@ -406,23 +352,11 @@
     }
   });
 
-  const cmp = { fig: $("[data-cmp-chart]"), svg: $("[data-cmp-svg]"), cross: $("[data-cmp-cross]"), tip: $("[data-cmp-tip]") };
-  let cmpState = null;
-
-  function levelOn(series, t) {
-    let lv = null;
-    for (const [d, l] of series) { if (parseDay(d).getTime() <= t) lv = l; else break; }
-    return lv;
-  }
-
   function renderCompare() {
-    const chips = $("[data-cmp-chips]");
-    chips.replaceChildren(...compare.map((p, i) => {
+    $("[data-cmp-chips]").replaceChildren(...compare.map((p, i) => {
       const li = document.createElement("li");
       li.className = "xc-chip";
-      li.style.setProperty("--slice", COLORS[i]);
-      const sw = document.createElement("span");
-      sw.className = "pv-swatch";
+      li.style.setProperty("--c", COLORS[i]);
       const a = document.createElement("a");
       a.href = profileUrl(p.username);
       a.textContent = p.username;
@@ -432,71 +366,45 @@
       x.setAttribute("aria-label", `Remove ${p.username}`);
       x.textContent = "×";
       x.addEventListener("click", () => { compare.splice(i, 1); renderCompare(); });
-      li.append(sw, a, x);
+      li.append(a, x);
       return li;
     }));
-
-    const withSeries = compare.filter((p) => p.series && p.series.length);
-    cmp.fig.hidden = withSeries.length === 0;
-    $("[data-cmp-tablewrap]").hidden = compare.length === 0;
-    cmp.svg.replaceChildren();
-    cmpState = null;
-    if (withSeries.length) {
-      let t0 = Infinity, t1 = -Infinity, lo = Infinity, hi = -Infinity;
-      for (const p of withSeries) {
-        for (const [d, l] of p.series) {
-          const t = parseDay(d).getTime();
-          t0 = Math.min(t0, t); t1 = Math.max(t1, t); lo = Math.min(lo, l); hi = Math.max(hi, l);
-        }
-      }
-      t1 = Math.max(t1, t0 + DAY_MS);
-      lo = Math.max(1, lo - 2); hi += 2;
-      const x = (t) => ((t - t0) / (t1 - t0)) * 1000;
-      const y = (l) => 290 - ((l - lo) / (hi - lo)) * 280;
-      compare.forEach((p, i) => {
-        if (!p.series || !p.series.length) return;
-        const pts = [];
-        let prev = null;
-        for (const [d, l] of p.series) {
-          const px = x(parseDay(d).getTime());
-          if (prev != null) pts.push(`${px.toFixed(1)},${y(prev).toFixed(1)}`);
-          pts.push(`${px.toFixed(1)},${y(l).toFixed(1)}`);
-          prev = l;
-        }
-        cmp.svg.append(svgEl("polyline", { points: pts.join(" "), class: "xc-line", style: `--line: ${COLORS[i]}` }));
-      });
-      $("[data-cmp-from]").textContent = fmtMonth.format(new Date(t0));
-      $("[data-cmp-to]").textContent = fmtMonth.format(new Date(t1));
-      cmpState = { t0, t1 };
-    }
+    const xp = cmpView === "xp";
+    cmpChart.update({
+      series: compare.map((p, i) => ({
+        name: p.username, color: COLORS[i], step: true, extend: false,
+        points: (p.series || []).map(([d, l]) => [parseDay(d), xp ? xpFor(l) : l]),
+      })),
+      yFormat: xp ? undefined : (v) => `${Math.round(v)}`,
+      tipValue: xp ? (v) => `≥ ${num(v)} XP` : (v) => `Level ${Math.round(v)}`,
+    });
     renderCompareTable();
   }
 
   function renderCompareTable() {
-    const goalLevel = readInt(g.goalLevel);
-    $("[data-cmp-goal-label]").textContent = goalLevel ? `level ${goalLevel}` : "goal";
+    const table = $("[data-cmp-table]");
+    table.hidden = compare.length === 0;
+    const goal = readInt(plan.goalLevel);
+    $("[data-cmp-goal-label]").textContent = goal ? `level ${goal}` : "goal";
     $("[data-cmp-rows]").replaceChildren(...compare.map((p, i) => {
       const tr = document.createElement("tr");
       const name = document.createElement("td");
       const sw = document.createElement("span");
-      sw.className = "pv-swatch";
-      sw.style.setProperty("--slice", COLORS[i]);
+      sw.className = "xc-sw";
+      sw.style.setProperty("--c", COLORS[i]);
       const a = document.createElement("a");
       a.href = profileUrl(p.username);
       a.textContent = p.username;
       name.append(sw, a);
       let eta = "—";
-      if (goalLevel && p.level) {
-        const need = xpFor(goalLevel) - playerXp(p);
+      if (goal && p.level) {
+        const need = xpFor(goal) - playerXp(p);
         if (need <= 0) eta = "Already there";
-        else if (p.pace && p.pace.xp_per_day > 0) {
-          const d = Math.ceil(need / p.pace.xp_per_day);
-          eta = d > 36500 ? "Not at this pace" : `≈ ${fmtMonth.format(new Date(today.getTime() + d * DAY_MS))}`;
-        } else eta = "No recent level-ups";
+        else if (p.pace && p.pace.xp_per_day > 0) eta = `≈ ${when(Math.ceil(need / p.pace.xp_per_day))}`;
+        else eta = "No recent level-ups";
       }
       const cells = [
-        name,
-        p.level ?? "—",
+        name, p.level ?? "—",
         p.xp != null ? num(p.xp) : p.xp_floor != null ? `≥ ${num(p.xp_floor)}` : "—",
         p.created ? `${p.created_extrapolated ? "around " : ""}${fmtMonth.format(parseDay(p.created))}` : "Unknown",
         p.pace ? (p.pace.levels_per_day * 30).toFixed(1) : "—",
@@ -505,34 +413,84 @@
       cells.forEach((c, k) => {
         const td = c instanceof Node ? c : document.createElement("td");
         if (!(c instanceof Node)) td.textContent = String(c);
-        if (k === 1 || k === 2 || k === 4) td.className = "pv-num";
+        if (k === 1 || k === 2 || k === 4) td.classList.add("pv-num");
         tr.append(td);
       });
       return tr;
     }));
   }
 
-  function cmpHover(e) {
-    if (!cmpState) return;
-    const r = cmp.fig.getBoundingClientRect();
-    const f = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
-    const t = cmpState.t0 + f * (cmpState.t1 - cmpState.t0);
-    cmp.cross.hidden = false;
-    cmp.cross.style.setProperty("--x", `${f * 100}%`);
-    placeTip(cmp.tip, cmp.fig, e.clientX, [
-      [fmtDay.format(new Date(t))],
-      ...compare.map((p, i) => {
-        const lv = p.series ? levelOn(p.series, t) : null;
-        return [`${p.username}: ${lv == null ? "not seen yet" : `level ${lv}`}`, COLORS[i]];
-      }),
-    ]);
-  }
-  cmp.fig.addEventListener("pointermove", cmpHover);
-  cmp.fig.addEventListener("pointerdown", cmpHover);
-  cmp.fig.addEventListener("pointerleave", () => { cmp.cross.hidden = true; cmp.tip.hidden = true; });
+  // ── Level spread ─────────────────────────────────────────────
+  let spread = null;
+  let bucket = 10;
+  let scale = "linear";
+  const spreadChart = BVChart.bars($("[data-spread-chart]"), { bars: [], height: 440, label: "Players by level" });
+  segment($("[data-spread-bucket]"), (b) => { bucket = Number(b.dataset.bucket); renderSpread(); });
+  segment($("[data-spread-scale]"), (b) => { scale = b.dataset.scale; renderSpread(); });
 
-  // ── Account ID → date ───────────────────────────────────────
-  const points = C.dbid_points.map(([n, d]) => [n, parseDay(d).getTime()]);
+  function percentileLevel(levels, total, q) {
+    let run = 0;
+    for (const [lv, n] of levels) { run += n; if (run / total >= q) return lv; }
+    return levels.length ? levels[levels.length - 1][0] : null;
+  }
+
+  function renderSpread() {
+    if (!spread) return;
+    const levels = spread.levels;
+    const total = levels.reduce((a, [, n]) => a + n, 0);
+    const you = readInt(plan.startLevel);
+    let below = 0;
+    for (const [lv, n] of levels) if (you && lv < you) below += n;
+    const pct = total ? (below / total) * 100 : 0;
+    $("[data-spread-headline]").textContent = you
+      ? `Level ${you} is higher than ${pct >= 99 ? pct.toFixed(2) : pct.toFixed(1)}% of players seen in replays.`
+      : "Enter a level in Plan a goal (or load a player) to see where it stands.";
+    $("[data-spread-stats]").hidden = false;
+    $("[data-spread-players]").textContent = num(total);
+    $("[data-spread-median]").textContent = `Level ${percentileLevel(levels, total, 0.5)}`;
+    $("[data-spread-p90]").textContent = `Level ${percentileLevel(levels, total, 0.9)}`;
+    $("[data-spread-p99]").textContent = `Level ${percentileLevel(levels, total, 0.99)}`;
+
+    const buckets = new Map();
+    let maxLv = 0;
+    for (const [lv, n] of levels) {
+      const b = Math.floor((lv - 1) / bucket) * bucket + 1;
+      buckets.set(b, (buckets.get(b) || 0) + n);
+      maxLv = Math.max(maxLv, lv);
+    }
+    const bars = [];
+    let run = 0, here = -1;
+    for (let b = 1; b <= maxLv; b += bucket) {
+      const n = buckets.get(b) || 0;
+      const hi = b + bucket - 1;
+      const highlight = Boolean(you && you >= b && you <= hi);
+      if (highlight) here = bars.length;
+      bars.push({
+        label: String(b), value: n, highlight,
+        tip: {
+          title: `Levels ${b}–${hi}`,
+          rows: [
+            { label: "Players", value: num(n) },
+            { label: "Share of all", value: `${total ? ((n / total) * 100).toFixed(n / total < 0.001 ? 3 : 2) : 0}%` },
+            { label: "Higher than", value: `${total ? ((run / total) * 100).toFixed(1) : 0}%` },
+          ],
+        },
+      });
+      run += n;
+    }
+    spreadChart.update({
+      bars, yScale: scale,
+      labelAt: (b, i) => i % Math.max(1, Math.round(50 / bucket)) === 0,
+      markers: here >= 0 ? [{ index: here, label: `Level ${you}` }] : [],
+    });
+  }
+  fetch(C.levels_url, { headers: { Accept: "application/json" } })
+    .then((r) => r.json())
+    .then((res) => { if (!res.ok) throw new Error(res.error); spread = res.data; renderSpread(); })
+    .catch(() => { $("[data-spread-headline]").textContent = "The level spread can't be loaded right now."; });
+
+  // ── Account age ──────────────────────────────────────────────
+  const points = C.dbid_points.map(([n, d]) => [n, parseDay(d)]);
   function dbidDate(id) {
     if (!(id >= 1)) return null;
     for (let i = 0; i < points.length - 1; i++) {
@@ -541,63 +499,78 @@
     }
     const [n0, t0] = points[points.length - 2], [n1, t1] = points[points.length - 1];
     const t = t0 + ((t1 - t0) * (id - n0)) / (n1 - n0);
-    return { t: Math.max(t1, Math.min(t, today.getTime())), extrapolated: true };
+    return { t: Math.max(t1, Math.min(t, today)), extrapolated: true };
   }
-  const db = { fig: $("[data-dbid-chart]"), svg: $("[data-dbid-svg]"), cross: $("[data-dbid-cross]"), dot: $("[data-dbid-dot]"), tip: $("[data-dbid-tip]") };
-  const dT0 = points[0][1], dT1 = Math.max(points[points.length - 1][1], today.getTime());
-  const dN1 = points[points.length - 1][0] * 1.02;
-  const dx = (t) => ((t - dT0) / (dT1 - dT0)) * 1000;
-  const dy = (n) => 250 - (n / dN1) * 240;
-  db.svg.append(svgEl("polyline", {
-    points: points.map(([n, t]) => `${dx(t).toFixed(1)},${dy(n).toFixed(1)}`).join(" "),
-    class: "xc-line", style: "--line: #47d8c4",
-  }));
-  $("[data-dbid-first]").textContent = fmtMonth.format(new Date(dT0));
-  $("[data-dbid-last]").textContent = fmtMonth.format(new Date(dT1));
-
   function idAt(t) {
+    if (t <= points[0][1]) return points[0][0];
     for (let i = 0; i < points.length - 1; i++) {
       const [n0, t0] = points[i], [n1, t1] = points[i + 1];
       if (t >= t0 && t <= t1) return n0 + ((n1 - n0) * (t - t0)) / Math.max(1, t1 - t0);
     }
     return points[points.length - 1][0];
   }
-  function renderDbid() {
+
+  let ageView = "timeline";
+  const ageEl = $("[data-age-chart]");
+  let ageChart = null;
+  segment($("[data-age-view]"), (b) => { ageView = b.dataset.view; renderAge(); });
+  $("[data-dbid-input]").addEventListener("input", renderAge);
+
+  function renderAge() {
     const id = readInt($("[data-dbid-input]"));
     const est = id ? dbidDate(id) : null;
-    db.dot.hidden = !est;
-    if (!est) { $("[data-dbid-date]").textContent = "—"; $("[data-dbid-age]").textContent = ""; return; }
-    const years = (today.getTime() - est.t) / (365.25 * DAY_MS);
-    $("[data-dbid-date]").textContent = `${est.extrapolated ? "Around " : ""}${fmtDay.format(new Date(est.t))}`;
-    $("[data-dbid-age]").textContent = years >= 1 ? `about ${years.toFixed(1)} years old` : `about ${Math.max(0, Math.round(years * 12))} months old`;
-    db.dot.style.setProperty("--x", `${dx(est.t) / 10}%`);
-    db.dot.style.setProperty("--y", `${(dy(id) / 260) * 240}px`); // the SVG is 240px tall
+    if (est) {
+      const years = (today - est.t) / (365.25 * DAY);
+      $("[data-dbid-date]").textContent = `${est.extrapolated ? "Around " : ""}${fmtDay.format(est.t)}`;
+      $("[data-dbid-age]").textContent = years >= 1 ? `About ${years.toFixed(1)} years old` : `About ${Math.max(0, Math.round(years * 12))} months old`;
+    } else {
+      $("[data-dbid-date]").textContent = "—";
+      $("[data-dbid-age]").textContent = "Type an account ID to date it.";
+    }
+    if (ageView === "timeline") {
+      const markers = compare.filter((p) => p.created && p.bonk_id).map((p) => ({
+        x: parseDay(p.created), y: p.bonk_id, color: COLORS[compare.indexOf(p)], label: p.username,
+      }));
+      if (est && !compare.some((p) => p.bonk_id === id)) markers.push({ x: est.t, y: id, color: "#ffb454", label: `#${num(id)}` });
+      const opts = {
+        xType: "time", height: 420, zoom: true, label: "Account IDs by date",
+        series: [{ name: "Accounts made then", color: "#47d8c4", points: points.map(([n, t]) => [t, n]), area: true }],
+        markers, yFloor: 0,
+        tipValue: (v) => `ID ≈ ${num(v)}`,
+      };
+      if (!ageChart || ageChart.kind !== "line") { ageChart = BVChart.line(ageEl, opts); ageChart.kind = "line"; }
+      else ageChart.update(opts);
+    } else {
+      const y0 = new Date(points[0][1]).getFullYear(), y1 = new Date(today).getFullYear();
+      const bars = [];
+      for (let y = y0; y <= y1; y++) {
+        const a = new Date(y, 0, 1).getTime(), b = Math.min(new Date(y + 1, 0, 1).getTime(), today);
+        const made = Math.max(0, Math.round(idAt(b) - idAt(a)));
+        bars.push({
+          label: String(y), value: made, highlight: est ? new Date(est.t).getFullYear() === y : false,
+          tip: { title: String(y) + (y === y1 ? " (so far)" : ""), rows: [{ label: "New accounts", value: `≈ ${num(made)}` }] },
+        });
+      }
+      const opts = { bars, height: 420, label: "New accounts a year", labelAt: (b, i) => i % 2 === 0 || bars.length < 10 };
+      if (!ageChart || ageChart.kind !== "bars") { ageChart = BVChart.bars(ageEl, opts); ageChart.kind = "bars"; }
+      else ageChart.update(opts);
+    }
   }
-  $("[data-dbid-input]").addEventListener("input", renderDbid);
-  function dbidHover(e) {
-    const r = db.fig.getBoundingClientRect();
-    const f = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
-    const t = dT0 + f * (dT1 - dT0);
-    db.cross.hidden = false;
-    db.cross.style.setProperty("--x", `${f * 100}%`);
-    placeTip(db.tip, db.fig, e.clientX, [[fmtMonth.format(new Date(t))], [`Accounts made then: ID ≈ ${num(idAt(t))}`, "#47d8c4"]]);
-  }
-  db.fig.addEventListener("pointermove", dbidHover);
-  db.fig.addEventListener("pointerdown", dbidHover);
-  db.fig.addEventListener("pointerleave", () => { db.cross.hidden = true; db.tip.hidden = true; });
 
-  // ── Start ───────────────────────────────────────────────────
-  renderConverter();
-  renderGoal();
+  // ── Everything that depends on the plan inputs ───────────────
+  function update() {
+    renderPlan();
+    renderSpread();
+    renderCompare();
+    renderAge();
+  }
+
   const prefill = root.dataset.prefillPlayer;
   const prefillGoal = parseInt(root.dataset.prefillGoal, 10);
+  update();
+  if (prefillGoal > 0) setGoal(prefillGoal);
   if (prefill) {
     $("[data-load-input]").value = prefill;
-    loadPlayer(prefill, { setGoal: !prefillGoal });
-  }
-  if (prefillGoal > 0) {
-    g.goalLevel.value = clampLevel(prefillGoal);
-    g.goalXp.value = xpFor(clampLevel(prefillGoal));
-    renderGoal();
+    loadPlayer(prefill, { keepGoal: prefillGoal > 0 });
   }
 })();

@@ -5,7 +5,7 @@
 {% block tab %}
 <div class="pv-trio">
   {% for list in lists %}
-    <section class="pv-card" aria-labelledby="pp-{{ list.key }}">
+    <section class="pv-open" aria-labelledby="pp-{{ list.key }}">
       <h2 id="pp-{{ list.key }}" class="pv-card__title">{{ list.title }}</h2>
       <ol class="pv-ranked">
         {% for p in list.rows %}
