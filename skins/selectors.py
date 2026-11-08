@@ -3,6 +3,9 @@
 decorate_skins_for_user: everything a skin card (skins/partials/_skin_card.html)
 shows beyond the Skin row itself, for a whole page of cards in a fixed number
 of queries. tests/test_query_budgets.py fails if a page starts asking per card.
+
+skins_created_by / favorites_of: a player's skins for their profile page
+(players/), most upvoted and most recently favorited first.
 """
 
 from django.db.models import Count
@@ -44,3 +47,15 @@ def decorate_skins_for_user(skins, user=None):
         skin.current_vote = votes.get(skin.id)
         skin.is_favorited = skin.id in favorited
     return skins
+
+
+def skins_created_by(username, limit):
+    """(up to `limit` skins `username` created, most upvoted first; how many in all)."""
+    qs = Skin.objects.filter(creator__iexact=username)
+    return list(qs.order_by("-upvotes", "-id")[:limit]), qs.count()
+
+
+def favorites_of(user, limit):
+    """(up to `limit` skins `user` favorited, newest skins first; how many in all)."""
+    qs = user.favorite_skins.all()
+    return list(qs.order_by("-created_at")[:limit]), qs.count()

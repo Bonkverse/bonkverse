@@ -94,6 +94,9 @@ BONKVERSE_BASE_URL = os.getenv("BONKVERSE_BASE_URL", "https://bonkverse.io").rst
 # own dev server for those apps.
 BONKVERSE_EDITOR_URL = os.getenv("BONKVERSE_EDITOR_URL", "http://localhost:5173").rstrip("/")
 BONKVERSE_REPLAYS_URL = os.getenv("BONKVERSE_REPLAYS_URL", "http://localhost:5173").rstrip("/")
+# Player profiles (players/) read the replay site's /api/player/<name> and
+# keep each answer this long; the replay site caches it for 5 minutes too.
+PLAYER_PROFILE_CACHE_SECONDS = int(os.getenv("PLAYER_PROFILE_CACHE_SECONDS", "300"))
 
 # Server-side skin renderer (POST {BONKVERSE_RENDER_URL}/api/render-bundle), used by
 # staff re-render. Separate from the editor link: it is a stateless service, so
@@ -242,6 +245,7 @@ INSTALLED_APPS = [
     "corsheaders",
     # Local apps
     "skins",
+    "players",
 ]
 
 # =========================================================

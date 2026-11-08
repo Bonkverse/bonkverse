@@ -1,0 +1,279 @@
+/* player_profile.css — player profiles (players/profile.html), profile
+   settings (players/settings.html) and the Replays tab on My Profile
+   (players/partials/_replay_stats.html).
+
+   Uses the replay site's palette (replays.bonkverse.io, browser/dev.css) so
+   a player looks the same on both sites. Everything is scoped under .pv or
+   a .pv-* class so it can't leak into other pages. */
+
+.pv,
+.pv-scope {
+  --pv-canvas: #141f2b;
+  --pv-panel: #1c2d40;
+  --pv-panel-2: #22364c;
+  --pv-inset: #101a25;
+  --pv-outline: #354a5f;
+  --pv-text: #edf4fb;
+  --pv-muted: #aec1d3;
+  --pv-action: #47d8c4;
+  --pv-link: #90b7ff;
+  --pv-radius: 12px;
+}
+
+.pv {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  text-align: left;
+  color: var(--pv-text);
+  position: relative;
+  z-index: 1;
+}
+.pv--narrow { max-width: 720px; }
+.pv h1, .pv h2, .pv h3,
+.pv-scope h2, .pv-scope h3 { font-weight: 600; margin: 0; }
+.pv h2, .pv-scope h2 { font-size: 1.1rem; }
+.pv a, .pv-scope a { color: var(--pv-link); }
+
+.pv-muted { color: var(--pv-muted); font-weight: 400; }
+.pv-fine { color: var(--pv-muted); font-size: 0.8rem; margin: 10px 0 0; }
+.pv-link { color: var(--pv-link); text-decoration: none; }
+.pv-link:hover { text-decoration: underline; }
+
+/* ── Hero ─────────────────────────────────────────── */
+.pv-hero {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.pv-hero__text { flex: 1 1 240px; min-width: 0; }
+.pv-hero__text h1 { font-size: 1.8rem; overflow-wrap: anywhere; }
+.pv-hero__text p { margin: 4px 0 0; }
+.pv-hero__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.pv-avatar {
+  width: 72px; height: 72px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--pv-panel-2);
+  border: 2px solid var(--pv-action);
+  color: var(--pv-action);
+  font-size: 1.5rem; font-weight: 700;
+}
+
+.pv-btn {
+  display: inline-block;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--pv-action);
+  background: var(--pv-action);
+  color: var(--pv-inset);
+  font: inherit; font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+.pv a.pv-btn, .pv-scope a.pv-btn { color: var(--pv-inset); }
+.pv-btn:hover { filter: brightness(1.08); }
+.pv-btn--ghost, .pv a.pv-btn--ghost, .pv-scope a.pv-btn--ghost { background: transparent; color: var(--pv-action); }
+.pv-btn:focus-visible, .pv a:focus-visible, .pv-switch input:focus-visible + .pv-switch__track {
+  outline: 2px solid var(--pv-link);
+  outline-offset: 2px;
+}
+
+.pv-note {
+  background: var(--pv-panel);
+  border: 1px solid var(--pv-outline);
+  border-left: 3px solid var(--pv-action);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 0 0 16px;
+  color: var(--pv-muted);
+}
+
+/* ── Cards ────────────────────────────────────────── */
+.pv-card {
+  background: var(--pv-panel);
+  border: 1px solid var(--pv-outline);
+  border-radius: var(--pv-radius);
+  padding: 18px;
+  margin-bottom: 16px;
+}
+.pv-card__head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; margin-bottom: 14px;
+}
+.pv-sub { font-size: 0.85rem; color: var(--pv-muted); margin: 18px 0 8px; }
+.pv-split { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+.pv-split h2 { margin-bottom: 12px; }
+.pv-split__full { grid-column: 1 / -1; margin-top: 0; }
+.pv-empty { text-align: center; padding: 32px 18px; }
+.pv-empty h1 { font-size: 1.4rem; margin-bottom: 8px; overflow-wrap: anywhere; }
+
+/* ── Summary tiles ────────────────────────────────── */
+.pv-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.pv-tile {
+  background: var(--pv-panel);
+  border: 1px solid var(--pv-outline);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.pv-tile__val { font-size: 1.25rem; font-weight: 700; color: var(--pv-text); }
+.pv-tile__lbl { font-size: 0.78rem; color: var(--pv-muted); }
+
+/* ── Level line ───────────────────────────────────── */
+.pv-line { margin: 0; }
+.pv-line svg {
+  display: block; width: 100%; height: 160px;
+  background: var(--pv-inset);
+  border-radius: 8px;
+}
+.pv-line__path {
+  fill: none;
+  stroke: var(--pv-action);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.pv-line__axis {
+  display: flex; justify-content: space-between; gap: 12px;
+  font-size: 0.78rem; color: var(--pv-muted); margin-top: 6px;
+}
+
+/* ── Column bars (months, weekdays, hours) ────────── */
+.pv-cols {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; align-items: flex-end; gap: 4px;
+  height: 140px;
+  overflow-x: auto;
+}
+.pv-cols--short { height: 100px; }
+.pv-cols li {
+  flex: 1 0 22px;
+  height: 100%;
+  display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+}
+.pv-cols--dense { gap: 2px; }
+.pv-cols--dense li { flex-basis: 8px; }
+.pv-cols__bar {
+  width: 100%;
+  height: var(--bar);
+  min-height: 2px;
+  background: var(--pv-action);
+  border-radius: 3px 3px 0 0;
+  opacity: 0.85;
+}
+.pv-cols li:hover .pv-cols__bar { opacity: 1; }
+.pv-cols__lbl {
+  font-size: 0.68rem; color: var(--pv-muted);
+  line-height: 1.2; text-align: center;
+  min-height: 2.4em; padding-top: 4px; white-space: nowrap;
+}
+
+/* ── Row bars (modes, maps) ───────────────────────── */
+.pv-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.pv-rows li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 2fr auto;
+  align-items: center; gap: 10px;
+}
+.pv-rows__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: none; }
+a.pv-rows__name:hover { text-decoration: underline; }
+.pv-rows__bar {
+  height: 8px; border-radius: 4px;
+  background: linear-gradient(var(--pv-action), var(--pv-action)) no-repeat left / var(--bar) 100%,
+              var(--pv-inset);
+}
+.pv-rows__num { font-variant-numeric: tabular-nums; color: var(--pv-muted); font-size: 0.85rem; }
+
+/* ── People and replays ───────────────────────────── */
+.pv-people, .pv-replays { list-style: none; margin: 0; padding: 0; }
+.pv-people li {
+  display: flex; justify-content: space-between; gap: 12px;
+  padding: 7px 0; border-bottom: 1px solid var(--pv-outline);
+}
+.pv-people li:last-child { border-bottom: 0; }
+.pv-people a { text-decoration: none; overflow-wrap: anywhere; }
+.pv-people a:hover { text-decoration: underline; }
+
+.pv-replays { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.pv-replays a {
+  display: flex; flex-direction: column; gap: 4px;
+  background: var(--pv-panel-2);
+  border: 1px solid var(--pv-outline);
+  border-radius: 10px;
+  padding: 12px;
+  text-decoration: none;
+  color: var(--pv-text);
+}
+.pv-replays a:hover { border-color: var(--pv-action); }
+.pv-replays__map { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pv-replays .pv-muted { font-size: 0.82rem; }
+
+/* ── Skins ────────────────────────────────────────── */
+.pv-skins {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 14px;
+}
+.pv-skin {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  text-align: center; text-decoration: none; color: var(--pv-text);
+}
+.pv-skin img {
+  width: 100px; height: 100px; border-radius: 50%; object-fit: cover;
+  background: var(--pv-inset); border: 2px solid var(--pv-outline);
+}
+.pv-skin:hover img { border-color: var(--pv-action); }
+.pv-skin .skin-tile-meta { display: contents; }
+.pv-skin strong { font-size: 0.9rem; font-weight: 600; }
+.pv-skin span { color: var(--pv-muted); font-size: 0.78rem; }
+
+/* ── Settings switches ────────────────────────────── */
+.pv-settings fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.pv-settings legend { font-weight: 600; font-size: 1.1rem; margin-bottom: 8px; }
+.pv-switch {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 0; border-bottom: 1px solid var(--pv-outline);
+  cursor: pointer;
+}
+.pv-switch__text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.pv-switch__label { font-weight: 600; }
+.pv-switch__text .pv-muted { font-size: 0.85rem; }
+.pv-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.pv-switch__track {
+  flex-shrink: 0; position: relative;
+  width: 42px; height: 24px; border-radius: 12px;
+  background: var(--pv-inset); border: 1px solid var(--pv-outline);
+  transition: background 0.15s;
+}
+.pv-switch__track::after {
+  content: ""; position: absolute; top: 3px; left: 3px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--pv-muted);
+  transition: transform 0.15s, background 0.15s;
+}
+.pv-switch input:checked + .pv-switch__track { background: var(--pv-action); border-color: var(--pv-action); }
+.pv-switch input:checked + .pv-switch__track::after { transform: translateX(18px); background: var(--pv-inset); }
+.pv-settings .pv-btn { margin-top: 16px; }
+
+/* ── My Profile's Replays tab ─────────────────────── */
+.pv-scope { max-width: 1228px; margin: 0 auto; padding: 0 24px; text-align: left; color: var(--pv-text); }
+.pv-scope .pv-tab-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.pv-loading { color: var(--pv-muted); padding: 24px 0; }
+
+@media (max-width: 600px) {
+  .pv { padding: 16px 16px 40px; }
+  .pv-hero__text h1 { font-size: 1.45rem; }
+  .pv-avatar { width: 56px; height: 56px; font-size: 1.2rem; }
+  .pv-rows li { grid-template-columns: minmax(0, 1fr) 1fr auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pv-switch__track, .pv-switch__track::after { transition: none; }
+}

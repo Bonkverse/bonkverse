@@ -27,7 +27,8 @@ Defaults are chosen so local development works with only the required ones set.
 |---|---|---|
 | `BONKVERSE_BASE_URL` | `https://bonkverse.io` | Absolute URLs (Cloudflare purge, restore script). Page links are relative. |
 | `BONKVERSE_EDITOR_URL` | `http://localhost:5173` | "Skin Editor" / "Open in editor" links |
-| `BONKVERSE_REPLAYS_URL` | `http://localhost:5173` | "Replays" link |
+| `BONKVERSE_REPLAYS_URL` | `http://localhost:5173` | "Replays" link; player profiles read its `/api/player/<name>` (`integrations/replays.py`) |
+| `PLAYER_PROFILE_CACHE_SECONDS` | `300` | How long a player profile's replay stats are cached |
 | `BONKVERSE_RENDER_URL` | `https://editor.bonkverse.io` | Staff re-render (`/api/render-bundle`). Production's works from local. |
 | `BLSKIN_FETCHER_URL` | production fetcher | Upload from BonkLeagues |
 | `BONKBOT_API_URL` | production BonkBot | `/api/join-matchmaking/` (`integrations/bonkbot.py`) |

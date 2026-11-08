@@ -82,6 +82,8 @@
                 <a href="#" class="nav-link username-link dropdown-trigger">My Profile ▾</a>
                 <ul class="dropdown-menu dropdown-menu-right">
                     <li><a href="{% url 'my_profile' %}">My Profile</a></li>
+                    <li><a href="{% url 'player_profile' user.username %}">Public Profile</a></li>
+                    <li><a href="{% url 'profile_settings' %}">Profile Settings</a></li>
                     <li><a href="{{ BONKVERSE_EDITOR_URL }}">Skin Editor</a></li>
                     <li class="dropdown-divider"></li>
                     <li><a href="{% url 'logout' %}" class="dropdown-logout">Logout</a></li>
@@ -152,6 +154,8 @@
 
                 {% if user.is_authenticated %}
                     <li><a href="{% url 'my_profile' %}" class="mobile-profile-link">My Profile</a></li>
+                    <li><a href="{% url 'player_profile' user.username %}">Public Profile</a></li>
+                    <li><a href="{% url 'profile_settings' %}">Profile Settings</a></li>
                     <li><a href="{{ BONKVERSE_EDITOR_URL }}" >Skin Editor</a></li>
                     <li><a href="{% url 'logout' %}" class="mobile-logout">Logout</a></li>
                 {% else %}
