@@ -50,3 +50,15 @@ class ProfileVisibility(models.Model):
 
     def as_dict(self):
         return {field: getattr(self, field) for field, _, _ in self.SECTIONS}
+
+
+class SyncCursor(models.Model):
+    """Where a background sync got to (players/replay_sync.py), so the next
+    run carries on from there instead of starting over."""
+
+    name = models.CharField(max_length=64, primary_key=True)
+    value = models.TextField(blank=True, default="")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} = {self.value}"

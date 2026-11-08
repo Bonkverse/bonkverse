@@ -97,6 +97,12 @@ BONKVERSE_REPLAYS_URL = os.getenv("BONKVERSE_REPLAYS_URL", "http://localhost:517
 # Player profiles (players/) read the replay site's /api/player/<name> and
 # keep each answer this long; the replay site caches it for 5 minutes too.
 PLAYER_PROFILE_CACHE_SECONDS = int(os.getenv("PLAYER_PROFILE_CACHE_SECONDS", "300"))
+# Shared secret for the replay site's private sync routes (players/replay_sync.py,
+# ReplayRenderer server/sync-routes.mjs). Set the same value on both services;
+# empty turns the sync off.
+BONKVERSE_SYNC_TOKEN = os.getenv("BONKVERSE_SYNC_TOKEN", "")
+# How often a page view may start a background sync (seconds).
+REPLAY_SYNC_INTERVAL_SECONDS = int(os.getenv("REPLAY_SYNC_INTERVAL_SECONDS", "3600"))
 
 # Server-side skin renderer (POST {BONKVERSE_RENDER_URL}/api/render-bundle), used by
 # staff re-render. Separate from the editor link: it is a stateless service, so

@@ -494,7 +494,8 @@ def _card(name, *, stats, member, bonk_player=None, flash_friends=None, listed_b
     """One player card. It links to the profile only when there is one
     (replays, a Bonkverse account, or a bonk.io account from friend lists)."""
     has_profile = bool(stats) or member or bonk_player is not None
-    age = calculator.account_age(bonk_player.bonk_id) if bonk_player else None
+    known_id = bonk_player.bonk_id if bonk_player and (bonk_player.bonk_id or 0) > 0 else None
+    age = calculator.account_age(known_id) if known_id else None
     return {
         "username": name,
         "shown_name": shown_name(name),
@@ -503,7 +504,9 @@ def _card(name, *, stats, member, bonk_player=None, flash_friends=None, listed_b
         "member": member,
         "level": calculator.sane_level((stats or {}).get("level")),
         "games": (stats or {}).get("games"),
-        "bonk_id": bonk_player.bonk_id if bonk_player else None,
+        "bonk_id": known_id,
+        # Copied in from replays (players/replay_sync.py): no DBID yet.
+        "replay_only": bonk_player is not None and known_id is None,
         "friends": bonk_player.last_friend_count if bonk_player else None,
         "joined": age,
         "flash_friends": flash_friends,

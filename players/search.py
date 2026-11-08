@@ -19,7 +19,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import date
 
-from django.db.models import Q
+from django.db.models import F, Q
 from django.db.models.functions import Collate, Length, Lower
 
 from core.bonk import dbid
@@ -420,7 +420,7 @@ def _order(qs, sort, name_field):
     if sort == "old":
         return qs.order_by("bonk_id")
     if sort == "new":
-        return qs.order_by("-bonk_id")
+        return qs.order_by(F("bonk_id").desc(nulls_last=True))
     return qs  # best match: the queryset's own order
 
 

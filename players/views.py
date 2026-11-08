@@ -7,7 +7,7 @@ from django.urls import reverse
 from core.bonk import dbid, levels
 from core.ratelimits import limit
 
-from . import selectors, services
+from . import replay_sync, selectors, services
 from .models import ProfileVisibility
 
 
@@ -81,6 +81,7 @@ def skins(request, username):
 def directory(request):
     """Find a player: Bonk players, the most active replay players and legacy
     flash friends in one search, as cards that open their profiles."""
+    replay_sync.maybe_start()  # at most hourly, in the background
     return render(request, "players/directory.html", selectors.directory(request.GET))
 
 

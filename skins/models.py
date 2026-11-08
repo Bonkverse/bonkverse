@@ -144,7 +144,10 @@ class BonkPlayer(models.Model):
     This is NOT your Bonkverse login user (BonkUser) — it’s the in-game identity.
     """
 
-    bonk_id = models.BigIntegerField(unique=True, db_index=True)
+    # The bonk.io account ID (DBID). Empty for a name only seen in replays
+    # (players.replay_sync copies those in); filled in when a friend list or
+    # login shows the real ID (skins.friends_sync.adopt_replay_names).
+    bonk_id = models.BigIntegerField(unique=True, db_index=True, null=True, blank=True)
     username = models.CharField(max_length=255, db_index=True)
     last_seen = models.DateTimeField(default=timezone.now)
     last_friend_count = models.IntegerField(default=0)  # snapshot at last sync
