@@ -1,0 +1,28 @@
+{% extends 'players/_layout.html' %}
+
+{% block tab_title %} · People{% endblock %}
+
+{% block tab %}
+<div class="pv-trio">
+  {% for list in lists %}
+    <section class="pv-card" aria-labelledby="pp-{{ list.key }}">
+      <h2 id="pp-{{ list.key }}" class="pv-card__title">{{ list.title }}</h2>
+      <ol class="pv-ranked">
+        {% for p in list.rows %}
+          <li class="pv-ranked__row">
+            <a class="pv-person" href="{{ p.profile_path }}">
+              <span class="pv-initials" aria-hidden="true">{{ p.initials }}</span>
+              <span class="pv-person__name">{{ p.username }}</span>
+            </a>
+            <span class="pv-ranked__bar" style="--bar: {{ p.bar }}%" aria-hidden="true"></span>
+            <a class="pv-ranked__count pv-small" href="{{ p.replays_url }}" aria-label="{{ p.games }} {{ list.unit }} with {{ p.username }}: watch the replays">{{ p.games }}</a>
+          </li>
+        {% empty %}
+          <li class="pv-muted">{{ list.empty }}</li>
+        {% endfor %}
+      </ol>
+    </section>
+  {% endfor %}
+</div>
+<p class="pv-fine">Registered players only: guests' names aren't unique, so they aren't counted. Each number links to those replays together. "Plays against" counts the other team in team games and the other player in 1v1s.</p>
+{% endblock %}

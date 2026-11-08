@@ -1,0 +1,44 @@
+{% extends 'players/_layout.html' %}
+
+{% block tab_title %} · Skins{% endblock %}
+
+{% block tab %}
+<section class="pv-tiles pv-tiles--3" aria-label="Creator stats">
+  {% if shown.skins %}
+    <div class="pv-tile"><span class="pv-tile__val">{{ creator.skins }}</span><span class="pv-tile__lbl">Skins created</span></div>
+    <div class="pv-tile"><span class="pv-tile__val">{{ creator.upvotes }}</span><span class="pv-tile__lbl">Upvotes received</span></div>
+    <div class="pv-tile"><span class="pv-tile__val">{{ creator.favorited }}</span><span class="pv-tile__lbl">Times favorited by others</span></div>
+  {% endif %}
+</section>
+
+<div class="pv-toolbar">
+  {% if views|length > 1 %}
+    <nav class="pv-seg" aria-label="Show">
+      <a href="?view=created"{% if view == 'created' %} aria-current="page"{% endif %}>Created · {{ creator.skins }}</a>
+      <a href="?view=favorites"{% if view == 'favorites' %} aria-current="page"{% endif %}>Favorites · {{ favorites_total }}</a>
+    </nav>
+  {% else %}
+    <h2 class="pv-section__title">{% if view == 'created' %}Created{% else %}Favorites{% endif %}</h2>
+  {% endif %}
+  <nav class="pv-sorts" aria-label="Sort">
+    <span class="pv-muted pv-small">Sort</span>
+    {% for key, label in sorts %}
+      <a class="pv-sort" href="?view={{ view }}&amp;sort={{ key }}"{% if sort == key %} aria-current="true"{% endif %}>{{ label }}</a>
+    {% endfor %}
+  </nav>
+</div>
+
+{% if page_obj.object_list %}
+  <div class="skins-container">
+    {% for skin in page_obj %}
+      {% include 'skins/partials/_skin_card.html' with skin=skin mode='search' %}
+    {% endfor %}
+  </div>
+  {% include 'skins/partials/pagination.html' with page_obj=page_obj elided_range=elided_range base_qs=base_qs %}
+{% else %}
+  <p class="pv-card pv-empty pv-muted">{% if view == 'created' %}No skins yet.{% else %}No favorites yet.{% endif %}</p>
+{% endif %}
+
+{% include 'skins/partials/_bonk_login_modal.html' %}
+{% include 'skins/partials/_report_skin_modal.html' %}
+{% endblock %}

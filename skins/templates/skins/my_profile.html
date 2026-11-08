@@ -5,7 +5,6 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/my_profile.css' %}">
-<link rel="stylesheet" href="{% static 'css/player_profile.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -15,7 +14,6 @@
        data-skins-partial-url="{% url 'my_skins_partial' %}"
        data-bulk-delete-url="{% url 'bulk_delete_skins' %}"
        data-friend-sync-url="{% url 'friends_sync_status' %}"
-       data-replays-partial-url="{% url 'my_replay_stats_partial' %}"
        {% if show_friend_sync_toast %}data-friend-sync="1"{% endif %}
        hidden></div>
 
@@ -39,17 +37,6 @@
   </div>
 
   {% include 'skins/partials/_favorites_panel.html' %}
-
-  <!-- ── Replays panel (players/; loaded when the tab is first opened) ── -->
-  <div class="profile-panel pv-scope" id="panel-replays">
-    <div class="pv-tab-actions">
-      <a class="pv-btn" href="{% url 'player_profile' user.username %}">View my public profile</a>
-      <a class="pv-btn pv-btn--ghost" href="{% url 'profile_settings' %}">Profile settings</a>
-    </div>
-    <div id="replays-panel-body">
-      <p class="pv-loading">Loading your replay stats…</p>
-    </div>
-  </div>
   {% include 'skins/partials/_bulk_bar.html' %}
 
   {% include 'skins/partials/_delete_skin_modal.html' %}

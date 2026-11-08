@@ -1,0 +1,128 @@
+{% extends 'players/_layout.html' %}
+
+{% block tab %}
+{% if not summary and replays_error == "not_found" %}
+  <div class="pv-card pv-empty">
+    <p>No replays found for <strong>{{ username }}</strong> as a registered player yet.</p>
+    <p class="pv-muted">Replays come from bonk.io's public replay list; new ones arrive every few minutes.</p>
+  </div>
+{% endif %}
+
+<div class="pv-bento">
+
+  {% if sparkline %}
+    <a class="pv-card pv-card--link pv-bento__wide" href="{% url 'player_level' username %}">
+      <div class="pv-card__head">
+        <div>
+          <span class="pv-eyebrow">Level</span>
+          <div class="pv-big">
+            <span class="pv-big__num">{{ summary.current_level }}</span>
+            {% if sparkline.gained %}<span class="pv-pill">+{{ sparkline.gained }} since {{ sparkline.first_day|date:"M Y" }}</span>{% endif %}
+          </div>
+        </div>
+        <span class="pv-link">Level explorer ›</span>
+      </div>
+      <svg class="pv-spark" viewBox="0 0 {{ sparkline.width }} {{ sparkline.height }}" preserveAspectRatio="none" role="img"
+           aria-label="Level {{ sparkline.low }} on {{ sparkline.first_day|date:'M j, Y' }} to {{ sparkline.high }} on {{ sparkline.last_day|date:'M j, Y' }}">
+        <polygon class="pv-spark__area" points="{{ sparkline.area }}"></polygon>
+        <polyline class="pv-spark__line" points="{{ sparkline.line }}"></polyline>
+      </svg>
+    </a>
+  {% endif %}
+
+  {% if main_mode or home_map %}
+    <div class="pv-bento__stack">
+      {% if main_mode %}
+        <a class="pv-card pv-card--link" href="{% url 'player_maps' username %}">
+          <span class="pv-eyebrow">Main mode</span>
+          <span class="pv-card__title">{{ main_mode.label }}</span>
+          <span class="pv-meter" style="--bar: {{ main_mode.share }}%"></span>
+          <span class="pv-muted pv-small">{{ main_mode.share }}% of replays</span>
+        </a>
+      {% endif %}
+      {% if home_map %}
+        <a class="pv-card pv-card--link pv-mapcard" href="{% url 'player_maps' username %}?map={{ home_map.mapid }}">
+          <img class="pv-thumb" src="{{ home_map.thumbnail }}" alt="" loading="lazy" width="96" height="64">
+          <span>
+            <span class="pv-eyebrow">Home map</span>
+            <span class="pv-card__title">{{ home_map.name }}</span>
+            <span class="pv-muted pv-small">{{ home_map.games }} replays</span>
+          </span>
+        </a>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if heatmap %}
+    <a class="pv-card pv-card--link pv-bento__full" href="{% url 'player_activity' username %}">
+      <div class="pv-card__head">
+        <span class="pv-card__title">Activity</span>
+        <span class="pv-muted pv-small">
+          {{ heatmap.days_played }} day{{ heatmap.days_played|pluralize }} played this year
+          {% if streaks.longest > 1 %} · longest streak {{ streaks.longest }} days{% endif %}
+        </span>
+      </div>
+      {% include 'players/partials/_heatmap.html' with heatmap=heatmap interactive=False %}
+    </a>
+  {% endif %}
+
+  {% if partners %}
+    <section class="pv-card" aria-labelledby="ov-people">
+      <div class="pv-card__head">
+        <h2 id="ov-people" class="pv-card__title">Plays with most</h2>
+        <a class="pv-link pv-small" href="{% url 'player_people' username %}">All ›</a>
+      </div>
+      <ul class="pv-people">
+        {% for p in partners %}
+          <li>
+            <a class="pv-person" href="{{ p.profile_path }}">
+              <span class="pv-initials" aria-hidden="true">{{ p.initials }}</span>
+              <span class="pv-person__name">{{ p.username }}</span>
+              <span class="pv-muted pv-small">{{ p.games }}</span>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
+  {% if milestones %}
+    <section class="pv-card" aria-labelledby="ov-ms">
+      <h2 id="ov-ms" class="pv-card__title">Milestones</h2>
+      <ol class="pv-timeline">
+        {% for m in milestones %}
+          <li>
+            {% if m.url %}<a href="{{ m.url }}">{{ m.what }}</a>{% else %}{{ m.what }}{% endif %}
+            <span class="pv-muted pv-small">{{ m.day|date:"M j, Y" }}</span>
+          </li>
+        {% endfor %}
+      </ol>
+    </section>
+  {% endif %}
+
+  {% if featured %}
+    <section class="pv-card" aria-labelledby="ov-skins">
+      <div class="pv-card__head">
+        <h2 id="ov-skins" class="pv-card__title">Skins</h2>
+        <a class="pv-link pv-small" href="{% url 'player_skins' username %}">All {{ skins_total }} ›</a>
+      </div>
+      <div class="pv-featured">
+        {% for s in featured %}
+          {% include 'skins/partials/_skin_card_compact.html' with skin=s card_class='pv-skin' name_len=18 %}
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+</div>
+
+{% if not account %}
+  <p class="pv-note">
+    Is this you? <a class="pv-link" href="{% url 'login' %}">Sign in with your bonk.io account</a>
+    to add your skins and choose what's public.
+  </p>
+{% endif %}
+{% if summary %}
+  <p class="pv-fine">Built from replays on <a href="{{ BONKVERSE_REPLAYS_URL }}">Bonkverse Replays</a>. Replays don't record who won, so there's no win rate.</p>
+{% endif %}
+{% endblock %}

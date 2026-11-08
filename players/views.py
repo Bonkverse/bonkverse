@@ -8,23 +8,52 @@ from . import selectors, services
 from .models import ProfileVisibility
 
 
-@limit("browse")
-def player_profile(request, username):
-    """A player's public page: replay stats for anyone with registered
-    replays, plus skins for Bonkverse users, minus what they chose to hide."""
-    context = selectors.profile_page(username, request.user)
-    if context is None:
+def _tab(request, username, slug, template, build):
+    """Render one profile tab: 404 for no such player, a "private" note when
+    the viewer can't see this tab, otherwise the tab with `build(base)`."""
+    base = selectors.profile_base(username, request.user, active=slug)
+    if base is None:
         return render(request, "players/not_found.html", {"username": username}, status=404)
-    return render(request, "players/profile.html", context)
+    if not base["tab_allowed"]:
+        return render(request, "players/tab_unavailable.html", base)
+    return render(request, template, {**base, **build(base)})
 
 
-@login_required
 @limit("browse")
-def my_replay_stats_partial(request):
-    """The Replays tab on My Profile, loaded when the tab is first opened so
-    the replay service never slows down the rest of the page."""
-    return render(
-        request, "players/partials/_replay_stats.html", selectors.own_replay_stats(request.user)
+def overview(request, username):
+    return _tab(request, username, "", "players/overview.html", selectors.overview)
+
+
+@limit("browse")
+def activity(request, username):
+    return _tab(request, username, "activity", "players/activity.html", selectors.activity)
+
+
+@limit("browse")
+def level(request, username):
+    return _tab(request, username, "level", "players/level.html", selectors.level)
+
+
+@limit("browse")
+def maps(request, username):
+    mapid = request.GET.get("map")
+    return _tab(request, username, "maps", "players/maps.html", lambda b: selectors.maps(b, mapid))
+
+
+@limit("browse")
+def people(request, username):
+    return _tab(request, username, "people", "players/people.html", selectors.people)
+
+
+@limit("browse")
+def skins(request, username):
+    q = request.GET
+    return _tab(
+        request,
+        username,
+        "skins",
+        "players/skins.html",
+        lambda b: selectors.skins(b, request.user, q.get("view"), q.get("sort"), q.get("page", 1)),
     )
 
 

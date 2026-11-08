@@ -1,0 +1,106 @@
+{% extends 'players/_layout.html' %}
+{% load static %}
+
+{% block tab_title %} · Level{% endblock %}
+
+{% block tab %}
+{{ script_data|json_script:"level-data" }}
+
+<section class="pv-card" aria-labelledby="lx-title" data-level>
+  <div class="pv-card__head pv-card__head--wrap">
+    <div>
+      <h2 id="lx-title" class="pv-card__title">Level explorer</h2>
+      <span class="pv-muted pv-small" data-range-label>
+        {% if sparkline %}{{ sparkline.first_day|date:"M j, Y" }} – {{ sparkline.last_day|date:"M j, Y" }}{% endif %}
+      </span>
+    </div>
+    <div class="pv-seg" role="group" aria-label="Zoom" data-presets hidden>
+      <button type="button" data-days="7">1W</button>
+      <button type="button" data-days="30">1M</button>
+      <button type="button" data-days="90">3M</button>
+      <button type="button" data-days="365">1Y</button>
+      <button type="button" data-days="all" aria-pressed="true">All</button>
+    </div>
+  </div>
+
+  <div class="pv-readout" aria-live="polite">
+    <span class="pv-readout__num" data-read-level>{% if summary %}Level {{ summary.current_level }}{% endif %}</span>
+    <span class="pv-muted" data-read-day>{% if sparkline %}{{ sparkline.last_day|date:"M j, Y" }}{% endif %}</span>
+  </div>
+
+  <div class="pv-plot" data-plot>
+    {% if sparkline %}
+      <svg class="pv-plot__svg" viewBox="0 0 1000 280" preserveAspectRatio="none" aria-hidden="true" data-plot-svg>
+        <polygon class="pv-spark__area" points="{{ sparkline.area }}" data-plot-area></polygon>
+        <polyline class="pv-spark__line" points="{{ sparkline.line }}" data-plot-line></polyline>
+      </svg>
+      <span class="pv-plot__axis pv-plot__axis--top pv-small" data-plot-hi>Level {{ sparkline.high }}</span>
+      <span class="pv-plot__axis pv-plot__axis--bottom pv-small" data-plot-lo>Level {{ sparkline.low }}</span>
+      <span class="pv-plot__cross" data-cross hidden></span>
+      <span class="pv-plot__dot" data-dot hidden></span>
+    {% else %}
+      <p class="pv-muted pv-plot__empty">Not enough days with replays to draw a line yet.</p>
+    {% endif %}
+  </div>
+
+  <div class="pv-brush" data-brush hidden>
+    <p class="pv-small pv-muted">Drag the handles to pick any stretch of days</p>
+    <div class="pv-brush__mini">
+      <svg viewBox="0 0 1000 56" preserveAspectRatio="none" aria-hidden="true"><polyline data-mini-line></polyline></svg>
+      <span class="pv-brush__window" data-mini-window></span>
+    </div>
+    <div class="pv-brush__inputs">
+      <label>From <span data-from-label></span>
+        <input type="range" min="0" value="0" data-from>
+      </label>
+      <label>To <span data-to-label></span>
+        <input type="range" min="0" value="0" data-to>
+      </label>
+    </div>
+  </div>
+</section>
+
+<section class="pv-tiles" aria-label="In this range" data-range-tiles hidden>
+  <div class="pv-tile"><span class="pv-tile__val" data-t-gained></span><span class="pv-tile__lbl">Levels gained</span></div>
+  <div class="pv-tile"><span class="pv-tile__val" data-t-replays></span><span class="pv-tile__lbl">Replays in range</span></div>
+  <div class="pv-tile"><span class="pv-tile__val" data-t-per-level></span><span class="pv-tile__lbl">Replays per level</span></div>
+  <div class="pv-tile"><span class="pv-tile__val" data-t-days-per-level></span><span class="pv-tile__lbl">Average time per level</span></div>
+</section>
+
+<div class="pv-split">
+  <section class="pv-card pv-split__main" aria-labelledby="ups-title">
+    <h2 id="ups-title" class="pv-card__title">Level-ups <span class="pv-muted pv-small" data-ups-scope>(latest)</span></h2>
+    <div class="pv-tablewrap">
+      <table class="pv-table">
+        <thead>
+          <tr><th scope="col">Level</th><th scope="col">First seen</th><th scope="col" class="pv-num">Replays since last</th><th scope="col" class="pv-num">Days since last</th></tr>
+        </thead>
+        <tbody data-ups>
+          {% for u in level_ups %}
+            <tr>
+              <td><a href="{{ u.url }}">{{ u.level }}</a></td>
+              <td>{{ u.day|date:"M j, Y" }}</td>
+              <td class="pv-num">{{ u.replays|default:"—" }}</td>
+              <td class="pv-num">{{ u.days|default_if_none:"—" }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="4" class="pv-muted">No level-ups seen in replays yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="pv-fine">Replays show a player's level, not their XP, so a level-up is dated by the first replay that shows it. Older replays have estimated days.</p>
+  </section>
+
+  <section class="pv-card pv-card--accent pv-split__side" aria-labelledby="next-title" data-next hidden>
+    <i data-lucide="trending-up" class="pv-card__icon" aria-hidden="true"></i>
+    <h2 id="next-title" class="pv-card__title">What's next</h2>
+    <p data-next-text></p>
+    <p class="pv-muted pv-small">An estimate from this range's pace, not a promise.</p>
+  </section>
+</div>
+{% endblock %}
+
+{% block tab_scripts %}
+<script src="{% static 'js/player_level.js' %}"></script>
+{% endblock %}

@@ -18,20 +18,18 @@ class ProfileVisibility(models.Model):
     activity = models.BooleanField(default=True)
     maps_and_modes = models.BooleanField(default=True)
     play_partners = models.BooleanField(default=True)
-    recent_replays = models.BooleanField(default=True)
     skins = models.BooleanField(default=True)
     favorites = models.BooleanField(default=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    # (field, label, what it shows), in page order. The settings form and the
-    # profile page both read this, so a new section is one entry here plus
-    # its field above.
+    # (field, label, what it shows), in tab order. The settings form, the
+    # profile tabs and the Overview cards all read this, so a new section is
+    # one entry here plus its field above.
     SECTIONS = [
-        ("level_history", "Level history", "Your level over time, from replays."),
-        ("activity", "Activity", "How much you play, by day, weekday and hour."),
-        ("maps_and_modes", "Maps and modes", "The modes you play and your most played maps."),
-        ("play_partners", "Play partners", "The players you play with and team with most."),
-        ("recent_replays", "Recent replays", "Your latest replays, with links to watch them."),
+        ("level_history", "Level", "Your level over time and when you levelled up."),
+        ("activity", "Activity", "When and how much you play: days, hours, streaks."),
+        ("maps_and_modes", "Maps and modes", "The modes, rooms and maps you play."),
+        ("play_partners", "People", "Who you play with, team with and play against."),
         ("skins", "Skins", "Skins you created on Bonkverse."),
         ("favorites", "Favorites", "Skins you favorited."),
     ]
