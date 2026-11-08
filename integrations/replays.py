@@ -1,6 +1,7 @@
 """The replay site's player API (ReplayRenderer, replays.bonkverse.io).
 
-Owns: the `GET /api/player/<name>`, `/api/player/<name>/map/<mapid>`,
+Owns: the `GET /api/player/<name>`, `/api/player/<name>/map/<mapid>`
+(or `?name=` for "." and ".."),
 `/api/players/lookup`, `/api/players?q=` and `/api/levels/distribution`
 requests, URL-encoding the username, the
 timeout, and sorting the reply into found / no such player / no usable
@@ -30,6 +31,16 @@ DEFAULT_TIMEOUT = (3.0, 12.0)  # (connect, read) seconds
 MAX_USERNAME_LENGTH = 100
 
 
+def _player_url(base_url: str, username: str, tail: str = "") -> tuple[str, dict]:
+    """(url, query params) for `/api/player/<name><tail>`. The names "." and
+    ".." are dot segments that requests and proxies resolve away (even
+    percent-encoded: /api/player/%2E%2E becomes /api/), so those go in the
+    query instead: `/api/player<tail>?name=..`."""
+    if username in (".", ".."):
+        return f"{base_url}/api/player{tail}", {"name": username}
+    return f"{base_url}/api/player/{quote(username, safe='')}{tail}", {}
+
+
 class PlayerError:
     """`PlayerResult.error` codes."""
 
@@ -52,9 +63,9 @@ def get_player(base_url: str, username: str, *, timeout=DEFAULT_TIMEOUT) -> Play
     if not username or len(username) > MAX_USERNAME_LENGTH:
         return PlayerResult(error=PlayerError.NOT_FOUND)
 
-    url = f"{base_url}/api/player/{quote(username, safe='')}"
+    url, params = _player_url(base_url, username)
     try:
-        response = requests.get(url, timeout=timeout)
+        response = requests.get(url, params=params, timeout=timeout)
     except requests.RequestException as exc:
         logger.warning("replays api: unreachable: %s", type(exc).__name__)
         return PlayerResult(error=PlayerError.UNAVAILABLE)
@@ -83,9 +94,9 @@ def get_player_map(
     if not username or len(username) > MAX_USERNAME_LENGTH or not str(mapid).isdigit():
         return PlayerResult(error=PlayerError.NOT_FOUND)
 
-    url = f"{base_url}/api/player/{quote(username, safe='')}/map/{mapid}"
+    url, params = _player_url(base_url, username, f"/map/{mapid}")
     try:
-        response = requests.get(url, timeout=timeout)
+        response = requests.get(url, params=params, timeout=timeout)
     except requests.RequestException as exc:
         logger.warning("replays api (map): unreachable: %s", type(exc).__name__)
         return PlayerResult(error=PlayerError.UNAVAILABLE)
