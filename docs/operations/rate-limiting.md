@@ -26,6 +26,13 @@ in `settings.RATE_LIMITS`; each can be overridden with `RATE_LIMIT_<TIER>`:
 | `upload` | 10/m | Skin uploads |
 | `login` | 15/h, POST only | bonk.io login attempts |
 | `submit` | 7/h | Discord server submissions |
+| `api` / `api_partner` | 60/m / 300/m, **per API key** | Public API reads (`/api/v1/`), [public-api.md](../architecture/public-api.md) |
+| `api_bulk` / `api_bulk_partner` | 10/m / 30/m, **per API key** | `POST /api/v1/lookup/players/` (up to 250 names each) |
+| `api_auth_fail` | 20/m, per IP | Failed key checks on `/api/v1/` before that IP waits |
+
+The public API's tiers use `public_api.auth.api_endpoint` instead of `@limit`:
+they count per key, add `RateLimit-Limit/-Remaining/-Reset` headers to every
+reply, and partner keys use the `*_partner` rate.
 
 **Flow:** `@limit` asks django-ratelimit to count the request in Redis under a
 key built from the view and the client IP, in fixed windows. Over the limit:

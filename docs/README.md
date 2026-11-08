@@ -11,6 +11,7 @@ development are in the [README](../README.md); code conventions in
 | [architecture/request-flow.md](architecture/request-flow.md) | You want to know what happens between a click and a response |
 | [architecture/frontend.md](architecture/frontend.md) | Changing a page: where its script and styles go, the shared `BV*` helpers, skin cards, what `tests/test_frontend.py` checks |
 | [architecture/integrations.md](architecture/integrations.md) | Calling another service (bonk.io, the editor, Discord, Cloudflare…), or one of them is failing |
+| [architecture/public-api.md](architecture/public-api.md) | Issuing or revoking an API key, changing `/api/v1/`, or a partner says the API is wrong |
 | [operations/configuration.md](operations/configuration.md) | Adding, changing or looking up an environment variable |
 | [operations/runbook.md](operations/runbook.md) | Something is wrong in production, or you're deploying / rotating a secret |
 | [operations/rate-limiting.md](operations/rate-limiting.md) | Adding a route, changing a limit, or someone hits a 429 / Cloudflare 1015 |
@@ -37,3 +38,4 @@ development are in the [README](../README.md); code conventions in
 - [0007 bonk.io names are stored exactly; identity is case-insensitive](adr/0007-bonk-usernames.md)
 - [0008 How Bonkverse answers bonk.io refusals](adr/0008-bonk-refusals.md)
 - [0009 One copy of each page behavior, in static files](adr/0009-frontend-structure.md)
+- [0011 A public, versioned API for other sites, with keys](adr/0011-public-api.md)

@@ -246,6 +246,7 @@ INSTALLED_APPS = [
     # Local apps
     "skins",
     "players",
+    "public_api",
 ]
 
 # =========================================================
@@ -419,6 +420,14 @@ RATE_LIMITS = {
         # thumbnails, so this allows ~12 fast page flips a minute; a scraper
         # pulling every skin (2026-11-03: ~2,700/min) is stopped.
         "media": "600/m",
+        # Public API (/api/v1/), counted per API key, not per IP. Partner
+        # keys use the *_partner rate. api_auth_fail is per IP: failed key
+        # checks before that IP is told to wait (slows key guessing).
+        "api": "60/m",
+        "api_partner": "300/m",
+        "api_bulk": "10/m",  # POST /api/v1/lookup/players/ (up to 250 names each)
+        "api_bulk_partner": "30/m",
+        "api_auth_fail": "20/m",
     }.items()
 }
 

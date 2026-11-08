@@ -70,6 +70,8 @@ urlpatterns = [
     path("matchmaking/", matchmaking_page, name="matchmaking"),
     path("skins/detail/<int:skin_id>", skin_detail, name="skin_detail"),
     path("staff/", staff.staff_page, name="staff"),
+    # Public, versioned API for other sites and bots (public_api/, ADR 0011).
+    path("api/v1/", include("public_api.urls")),
     # NEW: AJAX/JSON endpoints used by search cards
     path("api/", index, name="api_index"),
     path("api/skins/<int:skin_id>/vote/", vote_skin_api, name="api_vote_skin"),
