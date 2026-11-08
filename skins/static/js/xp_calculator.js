@@ -42,8 +42,11 @@
   const daysLabel = (d) => (d < 1 ? "today" : d === 1 ? "1 day" : `${num(d)} days`);
   const when = (days) => (days > 36500 ? "more than a century away" : fmtMonth.format(today + days * DAY));
   // A player's profile path (players/urls.py: player/<name>/), built here so
-  // links never come from page data; the name is percent-encoded.
-  const profileUrl = (name) => `/player/${encodeURIComponent(String(name))}/`;
+  // links never come from page data; the name is percent-encoded. Names like
+  // "." and ".." get a "~" in front, or the browser would read them as
+  // folders (players/converters.py).
+  const urlName = (name) => (/^~*\.{1,2}$/.test(name) ? `~${name}` : name);
+  const profileUrl = (name) => `/player/${encodeURIComponent(urlName(String(name)))}/`;
 
   // ── Tabs ─────────────────────────────────────────────────────
   const TABS = ["plan", "compare", "spread", "age"];

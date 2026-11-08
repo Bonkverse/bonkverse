@@ -45,7 +45,13 @@ ROUTES = list(_collect_routes())
 
 def _fill_kwargs(entry, skin) -> dict:
     """Pick a concrete value for every path converter in the route."""
-    sample = {"int": skin.id, "uuid": skin.uuid, "slug": "minimalist", "string": "today"}
+    sample = {
+        "int": skin.id,
+        "uuid": skin.uuid,
+        "slug": "minimalist",
+        "string": "today",
+        "username": "today",
+    }
     kwargs = {}
     for name, converter in entry.pattern.converters.items():
         # IntConverter -> "int", StringConverter -> "string", UUIDConverter -> "uuid", ...

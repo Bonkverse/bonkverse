@@ -13,6 +13,8 @@ import math
 from datetime import date, timedelta
 from urllib.parse import quote, urlencode
 
+from . import converters
+
 MODE_LABELS = {
     "b": "Classic",
     "ar": "Arrows",
@@ -60,7 +62,9 @@ def _played(days):
 
 
 def profile_path(username, tab=""):
-    return f"/player/{quote(username, safe='')}/" + (f"{tab}/" if tab else "")
+    """/player/<name>/[tab/], with "." and ".." escaped (players/converters.py)."""
+    segment = quote(converters.to_url(username), safe="")
+    return f"/player/{segment}/" + (f"{tab}/" if tab else "")
 
 
 class ReplayLinks:

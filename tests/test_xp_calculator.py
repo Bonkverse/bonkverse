@@ -211,4 +211,4 @@ def test_calculator_script_builds_profile_links_like_the_url_conf():
 
     script = Path("skins/static/js/xp_calculator.js").read_text(encoding="utf-8")
     assert reverse("player_profile", args=["x"]) == "/player/x/"
-    assert "`/player/${encodeURIComponent(String(name))}/`" in script
+    assert "`/player/${encodeURIComponent(urlName(String(name)))}/`" in script
