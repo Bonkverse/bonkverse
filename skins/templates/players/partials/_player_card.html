@@ -1,13 +1,17 @@
 {% comment %}
 One player card on the Players page (players.selectors.directory → _card).
 Three fixed stats (level, replays, friends) so a grid of cards scans in
-columns; "—" when we don't know. A card with a profile is a solid link; a
+columns; "—" when we don't know. The bonk.io account ID (DBID) sits small
+under the name when we know it. A card with a profile is a solid link; a
 card without one is dashed and quiet, so the two are easy to tell apart.
 {% endcomment %}
 {% if card.profile_url %}<a class="pv-pcard" href="{{ card.profile_url }}">{% else %}<div class="pv-pcard pv-pcard--none">{% endif %}
   <span class="pv-pcard__top">
     <span class="pv-initials pv-pcard__avatar" aria-hidden="true">{{ card.initials }}</span>
-    <span class="pv-pcard__name"{% if card.shown_name != card.username %} title="{{ card.username }}" aria-label="{{ card.username }}"{% endif %}>{{ card.shown_name }}</span>
+    <span class="pv-pcard__who">
+      <span class="pv-pcard__name"{% if card.shown_name != card.username %} title="{{ card.username }}" aria-label="{{ card.username }}"{% endif %}>{{ card.shown_name }}</span>
+      {% if card.bonk_id %}<span class="pv-pcard__id">DBID {{ card.bonk_id }}</span>{% endif %}
+    </span>
     {% if card.member %}<i data-lucide="badge-check" class="pv-pcard__member" aria-label="Bonkverse member"></i>{% endif %}
   </span>
   <span class="pv-pcard__stats">

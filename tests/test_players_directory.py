@@ -156,3 +156,11 @@ def test_navbar_links_to_players(client, mocked_http):
     mock_lookup(mocked_http, [])
     html = client.get("/").content.decode()
     assert f'href="{reverse("players_directory")}"' in html
+
+
+@pytest.mark.django_db
+def test_cards_show_the_account_id(client, mocked_http):
+    BonkPlayer.objects.create(bonk_id=13159907, username="dbid haver")
+    mock_lookup(mocked_http, [])
+    html = client.get(reverse("players_directory") + "?q=dbid").content.decode()
+    assert "DBID 13159907" in html
