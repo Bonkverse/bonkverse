@@ -1,0 +1,135 @@
+/* xp_calculator.css — the XP & Level calculator (players/xp_calculator.html).
+   Builds on player_profile.css (the .pv palette and cards). Sizes the
+   script computes arrive as custom properties: --bar (a percentage),
+   --x / --y (positions), --line / --slice (colors). */
+
+.xc-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px 24px; flex-wrap: wrap; margin-bottom: 18px; }
+.xc-head > div { flex: 1 1 420px; }
+.xc-head p { margin: 6px 0 0; max-width: 640px; }
+.xc-title { font-size: 2rem; margin: 0; }
+.xc-load { display: flex; gap: 8px; flex: 1 1 320px; max-width: 420px; }
+.xc-load .pv-dir__field, .xc-addplayer .pv-dir__field { flex: 1; min-height: 44px; }
+
+.xc-player {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  background: var(--pv-panel-2); border: 1px solid var(--pv-outline); border-radius: 14px;
+  padding: 14px 18px; margin-bottom: 20px;
+}
+.xc-player__who { flex: 1 1 200px; display: flex; flex-direction: column; min-width: 0; }
+.xc-player__name { font-size: 1.2rem; font-weight: 600; text-decoration: none; }
+.xc-player__stats { display: flex; gap: 24px; margin: 0; flex-wrap: wrap; }
+.xc-player__stats div { display: flex; flex-direction: column-reverse; }
+.xc-player__stats dt { font-size: 0.8rem; color: var(--pv-muted); }
+.xc-player__stats dd { margin: 0; font-size: 1.25rem; font-weight: 700; }
+
+.xc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 20px; }
+.xc-grid > .pv-card { margin: 0; }
+.xc-wide { grid-column: 1 / -1; }
+
+.xc-field { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--pv-muted); min-width: 0; }
+.pv .xc-field input {
+  min-height: 44px; padding: 0 12px; border-radius: 10px; width: 100%; box-sizing: border-box;
+  background: var(--pv-inset); border: 1px solid var(--pv-outline); color: var(--pv-text);
+  font: inherit; font-size: 1.05rem; font-variant-numeric: tabular-nums; box-shadow: none; margin: 0;
+}
+.pv .xc-field input:focus { outline: none; border-color: var(--pv-action); }
+.xc-pair { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.4fr); align-items: end; gap: 10px; }
+.xc-pair__arrow { color: var(--pv-muted); font-size: 1.3rem; padding-bottom: 10px; }
+
+.xc-progress { margin-top: 16px; }
+.xc-progress__labels { display: flex; justify-content: space-between; color: var(--pv-muted); margin-bottom: 6px; }
+.xc-progress__labels span:nth-child(2) { color: var(--pv-text); font-weight: 600; }
+.xc-progress p { margin: 6px 0 0; }
+.xc-bar { height: 14px; border-radius: 7px; background: var(--pv-inset); overflow: hidden; }
+.xc-bar__fill { display: block; height: 100%; width: var(--bar, 0%); background: var(--pv-action); border-radius: 7px; transition: width 0.25s; }
+.xc-bar--goal { margin-top: 18px; }
+
+.xc-milestones { list-style: none; margin: 0; padding: 0; }
+.xc-milestones li { display: flex; flex-direction: column; padding: 8px 0; border-top: 1px solid var(--pv-rule); }
+.xc-milestones li:first-child { border-top: 0; }
+
+.xc-goalrows { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1.3fr); gap: 10px 12px; align-items: end; }
+.xc-goalrows__lbl { font-weight: 600; padding-bottom: 12px; }
+.xc-results { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 16px 0 0; }
+.xc-results div { background: var(--pv-panel-2); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column-reverse; }
+.xc-results dt { font-size: 0.8rem; color: var(--pv-muted); }
+.xc-results dd { margin: 0; font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.xc-slider { display: block; margin-top: 18px; }
+.xc-slider__row { display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--pv-muted); }
+.xc-slider__row output { color: var(--pv-text); font-weight: 600; }
+.pv .xc-slider input { width: 100%; min-height: 32px; padding: 0; margin: 4px 0 0; border: 0; background: transparent; box-shadow: none; accent-color: #90b7ff; }
+.xc-eta { margin: 8px 0 0; }
+.xc-eta--player { color: var(--pv-warm); }
+
+/* Charts */
+.xc-chart { position: relative; margin: 18px 0 0; touch-action: pan-y; cursor: crosshair; }
+.xc-chart svg { display: block; width: 100%; background: var(--pv-inset); border-radius: 12px; }
+.xc-chart--projection svg { height: 200px; }
+.xc-chart--compare svg { height: 300px; }
+.xc-chart--dbid svg { height: 240px; }
+.xc-line { fill: none; stroke: var(--line); stroke-width: 2.5; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.xc-goalline { stroke: var(--pv-outline); stroke-dasharray: 6 6; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.xc-chart__cross { position: absolute; top: 0; bottom: 0; width: 2px; left: var(--x); background: rgba(237, 244, 251, 0.5); pointer-events: none; }
+.xc-chart--projection .xc-chart__cross { bottom: auto; height: 200px; }
+.xc-chart--compare .xc-chart__cross { bottom: auto; height: 300px; }
+.xc-chart--dbid .xc-chart__cross { bottom: auto; height: 240px; }
+.xc-chart__dot {
+  position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; left: var(--x); top: var(--y);
+  border-radius: 50%; background: var(--pv-warm); border: 2px solid var(--pv-inset); pointer-events: none;
+}
+.xc-chart__axis { display: flex; justify-content: space-between; margin-top: 6px; }
+.xc-tip {
+  position: absolute; top: 8px; left: var(--x); transform: translateX(-50%); pointer-events: none;
+  background: rgba(16, 26, 37, 0.95); border: 1px solid var(--pv-outline); border-radius: 10px;
+  padding: 8px 10px; font-size: 0.82rem; white-space: nowrap; z-index: 2;
+}
+.xc-tip div { display: flex; align-items: center; gap: 6px; }
+.xc-tip div:first-child { color: var(--pv-muted); margin-bottom: 2px; }
+.xc-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 8px; color: var(--pv-muted); }
+.xc-sw--cap { --slice: #47d8c4; }
+.xc-sw--pace { --slice: #90b7ff; }
+.xc-sw--player { --slice: #ffb454; }
+
+/* Level spread */
+.xc-stand__headline { font-size: 1.25rem; font-weight: 600; margin: 0 0 14px; }
+.xc-hist { display: flex; align-items: flex-end; gap: 2px; height: 160px; background: var(--pv-inset); border-radius: 12px; padding: 10px 10px 0; }
+.xc-hist__bar { flex: 1; min-width: 2px; height: var(--bar); background: var(--pv-action-dim); border-radius: 3px 3px 0 0; cursor: pointer; }
+.xc-hist__bar:hover { background: #379a8e; }
+.xc-hist__bar[data-here] { background: var(--pv-warm); }
+.xc-hist__axis { display: flex; justify-content: space-between; margin: 6px 0; }
+
+/* Compare */
+.xc-addplayer { display: flex; gap: 8px; max-width: 460px; }
+.xc-chips { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.xc-chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 0 4px 0 12px; min-height: 36px;
+  border-radius: 999px; background: var(--pv-panel-2); border: 1px solid var(--pv-outline);
+}
+.xc-chip a { text-decoration: none; }
+.pv .xc-chip__x {
+  width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; background: transparent;
+  color: var(--pv-muted); font-size: 1.1rem; cursor: pointer;
+}
+.pv .xc-chip__x:hover { background: var(--pv-inset); color: var(--pv-text); }
+.xc-table td a { text-decoration: none; }
+.pv .xc-table th, .pv .xc-table td { padding-left: 14px; white-space: nowrap; }
+.pv .xc-table th:first-child, .pv .xc-table td:first-child { padding-left: 0; }
+.xc-table .pv-swatch { margin-right: 8px; }
+
+/* Account ID */
+.xc-dbid { display: flex; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
+.xc-dbid .xc-field { flex: 0 1 260px; }
+.xc-dbid__out { display: flex; flex-direction: column; padding-bottom: 4px; }
+.xc-dbid__date { font-size: 1.6rem; font-weight: 700; }
+
+@media (max-width: 640px) {
+  .xc-title { font-size: 1.6rem; }
+  .xc-load { max-width: none; }
+  .xc-grid { grid-template-columns: minmax(0, 1fr); }
+  .xc-results { grid-template-columns: minmax(0, 1fr); }
+  .xc-results div { flex-direction: row-reverse; justify-content: space-between; align-items: baseline; }
+  .xc-player__stats { width: 100%; justify-content: space-between; }
+  .xc-chart--compare svg { height: 240px; }
+  .xc-chart--compare .xc-chart__cross { height: 240px; }
+}
+@media (prefers-reduced-motion: reduce) { .xc-bar__fill { transition: none; } }

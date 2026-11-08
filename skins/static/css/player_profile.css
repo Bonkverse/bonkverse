@@ -445,26 +445,38 @@ button.pv-heat__week:hover, button.pv-heat__week[aria-pressed="true"] { outline:
 .pv-dir__explain { text-align: center; margin: 10px auto 22px; max-width: 640px; }
 .pv-dir__count { margin: 0 0 10px; }
 
-.pv-pcards { list-style: none; margin: 0 0 24px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+.pv-pcards { list-style: none; margin: 0 0 24px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
 .pv-pcard {
   height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px;
   padding: 16px; border-radius: 14px; background: var(--pv-panel); border: 1px solid var(--pv-outline);
   text-decoration: none; transition: border-color 0.15s, transform 0.15s;
 }
 .pv a.pv-pcard { color: var(--pv-text); }
-.pv a.pv-pcard:hover { border-color: var(--pv-action); transform: translateY(-1px); }
-.pv-pcard--plain { opacity: 0.8; }
-.pv-pcard__top { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.pv-initials--lg { width: 46px; height: 46px; font-size: 1rem; }
-.pv-pcard__who { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-.pv-pcard__name { font-weight: 600; font-size: 1.05rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pv-pcard__chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.pv-chip--sm { padding: 1px 8px; font-size: 0.75rem; }
-.pv-chip--accent { background: #173d3a; border-color: #23605a; color: var(--pv-action); }
-.pv-pcard__facts { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.85rem; color: var(--pv-muted); }
-.pv-pcard__facts span { display: inline-flex; align-items: center; gap: 5px; }
-.pv .pv-pcard__facts i[data-lucide], .pv .pv-pcard__facts svg.lucide { width: 14px; height: 14px; }
-.pv-pcard__go { margin-top: auto; font-size: 0.85rem; font-weight: 600; color: var(--pv-link); }
+.pv a.pv-pcard:hover { border-color: var(--pv-action); transform: translateY(-2px); }
+.pv-pcard__top { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.pv-pcard__avatar { width: 40px; height: 40px; font-size: 0.9rem; box-shadow: 0 0 0 2px var(--pv-action); color: var(--pv-action); }
+.pv-pcard__name { flex: 1; min-width: 0; font-weight: 600; font-size: 1.05rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pv .pv-pcard__member { width: 18px; height: 18px; color: var(--pv-action); flex-shrink: 0; }
+.pv-pcard__stats {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  background: var(--pv-inset); border-radius: 10px; padding: 10px 4px;
+}
+.pv-pcard__stat { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
+.pv-pcard__stat + .pv-pcard__stat { border-left: 1px solid var(--pv-rule); }
+.pv-pcard__val { font-size: 1.15rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.pv-pcard__lbl { font-size: 0.72rem; color: var(--pv-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.pv-pcard__foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: auto; font-size: 0.85rem; }
+.pv-pcard__meta { color: var(--pv-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pv-pcard__go { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; color: var(--pv-link); white-space: nowrap; }
+.pv .pv-pcard__go i[data-lucide], .pv .pv-pcard__go svg.lucide { width: 15px; height: 15px; }
+
+/* No profile: dashed, see-through and quiet so it reads as "not a link". */
+.pv-pcard--none { background: transparent; border-style: dashed; border-color: #2b3f54; }
+.pv-pcard--none .pv-pcard__avatar { box-shadow: none; color: #6f849a; background: #18263a; }
+.pv-pcard--none .pv-pcard__name { color: #8fa3b8; font-weight: 500; }
+.pv-pcard--none .pv-pcard__stats { background: transparent; border: 1px dashed #2b3f54; }
+.pv-pcard--none .pv-pcard__val { color: #8fa3b8; font-weight: 500; }
+.pv-pcard__none { color: #6f849a; font-style: italic; white-space: nowrap; }
 
 @media (max-width: 640px) {
   .pv-dir__title { font-size: 1.7rem; }
@@ -482,3 +494,8 @@ button.pv-heat__week:hover, button.pv-heat__week[aria-pressed="true"] { outline:
 @media (max-width: 640px) {
   .pv-dir__views a { padding: 0 8px; font-size: 0.9rem; }
 }
+
+/* Level card XP facts (players/overview.html) */
+.pv-levelfacts { display: flex; flex-direction: column; gap: 4px; }
+.pv-levelfacts .pv-meter { margin: 0 0 4px; }
+.pv-chip i[data-lucide], .pv-chip svg.lucide { width: 14px; height: 14px; vertical-align: -2px; }

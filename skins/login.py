@@ -12,6 +12,7 @@ import threading
 import time
 
 from django.conf import settings
+from django.utils import timezone
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.core import signing
@@ -87,6 +88,10 @@ def _link_bonk_player(user: BonkUser, result: BonkLoginResult) -> None:
         )
         player.username = result.username.value
         player.save(update_fields=["username", "updated_at"])
+    if result.xp is not None:
+        player.xp = result.xp
+        player.xp_seen_at = timezone.now()
+        player.save(update_fields=["xp", "xp_seen_at", "updated_at"])
     BonkAccountLink.objects.update_or_create(
         user=user,
         bonk_player=player,

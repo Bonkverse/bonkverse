@@ -148,6 +148,10 @@ class BonkPlayer(models.Model):
     username = models.CharField(max_length=255, db_index=True)
     last_seen = models.DateTimeField(default=timezone.now)
     last_friend_count = models.IntegerField(default=0)  # snapshot at last sync
+    # Total XP from the player's own bonk.io login (the only place XP is
+    # shown); null until they sign in to Bonkverse. Level: core.bonk.levels.
+    xp = models.BigIntegerField(null=True, blank=True)
+    xp_seen_at = models.DateTimeField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

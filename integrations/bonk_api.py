@@ -132,6 +132,8 @@ class BonkLoginResult:
     # BONK: Flash-era friends arrive in the login response as one string of
     # names separated by "#", not from friends.php.
     legacy_friends: str = field(default="", repr=False)
+    # BONK: the account's total XP ("xp"); its level is core.bonk.levels.
+    xp: int | None = None
 
 
 @dataclass(frozen=True)
@@ -253,6 +255,7 @@ class BonkApi:
             username=canonical,
             bonk_id=_int_or_none(data.get("id")),
             legacy_friends=data.get("legacyFriends") or "",
+            xp=_int_or_none(data.get("xp")),
         )
 
     def get_friends(self, token: str) -> BonkFriendsResult:
