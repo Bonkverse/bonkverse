@@ -26,7 +26,7 @@ from skins.events import log_event
 
 from .flash_friends_sync import sync_flash_friends_for_user
 from .forms import LoginForm
-from .friends_sync import sync_friends_for_player
+from .friends_sync import adopt_replay_names, sync_friends_for_player
 from .models import BonkAccountLink, BonkPlayer, BonkUser
 
 logger = logging.getLogger(__name__)
@@ -75,6 +75,7 @@ def site_account_for(username: BonkUsername) -> BonkUser:
 
 def _link_bonk_player(user: BonkUser, result: BonkLoginResult) -> None:
     """Create or refresh the BonkPlayer and its link to the site account."""
+    adopt_replay_names({result.bonk_id: result.username.value})
     player, created = BonkPlayer.objects.get_or_create(
         bonk_id=result.bonk_id,
         defaults={"username": result.username.value},

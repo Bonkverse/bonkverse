@@ -25,7 +25,7 @@ card without one is dashed and quiet, so the two are easy to tell apart.
   </span>
   <span class="pv-pcard__foot">
     <span class="pv-pcard__meta">
-      {% if card.joined %}Joined {% if card.joined.extrapolated %}around{% else %}≈{% endif %} {{ card.joined.day|date:"M Y" }}{% elif card.listed_by is not None %}Flash friend{% else %}&nbsp;{% endif %}
+      {% if card.joined %}Joined {% if card.joined.extrapolated %}around{% else %}≈{% endif %} {{ card.joined.day|date:"M Y" }}{% elif card.listed_by is not None %}Flash friend{% elif card.replay_only %}Seen in replays{% else %}&nbsp;{% endif %}
     </span>
     {% if card.profile_url %}
       <span class="pv-pcard__go">Profile <i data-lucide="arrow-right" aria-hidden="true"></i></span>

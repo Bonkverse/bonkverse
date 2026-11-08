@@ -12,6 +12,7 @@ from typing import Dict, List, Set, Tuple
 
 from django.db import transaction
 from django.db.models import Q
+from django.db.models.functions import Lower
 from django.utils import timezone
 
 from integrations.bonk_api import BonkFriend
@@ -37,6 +38,37 @@ SUSPICIOUS_DROP_RATIO = 0.5  # a >50% drop from the previous count is flagged
 
 
 @transaction.atomic
+def adopt_replay_names(players: dict[int, str]) -> Set[int]:
+    """Give replay-only rows their DBID. `players` is {bonk_id: username} as
+    bonk.io just reported them. A name copied in from replays
+    (players.replay_sync, bonk_id empty) with one of these names gets that
+    bonk_id, so the account keeps one row instead of two. Returns the
+    bonk_ids adopted this way; callers create rows only for the rest.
+    bonk.io names are unique case-insensitively (docs/bonk/accounts.md)."""
+    by_name = {name.lower(): bonk_id for bonk_id, name in players.items() if name}
+    if not by_name:
+        return set()
+    taken = set(
+        BonkPlayer.objects.filter(bonk_id__in=list(players)).values_list("bonk_id", flat=True)
+    )
+    adopted: Set[int] = set()
+    now = timezone.now()
+    rows = (
+        BonkPlayer.objects.annotate(lname=Lower("username"))
+        .filter(bonk_id__isnull=True, lname__in=list(by_name))
+        .values_list("pk", "lname")
+    )
+    for pk, lname in rows:
+        bonk_id = by_name[lname]
+        if bonk_id in taken or bonk_id in adopted:
+            continue  # a row with this ID already exists; leave the copy alone
+        BonkPlayer.objects.filter(pk=pk, bonk_id__isnull=True).update(
+            bonk_id=bonk_id, username=players[bonk_id], updated_at=now
+        )
+        adopted.add(bonk_id)
+    return adopted
+
+
 def sync_friends_for_player(
     *,
     current_bonk_id: int | None,
@@ -127,6 +159,7 @@ def sync_friends_for_player(
                 username=current_username,
             )
     else:
+        adopt_replay_names({current_bonk_id: current_username})
         current, _ = BonkPlayer.objects.get_or_create(
             bonk_id=current_bonk_id,
             defaults={"username": current_username},
@@ -156,6 +189,7 @@ def sync_friends_for_player(
     # comparing against this sync's live value. Pulling (pk, bonk_id,
     # username) instead of bonk_id alone costs nothing extra: it's the
     # same rows, one more column, same single query.
+    adopt_replay_names(combined_by_id)
     existing_map: dict[int, tuple[int, str]] = {
         bonk_id: (pk, username)
         for pk, bonk_id, username in BonkPlayer.objects.filter(
@@ -192,7 +226,7 @@ def sync_friends_for_player(
                 stored_name,
                 live_name,
             )
-            to_update.append(BonkPlayer(pk=pk, username=live_name))
+            to_update.append(BonkPlayer(pk=pk, username=live_name, updated_at=timezone.now()))
             corrections.append(
                 {
                     "bonk_id": bonk_id,
@@ -202,7 +236,9 @@ def sync_friends_for_player(
             )
 
     if to_update:
-        BonkPlayer.objects.bulk_update(to_update, ["username"], batch_size=200)
+        # updated_at too, so the new name reaches the replay site
+        # (players.replay_sync pushes rows changed since its last run).
+        BonkPlayer.objects.bulk_update(to_update, ["username", "updated_at"], batch_size=200)
 
     # --------- Fetch PKs for everyone (existing + just-created) ----------
     friend_pks_by_bonkid: dict[int, int] = dict(
