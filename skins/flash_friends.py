@@ -1,15 +1,7 @@
 # skins/flash_friends.py
-from django.shortcuts import render
 from core.ratelimits import limit
 from django.http import JsonResponse
 from .models import FlashFriend
-
-
-# @login_required
-@limit("browse")
-def flash_friends_page(request):
-    total_flash = FlashFriend.objects.count()
-    return render(request, "players_search/flash_friends.html", {"total_flash": total_flash})
 
 
 # @login_required

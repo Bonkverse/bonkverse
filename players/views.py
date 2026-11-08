@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
+from django.urls import reverse
 
 from core.ratelimits import limit
 
@@ -55,6 +56,32 @@ def skins(request, username):
         "players/skins.html",
         lambda b: selectors.skins(b, request.user, q.get("view"), q.get("sort"), q.get("page", 1)),
     )
+
+
+@limit("search")
+def directory(request):
+    """Find a player: Bonk players, the most active replay players and legacy
+    flash friends in one search, as cards that open their profiles."""
+    q = request.GET
+    context = selectors.directory(q.get("q"), q.get("view"), q.get("page", 1))
+    return render(request, "players/directory.html", context)
+
+
+@limit("browse")
+def legacy_players_page(request):
+    """The old Bonk Players page lives on as the directory."""
+    return _redirect_to_directory(request, "all")
+
+
+@limit("browse")
+def legacy_flash_friends_page(request):
+    """The old Flash Friends page lives on as the directory's flash view."""
+    return _redirect_to_directory(request, "flash")
+
+
+def _redirect_to_directory(request, view):
+    query = request.GET.get("q", "")
+    return redirect(f"{reverse('players_directory')}?{selectors.urlencode_qs(query, view)}")
 
 
 @login_required

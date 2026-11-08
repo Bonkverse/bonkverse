@@ -1,0 +1,29 @@
+{% comment %}
+One player card on the Players page (players.selectors.directory → _card).
+The whole card links to the player's profile when there is one.
+{% endcomment %}
+{% if card.profile_url %}<a class="pv-pcard" href="{{ card.profile_url }}">{% else %}<div class="pv-pcard pv-pcard--plain">{% endif %}
+  <span class="pv-pcard__top">
+    <span class="pv-initials pv-initials--lg" aria-hidden="true">{{ card.initials }}</span>
+    <span class="pv-pcard__who">
+      <span class="pv-pcard__name">{{ card.username }}</span>
+      <span class="pv-pcard__chips">
+        {% if card.level %}<span class="pv-chip pv-chip--sm">Level {{ card.level }}</span>{% endif %}
+        {% if card.member %}<span class="pv-chip pv-chip--sm pv-chip--accent">Bonkverse</span>{% endif %}
+        {% if card.listed_by is not None %}<span class="pv-chip pv-chip--sm pv-chip--quiet">Flash friend</span>{% endif %}
+      </span>
+    </span>
+  </span>
+  <span class="pv-pcard__facts">
+    {% if card.games %}<span><i data-lucide="play" aria-hidden="true"></i>{{ card.games }} replay{{ card.games|pluralize }}</span>{% endif %}
+    {% if card.friends %}<span><i data-lucide="users" aria-hidden="true"></i>{{ card.friends }} friend{{ card.friends|pluralize }}</span>{% endif %}
+    {% if card.flash_friends %}<span><i data-lucide="zap" aria-hidden="true"></i>{{ card.flash_friends }} flash friend{{ card.flash_friends|pluralize }}</span>{% endif %}
+    {% if card.listed_by %}<span><i data-lucide="user-check" aria-hidden="true"></i>Listed by {{ card.listed_by }} member{{ card.listed_by|pluralize }}</span>{% endif %}
+    {% if card.bonk_id %}<span class="pv-muted">ID {{ card.bonk_id }}</span>{% endif %}
+  </span>
+  {% if card.profile_url %}
+    <span class="pv-pcard__go">View profile ›</span>
+  {% else %}
+    <span class="pv-pcard__go pv-muted">No profile yet</span>
+  {% endif %}
+{% if card.profile_url %}</a>{% else %}</div>{% endif %}

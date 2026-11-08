@@ -29,7 +29,6 @@ from skins.bonkbot import matchmaking_page, join_matchmaking
 from skins.skin_detail import skin_detail
 from skins.skin_votes import vote_skin_api, toggle_favorite_api
 from skins.wear_skin import wear_skin, bonk_login_for_wear, wear_skin_code
-from skins.players import players_page
 from skins.create_changelog import add_changelog
 from skins import flash_friends
 from skins import leaderboards
@@ -97,10 +96,6 @@ urlpatterns = [
         "leaderboards/favorited/", leaderboards.most_favorited_skins, name="leaderboards_favorited"
     ),
     # Players Search navigation
-    path("players_search/players/", players_page, name="players_page"),
-    path(
-        "players_search/flash-friends/", flash_friends.flash_friends_page, name="flash_friends_page"
-    ),
     path("changelog/add/", add_changelog, name="add_changelog"),
     path("api/friends-sync-status/", api.friends_sync_status, name="friends_sync_status"),
     path("serverlist/", discord.server_list, name="list"),
