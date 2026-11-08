@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 from datetime import date
 
 from django.db.models import Q
-from django.db.models.functions import Length, Lower
+from django.db.models.functions import Collate, Length, Lower
 
 from core.bonk import dbid
 
@@ -403,11 +403,14 @@ def apply(qs, query, name_field, *, players=True):
 
 
 def _order(qs, sort, name_field):
-    by_name = (Lower(name_field), name_field, "pk")
+    # Case-insensitive A–Z; names that differ only in case then go in
+    # byte order ("ABC" before "abc"), the same on every database collation.
+    exact = Collate(name_field, "C")
+    by_name = (Lower(name_field), exact, "pk")
     if sort == "az":
         return qs.order_by(*by_name)
     if sort == "za":
-        return qs.order_by(Lower(name_field).desc(), f"-{name_field}", "-pk")
+        return qs.order_by(Lower(name_field).desc(), exact.desc(), "-pk")
     if sort == "short":
         return qs.order_by("name_len", *by_name)
     if sort == "long":
