@@ -9,7 +9,7 @@ header, the owner's privacy note and the tab bar. Each tab fills
 {% block title %}{{ username }}{% block tab_title %}{% endblock %} · Bonkverse{% endblock %}
 
 {% block social_meta %}
-<meta name="description" content="{{ username }}'s bonk.io profile on Bonkverse: activity, level, maps, people{% if account %} and skins{% endif %}.">
+<meta name="description" content="{{ username }}'s bonk.io profile on Bonkverse: activity, level, maps, people, friends{% if account %} and skins{% endif %}.">
 <meta property="og:title" content="{{ username }} · Bonkverse">
 {% endblock %}
 
@@ -39,8 +39,10 @@ header, the owner's privacy note and the tab bar. Each tab fills
         {% endif %}
         {% if account %}
           <span class="pv-chip">On Bonkverse since {{ account.date_joined|date:"M Y" }}</span>
-        {% else %}
+        {% elif profile %}
           <span class="pv-chip pv-chip--quiet">Profile built from replays</span>
+        {% else %}
+          <span class="pv-chip pv-chip--quiet">Seen in friend lists</span>
         {% endif %}
       </div>
     </div>

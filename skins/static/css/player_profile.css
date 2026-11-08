@@ -523,3 +523,188 @@ button.pv-heat__week:hover, button.pv-heat__week[aria-pressed="true"] { outline:
   .bv-chart--zoom { padding-top: 52px; }
 }
 .pv-open-split > .pv-next { align-self: start; }
+
+/* ── Advanced search: the rule builder (players/directory.html,
+   partials/_qb_rule.html, js/players_directory.js, players/search.py) ── */
+.pv-dir__form { max-width: 980px; margin: 0 auto; }
+.pv-dir__form .pv-dir__search { max-width: 640px; margin: 0 auto; }
+.pv-adv { margin: 12px auto 0; max-width: 640px; }
+.pv-adv[open] { max-width: none; }
+.pv-adv > summary { display: flex; width: fit-content; margin: 0 auto; }
+.pv-adv__toggle {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px;
+  border-radius: 999px; border: 1px solid var(--pv-outline); background: rgba(16, 26, 37, 0.85);
+  color: var(--pv-muted); font-weight: 600; font-size: 0.9rem; cursor: pointer; list-style: none;
+}
+.pv-adv__toggle::-webkit-details-marker { display: none; }
+.pv-adv__toggle:hover, .pv-adv[open] > .pv-adv__toggle { color: var(--pv-text); border-color: var(--pv-action); }
+.pv-adv__toggle:focus-visible { outline: 2px solid var(--pv-link); outline-offset: 2px; }
+.pv-adv__count {
+  min-width: 22px; height: 22px; padding: 0 6px; box-sizing: border-box; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--pv-action); color: var(--pv-inset); font-size: 0.75rem; font-weight: 700;
+}
+
+.pv-qb {
+  margin-top: 12px; padding: 20px 22px; border-radius: 18px; text-align: left;
+  background: rgba(20, 31, 43, 0.96); border: 1px solid rgba(53, 74, 95, 0.8);
+}
+.pv-qb__head { margin-bottom: 14px; }
+.pv-qb__title { font-size: 1.1rem; margin: 0 0 4px; }
+.pv-qb__head p { margin: 0; line-height: 1.45; }
+
+.pv-qb__rules { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.pv-qb__rule {
+  display: grid; grid-template-columns: 76px minmax(130px, 0.9fr) minmax(150px, 1fr) minmax(200px, 1.6fr) 40px;
+  align-items: center; gap: 8px; padding: 8px; border-radius: 14px;
+  background: var(--pv-inset); border: 1px solid var(--pv-rule);
+}
+.pv-qb__rule:focus-within { border-color: rgba(71, 216, 196, 0.55); }
+.pv-qb__conn { display: flex; justify-content: center; }
+.pv-qb__where { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--pv-muted); }
+
+.pv-qb__select { display: inline-flex; align-items: center; gap: 8px; min-width: 0; position: relative; }
+.pv-qb__select select, .pv-qb__input input {
+  width: 100%; height: 42px; box-sizing: border-box; margin: 0; padding: 0 12px; border-radius: 10px;
+  border: 1px solid var(--pv-outline); background: #16263a; color: var(--pv-text);
+  font: inherit; font-size: 0.95rem; box-shadow: none;
+}
+.pv-qb__select select {
+  -webkit-appearance: none; appearance: none; padding-right: 32px; cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, #aec1d3 50%), linear-gradient(135deg, #aec1d3 50%, transparent 50%);
+  background-position: calc(100% - 17px) 50%, calc(100% - 12px) 50%;
+  background-size: 5px 5px; background-repeat: no-repeat;
+}
+.pv-qb__select select:focus, .pv-qb__input input:focus { outline: none; border-color: var(--pv-action); box-shadow: 0 0 0 3px rgba(71, 216, 196, 0.18); }
+.pv-qb__select--conn select {
+  height: 30px; padding: 0 26px 0 12px; border-radius: 999px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em;
+  color: var(--pv-action); border-color: rgba(71, 216, 196, 0.5); background-color: rgba(71, 216, 196, 0.1);
+  background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50%;
+}
+.pv-qb__field select { font-weight: 600; }
+.pv-qb__field, .pv-qb__op { width: 100%; }
+
+.pv-qb__value { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.pv-qb__value > .pv-qb__select { flex: 1; }
+.pv-qb__input { flex: 1; min-width: 0; display: flex; }
+.pv-qb__input--num { flex: 0 1 120px; }
+.pv-qb__input input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+.pv-qb__input input::-webkit-outer-spin-button, .pv-qb__input input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.pv-qb__input input { white-space: pre; }
+.pv-qb__and, .pv-qb__unit { color: var(--pv-muted); font-size: 0.85rem; white-space: nowrap; }
+.pv-qb__case { position: relative; flex-shrink: 0; display: inline-flex; cursor: pointer; }
+.pv-qb__case input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.pv-qb__case span[aria-hidden], .pv-qb__case > span:not(.pv-visually-hidden) {
+  display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; box-sizing: border-box;
+  border-radius: 10px; border: 1px solid var(--pv-outline); color: var(--pv-muted); font-weight: 700; font-size: 0.9rem;
+}
+.pv-qb__case input:checked + span { background: rgba(71, 216, 196, 0.16); border-color: var(--pv-action); color: var(--pv-action); }
+.pv-qb__case input:focus-visible + span { outline: 2px solid var(--pv-link); outline-offset: 2px; }
+
+.pv-qb__remove {
+  width: 40px; height: 40px; padding: 0; margin: 0; border-radius: 10px; border: 1px solid transparent;
+  background: transparent; color: var(--pv-muted); font: inherit; font-size: 1.4rem; line-height: 1; cursor: pointer;
+}
+.pv-qb__remove:hover { color: #ff8f8f; background: rgba(255, 143, 143, 0.1); }
+.pv-qb__remove:focus-visible { outline: 2px solid var(--pv-link); }
+
+.pv-qb__bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: 14px; }
+.pv-qb__add, .pv .pv-qb__clear {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 4px; border: 0; background: none;
+  font: inherit; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; text-decoration: none;
+}
+.pv-qb__add { color: var(--pv-action); }
+.pv .pv-qb__clear { color: var(--pv-warm); }
+.pv-qb__add:hover, .pv .pv-qb__clear:hover { text-decoration: underline; }
+.pv-qb__spacer { flex: 1; }
+.pv-qb__sort select { width: auto; min-width: 150px; }
+
+.pv-qb__examples { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--pv-rule); }
+.pv .pv-qb__example {
+  display: inline-flex; align-items: center; min-height: 30px; padding: 0 12px; border-radius: 999px;
+  border: 1px dashed var(--pv-outline); color: var(--pv-text); font-size: 0.82rem; text-decoration: none;
+}
+.pv .pv-qb__example:hover { border-style: solid; border-color: var(--pv-action); color: var(--pv-action); }
+
+.pv-adv__chips { list-style: none; padding: 0; margin: 14px auto 0; max-width: 980px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; }
+.pv-adv__conn { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; color: var(--pv-action); }
+.pv-pcard__name { white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+
+/* Checkbox and select used by the Friends tab. */
+.pv-check { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.92rem; width: fit-content; }
+.pv-check input {
+  -webkit-appearance: none; appearance: none; margin: 0; flex-shrink: 0; width: 22px; height: 22px; border-radius: 7px;
+  border: 2px solid var(--pv-outline); background: var(--pv-inset); display: grid; place-content: center; cursor: pointer;
+}
+.pv-check input::after { content: ""; width: 10px; height: 6px; border: 2px solid var(--pv-inset); border-top: 0; border-right: 0; transform: rotate(-45deg) translate(1px, -1px); opacity: 0; }
+.pv-check input:checked { background: var(--pv-action); border-color: var(--pv-action); }
+.pv-check input:checked::after { opacity: 1; }
+.pv-check input:focus-visible { outline: 2px solid var(--pv-link); outline-offset: 2px; }
+.pv-adv__select { display: inline-flex; align-items: center; gap: 8px; }
+.pv .pv-adv__select select {
+  height: 42px; box-sizing: border-box; padding: 0 32px 0 12px; border-radius: 10px; margin: 0;
+  border: 1px solid var(--pv-outline); background: var(--pv-inset); color: var(--pv-text); font: inherit; font-size: 0.95rem; cursor: pointer;
+}
+.pv .pv-adv__select select:focus { outline: none; border-color: var(--pv-action); box-shadow: 0 0 0 3px rgba(71, 216, 196, 0.18); }
+
+/* Phones: each rule becomes a small card, like the library's search lines:
+   [AND/OR] [field] [×] on top, [condition] [value] below. */
+@media (max-width: 760px) {
+  .pv-qb { padding: 16px 12px; }
+  .pv-qb__rule { grid-template-columns: auto minmax(0, 1fr) 40px; grid-template-areas: "conn field remove" "op op op" "value value value"; padding: 10px; }
+  .pv-qb__conn { grid-area: conn; justify-content: flex-start; }
+  .pv-qb__field { grid-area: field; }
+  .pv-qb__op { grid-area: op; }
+  .pv-qb__value { grid-area: value; flex-wrap: wrap; }
+  .pv-qb__remove { grid-area: remove; }
+  .pv-qb__spacer { display: none; }
+  .pv-qb__bar .pv-btn { flex: 1; }
+}
+
+/* ── Friends tab (players/friends.html, js/player_friends.js) ── */
+.pv-hero__name, .pv-name { white-space: pre-wrap; }
+.pv-friends__lists { flex-shrink: 0; }
+.pv-friends__n { margin-left: 6px; font-size: 0.8rem; color: var(--pv-muted); font-variant-numeric: tabular-nums; }
+.pv-friends__you {
+  display: flex; align-items: center; gap: 14px; margin: 0 0 18px; padding: 14px 16px; border-radius: 14px;
+  background: rgba(71, 216, 196, 0.08); border: 1px solid rgba(71, 216, 196, 0.35);
+}
+.pv-friends__you p { margin: 0; }
+.pv-friends__you .pv-initials { color: var(--pv-action); }
+.pv-friends__tools { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 8px; }
+.pv-friends__search { flex: 1 1 280px; }
+.pv .pv-friends__search input, .pv .pv-friends__search input:focus { padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; height: auto; outline: none; }
+.pv .pv-friends__search { transition: border-color 0.15s, box-shadow 0.15s; }
+.pv .pv-friends__search:focus-within { border-color: var(--pv-action); box-shadow: 0 0 0 3px rgba(71, 216, 196, 0.18); }
+.pv-friends__count { margin: 6px 0 12px; min-height: 1.2em; }
+.pv-friendlist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 8px; }
+.pv-friend {
+  display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 12px; box-sizing: border-box; height: 100%;
+  border-radius: 12px; background: var(--pv-inset); border: 1px solid transparent; text-decoration: none; color: var(--pv-text); min-width: 0;
+}
+.pv a.pv-friend { color: var(--pv-text); }
+a.pv-friend:hover { border-color: var(--pv-outline); background: #13202d; }
+a.pv-friend:focus-visible { outline: 2px solid var(--pv-link); outline-offset: 2px; }
+.pv-friend.is-mutual { border-color: rgba(71, 216, 196, 0.45); }
+.pv-friend--quiet { opacity: 0.75; }
+.pv-friend__text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.pv-friend__name { font-weight: 600; white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+.pv-friend__meta { font-size: 0.78rem; color: var(--pv-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pv-friend__tag {
+  flex-shrink: 0; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700;
+  background: rgba(71, 216, 196, 0.16); color: var(--pv-action);
+}
+.pv-friend__tag--you { background: rgba(144, 183, 255, 0.18); color: var(--pv-link); }
+.pv .pv-friend__member, .pv .pv-friend svg.lucide { flex-shrink: 0; width: 16px; height: 16px; color: var(--pv-action); }
+.pv-friends__empty { padding: 18px 4px; }
+.pv-friends__more { display: block; margin: 16px auto 0; }
+.pv-friendcard__nums { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; font-size: 1.6rem; }
+.pv-friendcard__nums strong { font-weight: 700; }
+.pv-friendcard__mutual { color: var(--pv-action); }
+@media (max-width: 640px) {
+  .pv-friendlist { grid-template-columns: minmax(0, 1fr); }
+  .pv-friends__lists { width: 100%; }
+  .pv-friends__lists button { flex: 1; justify-content: center; }
+}
+.pv-friendlist { grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); }
+.pv-friends__lists { box-sizing: border-box; max-width: 100%; }

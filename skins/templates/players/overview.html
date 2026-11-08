@@ -3,7 +3,7 @@
 {% block tab %}
 {% if not summary and replays_error == "not_found" %}
   <div class="pv-card pv-empty">
-    <p>No replays found for <strong>{{ username }}</strong> as a registered player yet.</p>
+    <p>No replays found for <strong class="pv-name">{{ username }}</strong> as a registered player yet.</p>
     <p class="pv-muted">Replays come from bonk.io's public replay list; new ones arrive every few minutes.</p>
   </div>
 {% endif %}
@@ -97,6 +97,20 @@
         {% endfor %}
       </ul>
     </section>
+  {% endif %}
+
+  {% if friend_counts and friend_counts.friends or friend_counts.flash %}
+    <a class="pv-card pv-card--link pv-friendcard" href="{% url 'player_friends' username %}">
+      <div class="pv-card__head">
+        <span class="pv-card__title">Friends</span>
+        <span class="pv-link pv-small">Search ›</span>
+      </div>
+      <span class="pv-friendcard__nums">
+        <span><strong>{{ friend_counts.friends|floatformat:"0g" }}</strong> <span class="pv-muted pv-small">on bonk.io</span></span>
+        {% if friend_counts.flash %}<span><strong>{{ friend_counts.flash|floatformat:"0g" }}</strong> <span class="pv-muted pv-small">Flash</span></span>{% endif %}
+        {% if friend_counts.mutual %}<span class="pv-friendcard__mutual"><strong>{{ friend_counts.mutual|floatformat:"0g" }}</strong> <span class="pv-small">mutual with you</span></span>{% endif %}
+      </span>
+    </a>
   {% endif %}
 
   {% if milestones %}

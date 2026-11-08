@@ -1,10 +1,11 @@
 """Read-only queries for player profile pages.
 
-A profile exists for anyone with registered replays, Bonkverse account or
-not. It is split into tabs (Overview, Activity, Level, Maps & modes, People,
-Skins). A Bonkverse account adds the Skins tab and the visibility switches
-(ProfileVisibility): a hidden section's tab and Overview card disappear for
-visitors; the owner always sees everything.
+A profile exists for anyone with registered replays, a Bonkverse account,
+or a bonk.io account Bonkverse knows from friend lists. It is split into
+tabs (Overview, Activity, Level, Maps & modes, People, Friends, Skins). A
+Bonkverse account adds the Skins tab, Flash friends and the visibility
+switches (ProfileVisibility): a hidden section's tab and Overview card
+disappear for visitors; the owner always sees everything.
 """
 
 from __future__ import annotations
@@ -16,6 +17,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.paginator import Paginator
+from django.db.models import Case, Count, Exists, IntegerField, OuterRef, Q, Value, When
 from django.db.models.functions import Lower
 from django.utils import timezone
 
@@ -31,17 +33,17 @@ from skins.pagination_utils import elided_page_range
 from skins.selectors import (
     SKIN_SORTS,
     account_links_for,
-    bonk_players_matching,
     bonk_players_named,
     creator_stats,
     flash_friend_counts,
-    flash_friends_matching,
     decorate_skins_for_user,
     favorites_of,
     skins_created_by,
 )
 
-from . import calculator, charts
+from skins.models import BonkAccountLink, BonkPlayer, FlashFriend, FlashFriendship, Friendship
+
+from . import calculator, charts, search
 from .models import ProfileVisibility
 
 FEATURED_SKINS = 4
@@ -54,6 +56,7 @@ TABS = [
     ("level", "Level", "level_history", True),
     ("maps", "Maps & modes", "maps_and_modes", True),
     ("people", "People", "play_partners", True),
+    ("friends", "Friends", "friends", False),
     ("skins", "Skins", None, False),
 ]
 
@@ -104,7 +107,14 @@ def profile_base(username, viewer, active=""):
     replay profile and the tab bar. None when there's no such player."""
     profile, error = replay_profile(username)
     account = site_account(username)
-    if profile is None and account is None and error == PlayerError.NOT_FOUND:
+    lookup_name = (profile or {}).get("username") or (account.username if account else username)
+    bonk_player = bonk_players_named([lookup_name]).get(lookup_name.lower())
+    if (
+        profile is None
+        and account is None
+        and bonk_player is None
+        and error == PlayerError.NOT_FOUND
+    ):
         return None
 
     is_owner = bool(
@@ -115,7 +125,9 @@ def profile_base(username, viewer, active=""):
         visibility.as_dict() if visibility else {f: True for f, _, _ in ProfileVisibility.SECTIONS}
     )
     shown = {f: True for f in saved} if is_owner else saved
-    name = (profile or {}).get("username") or (account.username if account else username)
+    name = (profile or {}).get("username") or (
+        account.username if account else bonk_player.username if bonk_player else username
+    )
 
     tabs = []
     for slug, label, section, needs_replays in TABS:
@@ -124,6 +136,8 @@ def profile_base(username, viewer, active=""):
         if needs_replays and profile is None:
             continue
         if slug == "skins" and not (account and (shown["skins"] or shown["favorites"])):
+            continue
+        if slug == "friends" and not (bonk_player or account):
             continue
         tabs.append(
             {
@@ -136,7 +150,6 @@ def profile_base(username, viewer, active=""):
         )
 
     links = charts.ReplayLinks(settings.BONKVERSE_REPLAYS_URL)
-    bonk_player = bonk_players_named([name]).get(name.lower())
     return {
         "bonk_player": bonk_player,
         "account_age": calculator.account_age(bonk_player.bonk_id) if bonk_player else None,
@@ -156,9 +169,11 @@ def profile_base(username, viewer, active=""):
     }
 
 
-def overview(base):
+def overview(base, viewer):
     profile, shown, links = base["profile"], base["shown"], base["links"]
     ctx = {}
+    if shown["friends"] and any(t["slug"] == "friends" for t in base["tabs"]):
+        ctx["friend_counts"] = friend_counts(base, viewer)
     if profile:
         today = timezone.now().date()
         maps = profile.get("maps") or []
@@ -272,6 +287,155 @@ def people(base):
     }
 
 
+# ── Friends tab ──────────────────────────────────────────────────
+
+FRIENDS_CAP = 5000  # per list sent to the page; bigger lists are cut
+
+
+def _hidden_friend_lists(viewer):
+    """BonkPlayer ids and lower usernames of members who hid their friend
+    list (ProfileVisibility.friends), except the viewer: they're left out of
+    other players' lists too, so their list can't be pieced back together."""
+    hidden = ProfileVisibility.objects.filter(friends=False)
+    if viewer.is_authenticated:
+        hidden = hidden.exclude(user=viewer)
+    users = list(hidden.values_list("user_id", "user__username"))
+    ids = set(
+        BonkAccountLink.objects.filter(user_id__in=[u for u, _ in users], active=True).values_list(
+            "bonk_player_id", flat=True
+        )
+    )
+    return ids, {name.lower() for _, name in users}
+
+
+def friend_ids(player):
+    """Ids of the BonkPlayers on `player`'s bonk.io friend list."""
+    if player is None:
+        return set()
+    low = Friendship.objects.filter(player_low=player).values_list("player_high_id", flat=True)
+    high = Friendship.objects.filter(player_high=player).values_list("player_low_id", flat=True)
+    return set(low) | set(high)
+
+
+def flash_names(user):
+    """{lower name: (name, BonkPlayer or None)} of `user`'s imported Flash
+    friends."""
+    if user is None:
+        return {}
+    rows = FlashFriendship.objects.filter(user=user).select_related("flash_friend__bonk_player")
+    return {
+        r.flash_friend.name.lower(): (r.flash_friend.name, r.flash_friend.bonk_player) for r in rows
+    }
+
+
+def viewer_player(viewer):
+    """The viewer's own bonk.io account, if they're signed in."""
+    if not viewer.is_authenticated:
+        return None
+    link = (
+        BonkAccountLink.objects.filter(user=viewer, active=True)
+        .select_related("bonk_player")
+        .order_by("-connected_at")
+        .first()
+    )
+    if link:
+        return link.bonk_player
+    return bonk_players_named([viewer.username]).get(viewer.username.lower())
+
+
+def _joined(bonk_id):
+    age = calculator.account_age(bonk_id)
+    return age["day"].strftime("%b %Y") if age else None
+
+
+def friend_counts(base, viewer):
+    """Small numbers for the Overview card: friends, Flash friends, mutual."""
+    player, account = base["bonk_player"], base["account"]
+    hidden_ids, hidden_names = _hidden_friend_lists(viewer)
+    ids = friend_ids(player) - hidden_ids
+    if hidden_names and ids:
+        ids -= set(
+            BonkPlayer.objects.annotate(lname=Lower("username"))
+            .filter(id__in=ids, lname__in=hidden_names)
+            .values_list("id", flat=True)
+        )
+    mine = viewer_player(viewer)
+    is_self = mine is not None and player is not None and mine.pk == player.pk
+    mutual = len(ids & friend_ids(mine)) if mine and not is_self else None
+    flash = FlashFriendship.objects.filter(user=account).count() if account else 0
+    return {"friends": len(ids), "flash": flash, "mutual": mutual}
+
+
+def friends(base, viewer):
+    """The Friends tab: bonk.io friends, Flash friends, and the ones the
+    viewer has too. Names, join dates and counts go to the page as JSON for
+    instant search; the first rows are also in the HTML."""
+    player, account = base["bonk_player"], base["account"]
+    mine = viewer_player(viewer)
+    is_self = base["is_owner"] or (mine is not None and player is not None and mine.pk == player.pk)
+
+    hidden_ids, hidden_names = _hidden_friend_lists(viewer)
+    ids = friend_ids(player) - hidden_ids
+    mine_ids = friend_ids(mine) if mine and not is_self else set()
+    rows = (
+        BonkPlayer.objects.filter(id__in=ids)
+        .annotate(
+            linked=Exists(BonkAccountLink.objects.filter(bonk_player=OuterRef("pk"), active=True))
+        )
+        .order_by(Lower("username"), "pk")
+    )
+    bonk_rows = []
+    for p in rows[:FRIENDS_CAP]:
+        if p.username.lower() in hidden_names:
+            continue
+        bonk_rows.append(
+            {
+                "n": p.username,
+                "j": _joined(p.bonk_id),
+                "id": p.bonk_id,
+                "f": p.last_friend_count or 0,
+                "m": bool(p.linked),
+                "mu": p.id in mine_ids,
+                "you": mine is not None and p.id == mine.id,
+            }
+        )
+
+    theirs = flash_names(account)
+    mine_flash = flash_names(viewer if viewer.is_authenticated else None) if not is_self else {}
+    flash_rows = [
+        {
+            "n": name,
+            "now": bp.username if bp and bp.username.lower() != name.lower() else None,
+            "p": bool(bp),
+            "mu": key in mine_flash,
+        }
+        for key, (name, bp) in sorted(theirs.items())[:FRIENDS_CAP]
+    ]
+
+    you_are_friends = mine is not None and not is_self and mine.id in ids
+    return {
+        "friend_data": {
+            "bonk": bonk_rows,
+            "flash": flash_rows,
+            "viewer": mine.username if mine and not is_self else None,
+        },
+        "bonk_total": len(bonk_rows),
+        "flash_total": len(flash_rows),
+        "mutual_total": sum(r["mu"] for r in bonk_rows),
+        "flash_mutual_total": sum(r["mu"] for r in flash_rows),
+        "bonk_preview": [
+            dict(r, url=charts.profile_path(r["n"]), shown=shown_name(r["n"]))
+            for r in bonk_rows[:60]
+        ],
+        "flash_preview": [dict(r, shown=shown_name(r["n"])) for r in flash_rows[:60]],
+        "has_flash": account is not None,
+        "can_compare": mine is not None and not is_self,
+        "you_are_friends": you_are_friends,
+        "is_self": is_self,
+        "synced": player is not None and (player.last_friend_count or bool(ids)),
+    }
+
+
 def skins(base, viewer, view, sort, page):
     account, shown = base["account"], base["shown"]
     views = [v for v, ok in (("created", shown["skins"]), ("favorites", shown["favorites"])) if ok]
@@ -328,11 +492,12 @@ def _accounts_named(names):
 
 def _card(name, *, stats, member, bonk_player=None, flash_friends=None, listed_by=None):
     """One player card. It links to the profile only when there is one
-    (replays or a Bonkverse account)."""
-    has_profile = bool(stats) or member
+    (replays, a Bonkverse account, or a bonk.io account from friend lists)."""
+    has_profile = bool(stats) or member or bonk_player is not None
     age = calculator.account_age(bonk_player.bonk_id) if bonk_player else None
     return {
         "username": name,
+        "shown_name": shown_name(name),
         "initials": name.strip()[:2].upper() or "?",
         "profile_url": charts.profile_path(name) if has_profile else None,
         "member": member,
@@ -346,12 +511,64 @@ def _card(name, *, stats, member, bonk_player=None, flash_friends=None, listed_b
     }
 
 
-def directory(query, view, page):
+def shown_name(name):
+    """A name as shown on a card: spaces that would otherwise vanish (at the
+    ends, two in a row, or a name of only spaces) are drawn as "␣"."""
+    if name != name.strip() or "  " in name or not name.strip():
+        return name.replace(" ", "\u2423")
+    return name
+
+
+def _players_base(f):
+    """BonkPlayers with `linked`, an exact name first when there is one."""
+    qs = BonkPlayer.objects.annotate(
+        linked=Exists(BonkAccountLink.objects.filter(bonk_player=OuterRef("pk"), active=True))
+    )
+    if f.text:
+        exact = Q(username__iexact=f.text)
+        qs = qs.annotate(
+            exact=Case(When(exact, then=Value(0)), default=Value(1), output_field=IntegerField())
+        )
+        return qs.order_by("exact", "-linked", "-last_friend_count", "username")
+    return qs.order_by("-linked", "-last_friend_count", "username")
+
+
+def _flash_base(f):
+    qs = FlashFriend.objects.select_related("bonk_player").annotate(listed_by=Count("friend_of"))
+    if f.text:
+        exact = Q(name__iexact=f.text)
+        qs = qs.annotate(
+            exact=Case(When(exact, then=Value(0)), default=Value(1), output_field=IntegerField())
+        )
+        return qs.order_by("exact", "-listed_by", "name")
+    return qs.order_by("-listed_by", "name")
+
+
+def _exact_replay_card(query, cards):
+    """A card for the replay player named exactly `query` when no card has
+    that name, so searching "." finds the player called "." first."""
+    if not query or any(c["username"].lower() == query.lower() for c in cards):
+        return None
+    stats, _ = replay_lookup([query])
+    row = (stats or {}).get(query.lower())
+    if not row:
+        return None
+    name = row.get("username") or query
+    return _card(name, stats=row, member=name.lower() in _accounts_named([name]))
+
+
+def directory(get):
     """Context for players/directory.html: one search over Bonk players
     (synced from bonk.io friend lists), replay players and legacy flash
-    friends, as cards that open player profiles."""
-    query = (query or "").strip()[:100]
+    friends, as cards that open player profiles. The advanced-search rule
+    builder (players/search.py) narrows the Bonk players and flash friend
+    views."""
+    view = get.get("view")
     view = view if view in dict(DIRECTORY_VIEWS) else "all"
+    page = get.get("page", 1)
+    f = search.parse(get, view)
+    query = f.text
+    advanced = view != "replays"
     ctx = {
         "query": query,
         "view": view,
@@ -359,8 +576,15 @@ def directory(query, view, page):
         "cards": [],
         "page_obj": None,
         "replays_error": None,
-        "base_qs": urlencode_qs(query, view),
+        "advanced": advanced,
+        "adv_active": f.active and advanced,
+        "chips": f.chips() if advanced else [],
+        "sort": f.sort,
+        "base_qs": urlencode_qs(query, view, f.params() if advanced else None),
+        "clear_qs": urlencode_qs(query, view),
     }
+    if advanced:
+        ctx.update(_builder(f, view))
 
     if view == "replays":
         if len(query) < 3:
@@ -372,22 +596,23 @@ def directory(query, view, page):
         ctx["replays_error"] = error
         rows = found or []
         names = [r["username"] for r in rows]
-        players = bonk_players_named(names)
+        bonk = bonk_players_named(names)
         members = _accounts_named(names)
         ctx["cards"] = [
             _card(
                 r["username"],
                 stats=r,
                 member=r["username"].lower() in members,
-                bonk_player=players.get(r["username"].lower()),
+                bonk_player=bonk.get(r["username"].lower()),
             )
             for r in rows
         ]
         return ctx
 
     if view == "flash":
-        page_obj = Paginator(flash_friends_matching(query), DIRECTORY_PAGE_SIZE).get_page(page)
-        names = [f.bonk_player.username if f.bonk_player else f.name for f in page_obj]
+        qs = search.apply(_flash_base(f), f, "name", players=False)
+        page_obj = Paginator(qs, DIRECTORY_PAGE_SIZE).get_page(page)
+        names = [fr.bonk_player.username if fr.bonk_player else fr.name for fr in page_obj]
         stats, ctx["replays_error"] = replay_lookup(names)
         members = _accounts_named(names)
         ctx["cards"] = [
@@ -395,19 +620,20 @@ def directory(query, view, page):
                 n,
                 stats=(stats or {}).get(n.lower()),
                 member=n.lower() in members,
-                bonk_player=f.bonk_player,
-                listed_by=f.listed_by,
+                bonk_player=fr.bonk_player,
+                listed_by=fr.listed_by,
             )
-            for f, n in zip(page_obj, names, strict=True)
+            for fr, n in zip(page_obj, names, strict=True)
         ]
         ctx.update(page_obj=page_obj, elided_range=elided_page_range(page_obj))
         return ctx
 
-    page_obj = Paginator(bonk_players_matching(query), DIRECTORY_PAGE_SIZE).get_page(page)
-    players = list(page_obj)
-    names = [p.username for p in players]
+    qs = search.apply(_players_base(f), f, "username")
+    page_obj = Paginator(qs, DIRECTORY_PAGE_SIZE).get_page(page)
+    rows = list(page_obj)
+    names = [p.username for p in rows]
     stats, ctx["replays_error"] = replay_lookup(names)
-    links = account_links_for(players)
+    links = account_links_for(rows)
     flash = flash_friend_counts(links.values())
     members = _accounts_named(names)
     ctx["cards"] = [
@@ -418,16 +644,70 @@ def directory(query, view, page):
             bonk_player=p,
             flash_friends=flash.get(links.get(p.id)),
         )
-        for p in players
+        for p in rows
     ]
+    if not f.rules and page_obj.number == 1:
+        pinned = _exact_replay_card(query, ctx["cards"])
+        if pinned:
+            ctx["cards"].insert(0, pinned)
+            ctx["pinned"] = True
     ctx.update(page_obj=page_obj, elided_range=elided_page_range(page_obj))
     return ctx
 
 
-def urlencode_qs(query, view):
+def _builder(f, view):
+    """What the rule builder needs: the field schema for its script, the
+    rows to draw now (one blank "Name contains" row when there are none),
+    sorts and example links."""
+    fields = search.schema(view, timezone.now().date())
+    by_key = {spec["key"]: spec for spec in fields}
+    rules = f.rules or [search.Rule("and", "name", "contains")]
+    rows = []
+    for i, rule in enumerate(rules):
+        spec = by_key[rule.field]
+        rows.append(
+            {
+                "i": i,
+                "conn": rule.conn,
+                "field": rule.field,
+                "op": rule.op,
+                "value": rule.value,
+                "value2": rule.value2,
+                "case": rule.case,
+                "spec": spec,
+            }
+        )
+    return {
+        "builder_fields": fields,
+        "builder_rows": rows,
+        "builder_state": {
+            "fields": fields,
+            "rules": [
+                {
+                    "conn": r["conn"],
+                    "field": r["field"],
+                    "op": r["op"],
+                    "value": r["value"],
+                    "value2": r["value2"],
+                    "case": r["case"],
+                }
+                for r in rows
+            ],
+            "max": search.MAX_RULES,
+        },
+        "sorts": [(k, label) for k, label, lists in search.SORTS if view in lists],
+        "examples": [
+            (label, urlencode_qs(f.text, view, params))
+            for label, params in search.example_links(view)
+        ],
+    }
+
+
+def urlencode_qs(query, view, extra=None):
     params = {"view": view}
     if query:
         params["q"] = query
+    params.update(extra or {})
     return urlencode(params)
 
 

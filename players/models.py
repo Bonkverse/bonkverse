@@ -18,6 +18,7 @@ class ProfileVisibility(models.Model):
     activity = models.BooleanField(default=True)
     maps_and_modes = models.BooleanField(default=True)
     play_partners = models.BooleanField(default=True)
+    friends = models.BooleanField(default=True)
     skins = models.BooleanField(default=True)
     favorites = models.BooleanField(default=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -30,6 +31,12 @@ class ProfileVisibility(models.Model):
         ("activity", "Activity", "When and how much you play: days, hours, streaks."),
         ("maps_and_modes", "Maps and modes", "The modes, rooms and maps you play."),
         ("play_partners", "People", "Who you play with, team with and play against."),
+        (
+            "friends",
+            "Friends",
+            "Your bonk.io and Flash friend lists. Hiding them also leaves you out of "
+            "other players' friend lists.",
+        ),
         ("skins", "Skins", "Skins you created on Bonkverse."),
         ("favorites", "Favorites", "Skins you favorited."),
     ]

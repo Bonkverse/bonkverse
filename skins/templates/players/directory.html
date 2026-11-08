@@ -12,18 +12,70 @@
 
   <header class="pv-dir__head">
     <h1 class="pv-dir__title">Players</h1>
-    <p class="pv-muted">Find anyone on bonk.io and open their profile: replays, level, maps, people and skins.</p>
+    <p class="pv-muted">Find anyone on bonk.io and open their profile: replays, level, maps, people, friends and skins.</p>
   </header>
 
-  <form class="pv-dir__search" method="get" action="{% url 'players_directory' %}" role="search">
+  <form class="pv-dir__form" method="get" action="{% url 'players_directory' %}" role="search" data-dir-form>
     <input type="hidden" name="view" value="{{ view }}">
-    <label class="pv-dir__field">
-      <i data-lucide="search" aria-hidden="true"></i>
-      <span class="pv-visually-hidden">Search players</span>
-      <input type="search" name="q" value="{{ query }}" placeholder="{% if view == 'flash' %}Search flash friend names{% elif view == 'replays' %}Name starts with… (3+ letters){% else %}Search by name or bonk.io ID{% endif %}" autocomplete="off" maxlength="100">
-    </label>
-    <button type="submit" class="pv-btn">Search</button>
+    <div class="pv-dir__search">
+      <label class="pv-dir__field">
+        <i data-lucide="search" aria-hidden="true"></i>
+        <span class="pv-visually-hidden">Search players</span>
+        <input type="search" name="q" value="{{ query }}" placeholder="{% if view == 'flash' %}Search flash friend names{% elif view == 'replays' %}Name starts with… (3+ letters){% else %}Search by name or bonk.io ID{% endif %}" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="100">
+      </label>
+      <button type="submit" class="pv-btn">Search</button>
+    </div>
+
+    {% if advanced %}
+      <details class="pv-adv"{% if adv_active %} open{% endif %}>
+        <summary class="pv-adv__toggle">
+          <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
+          Advanced search
+          {% if chips %}<span class="pv-adv__count">{{ chips|length }}</span>{% endif %}
+        </summary>
+
+        <div class="pv-qb">
+          <div class="pv-qb__head">
+            <h2 class="pv-qb__title">Find {% if view == 'flash' %}Flash friends{% else %}bonk.io accounts{% endif %} where…</h2>
+            <p class="pv-small pv-muted">Add a line for each rule. AND is applied before OR, so <em>a</em> AND <em>b</em> OR <em>c</em> means (<em>a</em> AND <em>b</em>) OR <em>c</em>. Spaces in a rule's text count.</p>
+          </div>
+
+          {{ builder_state|json_script:"qb-state" }}
+          <ol class="pv-qb__rules" data-rules>
+            {% for row in builder_rows %}{% include 'players/partials/_qb_rule.html' with row=row %}{% endfor %}
+          </ol>
+
+          <div class="pv-qb__bar">
+            <button type="button" class="pv-qb__add" data-add hidden><i data-lucide="plus" aria-hidden="true"></i> Add rule</button>
+            <a class="pv-qb__clear" href="?{{ clear_qs }}"><i data-lucide="rotate-ccw" aria-hidden="true"></i> Clear</a>
+            <span class="pv-qb__spacer"></span>
+            <label class="pv-qb__select pv-qb__sort">
+              <span class="pv-small pv-muted">Sort</span>
+              <select name="sort">
+                {% for key, label in sorts %}<option value="{{ key }}"{% if sort == key %} selected{% endif %}>{{ label }}</option>{% endfor %}
+              </select>
+            </label>
+            <button type="submit" class="pv-btn">Search</button>
+          </div>
+
+          <div class="pv-qb__examples">
+            <span class="pv-small pv-muted">Try:</span>
+            {% for label, qs in examples %}<a class="pv-qb__example" href="?{{ qs }}">{{ label }}</a>{% endfor %}
+          </div>
+        </div>
+      </details>
+    {% endif %}
   </form>
+
+  {% if chips %}
+    <ul class="pv-adv__chips" aria-label="Rules">
+      {% for conn, text in chips %}
+        {% if conn %}<li class="pv-adv__conn">{{ conn }}</li>{% endif %}
+        <li class="pv-chip">{{ text }}</li>
+      {% endfor %}
+      <li><a class="pv-link pv-small" href="?{{ clear_qs }}">Clear</a></li>
+    </ul>
+  {% endif %}
 
   <nav class="pv-seg pv-dir__views" aria-label="Show">
     {% for key, label in views %}
@@ -32,7 +84,7 @@
   </nav>
   <p class="pv-fine pv-dir__explain">
     {% if view == 'replays' %}
-      Registered players seen in replays whose name starts with your search, most replays first.
+      Registered players seen in replays whose name starts with your search, most replays first. Advanced search works on the other two lists.
     {% elif view == 'flash' %}
       Friends imported from the old Flash bonk and TinyTanks, most listed first. Names link to a profile when we know who they are now.
     {% else %}
@@ -50,7 +102,7 @@
     </div>
   {% elif cards %}
     {% if page_obj %}
-      <p class="pv-muted pv-small pv-dir__count">{{ page_obj.paginator.count }} player{{ page_obj.paginator.count|pluralize }}</p>
+      <p class="pv-muted pv-small pv-dir__count">{{ page_obj.paginator.count|floatformat:"0g" }} player{{ page_obj.paginator.count|pluralize }}{% if pinned %} · plus an exact match from replays{% endif %}</p>
     {% endif %}
     <ul class="pv-pcards">
       {% for c in cards %}
@@ -62,12 +114,21 @@
     {% endif %}
   {% else %}
     <div class="pv-card pv-empty">
-      <p>No players match “{{ query }}”.</p>
-      {% if view != 'replays' and query|length >= 3 %}
-        <p><a class="pv-link" href="?view=replays&amp;q={{ query|urlencode }}">Look for it among replay players</a></p>
+      {% if adv_active %}
+        <p>No players match these rules.</p>
+        <p><a class="pv-link" href="?{{ clear_qs }}">Clear the rules</a></p>
+      {% else %}
+        <p>No players match “{{ query }}”.</p>
+        {% if view != 'replays' and query|length >= 3 %}
+          <p><a class="pv-link" href="?view=replays&amp;q={{ query|urlencode }}">Look for it among replay players</a></p>
+        {% endif %}
       {% endif %}
     </div>
   {% endif %}
 
 </main>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/players_directory.js' %}"></script>
 {% endblock %}

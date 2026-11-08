@@ -1,0 +1,93 @@
+{% extends 'players/_layout.html' %}
+{% load static %}
+
+{% block tab_title %} · Friends{% endblock %}
+
+{% block tab_head %}
+<link rel="stylesheet" href="{% static 'css/controls.css' %}">
+{% endblock %}
+
+{% block tab %}
+{{ friend_data|json_script:"friends-data" }}
+
+<section class="pv-open pv-friends" aria-labelledby="fr-title" data-friends>
+  <div class="pv-open__head">
+    <div>
+      <h2 id="fr-title" class="pv-section__title">Friends</h2>
+      <span class="pv-muted pv-small">
+        {{ bonk_total|floatformat:"0g" }} on bonk.io{% if has_flash %} · {{ flash_total|floatformat:"0g" }} from Flash{% endif %}
+      </span>
+    </div>
+    {% if has_flash %}
+      <div class="bv-seg pv-friends__lists" role="group" aria-label="Friend list" data-lists hidden>
+        <button type="button" data-list="bonk" aria-pressed="true">bonk.io <span class="pv-friends__n">{{ bonk_total|floatformat:"0g" }}</span></button>
+        <button type="button" data-list="flash" aria-pressed="false">Flash <span class="pv-friends__n">{{ flash_total|floatformat:"0g" }}</span></button>
+      </div>
+    {% endif %}
+  </div>
+
+  {% if can_compare %}
+    <div class="pv-friends__you">
+      <span class="pv-initials" aria-hidden="true"><i data-lucide="users"></i></span>
+      <p>
+        {% if you_are_friends %}<strong>You're friends.</strong> {% endif %}
+        You have <strong data-mutual-n>{{ mutual_total|floatformat:"0g" }}</strong> bonk.io friend{{ mutual_total|pluralize }} in common{% if has_flash and flash_mutual_total %} and <strong>{{ flash_mutual_total|floatformat:"0g" }}</strong> Flash friend{{ flash_mutual_total|pluralize }}{% endif %}.
+      </p>
+    </div>
+  {% endif %}
+
+  <div class="pv-friends__tools" data-tools hidden>
+    <label class="pv-dir__field pv-friends__search">
+      <i data-lucide="search" aria-hidden="true"></i>
+      <span class="pv-visually-hidden">Search friends</span>
+      <input type="search" placeholder="Search {{ username }}'s friends" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="100" data-search>
+    </label>
+    <label class="pv-adv__select">
+      <span class="pv-visually-hidden">Sort</span>
+      <select data-sort>
+        <option value="az">A–Z</option>
+        <option value="friends" data-bonk-only>Most friends</option>
+        <option value="old" data-bonk-only>Oldest account</option>
+        <option value="new" data-bonk-only>Newest account</option>
+      </select>
+    </label>
+    {% if can_compare %}
+      <label class="pv-check"><input type="checkbox" data-mutual-only><span>Mutual only</span></label>
+    {% endif %}
+  </div>
+  <p class="pv-muted pv-small pv-friends__count" data-count aria-live="polite"></p>
+
+  <ul class="pv-friendlist" data-rows>
+    {% for f in bonk_preview %}
+      <li>
+        <a class="pv-friend{% if f.mu %} is-mutual{% endif %}" href="{{ f.url }}">
+          <span class="pv-initials" aria-hidden="true">{{ f.n|slice:":2"|upper }}</span>
+          <span class="pv-friend__text">
+            <span class="pv-friend__name">{{ f.shown }}</span>
+            <span class="pv-friend__meta">{% if f.j %}Joined ≈ {{ f.j }}{% endif %}{% if f.f %} · {{ f.f|floatformat:"0g" }} friends{% endif %}</span>
+          </span>
+          {% if f.mu %}<span class="pv-friend__tag">Mutual</span>{% endif %}
+        </a>
+      </li>
+    {% empty %}
+      <li class="pv-friends__empty pv-muted">
+        {% if synced %}No friends to show.{% else %}Bonkverse hasn't seen {{ username }}'s bonk.io friend list.{% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+  {% if bonk_total > bonk_preview|length %}
+    <p class="pv-muted pv-small" data-nojs-more>Showing the first {{ bonk_preview|length }}. Search needs JavaScript.</p>
+  {% endif %}
+  <button type="button" class="pv-btn pv-btn--ghost pv-friends__more" data-more hidden>Show more</button>
+</section>
+
+<p class="pv-fine">
+  bonk.io friends come from friend lists that players shared by signing in to Bonkverse, so a player who never signed in shows only the members who list them.
+  Flash friends are the old Flash bonk and TinyTanks lists a member imported.
+  {% if is_owner %}You can hide your lists in <a class="pv-link" href="{% url 'profile_settings' %}">profile settings</a>.{% elif not account %}Is this you? <a class="pv-link" href="{% url 'login' %}">Sign in</a> to add your whole list.{% endif %}
+</p>
+{% endblock %}
+
+{% block tab_scripts %}
+<script src="{% static 'js/player_friends.js' %}"></script>
+{% endblock %}

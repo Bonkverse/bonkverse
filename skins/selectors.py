@@ -11,9 +11,9 @@ bonk_players_matching / flash_friends_matching / flash_friend_counts: the
 player directory (players/ "Players" page).
 """
 
-from django.db.models import Case, Count, Exists, IntegerField, OuterRef, Q, Sum, Value, When
+from django.db.models import Count, Q, Sum
 
-from .models import BonkAccountLink, BonkPlayer, FlashFriend, FlashFriendship, Skin, SkinVote
+from .models import BonkAccountLink, BonkPlayer, FlashFriendship, Skin, SkinVote
 
 
 def decorate_skins_for_user(skins, user=None):
@@ -86,28 +86,6 @@ def creator_stats(username):
     }
 
 
-def bonk_players_matching(query):
-    """BonkPlayers whose name contains `query` (or whose bonk.io ID is it):
-    an exact name first, then players linked to a Bonkverse account, then
-    by friend count. Each has `linked` (bool)."""
-    qs = BonkPlayer.objects.annotate(
-        linked=Exists(BonkAccountLink.objects.filter(bonk_player=OuterRef("pk"), active=True))
-    )
-    if query:
-        match = Q(username__icontains=query)
-        if query.isdigit():
-            match |= Q(bonk_id=int(query))
-        qs = qs.filter(match).annotate(
-            exact=Case(
-                When(username__iexact=query, then=Value(0)),
-                default=Value(1),
-                output_field=IntegerField(),
-            )
-        )
-        return qs.order_by("exact", "-linked", "-last_friend_count", "username")
-    return qs.order_by("-linked", "-last_friend_count", "username")
-
-
 def bonk_players_named(names):
     """{lower name: BonkPlayer} for exact (case-insensitive) names."""
     lowered = {n.lower() for n in names}
@@ -120,15 +98,6 @@ def bonk_players_named(names):
     for p in BonkPlayer.objects.filter(q).order_by("-last_seen"):
         found.setdefault(p.username.lower(), p)
     return found
-
-
-def flash_friends_matching(query):
-    """Flash (Bonk 1 / TinyTanks) friend names containing `query`, most
-    listed first. Each has `listed_by` (how many Bonkverse users have them)."""
-    qs = FlashFriend.objects.select_related("bonk_player").annotate(listed_by=Count("friend_of"))
-    if query:
-        qs = qs.filter(name__icontains=query)
-    return qs.order_by("-listed_by", "name")
 
 
 def flash_friend_counts(user_ids):
