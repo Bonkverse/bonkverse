@@ -62,9 +62,9 @@ def test_all_players_cards_show_replay_stats_and_link_profiles(client, mocked_ht
     html = client.get(reverse("players_directory") + "?q=sau").content.decode()
     assert ">206<" in html and ">2,052<" in html and ">45<" in html
     assert reverse("player_profile", args=["Saucy Tulip"]) in html
-    # No replays and no Bonkverse account: no profile to open
-    assert reverse("player_profile", args=["saucepan"]) not in html
-    assert "No profile yet" in html
+    # No replays and no Bonkverse account, but known from friend lists:
+    # a basic profile (overview and friends)
+    assert reverse("player_profile", args=["saucepan"]) in html
 
 
 @pytest.mark.django_db
@@ -117,6 +117,7 @@ def test_flash_view_links_resolved_names(client, mocked_http):
     html = client.get(reverse("players_directory") + "?view=flash").content.decode()
     assert reverse("player_profile", args=["NowCalledThis"]) in html
     assert "lostpal" in html and "Listed by" in html
+    assert "No profile yet" in html  # unresolved Flash name
 
 
 @pytest.mark.django_db

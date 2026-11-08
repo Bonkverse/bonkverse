@@ -12,18 +12,132 @@
 
   <header class="pv-dir__head">
     <h1 class="pv-dir__title">Players</h1>
-    <p class="pv-muted">Find anyone on bonk.io and open their profile: replays, level, maps, people and skins.</p>
+    <p class="pv-muted">Find anyone on bonk.io and open their profile: replays, level, maps, people, friends and skins.</p>
   </header>
 
-  <form class="pv-dir__search" method="get" action="{% url 'players_directory' %}" role="search">
+  <form class="pv-dir__form" method="get" action="{% url 'players_directory' %}" role="search" data-dir-form>
     <input type="hidden" name="view" value="{{ view }}">
-    <label class="pv-dir__field">
-      <i data-lucide="search" aria-hidden="true"></i>
-      <span class="pv-visually-hidden">Search players</span>
-      <input type="search" name="q" value="{{ query }}" placeholder="{% if view == 'flash' %}Search flash friend names{% elif view == 'replays' %}Name starts with… (3+ letters){% else %}Search by name or bonk.io ID{% endif %}" autocomplete="off" maxlength="100">
-    </label>
-    <button type="submit" class="pv-btn">Search</button>
+    <div class="pv-dir__search">
+      <label class="pv-dir__field">
+        <i data-lucide="search" aria-hidden="true"></i>
+        <span class="pv-visually-hidden">Search players</span>
+        <input type="search" name="q" value="{{ query }}" placeholder="{% if view == 'flash' %}Search flash friend names{% elif view == 'replays' %}Name starts with… (3+ letters){% else %}Search by name or bonk.io ID{% endif %}" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="100">
+      </label>
+      <button type="submit" class="pv-btn">Search</button>
+    </div>
+
+    {% if advanced %}
+      <details class="pv-adv"{% if adv_active %} open{% endif %}>
+        <summary class="pv-adv__toggle">
+          <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
+          Advanced search
+          {% if chips %}<span class="pv-adv__count">{{ chips|length }}</span>{% endif %}
+        </summary>
+
+        <div class="pv-adv__panel">
+          <p class="pv-adv__hint pv-small pv-muted">
+            Find names by their shape. In advanced search, spaces in the search box count, so you can look for a name made of spaces.
+          </p>
+
+          <fieldset class="pv-adv__group">
+            <legend>Name</legend>
+            <div class="pv-radioseg" role="radiogroup" aria-label="The search box text">
+              {% for key, label in form.matches %}
+                <label><input type="radio" name="match" value="{{ key }}"{% if filters.match == key %} checked{% endif %}><span>{{ label }}</span></label>
+              {% endfor %}
+            </div>
+            <label class="pv-check"><input type="checkbox" name="case" value="1"{% if filters.case %} checked{% endif %}><span>Match case</span></label>
+            <p class="pv-small pv-muted pv-adv__note">Pattern: <code>*</code> is any run of characters and <code>?</code> is one, so <code>?_?</code> finds three-character names with an underscore in the middle.</p>
+          </fieldset>
+
+          <fieldset class="pv-adv__group">
+            <legend>Length</legend>
+            <div class="pv-adv__range">
+              <label class="pv-adv__num"><span class="pv-visually-hidden">At least</span><input type="number" name="len_min" min="1" max="100" inputmode="numeric" placeholder="Min" value="{{ filters.len_min|default_if_none:'' }}"></label>
+              <span aria-hidden="true">–</span>
+              <label class="pv-adv__num"><span class="pv-visually-hidden">At most</span><input type="number" name="len_max" min="1" max="100" inputmode="numeric" placeholder="Max" value="{{ filters.len_max|default_if_none:'' }}"></label>
+              <span class="pv-small pv-muted">characters</span>
+            </div>
+          </fieldset>
+
+          <fieldset class="pv-adv__group pv-adv__group--wide">
+            <legend>Characters</legend>
+            <div class="pv-adv__kinds">
+              {% for k in form.kinds %}
+                <div class="pv-adv__kind">
+                  <span class="pv-adv__kind-label" id="kind-{{ k.key }}">{{ k.label }}</span>
+                  <div class="pv-radioseg pv-radioseg--sm" role="radiogroup" aria-labelledby="kind-{{ k.key }}">
+                    {% for value, label in form.kind_states %}
+                      <label><input type="radio" name="{{ k.key }}" value="{{ value }}"{% if k.state == value %} checked{% endif %}><span>{{ label }}</span></label>
+                    {% endfor %}
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+            <p class="pv-small pv-muted pv-adv__note">Symbols are anything that isn't a letter, digit, underscore or space. "Has digits" with "None" for the rest finds all-number names.</p>
+          </fieldset>
+
+          <fieldset class="pv-adv__group">
+            <legend>Spaces</legend>
+            <div class="pv-adv__checks">
+              {% for sp in form.spaces %}
+                <label class="pv-check"><input type="checkbox" name="{{ sp.key }}" value="1"{% if sp.on %} checked{% endif %}><span>{{ sp.label }}</span></label>
+              {% endfor %}
+            </div>
+          </fieldset>
+
+          {% if form.players %}
+            <fieldset class="pv-adv__group">
+              <legend>Account</legend>
+              <div class="pv-adv__range">
+                <label class="pv-adv__select">
+                  <span class="pv-small pv-muted">Joined from</span>
+                  <select name="joined_from">
+                    <option value="">Any year</option>
+                    {% for y in form.years %}<option value="{{ y }}"{% if filters.joined_from == y %} selected{% endif %}>{{ y }}</option>{% endfor %}
+                  </select>
+                </label>
+                <label class="pv-adv__select">
+                  <span class="pv-small pv-muted">to</span>
+                  <select name="joined_to">
+                    <option value="">Any year</option>
+                    {% for y in form.years %}<option value="{{ y }}"{% if filters.joined_to == y %} selected{% endif %}>{{ y }}</option>{% endfor %}
+                  </select>
+                </label>
+              </div>
+              <div class="pv-adv__range">
+                <label class="pv-adv__num pv-adv__num--wide"><span class="pv-small pv-muted">At least</span><input type="number" name="min_friends" min="1" max="100000" inputmode="numeric" placeholder="0" value="{{ filters.min_friends|default_if_none:'' }}"><span class="pv-small pv-muted">friends</span></label>
+              </div>
+              <label class="pv-check"><input type="checkbox" name="members" value="1"{% if filters.members %} checked{% endif %}><span>Bonkverse members only</span></label>
+              <p class="pv-small pv-muted pv-adv__note">Join dates are estimated from account IDs.</p>
+            </fieldset>
+          {% endif %}
+
+          <fieldset class="pv-adv__group">
+            <legend>Sort</legend>
+            <label class="pv-adv__select">
+              <span class="pv-visually-hidden">Sort by</span>
+              <select name="sort">
+                {% for key, label in form.sorts %}<option value="{{ key }}"{% if filters.sort == key %} selected{% endif %}>{{ label }}</option>{% endfor %}
+              </select>
+            </label>
+          </fieldset>
+
+          <div class="pv-adv__actions">
+            <button type="submit" class="pv-btn">Show players</button>
+            {% if adv_active %}<a class="pv-btn pv-btn--ghost" href="?{{ clear_qs }}">Clear filters</a>{% endif %}
+          </div>
+        </div>
+      </details>
+    {% endif %}
   </form>
+
+  {% if chips %}
+    <ul class="pv-adv__chips" aria-label="Filters">
+      {% for c in chips %}<li class="pv-chip">{{ c }}</li>{% endfor %}
+      <li><a class="pv-link pv-small" href="?{{ clear_qs }}">Clear</a></li>
+    </ul>
+  {% endif %}
 
   <nav class="pv-seg pv-dir__views" aria-label="Show">
     {% for key, label in views %}
@@ -32,7 +146,7 @@
   </nav>
   <p class="pv-fine pv-dir__explain">
     {% if view == 'replays' %}
-      Registered players seen in replays whose name starts with your search, most replays first.
+      Registered players seen in replays whose name starts with your search, most replays first. Advanced search works on the other two lists.
     {% elif view == 'flash' %}
       Friends imported from the old Flash bonk and TinyTanks, most listed first. Names link to a profile when we know who they are now.
     {% else %}
@@ -50,7 +164,7 @@
     </div>
   {% elif cards %}
     {% if page_obj %}
-      <p class="pv-muted pv-small pv-dir__count">{{ page_obj.paginator.count }} player{{ page_obj.paginator.count|pluralize }}</p>
+      <p class="pv-muted pv-small pv-dir__count">{{ page_obj.paginator.count|floatformat:"0g" }} player{{ page_obj.paginator.count|pluralize }}{% if pinned %} · plus an exact match from replays{% endif %}</p>
     {% endif %}
     <ul class="pv-pcards">
       {% for c in cards %}
@@ -62,12 +176,21 @@
     {% endif %}
   {% else %}
     <div class="pv-card pv-empty">
-      <p>No players match “{{ query }}”.</p>
-      {% if view != 'replays' and query|length >= 3 %}
-        <p><a class="pv-link" href="?view=replays&amp;q={{ query|urlencode }}">Look for it among replay players</a></p>
+      {% if adv_active %}
+        <p>No players match these filters.</p>
+        <p><a class="pv-link" href="?{{ clear_qs }}">Clear filters</a></p>
+      {% else %}
+        <p>No players match “{{ query }}”.</p>
+        {% if view != 'replays' and query|length >= 3 %}
+          <p><a class="pv-link" href="?view=replays&amp;q={{ query|urlencode }}">Look for it among replay players</a></p>
+        {% endif %}
       {% endif %}
     </div>
   {% endif %}
 
 </main>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/players_directory.js' %}"></script>
 {% endblock %}

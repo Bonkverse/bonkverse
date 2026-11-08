@@ -24,7 +24,13 @@ def _tab(request, username, slug, template, build):
 
 @limit("browse")
 def overview(request, username):
-    return _tab(request, username, "", "players/overview.html", selectors.overview)
+    return _tab(
+        request,
+        username,
+        "",
+        "players/overview.html",
+        lambda b: selectors.overview(b, request.user),
+    )
 
 
 @limit("browse")
@@ -49,6 +55,17 @@ def people(request, username):
 
 
 @limit("browse")
+def friends(request, username):
+    return _tab(
+        request,
+        username,
+        "friends",
+        "players/friends.html",
+        lambda b: selectors.friends(b, request.user),
+    )
+
+
+@limit("browse")
 def skins(request, username):
     q = request.GET
     return _tab(
@@ -64,9 +81,7 @@ def skins(request, username):
 def directory(request):
     """Find a player: Bonk players, the most active replay players and legacy
     flash friends in one search, as cards that open their profiles."""
-    q = request.GET
-    context = selectors.directory(q.get("q"), q.get("view"), q.get("page", 1))
-    return render(request, "players/directory.html", context)
+    return render(request, "players/directory.html", selectors.directory(request.GET))
 
 
 @limit("browse")

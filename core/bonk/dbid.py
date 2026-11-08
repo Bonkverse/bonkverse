@@ -56,6 +56,26 @@ def _between(dbid, n0, d0, n1, d1):
     return d0 + timedelta(days=round(days))
 
 
+def id_for_day(day: date) -> int:
+    """About the first account ID made on `day` (the inverse of `estimate`),
+    for "joined between" filters. Before the oldest known point it's 1; past
+    the newest it continues at the newest pace."""
+    points = known_points()
+    if day <= points[0][1]:
+        return 1
+    for (n0, d0), (n1, d1) in zip(points, points[1:], strict=False):
+        if d0 <= day <= d1:
+            return _id_between(day, n0, d0, n1, d1)
+    (n0, d0), (n1, d1) = points[-2], points[-1]
+    return _id_between(day, n0, d0, n1, d1)
+
+
+def _id_between(day, n0, d0, n1, d1):
+    if d1 == d0:
+        return n0
+    return round(n0 + (n1 - n0) * (day - d0).days / (d1 - d0).days)
+
+
 def timeline():
     """The known points as [[dbid, "YYYY-MM-DD"], ...] for charts."""
     return [[n, d.isoformat()] for n, d in known_points()]
