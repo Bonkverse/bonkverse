@@ -8,6 +8,7 @@ flash_friends_sync.py).
 """
 
 import logging
+import math
 import threading
 import time
 
@@ -20,8 +21,14 @@ from django.shortcuts import redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 
 from core.bonk import BonkSession, BonkUsername
-from core.ratelimits import limit
-from integrations.bonk_api import BonkError, BonkLoginResult, get_client
+from core.ratelimits import describe_wait, limit
+from integrations.bonk_api import (
+    LOGIN_SCRIPT,
+    BonkError,
+    BonkLoginResult,
+    get_client,
+    rate_limit_cooldowns,
+)
 from skins.events import log_event
 
 from .flash_friends_sync import sync_flash_friends_for_user
@@ -37,16 +44,29 @@ LOGIN_FAILURE_MESSAGES = {
     BonkError.WRONG_PASSWORD: "Wrong password.",
     BonkError.UNKNOWN_USERNAME: "No bonk.io account has that username.",
     BonkError.RATE_LIMITED: (
-        "bonk.io is limiting logins from Bonkverse right now. Try again in a few minutes."
+        "bonk.io is limiting logins from Bonkverse right now. Try again in {wait}."
     ),
     BonkError.REJECTED: "bonk.io didn't accept that login.",
     BonkError.UNAVAILABLE: "Network error talking to bonk.io. Try again in a minute.",
 }
 
 
-def login_failure_message(error: str | None) -> str:
-    """The user-facing sentence for a failed bonk.io login."""
-    return LOGIN_FAILURE_MESSAGES.get(error, LOGIN_FAILURE_MESSAGES[BonkError.REJECTED])
+def login_failure_message(error: str | None, retry_after: int | None = None) -> str:
+    """The user-facing sentence for a failed bonk.io login.
+
+    `retry_after` is the seconds left in bonk.io's login pause, for the
+    rate-limited sentence ("a few minutes" when unknown).
+    """
+    message = LOGIN_FAILURE_MESSAGES.get(error, LOGIN_FAILURE_MESSAGES[BonkError.REJECTED])
+    if error == BonkError.RATE_LIMITED:
+        wait = describe_wait(retry_after) if retry_after else "a few minutes"
+        message = message.format(wait=wait)
+    return message
+
+
+def login_retry_after() -> int | None:
+    """Whole seconds until a bonk.io login may be tried, or None if it may now."""
+    return math.ceil(rate_limit_cooldowns.remaining(LOGIN_SCRIPT)) or None
 
 
 def site_account_for(username: BonkUsername) -> BonkUser:
@@ -187,8 +207,14 @@ def login_view(request):
         result.bonk_error,
     )
     if not result.ok:
-        messages.error(request, f"Bonk.io login failed: {login_failure_message(result.error)}")
-        return render(request, "skins/login.html", {"form": form})
+        retry_after = login_retry_after() if result.error == BonkError.RATE_LIMITED else None
+        messages.error(
+            request,
+            f"Bonk.io login failed: {login_failure_message(result.error, retry_after)}",
+        )
+        # The page keeps the Login button off until the pause ends, so players
+        # don't resubmit into it (6 tries in a minute on 2026-11-09).
+        return render(request, "skins/login.html", {"form": form, "retry_after": retry_after})
 
     _sign_in(request, result)
     messages.success(request, "Logged in successfully!")

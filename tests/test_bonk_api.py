@@ -14,11 +14,14 @@ import requests
 from core.bonk import AvatarSlot
 from integrations.bonk_api import (
     BROWSER_HEADERS,
+    AVATAR_UPDATE_SCRIPT,
     RATE_LIMIT_COOLDOWN,
+    RATE_LIMIT_COOLDOWN_MAX,
     BonkApi,
     BonkError,
     BonkFriend,
-    _Cooldown,
+    _Cooldowns,
+    backoff_seconds,
     get_client,
     redact,
 )
@@ -256,27 +259,35 @@ def test_redact_removes_tokens_from_cut_off_json():
 
 
 class TestRateLimitCooldown:
-    """After bonk.io says "ratelimited", Bonkverse stops calling it for a while
-    rather than adding requests while bonk.io is limiting the server's IP."""
+    """After bonk.io says "ratelimited" for a script, Bonkverse stops calling
+    that script for a while rather than adding requests while bonk.io is
+    limiting the server's IP."""
 
-    def test_ratelimited_login_pauses_every_bonk_call(self, api, mocked_http):
-        mocked_http.post(LOGIN, json={"r": "fail", "e": "ratelimited"})
+    def test_ratelimited_script_is_paused(self, api, mocked_http):
+        mocked_http.post(AVATAR, json={"r": "fail", "e": "ratelimited"})
 
-        first = api.login("TestPlayer", "pw")
-        after = [
-            api.login("Someone Else", "pw"),
-            api.get_friends("tok"),
-            api.update_avatar("tok", AvatarSlot(1), "CODE"),
-        ]
+        first = api.update_avatar("tok", AvatarSlot(1), "CODE")
+        second = api.update_avatar("other", AvatarSlot(2), "CODE")
 
         assert (first.error, first.bonk_error) == (BonkError.RATE_LIMITED, "ratelimited")
-        assert [r.error for r in after] == [BonkError.RATE_LIMITED] * 3
-        assert all(r.bonk_error is None for r in after)  # answered locally
-        assert len(mocked_http.calls) == 1  # nothing else reached bonk.io
+        assert (second.error, second.bonk_error) == (BonkError.RATE_LIMITED, None)
+        assert len(mocked_http.calls) == 1  # the second was answered locally
+
+    def test_a_wear_limit_does_not_block_logins(self, api, mocked_http):
+        """Regression for 2026-11-09: bonk.io accepted a login one second
+        before limiting a wear, while the old shared pause had refused six of
+        that player's logins."""
+        mocked_http.post(AVATAR, json={"r": "fail", "e": "ratelimited"})
+        mocked_http.post(LOGIN, json=load_bonk_fixture("login_success"))
+
+        api.update_avatar("tok", AvatarSlot(1), "CODE")
+        login = api.login("TestPlayer", "pw")
+
+        assert login.ok is True
 
     def test_calls_resume_after_the_cooldown(self, mocked_http):
         now = [1000.0]
-        api = BonkApi(BASE, cooldown=_Cooldown(clock=lambda: now[0]))
+        api = BonkApi(BASE, cooldowns=_Cooldowns(clock=lambda: now[0]))
         mocked_http.post(LOGIN, json={"r": "fail", "e": "ratelimited"})
         api.login("TestPlayer", "pw")
 
@@ -295,6 +306,59 @@ class TestRateLimitCooldown:
         assert len(mocked_http.calls) == 2
 
 
+class TestBackoff:
+    """Regression for 2026-11-09: a flat 2-minute pause let the first wear
+    after each pause reach bonk.io and be limited again, five times in a row."""
+
+    def test_pause_doubles_up_to_the_cap(self):
+        assert [backoff_seconds(n) for n in range(1, 7)] == [120, 240, 480, 960, 1800, 1800]
+        assert RATE_LIMIT_COOLDOWN_MAX == 1800
+
+    def test_limits_in_a_row_pause_longer(self, mocked_http):
+        now = [1000.0]
+        cooldowns = _Cooldowns(clock=lambda: now[0])
+        api = BonkApi(BASE, cooldowns=cooldowns)
+        mocked_http.post(AVATAR, json={"r": "fail", "e": "ratelimited"})
+
+        api.update_avatar("tok", AvatarSlot(1), "CODE")
+        assert cooldowns.remaining(AVATAR_UPDATE_SCRIPT) == 120
+        now[0] += 121
+        api.update_avatar("tok", AvatarSlot(1), "CODE")
+        assert cooldowns.remaining(AVATAR_UPDATE_SCRIPT) == 240
+        now[0] += 241
+        api.update_avatar("tok", AvatarSlot(1), "CODE")
+        assert cooldowns.remaining(AVATAR_UPDATE_SCRIPT) == 480
+
+    def test_a_normal_answer_starts_the_backoff_over(self, mocked_http):
+        now = [1000.0]
+        cooldowns = _Cooldowns(clock=lambda: now[0])
+        api = BonkApi(BASE, cooldowns=cooldowns)
+        mocked_http.post(AVATAR, json={"r": "fail", "e": "ratelimited"})
+        api.update_avatar("tok", AvatarSlot(1), "CODE")
+        now[0] += 121
+
+        mocked_http.replace("POST", AVATAR, json=load_bonk_fixture("avatar_update_success"))
+        assert api.update_avatar("tok", AvatarSlot(1), "CODE").ok is True
+        mocked_http.replace("POST", AVATAR, json={"r": "fail", "e": "ratelimited"})
+        api.update_avatar("tok", AvatarSlot(1), "CODE")
+
+        assert cooldowns.remaining(AVATAR_UPDATE_SCRIPT) == 120
+
+    def test_the_rate_limit_log_says_how_long(self, api, mocked_http, caplog):
+        mocked_http.post(AVATAR, json={"r": "fail", "e": "ratelimited"})
+
+        with caplog.at_level(logging.INFO, logger="integrations.bonk_api"):
+            api.update_avatar("tok", AvatarSlot(1), "CODE")
+            api.update_avatar("tok", AvatarSlot(1), "CODE")
+
+        messages = [r.getMessage() for r in caplog.records]
+        assert (
+            "bonk.io rate-limited avatar_update.php (1 in a row); "
+            "pausing avatar_update.php calls for 120s"
+        ) in messages
+        assert any("answered rate_limited without calling it" in m for m in messages)
+
+
 class TestSharedCooldown:
     """Regression for 2026-11-09: the pause lived in one gunicorn worker, so
     the others kept calling bonk.io and extended its limit."""
@@ -303,8 +367,8 @@ class TestSharedCooldown:
         from django.core.cache import cache
 
         now = [1000.0]
-        worker_a = BonkApi(BASE, cooldown=_Cooldown(clock=lambda: now[0], store=cache))
-        worker_b = BonkApi(BASE, cooldown=_Cooldown(clock=lambda: now[0], store=cache))
+        worker_a = BonkApi(BASE, cooldowns=_Cooldowns(clock=lambda: now[0], store=cache))
+        worker_b = BonkApi(BASE, cooldowns=_Cooldowns(clock=lambda: now[0], store=cache))
         mocked_http.post(AVATAR, json={"r": "fail", "e": "ratelimited"})
 
         worker_a.update_avatar("tok", AvatarSlot(1), "CODE")
@@ -314,18 +378,29 @@ class TestSharedCooldown:
         assert result.bonk_error is None  # answered locally by worker B
         assert len(mocked_http.calls) == 1
 
+    def test_the_backoff_count_is_shared_too(self, mocked_http):
+        from django.core.cache import cache
+
+        now = [1000.0]
+        a = _Cooldowns(clock=lambda: now[0], store=cache)
+        b = _Cooldowns(clock=lambda: now[0], store=cache)
+        mocked_http.post(AVATAR, json={"r": "fail", "e": "ratelimited"})
+
+        BonkApi(BASE, cooldowns=a).update_avatar("tok", AvatarSlot(1), "CODE")
+        now[0] += 121
+        BonkApi(BASE, cooldowns=b).update_avatar("tok", AvatarSlot(1), "CODE")
+
+        assert b.remaining(AVATAR_UPDATE_SCRIPT) == 240  # second in a row, though b saw one
+
     def test_store_failure_falls_back_to_this_process(self, mocked_http):
         class Broken:
-            def get(self, *a, **k):
-                raise ConnectionError
+            def __getattr__(self, name):
+                def fail(*a, **k):
+                    raise ConnectionError
 
-            def set(self, *a, **k):
-                raise ConnectionError
+                return fail
 
-            def delete(self, *a, **k):
-                raise ConnectionError
-
-        api = BonkApi(BASE, cooldown=_Cooldown(store=Broken()))
+        api = BonkApi(BASE, cooldowns=_Cooldowns(store=Broken()))
         mocked_http.post(AVATAR, json={"r": "fail", "e": "ratelimited"})
 
         api.update_avatar("tok", AvatarSlot(1), "CODE")

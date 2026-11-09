@@ -168,7 +168,7 @@ class TestWearSkin:
         "code,status,message_start",
         [
             ("avatar_too_big", 422, "This skin is too big for bonk.io"),
-            ("ratelimited", 503, "bonk.io is limiting requests"),
+            ("ratelimited", 503, "bonk.io is limiting skin changes"),
             ("something_new", 502, "bonk.io didn't accept this skin."),
         ],
     )
@@ -349,3 +349,58 @@ class TestWearSpamProtection:
         assert response.status_code == 503
         assert 0 < response.json()["retry_after"] <= 120
         assert response["Retry-After"] == str(response.json()["retry_after"])
+
+
+class TestRateLimitedWearMessages:
+    """2026-11-09: players saw "try again in a few minutes" while the pause had
+    its own length; the reply now says how long, and doesn't log an ERROR."""
+
+    def test_message_says_how_long_to_wait(self, bonk_session_client, skin, mocked_http):
+        mocked_http.post(BONK_AVATAR_UPDATE_URL, json={"r": "fail", "e": "ratelimited"})
+
+        body = bonk_session_client.post(_wear_url(skin.id)).json()
+
+        assert body["message"] == (
+            "bonk.io is limiting skin changes from Bonkverse right now. "
+            "Try again in about 2 minutes."
+        )
+        assert body["retry_after"] == 120
+
+    def test_rate_limited_wear_is_not_logged_as_a_server_error(
+        self, bonk_session_client, skin, mocked_http, caplog
+    ):
+        import logging
+
+        from core.logs import SkipExpectedErrors
+
+        mocked_http.post(BONK_AVATAR_UPDATE_URL, json={"r": "fail", "e": "ratelimited"})
+        django_request = logging.getLogger("django.request")
+        seen = []
+
+        class Collect(logging.Handler):
+            def emit(self, record):
+                seen.append(record)
+
+        handler = Collect()
+        django_request.addHandler(handler)
+        django_request.addFilter(SkipExpectedErrors())
+        try:
+            response = bonk_session_client.post(_wear_url(skin.id))
+        finally:
+            django_request.removeHandler(handler)
+            django_request.filters.clear()
+
+        assert response.status_code == 503
+        assert seen == []
+
+    def test_bonk_login_in_the_wear_modal_says_how_long(self, logged_in_client, mocked_http):
+        mocked_http.post(BONK_LOGIN_URL, json={"r": "fail", "e": "ratelimited"})
+
+        response = logged_in_client.post(
+            "/api/bonk/login/", {"bonk_username": "TestPlayer", "bonk_password": "pw"}
+        )
+
+        body = response.json()
+        assert response.status_code == 401
+        assert body["retry_after"] == 120
+        assert body["message"].endswith("Try again in about 2 minutes.")

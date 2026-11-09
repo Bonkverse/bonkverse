@@ -11,8 +11,9 @@ JSON contract the frontend relies on (tests/test_wear.py):
 - 401 without auth          -> the bonk.io credentials were wrong
 - any other failure         -> no modal; show `message` (a sentence):
     422 avatar_too_big   the skin is over bonk.io's size limit
-    503 rate_limited     bonk.io is limiting requests from Bonkverse
-                         (+ retry_after seconds and a Retry-After header)
+    503 rate_limited     bonk.io is limiting skin changes from Bonkverse
+                         (+ retry_after seconds and a Retry-After header, and
+                         the wait in `message`)
     429 wear_in_progress this account already has a wear waiting on bonk.io
     429 rate_limited     this account wore too many skins too fast (core/ratelimits)
     502 network_error    bonk.io couldn't be reached
@@ -32,7 +33,8 @@ every gunicorn worker sees them:
 2. Per-account rate tiers "wear_burst" and "wear" (settings.RATE_LIMITS),
    shared by both wear endpoints.
 3. The bonk.io cooldown (integrations/bonk_api.py): after "ratelimited", no
-   worker calls bonk.io until it ends.
+   worker calls avatar_update.php until it ends. It grows with each limit in
+   a row, and `retry_after` tells the page how long it has left.
 """
 
 import math
@@ -44,12 +46,15 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
 
 from core.bonk import AvatarSlot, BonkSession
-from core.ratelimits import limit
+from core.logs import mark_expected_error
+from core.ratelimits import describe_wait, limit
 from integrations.bonk_api import (
+    AVATAR_UPDATE_SCRIPT,
+    LOGIN_SCRIPT,
     BonkAvatarUpdateResult,
     BonkError,
     get_client,
-    rate_limit_cooldown,
+    rate_limit_cooldowns,
 )
 
 from .auth_guards import api_login_required, bonk_token_required
@@ -71,7 +76,7 @@ _WEAR_FAILURES = {
     ),
     BonkError.RATE_LIMITED: (
         503,
-        "bonk.io is limiting requests from Bonkverse right now. Try again in a few minutes.",
+        "bonk.io is limiting skin changes from Bonkverse right now. Try again in {wait}.",
     ),
     BonkError.UNAVAILABLE: (502, "bonk.io isn't responding. Try again in a minute."),
 }
@@ -116,21 +121,31 @@ def _wear_lock(user_id):
                 pass
 
 
-def _update_failed_response(result: BonkAvatarUpdateResult) -> JsonResponse:
+def retry_after_for(script: str) -> int | None:
+    """Whole seconds until `script` may be called again, or None if it may now."""
+    return math.ceil(rate_limit_cooldowns.remaining(script)) or None
+
+
+def _update_failed_response(request, result: BonkAvatarUpdateResult) -> JsonResponse:
     """The JSON reply when bonk.io didn't apply the skin."""
     if result.error == BonkError.TOKEN_REJECTED:
         # The one case a fresh bonk.io login fixes: open the login modal.
         return JsonResponse({"ok": False, "auth": "bonk", "error": result.error}, status=401)
     status, message = _WEAR_FAILURES.get(result.error, _UNKNOWN_FAILURE)
-    # No auth tag, so the page shows `message` and never opens the modal.
-    body = {"ok": False, "error": result.error, "message": message}
     retry_after = None
     if result.error == BonkError.RATE_LIMITED:
         # How long every worker will keep answering this without asking bonk.io,
         # so the page can wait instead of retrying into the pause.
-        retry_after = math.ceil(rate_limit_cooldown.remaining()) or None
-        if retry_after:
-            body["retry_after"] = retry_after
+        retry_after = retry_after_for(AVATAR_UPDATE_SCRIPT)
+        message = message.format(wait=describe_wait(retry_after))
+        # Expected, and integrations/bonk_api.py already logged it as a
+        # WARNING; don't also log "ERROR Service Unavailable" (or send it to
+        # Sentry) for every one.
+        mark_expected_error(request)
+    # No auth tag, so the page shows `message` and never opens the modal.
+    body = {"ok": False, "error": result.error, "message": message}
+    if retry_after:
+        body["retry_after"] = retry_after
     response = JsonResponse(body, status=status)
     if retry_after:
         response["Retry-After"] = str(retry_after)
@@ -154,7 +169,7 @@ def _wear(request, skin_code: str) -> tuple[AvatarSlot, JsonResponse | None]:
         result = get_client().update_avatar(token, slot, skin_code)
     if not result.ok:
         # integrations/bonk_api.py logs bonk.io's refusal code.
-        return slot, _update_failed_response(result)
+        return slot, _update_failed_response(request, result)
     bonk.store_token(token)  # sliding TTL
     return slot, None
 
@@ -173,14 +188,17 @@ def bonk_login_for_wear(request):
     if not result.ok:
         # Bad bonk credentials — 401 WITHOUT an `auth` tag so the client treats
         # it as a credential error, not a session-expired redirect.
-        return JsonResponse(
-            {
-                "ok": False,
-                "error": result.error,
-                "message": login_failure_message(result.error),
-            },
-            status=401,
-        )
+        retry_after = None
+        if result.error == BonkError.RATE_LIMITED:
+            retry_after = retry_after_for(LOGIN_SCRIPT)
+        body = {
+            "ok": False,
+            "error": result.error,
+            "message": login_failure_message(result.error, retry_after),
+        }
+        if retry_after:
+            body["retry_after"] = retry_after
+        return JsonResponse(body, status=401)
 
     bonk = BonkSession(request.session)
     bonk.store_token(result.token)

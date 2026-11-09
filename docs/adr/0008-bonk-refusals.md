@@ -31,4 +31,12 @@ Bonkverse user shares; what triggers it is unknown.
   for up to two minutes, even if bonk.io has already lifted the limit.
 - If bursts continue, share the pause across workers (Redis) and find what
   else sends traffic to bonk.io from our IP.
+
+**Update 2026-11-09.** The pause is now shared by every worker through Redis
+(#68), kept separately for each bonk.io script, and doubles with each limit
+in a row (2 minutes up to 30) instead of a flat 120 s. Players are told how
+long is left. A flat per-process pause had kept calling bonk.io from the
+other workers, retried into bonk.io's longer lockout every 2 minutes, and
+blocked logins during a wear limit. Details:
+[bonk/api.md](../bonk/api.md#rate-limits-and-the-cooldown).
 - Reference: [bonk/api.md](../bonk/api.md).

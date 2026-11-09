@@ -65,7 +65,7 @@ class BonkError:
     AVATAR_TOO_BIG = "avatar_too_big"  # the skin is over bonk.io's size limit
     # bonk.io is limiting requests. It appears to limit by IP, and every
     # Bonkverse user reaches bonk.io from the server's IP, which Railway may
-    # share with others. See RATE_LIMIT_COOLDOWN.
+    # share with others. See RATE_LIMIT_COOLDOWN and _Cooldown.
     RATE_LIMITED = "rate_limited"
     REJECTED = "rejected"  # a refusal code we don't recognise (see bonk_error)
     # bonk.io didn't give a usable answer: connection failed, timed out,
@@ -84,59 +84,76 @@ _REFUSALS = {
     "ratelimited": BonkError.RATE_LIMITED,
 }
 
-# After bonk.io says "ratelimited", Bonkverse makes no bonk.io calls for this
-# many seconds and answers RATE_LIMITED itself, so we don't add requests while
-# bonk.io is limiting the IP. Bursts have been logged since at least
-# 2026-10-30, mostly when Bonkverse itself sent little (docs/bonk/api.md).
-RATE_LIMIT_COOLDOWN = 120.0
+# After bonk.io says "ratelimited" for a script, Bonkverse stops calling that
+# script and answers RATE_LIMITED itself, so we don't add requests while bonk.io
+# is limiting the IP. The pause doubles with each limit in a row (2, 4, 8, 16
+# minutes, then 30 at most) and starts over once bonk.io answers that script
+# normally. A flat 2-minute pause only probed bonk.io every 2 minutes and kept
+# restarting its longer lockout: on 2026-11-09 the first wear after each pause
+# was limited again, five times in a row (docs/bonk/api.md).
+RATE_LIMIT_COOLDOWN = 120.0  # the first pause
+RATE_LIMIT_COOLDOWN_MAX = 1800.0
+# How long a run of limits is remembered. A limit after this much quiet starts
+# again at RATE_LIMIT_COOLDOWN.
+RATE_LIMIT_STRIKE_MEMORY = 3600
 
-# Cache key holding the wall-clock time (epoch seconds) until which no process
-# may call bonk.io. See _Cooldown.
-COOLDOWN_STORE_KEY = "bonk:cooldown_until"
+
+def backoff_seconds(strikes: int) -> float:
+    """The pause after `strikes` limits in a row: 120, 240, 480, ... up to 1800."""
+    return min(RATE_LIMIT_COOLDOWN * 2 ** max(strikes - 1, 0), RATE_LIMIT_COOLDOWN_MAX)
 
 
 class _Cooldown:
-    """A "don't call bonk.io until" time shared by every server process.
+    """A "don't call this bonk.io script until" time, shared by every process.
 
-    The time is kept in this process and, when a `store` is attached, in a
-    shared cache (Redis in production) so that one worker hearing
-    "ratelimited" pauses all of them. Before 2026-11-09 it lived only in the
-    process: with 4 gunicorn workers the other 3 kept calling bonk.io during
-    the pause, and a recycled worker forgot it, which kept extending bonk.io's
-    limit (incident 2026-11-09).
+    One per script: bonk.io seems to limit each script on its own. On
+    2026-11-09 login_legacy.php and friends.php answered normally one second
+    before avatar_update.php said "ratelimited", while a shared pause had been
+    turning away logins that would have worked.
 
-    `store` is anything with Django-cache-style get/set/delete. If it fails or
-    is unreachable, the in-process time still applies.
+    The pause and the count of limits in a row live in this process and, when
+    a `store` is attached, in a shared cache (Redis in production), so one
+    worker hearing "ratelimited" pauses all of them (before 2026-11-09 the
+    other workers kept calling). `store` is anything with Django-cache-style
+    get/set/add/incr/touch/delete; if it fails, this process's copy still
+    applies.
 
     Times are wall-clock (time.time) because monotonic clocks differ between
     processes.
     """
 
-    def __init__(self, clock=time.time, store=None):
+    def __init__(self, scope: str, clock=time.time, store=None):
+        self.scope = scope
         self._clock = clock
-        self._until = 0.0
-        self._lock = threading.Lock()
         self._store = store
+        self._until = 0.0
+        self._strikes = 0
+        self._lock = threading.Lock()
+        self._until_key = f"bonk:cooldown_until:{scope}"
+        self._strikes_key = f"bonk:cooldown_strikes:{scope}"
 
     def use_store(self, store) -> None:
-        """Share the pause through `store` (e.g. django.core.cache.cache)."""
         self._store = store
 
-    def _shared_until(self) -> float:
+    def _store_call(self, method: str, *args, **kwargs):
+        """Call the shared store; None if there is none or it failed."""
         if self._store is None:
-            return 0.0
+            return None
         try:
-            value = self._store.get(COOLDOWN_STORE_KEY)
+            return getattr(self._store, method)(*args, **kwargs)
         except Exception:  # the store being down must never break bonk.io calls
-            logger.warning("bonk.io cooldown store unreadable; using this process only")
-            return 0.0
+            logger.warning("bonk.io cooldown store failed (%s); using this process only", method)
+            return None
+
+    def _shared_until(self) -> float:
+        value = self._store_call("get", self._until_key)
         try:
             return float(value) if value is not None else 0.0
         except (TypeError, ValueError):
             return 0.0
 
     def remaining(self) -> float:
-        """Seconds left in the pause (0 when bonk.io may be called)."""
+        """Seconds left in the pause (0 when the script may be called)."""
         until = max(self._until, self._shared_until())
         return max(0.0, until - self._clock())
 
@@ -144,29 +161,80 @@ class _Cooldown:
         return self.remaining() > 0
 
     def start(self, seconds: float) -> None:
+        """Pause for at least `seconds` (never shortens a longer pause)."""
         until = self._clock() + seconds
         with self._lock:
             self._until = max(self._until, until)
-        if self._store is None:
-            return
-        try:
-            if until > self._shared_until():
-                self._store.set(COOLDOWN_STORE_KEY, until, timeout=math.ceil(seconds))
-        except Exception:
-            logger.warning("bonk.io cooldown store unwritable; pausing this process only")
+        if until > self._shared_until():
+            self._store_call("set", self._until_key, until, timeout=math.ceil(seconds))
+
+    def strike(self) -> tuple[float, int]:
+        """bonk.io said "ratelimited": pause, longer for each limit in a row.
+
+        Returns (seconds paused, limits in a row).
+        """
+        with self._lock:
+            self._strikes += 1
+            strikes = self._strikes
+        self._store_call("add", self._strikes_key, 0, timeout=RATE_LIMIT_STRIKE_MEMORY)
+        shared = self._store_call("incr", self._strikes_key)
+        if isinstance(shared, int) and shared > 0:
+            strikes = shared
+            self._store_call("touch", self._strikes_key, RATE_LIMIT_STRIKE_MEMORY)
+        seconds = backoff_seconds(strikes)
+        self.start(seconds)
+        return seconds, strikes
+
+    def clear(self) -> None:
+        """bonk.io answered this script normally: the next limit starts over."""
+        with self._lock:
+            had_local = self._strikes > 0
+            self._strikes = 0
+        if had_local or self._store_call("get", self._strikes_key):
+            self._store_call("delete", self._strikes_key)
 
     def reset(self) -> None:
         with self._lock:
             self._until = 0.0
-        if self._store is None:
-            return
-        try:
-            self._store.delete(COOLDOWN_STORE_KEY)
-        except Exception:
-            pass
+            self._strikes = 0
+        self._store_call("delete", self._until_key)
+        self._store_call("delete", self._strikes_key)
 
 
-rate_limit_cooldown = _Cooldown()
+class _Cooldowns:
+    """The cooldown for each bonk.io script, sharing one clock and store."""
+
+    def __init__(self, clock=time.time, store=None):
+        self._clock = clock
+        self._store = store
+        self._lock = threading.Lock()
+        self._by_script: dict[str, _Cooldown] = {}
+        for script in (LOGIN_SCRIPT, FRIENDS_SCRIPT, AVATAR_UPDATE_SCRIPT):
+            self.for_script(script)
+
+    def use_store(self, store) -> None:
+        """Share every pause through `store` (e.g. django.core.cache.cache)."""
+        with self._lock:
+            self._store = store
+            for cooldown in self._by_script.values():
+                cooldown.use_store(store)
+
+    def for_script(self, script: str) -> _Cooldown:
+        with self._lock:
+            if script not in self._by_script:
+                self._by_script[script] = _Cooldown(script, self._clock, self._store)
+            return self._by_script[script]
+
+    def remaining(self, script: str) -> float:
+        """Seconds until `script` may be called again (0 if it may now)."""
+        return self.for_script(script).remaining()
+
+    def reset(self) -> None:
+        for cooldown in list(self._by_script.values()):
+            cooldown.reset()
+
+
+rate_limit_cooldowns = _Cooldowns()
 
 
 @dataclass(frozen=True)
@@ -229,7 +297,7 @@ class _Unavailable(Exception):
 
 
 class _CoolingDown(Exception):
-    """bonk.io rate-limited us recently; no call was made. Internal."""
+    """bonk.io rate-limited this script recently; no call was made. Internal."""
 
 
 # Matches "token":"<anything up to the next quote>" so a token can be removed
@@ -259,12 +327,12 @@ class BonkApi:
         *,
         timeout=DEFAULT_TIMEOUT,
         http=None,
-        cooldown: _Cooldown | None = None,
+        cooldowns: _Cooldowns | None = None,
     ):
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self._http = http or requests
-        self._cooldown = cooldown or rate_limit_cooldown
+        self._cooldowns = cooldowns or rate_limit_cooldowns
 
     def login(self, username: str, password: str) -> BonkLoginResult:
         """Exchange a bonk.io username and password for a token.
@@ -375,11 +443,19 @@ class BonkApi:
         """POST `form` to a bonk.io script and return its JSON object.
 
         Raises:
-            _CoolingDown: bonk.io rate-limited us recently; nothing was sent.
+            _CoolingDown: bonk.io rate-limited this script recently; nothing
+                was sent.
             _Unavailable: no answer, an HTTP error status, or a body that
                 isn't a JSON object.
         """
-        if self._cooldown.active():
+        cooldown = self._cooldowns.for_script(script)
+        remaining = cooldown.remaining()
+        if remaining > 0:
+            logger.info(
+                "bonk.io %s paused for another %ss; answered rate_limited without calling it",
+                script,
+                math.ceil(remaining),
+            )
             raise _CoolingDown
         url = f"{self.base_url}/{script}"
         try:
@@ -404,25 +480,29 @@ class BonkApi:
             )
             raise _Unavailable
         if _bonk_code(data) == "ratelimited":
+            seconds, strikes = cooldown.strike()
             logger.warning(
-                "bonk.io rate-limited %s; pausing bonk.io calls for %ss",
+                "bonk.io rate-limited %s (%s in a row); pausing %s calls for %ss",
                 script,
-                RATE_LIMIT_COOLDOWN,
+                strikes,
+                script,
+                int(seconds),
             )
-            self._cooldown.start(RATE_LIMIT_COOLDOWN)
+        else:
+            cooldown.clear()
         return data
 
 
 def get_client() -> BonkApi:
     """A BonkApi configured from Django settings (base URL and timeouts).
 
-    Also points the process-wide cooldown at Django's cache, so a "ratelimited"
+    Also points the process-wide cooldowns at Django's cache, so a "ratelimited"
     heard by one gunicorn worker pauses every worker (Redis in production).
     """
     from django.conf import settings
     from django.core.cache import cache
 
-    rate_limit_cooldown.use_store(cache)
+    rate_limit_cooldowns.use_store(cache)
     return BonkApi(
         settings.BONK_API_BASE_URL,
         timeout=(settings.BONK_CONNECT_TIMEOUT, settings.BONK_READ_TIMEOUT),

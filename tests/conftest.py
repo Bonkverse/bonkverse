@@ -64,11 +64,11 @@ def mocked_http(_no_real_http):
 @pytest.fixture(autouse=True)
 def _no_bonk_rate_limit_cooldown():
     """The bonk.io cooldown is process-wide; never let one test's 429 leak into the next."""
-    from integrations.bonk_api import rate_limit_cooldown
+    from integrations.bonk_api import rate_limit_cooldowns
 
-    rate_limit_cooldown.reset()
+    rate_limit_cooldowns.reset()
     yield
-    rate_limit_cooldown.reset()
+    rate_limit_cooldowns.reset()
 
 
 @pytest.fixture(autouse=True)
