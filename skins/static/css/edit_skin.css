@@ -23,7 +23,7 @@
     object-fit: contain;
     border-radius: 50%;
     border: 3px solid var(--bv-link);
-    background-color: black;
+    background-color: var(--bv-thumb);
 }
 
 .skin-description-edit {

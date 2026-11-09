@@ -93,7 +93,7 @@
                 <form method="post" action="{% url 'developer_revoke_key' key.prefix %}"
                       data-confirm="Revoke “{{ key.name }}”? Anything using it stops working right away.">
                   {% csrf_token %}
-                  <button type="submit" class="pv-btn pv-btn--ghost dev-keys__revoke">Revoke</button>
+                  <button type="submit" class="bv-btn bv-btn--danger dev-keys__revoke">Revoke</button>
                 </form>
                 {% endif %}
               </td>

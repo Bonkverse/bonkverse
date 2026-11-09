@@ -58,7 +58,7 @@
 .pv a.pv-btn { color: var(--bv-action-ink); }
 .pv-btn:hover { background: var(--bv-action-hover); }
 .pv-btn--ghost, .pv a.pv-btn--ghost { background: transparent; color: var(--pv-text); border-color: var(--pv-outline); }
-.pv-btn--ghost:hover { background: var(--bv-selected); }
+.pv-btn--ghost:hover { background: var(--bv-hover); border-color: var(--bv-text); }
 .pv-iconbtn {
   width: 44px; height: 44px; border-radius: 12px;
   display: inline-flex; align-items: center; justify-content: center;

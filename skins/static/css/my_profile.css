@@ -31,10 +31,11 @@
   font-family: var(--bv-font); font-size: 1rem; font-weight: 600;
   padding: 10px 2px 12px; cursor: pointer; position: relative;
 }
+.profile-tab:hover { color: var(--bv-text); }
 .profile-tab.active { color: var(--bv-text); }
 .profile-tab .tab-indicator {
   position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
-  background: var(--bv-selected); transform: scaleX(0); transition: transform .18s ease;
+  background: var(--bv-link); transform: scaleX(0); transition: transform .18s ease;
 }
 .profile-tab.active .tab-indicator { transform: scaleX(1); }
 .profile-tab .tab-count { color: var(--bv-muted); font-weight: 400; font-size: 0.85rem; }
@@ -237,11 +238,3 @@ body.bulk-bar-open { padding-bottom: 76px; }
 
 /* Links to the public profile (players/) and its privacy settings */
 .profile-links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-.profile-link-btn {
-  display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px;
-  border-radius: 999px; background: var(--bv-selected); color: var(--bv-text); text-decoration: none;
-  font-size: 0.85rem; font-weight: 600;
-}
-.profile-link-btn:hover { background: var(--bv-action); }
-.profile-link-btn--ghost { background: transparent; border: 1px solid var(--bv-link); color: var(--bv-link); }
-.profile-link-btn--ghost:hover { background: color-mix(in srgb, var(--bv-link) 15%, transparent); }

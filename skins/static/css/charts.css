@@ -22,7 +22,7 @@
 .bv-chart__dot { fill: var(--c); stroke: var(--bv-page); stroke-width: 2.5; }
 .bv-chart__sel { fill: var(--bv-link); stroke: var(--bv-link); stroke-width: 1; }
 
-.bv-chart__bar { fill: var(--c, var(--bv-card)); transition: fill 0.12s; }
+.bv-chart__bar { fill: var(--c, var(--site-series-1)); transition: fill 0.12s; }
 .bv-chart__bar.is-here { fill: var(--bv-gold); }
 .bv-chart__bar.is-hover { fill: var(--bv-link); }
 
@@ -46,7 +46,7 @@
   border: 1px solid var(--bv-link); background: var(--bv-card); color: var(--bv-link);
   font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer;
 }
-.bv-chart__reset:hover { background: var(--bv-selected); color: var(--bv-page); }
+.bv-chart__reset:hover { background: var(--bv-hover); color: var(--bv-link); box-shadow: inset 0 0 0 1px var(--bv-link); }
 .bv-chart__hint { margin-top: 4px; font-size: 0.78rem; color: var(--bv-muted); text-align: right; }
 .bv-chart__empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--bv-muted); }
 @media (hover: none) { .bv-chart__hint { display: none; } }

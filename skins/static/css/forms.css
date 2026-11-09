@@ -73,7 +73,7 @@
     padding: 0;
     margin: 5px 0;
     margin-left: 30px;
-    background: black;
+    background: var(--bv-card);
     border: 2px solid var(--bv-link);
     border-radius: 5px;
     width: 93%;
@@ -93,12 +93,12 @@
 .suggestions li {
     padding: 10px;
     cursor: pointer;
-    color: white;
+    color: var(--bv-text);
     border-bottom: 1px solid var(--bv-link);
 }
 
 .suggestions li:hover {
-    background-color: var(--bv-selected);
+    background-color: var(--bv-hover);
 }
 
 /* Hero Search Bar — same modal-matching language as plain inputs:

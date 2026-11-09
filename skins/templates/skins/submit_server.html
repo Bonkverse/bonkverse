@@ -13,21 +13,16 @@
   <h3>Tags</h3>
 
   <!-- Visible tag bubbles -->
-  <div class="tag-bubbles">
+  <div class="tag-bubbles bv-chips" role="group" aria-label="Tags">
     {% for tag in tags %}
-      <span
-        class="tag-bubble selectable-tag"
-        data-tag="{{ tag.name }}"
-      >
-        {{ tag.name }}
-      </span>
+      <button type="button" class="bv-chip selectable-tag" data-tag="{{ tag.name }}" aria-pressed="false">{{ tag.name }}</button>
     {% endfor %}
   </div>
 
   <!-- Hidden inputs will be injected here -->
   <div id="selected-tags"></div>
 
-  <button type="submit">Submit Server</button>
+  <button class="bv-btn bv-btn--primary" type="submit">Submit server</button>
 </form>
 
 <p class="note">

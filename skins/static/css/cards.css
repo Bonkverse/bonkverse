@@ -489,9 +489,9 @@
     border-radius: 999px;
     font-size: 14px;
     font-weight: 600;
-    color: white;
-    background-color: color-mix(in srgb, var(--bv-link) 16%, transparent);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    color: var(--bv-text);
+    background-color: var(--bv-hover);
+    border: 1px solid var(--bv-control);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     position: relative;
@@ -500,21 +500,7 @@
 .tag-bubble::before {
     content: "#";
     margin-right: 4px;
-    color: white;
+    color: var(--bv-link);
 }
 
-.selectable-tag {
-    cursor: pointer;
-    opacity: 0.7;
-    transition: transform 0.15s ease, opacity 0.15s ease;
-}
-
-.selectable-tag:hover {
-    transform: scale(1.05);
-    opacity: 1;
-}
-
-.selectable-tag.active {
-    opacity: 1;
-    border: 1px solid var(--bv-link);
-}
+/* Selectable tags are .bv-chip buttons (aria-pressed); see Bonkverse/ui. */

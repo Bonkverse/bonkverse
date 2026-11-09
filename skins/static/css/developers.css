@@ -165,7 +165,7 @@
 .dev-keys__meta { display: block; margin-top: 2px; }
 .dev-keys__tier { margin-left: 6px; font-size: 0.75rem; }
 .dev-keys__revoked td { opacity: 0.55; }
-.dev-keys__revoke { min-height: 36px; padding: 0 14px; }
+.dev-keys__revoke { padding: 0 14px; }
 .dev-keys code { white-space: nowrap; }
 
 /* The new key, shown once */

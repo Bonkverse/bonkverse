@@ -100,50 +100,7 @@
     margin-top: 22px;
 }
 
-/* Generic modal buttons */
-.modal-btn {
-    padding: 9px 18px;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    font-family: var(--bv-font);
-    cursor: pointer;
-    border: none;
-    transition: background 0.15s ease, transform 0.1s ease;
-}
-
-.modal-btn:active {
-    transform: translateY(1px);
-}
-
-.modal-btn-ghost {
-    background: color-mix(in srgb, var(--bv-text) 7%, transparent);
-    color: var(--bv-text);
-    border: 1px solid var(--bv-outline);
-}
-
-.modal-btn-ghost:hover {
-    background: color-mix(in srgb, var(--bv-text) 12%, transparent);
-    color: var(--bv-text);
-}
-
-.modal-btn-primary {
-    background: var(--bv-selected);
-    color: var(--bv-text);
-}
-
-.modal-btn-primary:hover {
-    background: var(--bv-selected);
-}
-
-.modal-btn-danger {
-    background: var(--bv-danger-surface);
-    color: var(--bv-text);
-}
-
-.modal-btn-danger:hover {
-    background: var(--bv-danger-surface);
-}
+/* Modal buttons are Bonkverse/ui .bv-btn (--primary, --danger). */
 
 /* Form elements inside modals */
 .modal-label {

@@ -120,7 +120,7 @@ body {
     position: absolute;
     top: 15px;
     right: 35px;
-    color: white;
+    color: var(--bv-text);
     font-size: 40px;
     font-weight: bold;
     cursor: pointer;
@@ -192,9 +192,9 @@ body {
 .update-popup a { color: var(--bv-link); text-decoration: underline; }
 .update-popup button {
     margin-top: 10px;
-    background: var(--bv-selected);
-    border: none;
-    color: white;
+    background: var(--bv-action);
+    border: 1px solid var(--bv-action-border);
+    color: var(--bv-action-ink);
     padding: 6px 12px;
     border-radius: 6px;
     cursor: pointer;

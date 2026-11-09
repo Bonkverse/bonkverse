@@ -1,5 +1,5 @@
 /*
- * Bonkverse UI base (v0.1.2): font, page, type, links, focus.
+ * Bonkverse UI base (v0.1.3): font, page, type, links, focus.
  * Needs tokens.css first. Sites add components.css after this.
  */
 
@@ -140,8 +140,13 @@ body.bv-app {
   display: flex;
   flex-direction: column;
 }
-body.bv-app > :not(.bv-skip-link) {
+/* Zero specificity, so anything that sets its own width (toasts, dialogs,
+   fixed panels added to <body>) keeps it. */
+:where(body.bv-app > :not(.bv-skip-link)) {
   width: 100%; /* a flex column would otherwise shrink centered children to their content */
+}
+:where(body.bv-app > dialog, body.bv-app > .bv-toasts) {
+  width: auto;
 }
 body.bv-app > .bv-footer {
   margin-top: auto;

@@ -217,7 +217,7 @@
     border-radius: 14px;
     padding: 14px;
     text-decoration: none;
-    color: white;
+    color: var(--bv-text);
     transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 

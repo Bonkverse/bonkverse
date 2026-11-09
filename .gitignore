@@ -61,5 +61,5 @@ htmlcov/
 dump.rdb
 
 # scripts/check_responsive.mjs
-node_modules/
+node_modules
 shots/

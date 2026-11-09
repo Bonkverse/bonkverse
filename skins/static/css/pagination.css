@@ -33,12 +33,14 @@
 
 .site-pagination .page-btn:hover,
 .site-pagination .page-nav:hover {
-  background: var(--bv-selected);
+  border-color: var(--bv-text);
+  background: var(--bv-hover);
 }
 
 .site-pagination .page-btn.active {
   background: var(--bv-selected);
   border-color: var(--bv-link);
+  box-shadow: inset 0 0 0 1px var(--bv-link);
   color: var(--bv-text);
   font-weight: 700;
   cursor: default;
@@ -51,6 +53,7 @@
 }
 
 .site-pagination .page-nav.disabled {
+  border-style: dashed;
   opacity: 0.45;
   pointer-events: none;
 }

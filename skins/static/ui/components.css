@@ -1,5 +1,5 @@
 /*
- * Bonkverse UI components (v0.1.2)
+ * Bonkverse UI components (v0.1.3)
  * Needs tokens.css and base.css first. Every class starts with bv-.
  * index.html shows each one in all three themes with its markup.
  *
@@ -89,7 +89,7 @@
   transition: background-color var(--bv-fade) ease-out, color var(--bv-fade) ease-out;
 }
 .bv-header__link:hover {
-  background: color-mix(in srgb, var(--bv-header-title) 8%, transparent);
+  background: color-mix(in srgb, var(--bv-header-title) 16%, transparent);
   text-decoration: none;
 }
 .bv-header__link[aria-current="page"],
@@ -350,10 +350,16 @@
  * .bv-btn            secondary: card fill, control border
  * .bv-btn--primary   the brown main action; one per screen or card
  * .bv-btn--ghost     no fill or border, teal text (Copy link, Quickstart)
- * .bv-btn--danger    red text and border (Revoke, Delete)
+ * .bv-btn--danger    solid red, white text: does something you can't undo
+ *                    (Delete, Revoke); the confirm button of a delete dialog
+ * .bv-btn--danger-outline  red text on a red tint (Report): a warning, not
+ *                    the destructive step itself
  * .bv-btn--icon      44 × 44 square, needs aria-label
  * States: :hover, :active (press), :focus-visible, :disabled,
  *         aria-pressed="true" (selected), aria-busy="true" (pending)
+ * Every state reads in every theme without color alone: hover changes the
+ * fill and darkens the border to the text color, selected adds a 2 px teal
+ * border, disabled fades and dashes the border.
  */
 
 .bv-btn {
@@ -382,7 +388,8 @@
     transform var(--bv-press) ease-out;
 }
 .bv-btn:hover {
-  background: var(--bv-selected);
+  border-color: var(--bv-text);
+  background: var(--bv-hover);
   text-decoration: none;
 }
 .bv-btn:active:not(:disabled, [aria-disabled="true"]) {
@@ -400,6 +407,7 @@
   color: var(--bv-action-ink);
 }
 .bv-btn--primary:hover {
+  border-color: var(--bv-action-ink);
   background: var(--bv-action-hover);
 }
 .bv-btn--primary:active {
@@ -413,16 +421,32 @@
   padding-inline: var(--bv-space-3);
 }
 .bv-btn--ghost:hover {
+  border-color: var(--bv-link);
   background: color-mix(in srgb, var(--bv-link) 12%, transparent);
 }
 
 .bv-btn--danger {
-  border-color: var(--bv-danger);
-  background: transparent;
-  color: var(--bv-danger);
+  border-color: var(--bv-danger-border);
+  background: var(--bv-danger-solid);
+  color: var(--bv-danger-ink);
 }
 .bv-btn--danger:hover {
+  border-color: var(--bv-danger-ink);
+  background: var(--bv-danger-solid-hover);
+}
+.bv-btn--danger:active {
+  background: var(--bv-danger-solid-pressed);
+}
+
+.bv-btn--danger-outline {
+  border-color: var(--bv-danger);
   background: var(--bv-danger-surface);
+  color: var(--bv-danger);
+}
+.bv-btn--danger-outline:hover {
+  border-color: var(--bv-danger);
+  background: var(--bv-danger-surface);
+  box-shadow: inset 0 0 0 1px var(--bv-danger);
 }
 
 .bv-btn--icon {
@@ -437,20 +461,34 @@
 .bv-btn[aria-pressed="true"] {
   border-color: var(--bv-link);
   background: var(--bv-selected);
+  box-shadow: inset 0 0 0 1px var(--bv-link);
 }
 
 .bv-btn:disabled,
 .bv-btn[aria-disabled="true"] {
+  border-style: dashed;
   opacity: 0.55;
   cursor: not-allowed;
 }
 .bv-btn:disabled:hover,
 .bv-btn[aria-disabled="true"]:hover {
+  border-color: var(--bv-control);
   background: var(--bv-card);
+}
+.bv-btn--ghost:disabled:hover,
+.bv-btn--ghost[aria-disabled="true"]:hover {
+  border-color: transparent;
+  background: transparent;
 }
 .bv-btn--primary:disabled:hover,
 .bv-btn--primary[aria-disabled="true"]:hover {
+  border-color: var(--bv-action-border);
   background: var(--bv-action);
+}
+.bv-btn--danger:disabled:hover,
+.bv-btn--danger[aria-disabled="true"]:hover {
+  border-color: var(--bv-danger-border);
+  background: var(--bv-danger-solid);
 }
 
 /* Pending keeps full opacity and a waiting cursor: it's working, not off. */
@@ -515,7 +553,7 @@
   cursor: pointer;
 }
 .bv-menu__item:hover {
-  background: var(--bv-selected);
+  background: var(--bv-hover);
   text-decoration: none;
 }
 .bv-menu__item svg {
@@ -525,6 +563,9 @@
 }
 .bv-menu__item--danger {
   color: var(--bv-danger);
+}
+.bv-menu__item--danger:hover {
+  background: var(--bv-danger-surface);
 }
 .bv-menu__item--danger svg {
   color: currentColor;
@@ -1066,6 +1107,7 @@ span.bv-fav {
   white-space: nowrap;
 }
 .bv-tab:hover {
+  border-bottom-color: var(--bv-control);
   color: var(--bv-text);
   text-decoration: none;
 }
@@ -1104,12 +1146,22 @@ span.bv-fav {
   inset: -4px 0;
 }
 .bv-chip:hover {
-  background: var(--bv-selected);
+  border-color: var(--bv-text);
+  background: var(--bv-hover);
 }
-.bv-chip[aria-pressed="true"] {
+.bv-chip[aria-pressed="true"],
+.bv-chip[aria-current]:not([aria-current="false"]) {
   border-color: var(--bv-link);
   background: var(--bv-selected);
+  box-shadow: inset 0 0 0 1px var(--bv-link);
   color: var(--bv-text);
+}
+.bv-chip:disabled,
+.bv-chip[aria-disabled="true"] {
+  border-style: dashed;
+  background: transparent;
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 .bv-chip[aria-pressed="true"]::before {
   content: "✓";
@@ -1123,7 +1175,8 @@ span.bv-fav {
   padding: 1px var(--bv-space-2);
   border: 1px solid var(--bv-control);
   border-radius: var(--bv-radius-pill);
-  color: var(--bv-muted);
+  background: var(--bv-hover);
+  color: var(--bv-text);
   font-size: 12px;
   font-weight: 600;
   line-height: 18px;
@@ -1131,7 +1184,8 @@ span.bv-fav {
 }
 .bv-pill--accent {
   border-color: var(--bv-link);
-  color: var(--bv-link);
+  background: var(--bv-selected);
+  color: var(--bv-text);
 }
 
 /* ════ 9. Tables and pagination ═══════════════════════════════════════════ */
@@ -1164,7 +1218,7 @@ span.bv-fav {
   border-bottom: 0;
 }
 .bv-table tbody tr:hover {
-  background: color-mix(in srgb, var(--bv-selected) 45%, transparent);
+  background: var(--bv-hover);
 }
 .bv-table .bv-num {
   text-align: right;
