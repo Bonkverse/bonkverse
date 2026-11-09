@@ -94,6 +94,10 @@ BONKVERSE_BASE_URL = os.getenv("BONKVERSE_BASE_URL", "https://bonkverse.io").rst
 # own dev server for those apps.
 BONKVERSE_EDITOR_URL = os.getenv("BONKVERSE_EDITOR_URL", "http://localhost:5173").rstrip("/")
 BONKVERSE_REPLAYS_URL = os.getenv("BONKVERSE_REPLAYS_URL", "http://localhost:5173").rstrip("/")
+
+# @login_required sends signed-out visitors here (Django's default,
+# /accounts/login/, doesn't exist on this site).
+LOGIN_URL = "login"
 # Player profiles (players/) read the replay site's /api/player/<name> and
 # keep each answer this long; the replay site caches it for 5 minutes too.
 PLAYER_PROFILE_CACHE_SECONDS = int(os.getenv("PLAYER_PROFILE_CACHE_SECONDS", "300"))

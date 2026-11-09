@@ -233,3 +233,12 @@ def test_logout_clears_bonk_session(bonk_session_client):
     assert response.status_code == 302
     assert "bonk_token" not in bonk_session_client.session
     assert "_auth_user_id" not in bonk_session_client.session
+
+
+@pytest.mark.django_db
+def test_login_required_pages_send_visitors_to_the_login_page(client):
+    """Regression: LOGIN_URL was Django's default /accounts/login/, a 404 here,
+    so signed-out visitors to e.g. profile settings hit a dead page."""
+    response = client.get(reverse("profile_settings"))
+    assert response.status_code == 302
+    assert response["Location"] == "/login/?next=/settings/profile/"
