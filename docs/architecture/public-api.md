@@ -2,8 +2,9 @@
 
 What other sites and bots can read from Bonkverse, and how keys work.
 Why it's built this way: [ADR 0011](../adr/0011-public-api.md). The guide
-for people *using* the API (with copy-paste examples) is the developer docs
-site, `Bonkverse/developers`; this page is for running it.
+for people *using* the API (with copy-paste examples) is
+[docs.bonkverse.io/api](https://docs.bonkverse.io/api), from `Bonkverse/docs`;
+this page is for running it.
 
 ## Endpoints
 
@@ -74,5 +75,6 @@ machinery: [rate-limiting.md](../operations/rate-limiting.md).
 
 ## Changing it
 
-Within v1, add fields and codes; never rename or remove them. Update the
-developer docs site in the same PR. Tests: `tests/test_public_api.py`.
+Within v1, add fields and codes; never rename or remove them. Open the
+matching `Bonkverse/docs` PR (pages under `docs/api/`, plus its changelog)
+and link it from this repo's PR. Tests: `tests/test_public_api.py`.

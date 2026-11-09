@@ -1,4 +1,4 @@
-"""Public API v1 endpoints. Reference: Bonkverse/developers (docs site).
+"""Public API v1 endpoints. Guide: docs.bonkverse.io/api (Bonkverse/docs).
 
 Every endpoint needs an API key (auth.py) and answers with the envelope in
 responses.py. Player names are bonk.io usernames, matched ignoring case.

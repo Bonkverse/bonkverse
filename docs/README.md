@@ -39,3 +39,4 @@ development are in the [README](../README.md); code conventions in
 - [0008 How Bonkverse answers bonk.io refusals](adr/0008-bonk-refusals.md)
 - [0009 One copy of each page behavior, in static files](adr/0009-frontend-structure.md)
 - [0011 A public, versioned API for other sites, with keys](adr/0011-public-api.md)
+- [0012 The platform docs site is Docusaurus, at docs.bonkverse.io](adr/0012-docs-site.md)

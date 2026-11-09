@@ -29,8 +29,10 @@ levels that a player hid on bonkverse.io.
   login (`BonkPlayer.xp`) was given to Bonkverse, not to other sites.
 - Times say what was observed: `seen_at` is when a replay showing that
   level was collected, not when the level changed.
-- Public developer docs live in their own Docusaurus site
-  (`Bonkverse/developers`). Platform docs keep RFC-0001's plan.
+- The guide for people using the API lives in the platform docs site,
+  `Bonkverse/docs` (docs.bonkverse.io/api), as RFC-0001 places
+  cross-service contracts ([ADR 0012](0012-docs-site.md)). How to run the
+  API stays in this repo: `docs/architecture/public-api.md`.
 
 **Consequences.**
 - Partners depend on Bonkverse being up, and on the replay site behind it
@@ -43,5 +45,6 @@ levels that a player hid on bonkverse.io.
   avatar a name has worn, but as an unordered set, so it can't say which
   is latest. Serving a latest skin means decoding the player's latest
   replay (ReplayRenderer can) or storing the avatar per participant row.
-- Every change to `/api/v1/` updates the developer docs in the same PR.
+- Every PR that changes `/api/v1/` links a matching `Bonkverse/docs` PR,
+  merged together (the PR template asks).
 - Reference: [architecture/public-api.md](../architecture/public-api.md).
