@@ -9,18 +9,20 @@ tildes followed by one or two dots gets one more "~" ("~.." → "~~.."). Every
 other name is in the path as-is.
 """
 
-import re
 
-_DOTS = re.compile(r"~*\.{1,2}")
+def _is_dot_name(value):
+    """Only tildes, then "." or ".." ("~*\\.{1,2}"), checked without a
+    regex so a long run of "~" from a URL costs one linear scan."""
+    return value.lstrip("~") in (".", "..")
 
 
 def to_url(username):
     username = str(username)
-    return "~" + username if _DOTS.fullmatch(username) else username
+    return "~" + username if _is_dot_name(username) else username
 
 
 def from_url(value):
-    if _DOTS.fullmatch(value) and value.startswith("~"):
+    if _is_dot_name(value) and value.startswith("~"):
         return value[1:]
     return value
 

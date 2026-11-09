@@ -20,4 +20,5 @@ Refactor commits contain no behavior changes, and feature commits contain no ref
 - [ ] No commented-out code, `print()`, or untracked `TODO` (use `TODO(#issue)`)
 - [ ] Config read from settings/env, not hardcoded
 - [ ] Docs updated in this PR if behavior changed (README, `docs/`, bonk.io quirks tagged `# BONK:`)
+- [ ] Changes `/api/v1/`? Matching `Bonkverse/docs` PR linked here
 - [ ] Changelog entry added; `navbar.html` updated if a nav item was added

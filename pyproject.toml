@@ -33,5 +33,5 @@ filterwarnings = [
 ]
 
 [tool.coverage.run]
-source = ["skins", "players", "bonk_skin_search", "core", "integrations"]
+source = ["skins", "players", "public_api", "bonk_skin_search", "core", "integrations"]
 omit = ["*/migrations/*", "*/management/commands/*"]
