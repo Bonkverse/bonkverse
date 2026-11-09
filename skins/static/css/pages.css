@@ -332,7 +332,7 @@
     transform: translateY(0);
 }
 
-.server-actions { margin-top: 10px; }
+.server-actions { margin-top: 10px; display: flex; flex-wrap: wrap; justify-content: center; gap: var(--bv-space-2); }
 
 /* Server detail page */
 .back-link {

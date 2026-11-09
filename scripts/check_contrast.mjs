@@ -148,6 +148,8 @@ function audit({ CONTROLS, BARS, SELECTED }) {
   // 2. Control edges
   for (const el of document.querySelectorAll(CONTROLS)) {
     if (!visible(el) || disabled(el) || el.closest("svg")) continue;
+    // The search action sits inside the search field: the field's border is its edge.
+    if (el.closest(".bv-search")) continue;
     const s = getComputedStyle(el);
     const fill = parse(s.backgroundColor);
     const around = behind(el, false);
@@ -219,6 +221,8 @@ async function hoverChecks(page) {
     const kinds = new Map();
     for (const el of document.querySelectorAll(CONTROLS + ", a.bv-header__link, .bv-menu__item, .bv-tab, a[class]")) {
       if (!el.matches("a[href], button, [role=button], [role=tab], summary")) continue; // only things you can click
+      // "You are here" (the current tab, the chosen option) needn't react to the pointer.
+      if (el.matches('[aria-current]:not([aria-current="false"]), [aria-selected="true"], [aria-pressed="true"], .active')) continue;
       if (el.closest("[hidden], dialog:not([open]), .bv-dropdown__menu, [role=menu]") || el.matches(":disabled, [aria-disabled=true], .disabled")) continue;
       const r = el.getBoundingClientRect();
       if (r.width < 2 || r.height < 2 || r.bottom < 0 || r.top > innerHeight * 4) continue;

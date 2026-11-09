@@ -31,7 +31,7 @@
     box-sizing: border-box;
     margin: 8px 0;
     background: var(--bv-input);
-    border: 1px solid var(--bv-outline);
+    border: 1px solid var(--bv-control);
     border-radius: 8px;
     color: var(--bv-text);
     font-family: var(--bv-font);

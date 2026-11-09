@@ -262,4 +262,4 @@ body {
 /* Plain links in tables and lists: underline on hover, so the pointer has
    feedback in every theme. */
 a.skin-link { color: var(--bv-link); }
-a.skin-link:hover { text-decoration: underline; }
+a.skin-link:hover { color: var(--bv-text); text-decoration: underline; }
