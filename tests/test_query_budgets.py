@@ -34,8 +34,10 @@ BUDGETS = {
     "/search/?q=Test": (14, 18),
     "/search/?sort=favorites": (16, 20),
     "/search/?sort=upvotes": (16, 20),
-    "/new/?period=all": (3, 5),
-    "/category/minimalist/": (3, 5),
+    # New and categories use the full skin card since 2026-11-09: one more
+    # query for favorite counts, plus your votes and favorites when signed in.
+    "/new/?period=all": (4, 8),
+    "/category/minimalist/": (4, 8),
     "/leaderboards/upvoted/": (2, 4),
     "/leaderboards/favorited/": (2, 4),
     "DETAIL": (3, 7),

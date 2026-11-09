@@ -1,11 +1,11 @@
 :root {
-  --site-toast-bg: #24333f;
-  --site-toast-border: #3a4d5c;
-  --site-toast-text: #f0f0f0;
-  --site-toast-success: #009688;
-  --site-toast-warning: #ffc107;
-  --site-toast-error: #c0392b;
-  --site-toast-info: #5a7a94;
+  --site-toast-bg: var(--bv-card);
+  --site-toast-border: var(--bv-control);
+  --site-toast-text: var(--bv-text);
+  --site-toast-success: var(--bv-link);
+  --site-toast-warning: var(--bv-gold);
+  --site-toast-error: var(--bv-danger);
+  --site-toast-info: var(--bv-muted);
 }
 
 #site-toast-stack {

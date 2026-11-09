@@ -1,10 +1,10 @@
 {
   "package": "Bonkverse/ui",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "note": "Copied by scripts/sync_ui.py. Don't edit these files; change Bonkverse/ui and sync a new release.",
   "files": {
-    "base.css": "fe47a101e96c331e338f4f72282261a2995bb6eb2d5555d66e923681cb52411c",
-    "components.css": "28ebbc7031f8e5770486f2c823254a27e07cec404eabade07190b7e8196e80b1",
+    "base.css": "97a4f54ce6c5828f6eda2efe7240bae58e95bddc20eb77fa663e228a14e7b93d",
+    "components.css": "01b9dac373a5d905f23313df8970a381671d63f1b6fac5c447dedcf658f8276c",
     "fonts/OFL.txt": "536533cad95838e13777663c4109b802aa662ef1ef285337f0c7f51d35682fdc",
     "fonts/jost-latin-400-normal.woff2": "f94cffda16515fbb1667a2662d6b46f5610a942fd02fe88d67ff98f776288962",
     "fonts/jost-latin-500-normal.woff2": "98dce4f076fe71a123a7cd44470e6f05e969cb6d7c9b2717766ad103e3597297",
@@ -14,10 +14,10 @@
     "fonts/jost-latin-ext-500-normal.woff2": "a8b3af72a02fff5a20dc96316070ca95ce4a278b93a9b3a22ef8fe36abf3b442",
     "fonts/jost-latin-ext-600-normal.woff2": "cbf14d41edf5f9741ca48317a4d1a3e6efe4e998512ebf2147900faf405c7015",
     "fonts/jost-latin-ext-700-normal.woff2": "c0ef19f44a900563d7bb2e54275b35f329e0c7324a46ba55e53899a614b5d2b2",
-    "img/planet.png": "6cf3a45ffcb6d31ccc9f6fe3ef912a2276ef8b139e3d8069294ac9e6ae0a2e49",
-    "nav.json": "29596adbb3c2a12880d94b363a32f126774cee1fa9b9c4aadc951ef07fd206f9",
-    "theme.js": "85ac9614f2c925e41e3716e856bbf9369c96626cf69979db6870e9dbd5f33004",
-    "tokens.css": "eed3e0aff5da4faebb324a547c33455e03cec1fc65916f1e5e04951485e47280",
-    "ui.js": "9bdd8809cc6836ab38c2370a13cb85fe3305da3a3a69a5e1ea4fa2466dfb6bae"
+    "img/logo.png": "bf9807a7c66946fa159c34dc9deb35d20a919353822b3b575b82561515ea3c77",
+    "nav.json": "f5e8fe33f433dc972c79cb88634e334f68055ef21c228a0f8bc84ad8faf10eee",
+    "theme.js": "b926417060b7d9aa410a660486c049c2f8e22ab15a95449a161bfc04c202e95d",
+    "tokens.css": "bb7109d33872d965ba62418d42643fd2cd9c0831006f712fa2506b11bfa7e746",
+    "ui.js": "85e50c7241d0876ba4b76c2b526e1c74d8e22ec42e77f1f3582a537c57646d53"
   }
 }

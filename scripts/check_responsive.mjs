@@ -15,6 +15,7 @@
 //        [--session <sessionid cookie>]   # to check signed-in pages too
 //        [--pages search,detail]          # only some pages
 //        [--shots shots/]                 # save screenshots at 375 and 1440 px
+//   BV_LUCIDE_FILE=path/to/lucide.min.js   serve the icon library locally (offline)
 //
 // Pages still on their old CSS ("site-legacy") are checked too: a problem
 // there is real, even if the fix is moving the page onto bv- components.
@@ -45,7 +46,10 @@ const PAGES = [
   ["/players/", "players", false],
   ["/tools/xp/", "xp", false],
   ["/developers/", "developers", false],
+  ["/login/", "login", false],
   ["/my-profile/", "my-profile", true],
+  ["/upload/", "upload", true],
+  ["/settings/profile/", "settings", true],
   ["/developers/keys/", "api-keys", true],
 ];
 const SIZES = [
@@ -107,6 +111,10 @@ for (const [path, label, signedIn] of PAGES) {
       if (SESSION) cookies.push({ name: "sessionid", value: SESSION, url: BASE });
       await context.addCookies(cookies);
       const page = await context.newPage();
+      if (process.env.BV_LUCIDE_FILE) {
+        // Offline: serve the pinned icon library from a local copy.
+        await page.route("https://unpkg.com/lucide@*/**", (r) => r.fulfill({ path: process.env.BV_LUCIDE_FILE, contentType: "text/javascript" }));
+      }
       const problems = [];
       page.on("pageerror", (e) => problems.push(`script error: ${e.message}`));
       page.on("response", (r) => {

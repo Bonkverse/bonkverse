@@ -1,5 +1,5 @@
 /*
- * Bonkverse UI behavior (v0.1.1)
+ * Bonkverse UI behavior (v0.1.2)
  *
  * Load with defer:  <script src="/static/ui/ui.js" defer></script>
  * Works on markup that's on the page now or added later (event delegation).
@@ -14,6 +14,13 @@
  *                          closes too.
  *   data-bv-copy="id"      copies the value or text of #id (or, without a
  *                          value, the attribute data-bv-copy-text).
+ *   data-bv-zoom-full      in a .bv-dialog--zoom: toggles full size (the
+ *                          image as large as the screen allows, up to its
+ *                          real size). Closing the dialog resets it.
+ *   [role="tablist"][data-bv-tabs="name"]
+ *                          buttons with role="tab" and aria-controls switch
+ *                          panels; the choice is remembered under "name", so
+ *                          every code block on a site shows the same language.
  *
  *   BonkverseUI.toast("Link copied", "success" | "error" | "info")
  */
@@ -91,8 +98,30 @@
     }
   });
 
+  // Full size inside the Enlarge dialog
+  document.addEventListener("click", function (event) {
+    var toggle = event.target.closest("[data-bv-zoom-full]");
+    if (!toggle) return;
+    var dialog = toggle.closest(".bv-dialog--zoom");
+    if (!dialog) return;
+    var full = !dialog.classList.contains("is-full");
+    dialog.classList.toggle("is-full", full);
+    toggle.setAttribute("aria-pressed", full ? "true" : "false");
+    var label = toggle.querySelector("span");
+    if (label) label.textContent = full ? "Fit" : "Full size";
+  });
+
   document.addEventListener("close", function (event) {
     var dialog = event.target;
+    if (dialog.classList && dialog.classList.contains("is-full")) {
+      dialog.classList.remove("is-full");
+      var toggle = dialog.querySelector("[data-bv-zoom-full]");
+      if (toggle) {
+        toggle.setAttribute("aria-pressed", "false");
+        var label = toggle.querySelector("span");
+        if (label) label.textContent = "Full size";
+      }
+    }
     if (dialog._bvOpener && document.contains(dialog._bvOpener)) dialog._bvOpener.focus();
     dialog._bvOpener = null;
   }, true);
@@ -157,6 +186,56 @@
       fallback();
     }
   });
+
+  // ── Tabs that switch panels (code languages) ─────────────────────────────
+  function selectTab(tab) {
+    var list = tab.closest("[role='tablist']");
+    list.querySelectorAll("[role='tab']").forEach(function (t) {
+      var on = t === tab;
+      t.setAttribute("aria-selected", on ? "true" : "false");
+      t.tabIndex = on ? 0 : -1;
+      var panel = document.getElementById(t.getAttribute("aria-controls"));
+      if (panel) panel.hidden = !on;
+    });
+  }
+
+  function selectByLabel(name, label) {
+    document.querySelectorAll("[role='tablist'][data-bv-tabs='" + name + "']").forEach(function (list) {
+      list.querySelectorAll("[role='tab']").forEach(function (t) {
+        if (t.textContent.trim() === label) selectTab(t);
+      });
+    });
+  }
+
+  document.addEventListener("click", function (event) {
+    var tab = event.target.closest("[role='tablist'][data-bv-tabs] [role='tab']");
+    if (!tab) return;
+    var name = tab.closest("[role='tablist']").getAttribute("data-bv-tabs");
+    var label = tab.textContent.trim();
+    selectByLabel(name, label);
+    try { localStorage.setItem("bv-tabs-" + name, label); } catch (e) { /* fine */ }
+  });
+
+  document.addEventListener("keydown", function (event) {
+    var tab = event.target.closest && event.target.closest("[role='tablist'][data-bv-tabs] [role='tab']");
+    if (!tab || (event.key !== "ArrowRight" && event.key !== "ArrowLeft")) return;
+    var tabs = Array.prototype.slice.call(tab.closest("[role='tablist']").querySelectorAll("[role='tab']"));
+    var next = tabs[(tabs.indexOf(tab) + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+    next.click();
+    next.focus();
+  });
+
+  function restoreTabs() {
+    document.querySelectorAll("[role='tablist'][data-bv-tabs]").forEach(function (list) {
+      var saved = null;
+      try { saved = localStorage.getItem("bv-tabs-" + list.getAttribute("data-bv-tabs")); } catch (e) { /* fine */ }
+      var tabs = list.querySelectorAll("[role='tab']");
+      var match = Array.prototype.filter.call(tabs, function (t) { return t.textContent.trim() === saved; })[0];
+      selectTab(match || list.querySelector("[aria-selected='true']") || tabs[0]);
+    });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", restoreTabs);
+  else restoreTabs();
 
   window.BonkverseUI = { toast: toast };
 })();

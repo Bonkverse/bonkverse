@@ -37,7 +37,7 @@ FILES = [
     "theme.js",
     "ui.js",
     "nav.json",
-    "img/planet.png",
+    "img/logo.png",
 ]
 DIRS = ["fonts"]
 

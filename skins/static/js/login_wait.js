@@ -24,10 +24,10 @@
     const left = Math.ceil((deadline - Date.now()) / 1000);
     if (left <= 0) {
       button.disabled = false;
-      button.textContent = "Login";
+      button.textContent = "Log in";
       return;
     }
-    button.textContent = `Login (wait ${format(left)})`;
+    button.textContent = `Log in (wait ${format(left)})`;
     setTimeout(tick, 1000);
   }
 

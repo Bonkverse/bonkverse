@@ -27,9 +27,9 @@
 {% comment %}
 The skin's page (Skin card design guide: "Details is for deeper actions").
 The art sits on the page with no box behind it, votes sit beside Wear, and
-sharing and tools go in a compact second row. Favorite, Wear and Enlarge are
+every other action is a labeled button in one row (no menus). Favorite, Wear and Enlarge are
 core/js/bv-cards.js (data-skin-card); votes, Re-render and Back are
-js/skin_detail.js; the menus are ui/ui.js; Report is core/js/bv-report.js.
+js/skin_detail.js; Copy link is ui/ui.js; Report is core/js/bv-report.js.
 {% endcomment %}
 <div class="bv-main">
   <section class="bv-skin-detail" id="skin-detail" data-skin-card
@@ -81,45 +81,26 @@ js/skin_detail.js; the menus are ui/ui.js; Report is core/js/bv-report.js.
       </div>
       <p class="bv-status" role="status" aria-live="polite"></p>
 
-      <div class="bv-skin-detail__more">
+      <div class="bv-skin-detail__tools">
         <button class="bv-btn bv-btn--ghost" type="button" data-bv-copy-text="{{ share_url }}" data-bv-copied-label="Link copied">
-          <i data-lucide="copy" aria-hidden="true"></i><span>Copy link</span>
+          <i data-lucide="link" aria-hidden="true"></i><span>Copy link</span>
         </button>
-
-        <div class="bv-dropdown">
-          <button class="bv-btn bv-btn--ghost" type="button" aria-expanded="false" aria-controls="open-in" data-bv-toggle>
-            Open in <i data-lucide="chevron-down" aria-hidden="true"></i>
+        <a class="bv-btn bv-btn--ghost" href="{{ editor_url }}" target="_blank" rel="noopener">
+          <i data-lucide="pencil" aria-hidden="true"></i>Skin editor
+        </a>
+        {% if skin.link %}
+          <a class="bv-btn bv-btn--ghost" href="{{ skin.link }}" target="_blank" rel="noopener">
+            <i data-lucide="external-link" aria-hidden="true"></i>Bonkleagues
+          </a>
+        {% endif %}
+        {% if user.is_staff %}
+          <button class="bv-btn bv-btn--ghost" type="button" data-rerender>
+            <i data-lucide="refresh-cw" aria-hidden="true"></i><span>Re-render image</span>
           </button>
-          <div class="bv-menu" id="open-in" hidden>
-            <a class="bv-menu__item" href="{{ editor_url }}" target="_blank" rel="noopener">
-              <i data-lucide="external-link" aria-hidden="true"></i> Skin editor
-            </a>
-            {% if skin.link %}
-              <a class="bv-menu__item" href="{{ skin.link }}" target="_blank" rel="noopener">
-                <i data-lucide="external-link" aria-hidden="true"></i> Bonkleagues
-              </a>
-            {% endif %}
-          </div>
-        </div>
-
-        <div class="bv-dropdown">
-          <button class="bv-btn bv-btn--ghost bv-btn--icon" type="button" aria-label="More actions"
-                  aria-expanded="false" aria-controls="skin-more" data-bv-toggle>
-            <i data-lucide="more-horizontal" aria-hidden="true"></i>
-          </button>
-          <div class="bv-menu bv-menu--end" id="skin-more" hidden>
-            {% if user.is_staff %}
-              <button class="bv-menu__item" type="button" data-rerender>
-                <i data-lucide="refresh-cw" aria-hidden="true"></i> Re-render image
-              </button>
-              <div class="bv-menu__divider"></div>
-            {% endif %}
-            <button class="bv-menu__item bv-menu__item--danger" type="button"
-                    data-report-skin="{{ skin.id }}" data-skin-name="{{ skin.name }}">
-              <i data-lucide="flag" aria-hidden="true"></i> Report
-            </button>
-          </div>
-        </div>
+        {% endif %}
+        <button class="bv-btn bv-btn--ghost" type="button" data-report-skin="{{ skin.id }}" data-skin-name="{{ skin.name }}">
+          <i data-lucide="flag" aria-hidden="true"></i>Report
+        </button>
       </div>
     </div>
   </section>

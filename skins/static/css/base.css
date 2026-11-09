@@ -13,24 +13,19 @@ body {
     text-align: start;
 }
 
-/* Pages not yet moved onto bv- components still use dark-theme colors in
-   their own CSS. In the Light theme their content keeps the Bonkverse slate
-   values so nothing turns light-on-light; the header and footer still follow
-   the theme. Remove a page from this by giving it content_class "site-page".
-   The legacy modals carry the class too, wherever they open. */
-:root[data-bv-theme="light"] .site-legacy {
-    --bv-page: #192630; --bv-card: #263845; --bv-thumb: #1c2b36; --bv-header: #2a4054;
-    --bv-outline: #405464; --bv-control: #83949e; --bv-text: #e7ecee; --bv-muted: #b3bec4;
-    --bv-heading: #e7ecee; --bv-link: #8bd2c5; --bv-input: #1c2b36;
-    --bv-action: #79554a; --bv-action-hover: #855e52; --bv-action-pressed: #6b4a40;
-    --bv-action-ink: #f5ede7; --bv-action-border: #a37b69; --bv-selected: #314b4c;
-    --bv-success: #293e3d; --bv-gold: #e5bf68; --bv-danger: #ff8a80; --bv-danger-surface: #3a2a2e;
-    --bv-search-action: transparent; --bv-search-action-hover: #263845; --bv-divider: #405464;
-    color-scheme: dark;
-    color: var(--bv-text);
+/* Chart and swatch colors: one set per theme, so charts read on every page
+   color. Scripts pass these as var(--site-series-N). */
+:root, [data-bv-theme="bonkverse"], [data-bv-theme="dark"] {
+    --site-series-1: #8bd2c5;
+    --site-series-2: #90b7ff;
+    --site-series-3: #e5bf68;
+    --site-series-4: #c79bff;
 }
-:root[data-bv-theme="light"] .content.site-legacy {
-    background: var(--bv-page);
+[data-bv-theme="light"] {
+    --site-series-1: #15534c;
+    --site-series-2: #2f5ba8;
+    --site-series-3: #8a5a00;
+    --site-series-4: #6b3fb3;
 }
 
 .content {
@@ -55,8 +50,7 @@ body {
 #loading {
     font-size: 18px;
     font-weight: bold;
-    color: #009688;
-    text-shadow: 0px 0px 5px #009688;
+    color: var(--bv-link);
 }
 
 /* Home Button */
@@ -88,15 +82,15 @@ body {
     padding: 10px 15px;
     margin: 5px;
     text-decoration: none;
-    color: #ddd;
-    background-color: #795548;
+    color: var(--bv-action-ink);
+    background-color: var(--bv-action);
     text-align: center;
     border-radius: 8px;
 }
 
 .pagination a.active {
     font-weight: bold;
-    background-color: #ddd;
+    background-color: var(--bv-text);
 }
 
 /* Image Modal */
@@ -108,7 +102,7 @@ body {
     top: 0;
     width: 100vw;
     height: 100vh;
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: var(--bv-backdrop);
     align-items: center;
     justify-content: center;
 }
@@ -185,8 +179,8 @@ body {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    background: #1a2733;
-    color: #fff;
+    background: var(--bv-card);
+    color: var(--bv-text);
     padding: 16px;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.4);
@@ -195,10 +189,10 @@ body {
 }
 
 .update-popup h3 { margin: 0 0 8px; font-size: 16px; }
-.update-popup a { color: #00ffcc; text-decoration: underline; }
+.update-popup a { color: var(--bv-link); text-decoration: underline; }
 .update-popup button {
     margin-top: 10px;
-    background: #444;
+    background: var(--bv-selected);
     border: none;
     color: white;
     padding: 6px 12px;
@@ -210,7 +204,7 @@ body {
     position: fixed;
     top: 0; left: 0;
     width: 100vw; height: 100vh;
-    background: rgba(0,0,0,0.7);
+    background: var(--bv-backdrop);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -218,21 +212,20 @@ body {
 }
 
 .update-modal {
-    background: #1a2733;
+    background: var(--bv-card);
     padding: 30px;
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     max-width: 500px;
     width: 90%;
-    color: #fff;
+    color: var(--bv-text);
     text-align: center;
     animation: fadeIn 0.3s ease;
 }
 
 .update-modal h2 {
     margin-top: 0;
-    color: #00ffcc;
-    text-shadow: 0 0 8px #00ffcc;
+    color: var(--bv-link);
 }
 
 .update-modal p {
@@ -243,14 +236,14 @@ body {
 .update-modal .read-more {
     display: inline-block;
     margin: 10px 0;
-    color: #00e6c3;
+    color: var(--bv-link);
     text-decoration: underline;
 }
 
 .update-modal button {
     margin-top: 15px;
-    background: #444;
-    color: #fff;
+    background: var(--bv-selected);
+    color: var(--bv-text);
     border: none;
     padding: 10px 16px;
     border-radius: 6px;
@@ -258,7 +251,7 @@ body {
 }
 
 .update-modal button:hover {
-    background: #666;
+    background: var(--bv-control);
 }
 
 @keyframes fadeIn {

@@ -20,9 +20,9 @@ guide's skin card, and one header for every site.
   edited here. The React sites install the same tag as an npm dependency.
 - The header and footer come from `nav.json`, so a link changes once for
   every site.
-- Pages move onto the `bv-` components one at a time. Until a page moves, it
-  keeps its own CSS and shows the slate colors in the Light theme, so
-  nothing becomes light-on-light.
+- Every page follows the theme from day one: the site's own CSS uses the
+  `--bv-*` tokens instead of hard-coded colors. Pages then move onto the
+  `bv-` components one at a time.
 - Log out is a POST form in the account menu, and `/logout/` refuses GET.
 
 **Consequences.**

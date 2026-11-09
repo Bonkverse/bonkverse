@@ -102,3 +102,28 @@
 .site-search-empty {
   margin-top: var(--bv-space-6);
 }
+
+/* Sort and period links on browse pages: chips, the current one selected */
+.site-browse-controls {
+  margin-bottom: var(--bv-space-2);
+}
+.bv-chip[aria-current="page"] {
+  border-color: var(--bv-link);
+  background: var(--bv-selected);
+  text-decoration: none;
+}
+a.bv-chip {
+  text-decoration: none;
+}
+a.bv-chip[aria-current="page"]::before {
+  content: "✓";
+  color: var(--bv-link);
+}
+
+/* Short single-purpose pages (log in, upload): one readable column */
+.site-narrow {
+  max-width: 560px;
+}
+.site-form-card {
+  max-width: none;
+}

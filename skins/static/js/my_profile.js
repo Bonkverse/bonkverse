@@ -231,7 +231,7 @@ function openSingleDeleteModal(action, name) {
   deleteMode = 'single';
   deleteActionUrl = action;
   deleteModalTitle.textContent = 'Delete Skin';
-  deleteModalBody.innerHTML = `Are you sure you want to delete <strong style="color:#fff;">"${name}"</strong>? This cannot be undone.`;
+  deleteModalBody.innerHTML = `Are you sure you want to delete <strong>"${name}"</strong>? This cannot be undone.`;
   deleteModal.classList.add('open');
   document.body.style.overflow = 'hidden';
 }

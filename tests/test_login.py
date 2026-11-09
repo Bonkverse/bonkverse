@@ -218,7 +218,7 @@ class TestFailedLogin:
         response = _post_login(client)
 
         assert response.context["retry_after"] is None
-        assert b'<button type="submit" id="login-submit">Login</button>' in response.content
+        assert b'id="login-submit">Log in</button>' in response.content
 
     def test_network_error_shows_message_instead_of_500(self, client, mocked_http):
         mocked_http.post(BONK_LOGIN_URL, body=requests.ConnectionError("bonk.io down"))

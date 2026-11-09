@@ -44,12 +44,12 @@
       {% include 'players/partials/_room_split.html' with rooms=rooms %}
       <div class="pv-split-bar__row">
         <div class="pv-stack" aria-label="Custom rooms {{ rooms.custom_share }}%, quick play {{ rooms.quickplay_share }}%">
-          <span class="pv-stack__part" style="--bar: {{ rooms.custom_share }}%; --slice: #47d8c4"></span>
-          <span class="pv-stack__part" style="--bar: {{ rooms.quickplay_share }}%; --slice: #90b7ff"></span>
+          <span class="pv-stack__part" style="--bar: {{ rooms.custom_share }}%; --slice: var(--site-series-1)"></span>
+          <span class="pv-stack__part" style="--bar: {{ rooms.quickplay_share }}%; --slice: var(--site-series-2)"></span>
         </div>
         <div class="pv-legend-inline pv-small">
-          <span><span class="pv-swatch" style="--slice: #47d8c4"></span>Custom rooms {{ rooms.custom_share|floatformat:0 }}%</span>
-          <span><span class="pv-swatch" style="--slice: #90b7ff"></span>Quick play {{ rooms.quickplay_share|floatformat:0 }}%</span>
+          <span><span class="pv-swatch" style="--slice: var(--site-series-1)"></span>Custom rooms {{ rooms.custom_share|floatformat:0 }}%</span>
+          <span><span class="pv-swatch" style="--slice: var(--site-series-2)"></span>Quick play {{ rooms.quickplay_share|floatformat:0 }}%</span>
         </div>
       </div>
       <div class="pv-minitiles">

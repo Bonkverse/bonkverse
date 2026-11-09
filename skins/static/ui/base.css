@@ -1,5 +1,5 @@
 /*
- * Bonkverse UI base (v0.1.1): font, page, type, links, focus.
+ * Bonkverse UI base (v0.1.2): font, page, type, links, focus.
  * Needs tokens.css first. Sites add components.css after this.
  */
 
@@ -120,6 +120,31 @@ hr {
 ::selection {
   background: var(--bv-selected);
   color: var(--bv-text);
+}
+
+/* ── Autofilled fields keep the theme's colors (browsers paint them yellow) */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--bv-text);
+  caret-color: var(--bv-text);
+  box-shadow: 0 0 0 1000px var(--bv-input) inset;
+  transition: background-color 600000s 0s;
+}
+
+/* ── Opt-in page frame: <body class="bv-app"> keeps the footer at the
+   bottom of short pages. */
+body.bv-app {
+  display: flex;
+  flex-direction: column;
+}
+body.bv-app > :not(.bv-skip-link) {
+  width: 100%; /* a flex column would otherwise shrink centered children to their content */
+}
+body.bv-app > .bv-footer {
+  margin-top: auto;
 }
 
 /* ── Focus: 2 px teal ring, 2 px away from the element ─────────────────── */

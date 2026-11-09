@@ -6,8 +6,8 @@
 // only the image fallback below applies to it).
 //
 //   artwork      the art button (or img[data-zoom] anywhere) opens it large in
-//                a dialog; Escape, the Close button or the backdrop close it and
-//                focus goes back to what opened it
+//                a dialog, with Full size for the real thing; Escape, Close or
+//                the backdrop close it and focus goes back to what opened it
 //   broken art   falls back to the default image (also img[data-fallback])
 //   Favorite     POSTs, then sets aria-pressed and the count from the reply
 //   Wear         Wear → Applying… → ✓ Applied (or Retry), with the outcome in
@@ -42,9 +42,14 @@
       zoom.innerHTML =
         '<div class="bv-dialog__header">' +
         '<h2 class="bv-dialog__title" id="bv-image-zoom-title"></h2>' +
+        '<div class="bv-dialog__tools">' +
+        // Full size: ui/ui.js toggles it (data-bv-zoom-full) and resets it on close.
+        '<button class="bv-btn bv-btn--ghost" type="button" aria-pressed="false" data-bv-zoom-full>' +
+        '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+        "<span>Full size</span></button>" +
         '<button class="bv-btn bv-btn--ghost bv-btn--icon" type="button" aria-label="Close" data-bv-dialog-close>' +
         '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>' +
-        "</button></div>" +
+        "</button></div></div>" +
         '<div class="bv-dialog__body"><img alt=""></div>';
       document.body.appendChild(zoom);
     }

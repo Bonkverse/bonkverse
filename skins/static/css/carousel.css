@@ -14,7 +14,6 @@
     width: 92px;
     height: 92px;
     border-radius: 50%;
-    box-shadow: 0 0 40px rgba(95,127,255,.35);
     margin-bottom: 12px;
 }
 
@@ -26,7 +25,7 @@
 }
 
 .hero-sub {
-    color: #a9b3c1;
+    color: var(--bv-muted);
     margin-bottom: 20px;
 }
 
@@ -50,7 +49,7 @@
 }
 
 .carousel-seeall {
-    color: #9fb6ff;
+    color: var(--bv-link);
     text-decoration: none;
     font-size: 14px;
 }
@@ -58,9 +57,9 @@
 .carousel {
     position: relative;
     overflow: hidden;
-    border: 1px solid rgba(255,255,255,.1);
+    border: 1px solid var(--bv-outline);
     border-radius: 16px;
-    background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+    background:color-mix(in srgb, var(--bv-text) 3%, transparent);
 }
 
 .carousel-track {
@@ -84,8 +83,8 @@
     flex: 0 0 180px;
     text-decoration: none;
     color: inherit;
-    background: rgba(0,0,0,.35);
-    border: 1px solid rgba(255,255,255,.08);
+    background: var(--bv-input);
+    border: 1px solid var(--bv-outline);
     border-radius: 14px;
     overflow: hidden;
     transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
@@ -94,7 +93,7 @@
 .carousel-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 10px 28px rgba(0,0,0,.35);
-    border-color: rgba(123,183,255,.35);
+    border-color: var(--bv-outline);
 }
 
 .carousel-card .skin-tile-img {
@@ -102,7 +101,7 @@
     width: 100%;
     height: 140px;
     object-fit: cover;
-    background: #0e1720;
+    background: var(--bv-card);
 }
 
 /* Card markup: skins/partials/_skin_card_compact.html */

@@ -9,7 +9,7 @@ menus open with static/ui/ui.js.
 <header class="bv-header">
   <div class="bv-header__inner">
     <a class="bv-header__brand" href="{% url 'home' %}">
-      <img src="{% static 'ui/img/planet.png' %}" alt="" width="30" height="30">
+      <img src="{% static 'ui/img/logo.png' %}" alt="" width="30" height="30">
       <span>Bonkverse</span>
     </a>
 
@@ -52,11 +52,13 @@ menus open with static/ui/ui.js.
         </label>
 
         {% if user.is_authenticated %}
-          <div class="bv-dropdown">
-            <button class="bv-header__link" type="button" aria-expanded="false"
-                    aria-controls="bv-account" data-bv-toggle>
+          <div class="bv-dropdown bv-header__account">
+            <a class="bv-header__link" href="{% url 'my_profile' %}"{% if request.resolver_match.url_name == 'my_profile' %} aria-current="page"{% endif %}>
               <i data-lucide="circle-user" aria-hidden="true"></i>
               <span class="bv-header__account-name">{{ user.username }}</span>
+            </a>
+            <button class="bv-header__link" type="button" aria-label="Account menu" aria-expanded="false"
+                    aria-controls="bv-account" data-bv-toggle>
               <i data-lucide="chevron-down" aria-hidden="true"></i>
             </button>
             <div class="bv-menu bv-menu--end" id="bv-account" hidden>

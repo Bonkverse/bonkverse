@@ -1,10 +1,10 @@
 {
   "$comment": "The header and footer links every Bonkverse site renders. Edit here, release, then bump each site. Paths starting with / are on bonkverse.io; sites prefix them with https://bonkverse.io when they live elsewhere. 'site' marks which item is highlighted on each site.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "brand": {
     "label": "Bonkverse",
     "href": "https://bonkverse.io/",
-    "logo": "img/planet.png"
+    "logo": "img/logo.png"
   },
   "header": [
     { "id": "skins", "label": "Skins", "href": "/search/", "site": "bonkverse.io" },

@@ -1,8 +1,7 @@
 // skin_detail.js: the skin page (skins/skin_detail.html).
 // Votes, the staff Re-render, and "Search results" going back to the search
 // you came from. Favorite, Wear and Enlarge are core/js/bv-cards.js (the page
-// is a data-skin-card); Report is core/js/bv-report.js; the menus and Copy
-// link are ui/ui.js.
+// is a data-skin-card); Report is core/js/bv-report.js; Copy link is ui/ui.js.
 
 (function () {
   "use strict";
@@ -32,9 +31,9 @@
   const rerender = page.querySelector("[data-rerender]");
   if (rerender) {
     rerender.addEventListener("click", async () => {
-      const label = rerender.lastChild;
+      const label = rerender.querySelector("span");
       rerender.disabled = true;
-      label.textContent = " Re-rendering…";
+      label.textContent = "Re-rendering…";
       const { ok, status, json } = await BVApi.post(page.dataset.rerenderUrl);
       if (ok && json.ok) {
         page.querySelector(".bv-skin-art").src = json.image_url + "?t=" + Date.now();
@@ -43,7 +42,7 @@
         BVToast.show(status === 0 ? "Re-render request failed." : "Re-render failed: " + (json.error || "unknown error"), { type: "error" });
       }
       rerender.disabled = false;
-      label.textContent = " Re-render image";
+      label.textContent = "Re-render image";
     });
   }
 

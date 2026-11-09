@@ -42,12 +42,16 @@ release: the colors for the three themes, Jost, the `bv-` components and
   `skins.context_processors.site_nav`. Paths starting with `/` are this site.
   Links to the replay site, editor, docs and Discord use this deployment's
   settings.
-- **Pages move over one at a time.** A page on `bv-` components sets
-  `{% block content_class %}site-page{% endblock %}`. Every other page is
-  `site-legacy`: its own CSS still assumes the dark colors, so in the Light
-  theme its content keeps the slate colors (`css/base.css`), and the old bare
-  `form`, `input` and `button` rules only apply inside it. Today `site-page`
-  covers skin search and the skin page.
+- **Every page follows the theme.** The site's own CSS uses the `--bv-*`
+  color tokens too (no hard-coded colors, glows or gradient panels), and
+  `--site-series-1…4` (`css/base.css`) color charts and swatches in each
+  theme. Scripts pass those as `var(--site-series-N)`, never hex.
+- **Pages move onto `bv-` components one at a time.** A page built on them
+  sets `{% block content_class %}site-page{% endblock %}`. Every other page is
+  `site-legacy`, and the old bare `form`, `input` and `button` rules
+  (`css/forms.css`) only apply inside it. Today `site-page` covers skin
+  search, the skin page, new and category pages, log in, upload and the
+  developers page.
 - **Three classes were renamed** to make room for the package:
   `site-toast`, `site-pagination` and `site-num` (they were `bv-`).
 - **Check every screen size.** `node scripts/check_responsive.mjs` (needs

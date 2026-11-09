@@ -3,41 +3,54 @@
 
 {% block title %}{{ heading }}{% endblock %}
 
-{% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/browse.css' %}">
-{% endblock %}
+
+{% block content_class %}site-page{% endblock %}
 
 {% block content %}
-<div class="browse-header">
-  <h1>{{ heading }}</h1>
-  {% if blurb %}<p class="browse-blurb">{{ blurb }}</p>{% endif %}
+{# New releases and one category: the shared skin card, as on search. #}
+<div class="bv-main">
+  <div class="bv-page-header">
+    <div class="bv-page-header__text">
+      <h1>{{ heading }}</h1>
+      {% if blurb %}<p class="bv-muted">{{ blurb }}</p>{% endif %}
+    </div>
+  </div>
 
-  {# Category pages: sort controls #}
   {% if slug %}
-  <div class="browse-controls">
-    <a href="?sort=favorites" class="{% if sort == 'favorites' %}active{% endif %}">Most Favorited</a>
-    <a href="?sort=upvotes"   class="{% if sort == 'upvotes' %}active{% endif %}">Top Voted</a>
-    <a href="?sort=newest"    class="{% if sort == 'newest' %}active{% endif %}">Newest</a>
-  </div>
+    <nav class="bv-chips site-browse-controls" aria-label="Sort">
+      <a class="bv-chip" href="?sort=favorites"{% if sort == 'favorites' %} aria-current="page"{% endif %}>Most favorited</a>
+      <a class="bv-chip" href="?sort=upvotes"{% if sort == 'upvotes' %} aria-current="page"{% endif %}>Top voted</a>
+      <a class="bv-chip" href="?sort=newest"{% if sort == 'newest' %} aria-current="page"{% endif %}>Newest</a>
+    </nav>
   {% endif %}
-
-  {# New Releases: time-window controls #}
   {% if period %}
-  <div class="browse-controls">
-    <a href="?period=today" class="{% if period == 'today' %}active{% endif %}">Today</a>
-    <a href="?period=week"  class="{% if period == 'week' %}active{% endif %}">This Week</a>
-    <a href="?period=all"   class="{% if period == 'all' %}active{% endif %}">All Time</a>
-  </div>
+    <nav class="bv-chips site-browse-controls" aria-label="Uploaded">
+      <a class="bv-chip" href="?period=today"{% if period == 'today' %} aria-current="page"{% endif %}>Today</a>
+      <a class="bv-chip" href="?period=week"{% if period == 'week' %} aria-current="page"{% endif %}>This week</a>
+      <a class="bv-chip" href="?period=all"{% if period == 'all' %} aria-current="page"{% endif %}>All time</a>
+    </nav>
   {% endif %}
+
+  {% if skins %}
+    <div class="bv-skin-grid site-skin-grid">
+      {% for skin in skins %}
+        {% include 'skins/partials/_skin_card.html' with skin=skin mode='search' %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="bv-empty site-search-empty">
+      <i data-lucide="image-off" aria-hidden="true"></i>
+      <h2 class="bv-empty__title">No skins here yet</h2>
+      <p>{% if period and period != 'all' %}Nothing was uploaded in that time. Try a longer one.{% else %}Check back soon, or search for something else.{% endif %}</p>
+      <a class="bv-btn" href="{% url 'search_skins' %}">Search skins</a>
+    </div>
+  {% endif %}
+
+  {% include 'skins/partials/pagination.html' with page_obj=page_obj elided_range=elided_range base_qs=base_qs %}
 </div>
 
-<div class="skins-container">
-  {% for skin in page_obj %}
-    {% include 'skins/partials/_skin_card_compact.html' with skin=skin card_class='skin-card browse-card' name_len=24 show_date=True %}
-  {% empty %}
-    <p class="browse-empty">No skins here yet.</p>
-  {% endfor %}
-</div>
-
-{% include 'skins/partials/pagination.html' with page_obj=page_obj elided_range=elided_range base_qs=base_qs %}
+{% include 'skins/partials/_report_skin_modal.html' %}
+{% if user.is_authenticated %}
+  {% include 'skins/partials/_bonk_login_modal.html' %}
+{% endif %}
 {% endblock %}
