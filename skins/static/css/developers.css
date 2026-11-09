@@ -149,7 +149,7 @@
 .dev-field__label { font-weight: 600; }
 .dev-field input {
   min-height: 46px; padding: 0 14px; margin-top: 4px; width: 100%; max-width: 420px;
-  background: var(--pv-inset); border: 1px solid var(--pv-outline); border-radius: 12px;
+  background: var(--pv-inset); border: 1px solid var(--bv-control); border-radius: 12px;
   color: var(--pv-text); font: inherit;
 }
 .dev-field input:focus { border-color: var(--pv-action); outline: none; }
@@ -173,7 +173,7 @@
 .dev-reveal__row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
 .dev-reveal__key {
   flex: 1 1 280px; min-width: 0; min-height: 46px; padding: 0 14px;
-  background: var(--pv-inset); border: 1px solid var(--pv-outline); border-radius: 12px;
+  background: var(--pv-inset); border: 1px solid var(--bv-control); border-radius: 12px;
   color: var(--pv-text); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9rem;
 }
 

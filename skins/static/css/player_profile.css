@@ -14,6 +14,7 @@
   --pv-panel-2: var(--bv-thumb);
   --pv-inset: var(--bv-input);
   --pv-outline: var(--bv-outline);
+  --pv-control: var(--bv-control);   /* borders of things you click or type in */
   --pv-rule: var(--bv-outline);
   --pv-text: var(--bv-text);
   --pv-muted: var(--bv-muted);
@@ -57,12 +58,12 @@
 }
 .pv a.pv-btn { color: var(--bv-action-ink); }
 .pv-btn:hover { background: var(--bv-action-hover); }
-.pv-btn--ghost, .pv a.pv-btn--ghost { background: transparent; color: var(--pv-text); border-color: var(--pv-outline); }
-.pv-btn--ghost:hover { background: var(--bv-hover); border-color: var(--bv-text); }
+.pv-btn--ghost, .pv a.pv-btn--ghost { background: transparent; color: var(--pv-text); border-color: var(--pv-control); }
+.pv-btn--ghost:hover, .pv a.pv-btn--ghost:hover { background: var(--bv-hover); border-color: var(--bv-text); }
 .pv-iconbtn {
   width: 44px; height: 44px; border-radius: 12px;
   display: inline-flex; align-items: center; justify-content: center;
-  background: var(--pv-panel-2); border: 1px solid var(--pv-outline); color: var(--pv-text); cursor: pointer;
+  background: var(--pv-panel-2); border: 1px solid var(--pv-control); color: var(--pv-text); cursor: pointer;
 }
 .pv-iconbtn:disabled { opacity: 0.35; cursor: default; }
 .pv :focus-visible { outline: 2px solid var(--pv-link); outline-offset: 2px; }
@@ -79,12 +80,13 @@
   color: var(--pv-action); font-size: 1.9rem; font-weight: 700; text-decoration: none;
 }
 .pv a.pv-avatar { color: var(--pv-action); }
+.pv a.pv-avatar:hover { border-color: var(--pv-text); }
 .pv-hero--compact .pv-avatar { width: 52px; height: 52px; font-size: 1.15rem; border-width: 2px; }
 .pv-hero--compact .pv-hero__name { font-size: 1.45rem; }
 .pv-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .pv-chip {
   padding: 3px 12px; border-radius: 999px; font-size: 0.85rem;
-  background: var(--pv-panel-2); border: 1px solid var(--pv-outline);
+  background: var(--pv-panel-2); border: 1px solid var(--pv-control);
 }
 .pv-chip--quiet { background: transparent; color: var(--pv-muted); }
 .pv-hero--compact .pv-chips { margin-top: 4px; }
@@ -345,7 +347,7 @@ button.pv-heat__week:hover, button.pv-heat__week[aria-pressed="true"] { outline:
 .pv-sorts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .pv-sort {
   display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px;
-  border-radius: 999px; border: 1px solid var(--pv-outline); text-decoration: none; font-size: 0.9rem;
+  border-radius: 999px; border: 1px solid var(--pv-control); text-decoration: none; font-size: 0.9rem;
 }
 .pv a.pv-sort { color: var(--pv-muted); }
 .pv a.pv-sort[aria-current="true"] { color: var(--pv-text); border-color: var(--pv-action); }
@@ -534,7 +536,7 @@ button.pv-heat__week:hover, button.pv-heat__week[aria-pressed="true"] { outline:
 .pv-adv > summary { display: flex; width: fit-content; margin: 0 auto; }
 .pv-adv__toggle {
   display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px;
-  border-radius: 999px; border: 1px solid var(--pv-outline); background: var(--bv-card);
+  border-radius: 999px; border: 1px solid var(--pv-control); background: var(--bv-card);
   color: var(--pv-muted); font-weight: 600; font-size: 0.9rem; cursor: pointer; list-style: none;
 }
 .pv-adv__toggle::-webkit-details-marker { display: none; }
@@ -567,7 +569,7 @@ button.pv-heat__week:hover, button.pv-heat__week[aria-pressed="true"] { outline:
 .pv-qb__select { display: inline-flex; align-items: center; gap: 8px; min-width: 0; position: relative; }
 .pv-qb__select select, .pv-qb__input input {
   width: 100%; height: 42px; box-sizing: border-box; margin: 0; padding: 0 12px; border-radius: 10px;
-  border: 1px solid var(--pv-outline); background: var(--bv-card); color: var(--pv-text);
+  border: 1px solid var(--pv-control); background: var(--bv-card); color: var(--pv-text);
   font: inherit; font-size: 0.95rem; box-shadow: none;
 }
 .pv-qb__select select {
@@ -597,7 +599,7 @@ button.pv-heat__week:hover, button.pv-heat__week[aria-pressed="true"] { outline:
 .pv-qb__case input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
 .pv-qb__case span[aria-hidden], .pv-qb__case > span:not(.pv-visually-hidden) {
   display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; box-sizing: border-box;
-  border-radius: 10px; border: 1px solid var(--pv-outline); color: var(--pv-muted); font-weight: 700; font-size: 0.9rem;
+  border-radius: 10px; border: 1px solid var(--pv-control); color: var(--pv-muted); font-weight: 700; font-size: 0.9rem;
 }
 .pv-qb__case input:checked + span { background: color-mix(in srgb, var(--bv-link) 16%, transparent); border-color: var(--pv-action); color: var(--pv-action); }
 .pv-qb__case input:focus-visible + span { outline: 2px solid var(--pv-link); outline-offset: 2px; }
@@ -623,7 +625,7 @@ button.pv-heat__week:hover, button.pv-heat__week[aria-pressed="true"] { outline:
 .pv-qb__examples { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--pv-rule); }
 .pv .pv-qb__example {
   display: inline-flex; align-items: center; min-height: 30px; padding: 0 12px; border-radius: 999px;
-  border: 1px dashed var(--pv-outline); color: var(--pv-text); font-size: 0.82rem; text-decoration: none;
+  border: 1px dashed var(--pv-control); color: var(--pv-text); font-size: 0.82rem; text-decoration: none;
 }
 .pv .pv-qb__example:hover { border-style: solid; border-color: var(--pv-action); color: var(--pv-action); }
 
@@ -635,7 +637,7 @@ button.pv-heat__week:hover, button.pv-heat__week[aria-pressed="true"] { outline:
 .pv-check { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.92rem; width: fit-content; }
 .pv-check input {
   -webkit-appearance: none; appearance: none; margin: 0; flex-shrink: 0; width: 22px; height: 22px; border-radius: 7px;
-  border: 2px solid var(--pv-outline); background: var(--pv-inset); display: grid; place-content: center; cursor: pointer;
+  border: 2px solid var(--pv-control); background: var(--pv-inset); display: grid; place-content: center; cursor: pointer;
 }
 .pv-check input::after { content: ""; width: 10px; height: 6px; border: 2px solid var(--pv-inset); border-top: 0; border-right: 0; transform: rotate(-45deg) translate(1px, -1px); opacity: 0; }
 .pv-check input:checked { background: var(--pv-action); border-color: var(--pv-action); }
@@ -644,7 +646,7 @@ button.pv-heat__week:hover, button.pv-heat__week[aria-pressed="true"] { outline:
 .pv-adv__select { display: inline-flex; align-items: center; gap: 8px; }
 .pv .pv-adv__select select {
   height: 42px; box-sizing: border-box; padding: 0 32px 0 12px; border-radius: 10px; margin: 0;
-  border: 1px solid var(--pv-outline); background: var(--pv-inset); color: var(--pv-text); font: inherit; font-size: 0.95rem; cursor: pointer;
+  border: 1px solid var(--pv-control); background: var(--pv-inset); color: var(--pv-text); font: inherit; font-size: 0.95rem; cursor: pointer;
 }
 .pv .pv-adv__select select:focus { outline: none; border-color: var(--pv-action); }
 

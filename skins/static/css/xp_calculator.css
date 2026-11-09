@@ -44,7 +44,7 @@
 .xc-levelbar p { margin: 6px 0 0; }
 .xc-quick { display: flex; flex-wrap: wrap; gap: 8px; margin: -6px 0 0 68px; }
 .pv .xc-quick__btn {
-  min-height: 34px; padding: 0 12px; border-radius: 999px; border: 1px dashed var(--bv-outline);
+  min-height: 34px; padding: 0 12px; border-radius: 999px; border: 1px dashed var(--bv-control);
   background: transparent; color: var(--bv-muted); font: inherit; font-size: 0.85rem; cursor: pointer;
 }
 .pv .xc-quick__btn:hover { border-style: solid; border-color: var(--bv-link); color: var(--bv-link); }

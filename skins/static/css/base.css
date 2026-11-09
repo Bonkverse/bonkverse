@@ -258,3 +258,8 @@ body {
     from { opacity: 0; transform: translateY(-20px); }
     to   { opacity: 1; transform: translateY(0); }
 }
+
+/* Plain links in tables and lists: underline on hover, so the pointer has
+   feedback in every theme. */
+a.skin-link { color: var(--bv-link); }
+a.skin-link:hover { text-decoration: underline; }

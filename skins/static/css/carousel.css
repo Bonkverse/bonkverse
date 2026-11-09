@@ -53,6 +53,7 @@
     text-decoration: none;
     font-size: 14px;
 }
+.carousel-seeall:hover { text-decoration: underline; }
 
 .carousel {
     position: relative;

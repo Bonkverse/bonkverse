@@ -137,18 +137,19 @@
 }
 
 .hero-search button {
-    background:var(--bv-selected);
-    border: none;
+    background: var(--bv-action);
+    border: 1px solid var(--bv-action-border);
     border-radius: 10px;
     padding: 10px 16px;
-    color: var(--bv-text);
+    color: var(--bv-action-ink);
     font-weight: bold;
     cursor: pointer;
     transition: transform .15s ease, box-shadow .15s ease;
 }
 
 .hero-search button:hover {
-    transform: translateY(-1px);
+    background: var(--bv-action-hover);
+    border-color: var(--bv-action-ink);
 }
 
 /* Search row + filter controls */

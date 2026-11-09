@@ -156,7 +156,7 @@ function audit({ CONTROLS, BARS, SELECTED }) {
     const fillRatio = ratio(own, around);
     const bw = parseFloat(s.borderTopWidth) + parseFloat(s.borderBottomWidth);
     const bc = parse(s.borderTopColor);
-    const borderRatio = bw > 0 && s.borderTopStyle !== "none" && bc ? ratio(over(bc, around), around) : 0;
+    const borderRatio = bw > 0 && s.borderTopStyle !== "none" && bc && bc[3] > 0 ? ratio(over(bc, around), around) : 0;
     const shadowRing = /inset/.test(s.boxShadow) ? 3 : 0; // an inset ring is a drawn border
     // Text-only controls (no fill, no border) are links in look: their text is the cue.
     if (fillRatio < 1.01 && borderRatio === 0 && !shadowRing) continue;
@@ -218,7 +218,8 @@ async function hoverChecks(page) {
   const handles = await page.evaluateHandle((CONTROLS) => {
     const kinds = new Map();
     for (const el of document.querySelectorAll(CONTROLS + ", a.bv-header__link, .bv-menu__item, .bv-tab, a[class]")) {
-      if (el.closest("[hidden], dialog:not([open]), .bv-dropdown__menu, [role=menu]") || el.matches(":disabled, [aria-disabled=true], .disabled, input, select, textarea")) continue;
+      if (!el.matches("a[href], button, [role=button], [role=tab], summary")) continue; // only things you can click
+      if (el.closest("[hidden], dialog:not([open]), .bv-dropdown__menu, [role=menu]") || el.matches(":disabled, [aria-disabled=true], .disabled")) continue;
       const r = el.getBoundingClientRect();
       if (r.width < 2 || r.height < 2 || r.bottom < 0 || r.top > innerHeight * 4) continue;
       const s = getComputedStyle(el);
