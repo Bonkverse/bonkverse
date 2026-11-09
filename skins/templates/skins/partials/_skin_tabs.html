@@ -1,0 +1,6 @@
+{% comment %}The row of skin pages under the header (nav.json skinTabs).{% endcomment %}
+<nav class="bv-tabs site-skin-tabs" aria-label="Skins">
+  {% for tab in site_nav.skin_tabs %}
+    <a class="bv-tab" href="{{ tab.href }}"{% if tab.current %} aria-current="page"{% endif %}>{{ tab.label }}</a>
+  {% endfor %}
+</nav>

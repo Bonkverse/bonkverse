@@ -3,53 +3,72 @@
 
 {% block title %}Bonk.io Skin Search{% endblock %}
 
+{% block content_class %}site-page{% endblock %}
+
 {% block content %}
+<div class="bv-main">
+  <div class="bv-page-header">
+    <div class="bv-page-header__text">
+      <h1>Skin search</h1>
+      <p class="bv-muted">{{ total_skin_count }} skins, {{ daily_skin_count }} uploaded today.</p>
+    </div>
+  </div>
 
-  <h1>Bonk.io Skin Search</h1>
-  <h2>🔥 Skins uploaded today: {{ daily_skin_count }} 🔥 Total Skins: {{ total_skin_count }} 🔥</h2>
+  <form id="searchForm" method="GET" action="{% url 'search_skins' %}" class="site-search-form" role="search">
+    <div class="bv-search">
+      <input type="search" name="q" value="{{ query }}" placeholder="Skin name or creator" aria-label="Search skins" autocomplete="off">
+      <button type="submit">Search</button>
+    </div>
 
-  <div class="hero-inner">
-    <div class="search-row">
-      <form id="searchForm" method="GET" action="{% url 'search_skins' %}" class="hero-search">
-        <input type="text" name="q" value="{{ query }}" placeholder="Search skins...">
-        <button type="submit">Search</button>
-      </form>
-
-      <br><br>
-
-      {% if query %}
-        <div class="search-controls-inline">
-          <label>Search By:</label>
-          <select name="mode" form="searchForm">
-            <option value="relevance" {% if mode == "relevance" %}selected{% endif %}>Relevance</option>
+    {% if query %}
+      <div class="site-search-filters search-controls-inline">
+        <label class="bv-field">
+          <span class="bv-label">Search by</span>
+          <select class="bv-select" name="mode">
+            <option value="relevance" {% if mode == "relevance" %}selected{% endif %}>Everything</option>
             <option value="name"      {% if mode == "name"      %}selected{% endif %}>Name</option>
             <option value="creator"   {% if mode == "creator"   %}selected{% endif %}>Creator</option>
             <option value="tags"      {% if mode == "tags"      %}selected{% endif %}>Tags</option>
             <option value="description" {% if mode == "description" %}selected{% endif %}>Description</option>
           </select>
-
-          <label>Sort By:</label>
-          <select name="sort" form="searchForm">
-            <option value="relevance" {% if sort == "relevance" %}selected{% endif %}>Relevance</option>
+        </label>
+        <label class="bv-field">
+          <span class="bv-label">Sort by</span>
+          <select class="bv-select" name="sort">
+            <option value="relevance" {% if sort == "relevance" %}selected{% endif %}>Best match</option>
             <option value="newest"    {% if sort == "newest"    %}selected{% endif %}>Newest</option>
-            <option value="favorites" {% if sort == "favorites" %}selected{% endif %}>Most Favorited</option>
-            <option value="upvotes"   {% if sort == "upvotes"   %}selected{% endif %}>Most Upvoted</option>
+            <option value="favorites" {% if sort == "favorites" %}selected{% endif %}>Most favorited</option>
+            <option value="upvotes"   {% if sort == "upvotes"   %}selected{% endif %}>Most upvoted</option>
           </select>
-        </div>
-      {% endif %}
+        </label>
+      </div>
+      <p class="bv-small bv-muted site-search-summary">Results for “{{ query }}”</p>
+    {% endif %}
+  </form>
+
+  {% if skins_on_page %}
+    <div class="bv-skin-grid site-skin-grid">
+      {% for skin in skins_on_page %}
+        {% include 'skins/partials/_skin_card.html' with skin=skin mode='search' %}
+      {% endfor %}
     </div>
-  </div>
-
-
-  <div class="skins-container">
-    {% for skin in skins_on_page %}
-      {% include 'skins/partials/_skin_card.html' with skin=skin mode='search' %}
-    {% empty %}
-      <p class="empty-state">{{ search_error|default:"No skins found. Try a different search." }}</p>
-    {% endfor %}
-  </div>
+  {% elif search_error %}
+    <div class="bv-empty site-search-empty" role="alert">
+      <i data-lucide="triangle-alert" aria-hidden="true"></i>
+      <h2 class="bv-empty__title">Search didn't finish</h2>
+      <p>{{ search_error }} Your search is still in the box.</p>
+    </div>
+  {% else %}
+    <div class="bv-empty site-search-empty">
+      <i data-lucide="search-x" aria-hidden="true"></i>
+      <h2 class="bv-empty__title">{% if query %}No skins match “{{ query }}”{% else %}No skins yet{% endif %}</h2>
+      <p>Check the spelling, or search by creator instead.</p>
+      <a class="bv-btn" href="{% url 'new_releases' %}">Browse new skins</a>
+    </div>
+  {% endif %}
 
   {% include 'skins/partials/pagination.html' with page_obj=skins elided_range=elided_range base_qs=base_qs %}
+</div>
 
   {% include 'skins/partials/_report_skin_modal.html' %}
 

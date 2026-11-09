@@ -97,4 +97,5 @@ def test_nav_no_longer_links_to_win_loss_leaderboards(client):
     html = client.get("/").content.decode()
 
     assert "/leaderboards/wins/" not in html
-    assert "Most Upvoted" in html
+    # Skin leaderboards are a tab on the skin pages (Bonkverse/ui nav.json).
+    assert 'href="/leaderboards/upvoted/"' in client.get("/search/").content.decode()

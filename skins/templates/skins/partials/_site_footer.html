@@ -1,0 +1,16 @@
+{% comment %}The shared Bonkverse footer, from Bonkverse/ui's nav.json.{% endcomment %}
+<footer class="bv-footer">
+  <div class="bv-footer__inner">
+    {% for column in site_nav.footer %}
+      <div>
+        <h2>{{ column.title }}</h2>
+        <ul>
+          {% for link in column.links %}
+            <li><a href="{{ link.href }}"{% if link.external %} target="_blank" rel="noopener"{% endif %}>{{ link.label }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endfor %}
+    <p class="bv-footer__note">{{ site_nav.note }}</p>
+  </div>
+</footer>

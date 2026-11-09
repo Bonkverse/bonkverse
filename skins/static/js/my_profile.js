@@ -122,7 +122,7 @@ async function loadSkinsPage(page) {
   const grid = getSkinsGrid();
   if (grid) {
     grid.classList.toggle('select-mode', selectMode);
-    grid.querySelectorAll('.skin-card').forEach(card => {
+    grid.querySelectorAll('.bv-skin-card').forEach(card => {
       card.classList.toggle('selected', selectedIds.has(card.dataset.id));
     });
   }
@@ -134,7 +134,7 @@ async function loadSkinsPage(page) {
 // Intercept pagination link clicks inside My Skins and load via fetch
 // instead of letting the browser navigate.
 skinsPanelBody.addEventListener('click', (e) => {
-  const link = e.target.closest('.bv-pagination a');
+  const link = e.target.closest('.site-pagination a');
   if (!link) return;
   e.preventDefault();
   const page = new URL(link.href).searchParams.get('page') || 1;
@@ -150,6 +150,14 @@ skinsPanelBody.addEventListener('keydown', (e) => {
   if (isNaN(target) || target < 1 || target > max) return;
   loadSkinsPage(target);
 });
+
+// A card's ⋯ menu (opened by ui/ui.js) closes when one of its items opens a modal.
+function closeCardMenu(item) {
+  const menu = item.closest('.bv-menu');
+  if (!menu) return;
+  menu.hidden = true;
+  document.querySelector(`[aria-controls="${menu.id}"]`)?.setAttribute('aria-expanded', 'false');
+}
 
 // ── Select mode ─────────────────────────────────────────────
 const selectToggle    = document.getElementById('select-toggle-btn');
@@ -175,7 +183,7 @@ function setSelectMode(on) {
   if (selectToggle) selectToggle.textContent = on ? 'Done' : 'Select';
   bulkBar.classList.toggle('open', on);
   document.body.classList.toggle('bulk-bar-open', on);
-  grid?.querySelectorAll('.skin-card.selected').forEach(c => c.classList.remove('selected'));
+  grid?.querySelectorAll('.bv-skin-card.selected').forEach(c => c.classList.remove('selected'));
   updateBulkBar();
 }
 
@@ -197,7 +205,7 @@ document.addEventListener('click', e => {
   if (!selectMode) return;
   const grid = getSkinsGrid();
   if (!grid) return;
-  const card = e.target.closest('.skin-card');
+  const card = e.target.closest('.bv-skin-card');
   if (!card || !grid.contains(card)) return;
   const id = card.dataset.id;
   if (selectedIds.has(id)) {
@@ -254,7 +262,7 @@ document.addEventListener('click', (e) => {
   const btn = e.target.closest('.card-delete-btn');
   if (!btn) return;
   e.stopPropagation();
-  btn.closest('.card-more-dropdown')?.classList.remove('open');
+  closeCardMenu(btn);
   openSingleDeleteModal(btn.dataset.action, btn.dataset.name);
 });
 
@@ -264,7 +272,7 @@ bulkDeleteBtn.addEventListener('click', () => {
 });
 
 function removeCardFromDOM(id) {
-  const card = document.querySelector(`.skin-card[data-id="${id}"]`);
+  const card = document.querySelector(`.bv-skin-card[data-id="${id}"]`);
   card?.remove();
 }
 
@@ -390,7 +398,7 @@ document.addEventListener('click', (e) => {
   const trigger = e.target.closest('.edit-skin-trigger');
   if (!trigger) return;
   e.stopPropagation();
-  trigger.closest('.card-more-dropdown')?.classList.remove('open');
+  closeCardMenu(trigger);
   openEditModal(trigger);
 });
 
@@ -418,11 +426,9 @@ async function saveEditSkin() {
     return;
   }
 
-  const card = document.querySelector(`.skin-card[data-id="${editSkinId}"]`);
+  const card = document.querySelector(`.bv-skin-card[data-id="${editSkinId}"]`);
   if (card) {
-    const nameEl = card.querySelector('strong');
-    nameEl.textContent = json.skin.name.length > 20 ? json.skin.name.slice(0, 20) + '…' : json.skin.name;
-    nameEl.title = json.skin.name;
+    card.querySelector('.bv-skin-card__title').textContent = json.skin.name;
 
     const trigger = card.querySelector('.edit-skin-trigger');
     if (trigger) {

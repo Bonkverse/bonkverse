@@ -19,6 +19,7 @@ import re
 from pathlib import Path
 
 import pytest
+from django.urls import reverse
 
 from tests.factories import SkinFactory
 
@@ -34,10 +35,12 @@ PARTIALS = TEMPLATES / "skins" / "partials"
 CARD_PARTIALS = {PARTIALS / "_skin_card.html", PARTIALS / "_skin_card_compact.html"}
 
 # Card markup: an element whose class list names a piece of the card.
-CARD_MARKUP = re.compile(r'class="[^"]*\b(skin-card|skin-tile|card-more-dropdown|vote-row)\b[^"]*"')
+CARD_MARKUP = re.compile(
+    r'class="[^"]*\b(skin-card|skin-tile|bv-skin-card|bv-skin-card__[a-z]+)\b[^"]*"'
+)
 # Card behavior: a script selecting the card's buttons or image.
 CARD_BEHAVIOR = re.compile(
-    r"""['"`][^'"`]*\.(card-more-btn|wear-card-action|vote-up|vote-down|fav-toggle|skin-card-img)\b"""
+    r"""['"`][^'"`]*\.(wear-card-action|bv-skin-card__art|bv-fav|bv-wear|skin-card-img)\b"""
 )
 MODAL_PARTIAL = TEMPLATES / "skins" / "partials" / "_bonk_login_modal.html"
 
@@ -139,18 +142,27 @@ def test_card_pages_load_bv_cards(logged_in_client, page):
 
 
 @pytest.mark.django_db
-def test_search_card_shows_the_visitors_vote_and_favorite(logged_in_client, user):
-    from skins.models import SkinVote
-
-    skin = SkinFactory(name="Votedskin")
-    SkinVote.objects.create(user=user, skin=skin, vote="down")
+def test_search_card_shows_the_visitors_favorite(logged_in_client, user):
+    skin = SkinFactory(name="Favedskin")
     user.favorite_skins.add(skin)
 
     html = logged_in_client.get("/search/").content.decode()
 
-    assert 'class="vote-down active"' in html
-    assert 'class="vote-up active"' not in html
-    assert 'class="fav-toggle active"' in html
+    assert 'aria-pressed="true"' in html
+    assert 'aria-label="Favorite Favedskin"' in html
+
+
+@pytest.mark.django_db
+def test_skin_page_shows_the_visitors_vote(logged_in_client, user):
+    from skins.models import SkinVote
+
+    skin = SkinFactory(name="Votedskin")
+    SkinVote.objects.create(user=user, skin=skin, vote="down")
+
+    html = logged_in_client.get(reverse("skin_detail", args=[skin.id])).content.decode()
+
+    assert re.search(r'data-vote="down" aria-label="Downvote"\s+aria-pressed="true"', html)
+    assert re.search(r'data-vote="up" aria-label="Upvote"\s+aria-pressed="false"', html)
 
 
 ALL_TEMPLATES = [

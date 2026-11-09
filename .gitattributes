@@ -1,3 +1,7 @@
 *.png filter=lfs diff=lfs merge=lfs -text
 *.jpg filter=lfs diff=lfs merge=lfs -text
 *.jpeg filter=lfs diff=lfs merge=lfs -text
+
+# Bonkverse/ui copies (scripts/sync_ui.py) are stored as plain files: tests
+# check their hashes, and the deploy needs no LFS fetch.
+skins/static/ui/**/*.png -filter -diff -merge binary

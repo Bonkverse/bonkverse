@@ -28,7 +28,7 @@
 }
 .profile-tab {
   background: none; border: none; color: #9aa4b2;
-  font-family: "Oxanium", sans-serif; font-size: 1rem; font-weight: 600;
+  font-family: var(--bv-font); font-size: 1rem; font-weight: 600;
   padding: 10px 2px 12px; cursor: pointer; position: relative;
 }
 .profile-tab.active { color: #fff; }
@@ -52,30 +52,12 @@
 .select-toggle-btn {
   background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15);
   color: #ddd; border-radius: 8px; padding: 7px 14px; font-size: 0.85rem;
-  font-family: "Oxanium", sans-serif; cursor: pointer;
+  font-family: var(--bv-font); cursor: pointer;
 }
 .select-toggle-btn:hover { border-color: #009688; color: #fff; }
 .select-toggle-btn.active { background: rgba(0,150,136,0.25); border-color: #009688; color: #fff; }
 
-/* Checkbox overlay + selected state, select mode only */
-.skins-container.select-mode .skin-card { cursor: pointer; }
-.skins-container.select-mode .card-more-menu,
-.skins-container.select-mode .wear-card-action {
-  pointer-events: none; opacity: 0.4;
-}
-.select-check {
-  display: none;
-  position: absolute; top: 8px; right: 8px;
-  width: 22px; height: 22px; border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.35);
-  background: rgba(0,0,0,0.35);
-  align-items: center; justify-content: center;
-}
-.skins-container.select-mode .select-check { display: flex; }
-.skin-card.selected { border-color: #00ffcc; background: hsla(174, 60%, 20%, 0.35); }
-.skin-card.selected .select-check { background: #009688; border-color: #009688; }
-.select-check i[data-lucide] { width: 13px; height: 13px; color: #fff; display: none; }
-.skin-card.selected .select-check i[data-lucide] { display: block; }
+/* Checkbox overlay + selected state: static/css/skin_cards.css */
 
 /* ── Bulk action bar ──────────────────────────────────
    Full-width bar pinned to the true bottom of the viewport
@@ -108,7 +90,7 @@
 }
 .bulk-bar-inner span { color: #ddd; font-size: 0.9rem; white-space: nowrap; }
 .bulk-bar-actions { display: flex; gap: 10px; }
-.bulk-bar-actions button { font-family: "Oxanium", sans-serif; font-size: 0.85rem; }
+.bulk-bar-actions button { font-family: var(--bv-font); font-size: 0.85rem; }
 
 /* Reserve space at the bottom of the page while the bar is open,
    so it never sits on top of the last row of cards — the page
@@ -145,7 +127,7 @@ body.bulk-bar-open { padding-bottom: 76px; }
 #edit-modal .edit-name-input {
   width: 100%; box-sizing: border-box;
   background: transparent; border: none;
-  color: #fff; font-family: "Oxanium", sans-serif;
+  color: #fff; font-family: var(--bv-font);
   font-size: 1.15rem; font-weight: 700;
   padding: 4px 0;
   border-bottom: 1px solid transparent;

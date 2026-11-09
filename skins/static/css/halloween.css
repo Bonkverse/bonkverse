@@ -14,7 +14,7 @@ body {
 }
 
 /* --- HEADINGS --- */
-h1, .leaderboard-title, .changelog-header {
+:where(.site-legacy) h1, .leaderboard-title, .changelog-header {
   color: #ff8c00;
   text-shadow: 0 0 12px #ff6a00, 0 0 28px rgba(255, 140, 0, 0.6);
   animation: halloween-glow 3s infinite alternate;
@@ -25,19 +25,19 @@ h1, .leaderboard-title, .changelog-header {
 }
 
 /* --- FORM --- */
-form {
+:where(.site-legacy) form {
   border: 2px solid #ff7b00;
   background: rgba(40, 10, 20, 0.9);
   box-shadow: 0 0 12px rgba(255, 94, 0, 0.4);
 }
-label { color: #ffcf91; }
+:where(.site-legacy) label { color: #ffcf91; }
 
-input, textarea, select {
+:where(.site-legacy) :is(input, textarea, select) {
   background: #1a0b0a;
   border: 2px solid #6b1f5f;
   color: #ffe6cc;
 }
-input:focus, textarea:focus, select:focus {
+:where(.site-legacy) :is(input, textarea, select):focus {
   border-color: #ff7b00;
   box-shadow: 0 0 10px #ff7b00;
 }
@@ -46,14 +46,14 @@ input:focus, textarea:focus, select:focus {
 }
 
 /* --- BUTTONS --- */
-button, .view-btn, .submit-btn, .pagination a {
+:where(.site-legacy) button, .view-btn, .submit-btn, .pagination a {
   background: linear-gradient(180deg, #ff7b00, #a34100);
   border: 2px solid #ffb347;
   color: #fff7e6;
   box-shadow: 0 0 10px rgba(255, 94, 0, 0.3);
   transition: all 0.2s ease;
 }
-button:hover, .view-btn:hover, .submit-btn:hover, .pagination a:hover {
+:where(.site-legacy) button:hover, .view-btn:hover, .submit-btn:hover, .pagination a:hover {
   background: linear-gradient(180deg, #a34100, #ff7b00);
   box-shadow: 0 0 18px rgba(255, 120, 0, 0.8);
   transform: translateY(-2px);

@@ -19,7 +19,7 @@
 }
 
 .hero-title {
-    font-family: "Oxanium", system-ui, sans-serif;
+    font-family: var(--bv-font);
     font-size: clamp(28px, 5vw, 44px);
     letter-spacing: .5px;
     margin: 6px 0;

@@ -1,7 +1,7 @@
 // core/js/bv-controls.js
 //
 // Behaviour for the shared controls in css/controls.css:
-// - .bv-num steppers: <button data-step="1"> / <button data-step="-1"> next to
+// - .site-num steppers: <button data-step="1"> / <button data-step="-1"> next to
 //   an <input type="number"> step it and fire "input", like typing would.
 // - .bv-range: keeps --fill (the coloured part of the track) in step with
 //   the value, for browsers without a native filled track.
@@ -10,9 +10,9 @@
   "use strict";
 
   document.addEventListener("click", (e) => {
-    const btn = e.target.closest(".bv-num__step[data-step]");
+    const btn = e.target.closest(".site-num__step[data-step]");
     if (!btn) return;
-    const input = btn.closest(".bv-num").querySelector("input");
+    const input = btn.closest(".site-num").querySelector("input");
     if (!input) return;
     const dir = Number(btn.dataset.step);
     const step = Number(input.step) || 1;

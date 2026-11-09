@@ -4,7 +4,7 @@
   {% if favorites|length == 0 %}
     <p class="profile-empty">You haven't favorited any skins yet.</p>
   {% else %}
-    <div class="skins-container">
+    <div class="bv-skin-grid site-skin-grid">
       {% for skin in favorites %}
         {% include 'skins/partials/_skin_card.html' with skin=skin mode='favorite' %}
       {% endfor %}

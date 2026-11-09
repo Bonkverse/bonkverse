@@ -1,0 +1,63 @@
+{
+  "$comment": "The header and footer links every Bonkverse site renders. Edit here, release, then bump each site. Paths starting with / are on bonkverse.io; sites prefix them with https://bonkverse.io when they live elsewhere. 'site' marks which item is highlighted on each site.",
+  "version": "0.1.1",
+  "brand": {
+    "label": "Bonkverse",
+    "href": "https://bonkverse.io/",
+    "logo": "img/planet.png"
+  },
+  "header": [
+    { "id": "skins", "label": "Skins", "href": "/search/", "site": "bonkverse.io" },
+    { "id": "replays", "label": "Replays", "href": "https://replays.bonkverse.io/", "site": "replays.bonkverse.io" },
+    { "id": "players", "label": "Players", "href": "/players/" },
+    {
+      "id": "tools",
+      "label": "Tools",
+      "items": [
+        { "label": "Skin editor", "href": "https://editor.bonkverse.io/" },
+        { "label": "XP and level calculator", "href": "/tools/xp/" },
+        { "label": "Map decoder", "href": "/tools/map-decode/" }
+      ]
+    },
+    { "id": "developers", "label": "Developers", "href": "/developers/", "site": "docs.bonkverse.io" }
+  ],
+  "skinTabs": [
+    { "id": "search", "label": "Search", "href": "/search/" },
+    { "id": "new", "label": "New", "href": "/new/" },
+    { "id": "categories", "label": "Categories", "href": "/categories/" },
+    { "id": "leaderboards", "label": "Leaderboards", "href": "/leaderboards/upvoted/" },
+    { "id": "upload", "label": "Upload", "href": "/upload/" }
+  ],
+  "account": {
+    "signedOut": { "label": "Log in", "href": "/login/" },
+    "items": [
+      { "label": "My profile", "href": "/my-profile/" },
+      { "label": "Settings", "href": "/settings/profile/" },
+      { "label": "API keys", "href": "/developers/keys/" },
+      { "label": "Log out", "href": "/logout/", "method": "post" }
+    ]
+  },
+  "footer": [
+    {
+      "title": "Community",
+      "items": [
+        { "label": "Discord", "href": "https://discord.gg/2Zx7Cwhr4Z" },
+        { "label": "Discord servers", "href": "/serverlist/" },
+        { "label": "Submit a server", "href": "/submit/" },
+        { "label": "Social stats", "href": "/social-stats/" },
+        { "label": "Support Bonkverse", "href": "https://www.buymeacoffee.com/misterurias" }
+      ]
+    },
+    {
+      "title": "Bonkverse",
+      "items": [
+        { "label": "Our team", "href": "/staff/" },
+        { "label": "Docs", "href": "https://docs.bonkverse.io/" },
+        { "label": "GitHub", "href": "https://github.com/Bonkverse" },
+        { "label": "Privacy", "href": "/privacy/" },
+        { "label": "Terms", "href": "/terms/" }
+      ]
+    }
+  ],
+  "note": "Bonkverse is a fan project and is not affiliated with bonk.io."
+}

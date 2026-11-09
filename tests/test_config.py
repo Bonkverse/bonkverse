@@ -21,9 +21,15 @@ class TestLinksStayOnThisSite:
 
         html = client.get("/search/?q=Dragon").content.decode()
 
-        assert f'href="/skins/share/{skin.id}/{skin.uuid}/"' in html
         assert f'href="/skins/detail/{skin.id}"' in html
         assert "https://bonkverse.io/skins/" not in html
+
+    def test_skin_page_copies_the_share_link(self, client):
+        skin = SkinFactory(name="Dragon")
+
+        html = client.get(f"/skins/detail/{skin.id}").content.decode()
+
+        assert f'data-bv-copy-text="http://testserver/skins/share/{skin.id}/{skin.uuid}/"' in html
 
     def test_profile_and_favorites_link_relatively(self, logged_in_client, user):
         SkinFactory(creator=user.username)

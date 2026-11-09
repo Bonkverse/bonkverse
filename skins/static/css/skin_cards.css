@@ -1,0 +1,104 @@
+/* The site's additions to Bonkverse/ui's skin card (.bv-skin-card in
+   static/ui/components.css). The card itself is never restyled here; this
+   only places grids on older pages and adds the profile's select mode. */
+
+.site-skin-grid {
+  margin: var(--bv-space-6) auto 0;
+  padding: 0 var(--bv-gutter);
+  text-align: start;
+}
+/* A grid can't hold a centered empty message across its columns otherwise. */
+.site-skin-grid > .empty-state,
+.site-skin-grid > .bv-empty {
+  grid-column: 1 / -1;
+}
+
+/* Favorites panel: the gold star is read-only. */
+.site-fav--on {
+  color: var(--bv-gold);
+}
+.site-fav--on svg {
+  fill: currentColor;
+}
+
+/* My skins, select mode (static/js/my_profile.js) */
+.bv-skin-card {
+  position: relative;
+}
+.bv-skin-card .select-check {
+  display: none;
+  position: absolute;
+  top: var(--bv-space-2);
+  left: var(--bv-space-2);
+  z-index: 1;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--bv-control);
+  background: var(--bv-card);
+  align-items: center;
+  justify-content: center;
+}
+.select-mode .bv-skin-card {
+  cursor: pointer;
+}
+.select-mode .bv-skin-card .select-check {
+  display: flex;
+}
+.select-mode .bv-skin-card .bv-dropdown,
+.select-mode .bv-skin-card .bv-wear {
+  pointer-events: none;
+  opacity: 0.4;
+}
+.bv-skin-card.selected {
+  border-color: var(--bv-link);
+  box-shadow: 0 0 0 1px var(--bv-link);
+}
+.bv-skin-card.selected .select-check {
+  background: var(--bv-link);
+  border-color: var(--bv-link);
+}
+.bv-skin-card .select-check i[data-lucide],
+.bv-skin-card .select-check svg {
+  display: none;
+  width: 14px;
+  height: 14px;
+  color: var(--bv-page);
+}
+.bv-skin-card.selected .select-check svg,
+.bv-skin-card.selected .select-check i[data-lucide] {
+  display: block;
+}
+
+/* Skin page: title and creator on the left, Favorite on the right */
+.site-detail-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--bv-space-3);
+}
+.site-detail-heading > div {
+  min-width: 0;
+}
+
+/* Search page: the box, then filters on one row that wraps */
+.site-search-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--bv-space-3);
+}
+.site-search-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bv-space-3);
+}
+.site-search-filters .bv-field {
+  flex: 1 1 180px;
+  max-width: 240px;
+}
+.bv-main .site-skin-grid {
+  padding: 0;
+}
+.site-search-empty {
+  margin-top: var(--bv-space-6);
+}

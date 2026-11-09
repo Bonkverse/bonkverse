@@ -1,7 +1,7 @@
 {% if skins|length == 0 %}
   <p class="profile-empty">You haven't uploaded any skins yet.</p>
 {% else %}
-  <div class="skins-container" id="skins-grid">
+  <div class="bv-skin-grid site-skin-grid" id="skins-grid">
     {% for skin in skins %}
       {% include 'skins/partials/_skin_card.html' with skin=skin mode='mine' %}
     {% endfor %}

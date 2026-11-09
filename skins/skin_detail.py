@@ -14,8 +14,9 @@ def skin_detail(request, skin_id):
     png_path = f"{settings.MEDIA_URL}skins/{skin.id}.png"
     image_url = request.build_absolute_uri(png_path)
 
-    desc = skin.description or f"{skin.name} by {skin.creator} on Bonkverse."
-    desc = desc.strip()[:200]
+    # Descriptions and tags stay behind the scenes (search and moderation),
+    # so link previews say the same thing the page does.
+    desc = f"{skin.name} by {skin.creator} on Bonkverse."[:200]
 
     og = {
         "title": f"{skin.name} by {skin.creator} — Bonkverse",

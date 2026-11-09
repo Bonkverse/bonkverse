@@ -68,3 +68,15 @@
     color: #222;
     font-weight: bold;
 }
+
+/* Wide tables scroll inside their box on small screens, not the page. */
+.site-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.leaderboard-container {
+    padding: var(--bv-space-6) var(--bv-gutter);
+}
+.site-leaderboard-tabs {
+    justify-content: center;
+}

@@ -246,11 +246,19 @@ def test_login_page_renders(client):
 
 
 def test_logout_clears_bonk_session(bonk_session_client):
-    response = bonk_session_client.get("/logout/")
+    response = bonk_session_client.post("/logout/")
 
     assert response.status_code == 302
     assert "bonk_token" not in bonk_session_client.session
     assert "_auth_user_id" not in bonk_session_client.session
+
+
+def test_logout_is_post_only(bonk_session_client):
+    """A GET (a link or an <img> on another site) doesn't sign anyone out."""
+    response = bonk_session_client.get("/logout/")
+
+    assert response.status_code == 405
+    assert "_auth_user_id" in bonk_session_client.session
 
 
 @pytest.mark.django_db

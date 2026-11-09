@@ -1,25 +1,53 @@
 /* The hidden attribute always hides, whatever display a class sets. */
 [hidden] { display: none !important; }
 
+/* Page, text and font come from Bonkverse/ui (static/ui/base.css). Older
+   pages still center their text; pages on bv- components don't. */
 body {
-    font-family: "Oxanium", sans-serif;
-    margin: 0;
     text-align: center;
-    background-color: #1a2733;
-    color: #ddd;
+}
+.bv-header,
+.bv-footer,
+.site-skin-tabs-wrap,
+.site-page {
+    text-align: start;
 }
 
-#particles-js {
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    background-size: cover;
-    background-position: center;
-    z-index: -1;
+/* Pages not yet moved onto bv- components still use dark-theme colors in
+   their own CSS. In the Light theme their content keeps the Bonkverse slate
+   values so nothing turns light-on-light; the header and footer still follow
+   the theme. Remove a page from this by giving it content_class "site-page".
+   The legacy modals carry the class too, wherever they open. */
+:root[data-bv-theme="light"] .site-legacy {
+    --bv-page: #192630; --bv-card: #263845; --bv-thumb: #1c2b36; --bv-header: #2a4054;
+    --bv-outline: #405464; --bv-control: #83949e; --bv-text: #e7ecee; --bv-muted: #b3bec4;
+    --bv-heading: #e7ecee; --bv-link: #8bd2c5; --bv-input: #1c2b36;
+    --bv-action: #79554a; --bv-action-hover: #855e52; --bv-action-pressed: #6b4a40;
+    --bv-action-ink: #f5ede7; --bv-action-border: #a37b69; --bv-selected: #314b4c;
+    --bv-success: #293e3d; --bv-gold: #e5bf68; --bv-danger: #ff8a80; --bv-danger-surface: #3a2a2e;
+    --bv-search-action: transparent; --bv-search-action-hover: #263845; --bv-divider: #405464;
+    color-scheme: dark;
+    color: var(--bv-text);
+}
+:root[data-bv-theme="light"] .content.site-legacy {
+    background: var(--bv-page);
 }
 
-h1 {
-    color: #ddd;
+.content {
+    padding-bottom: var(--bv-space-8);
+}
+
+/* Skin tab row (Search · New · Categories · Leaderboards · Upload) */
+.site-skin-tabs-wrap {
+    max-width: var(--bv-page-max);
+    margin: 0 auto;
+    padding: var(--bv-space-2) var(--bv-gutter) 0;
+}
+.site-skin-tabs-wrap .bv-tabs {
+    margin-bottom: var(--bv-space-2);
+}
+
+.site-legacy h1 {
     font-size: 28px;
 }
 

@@ -1,37 +1,37 @@
 /* controls.css — Bonkverse form controls for tools and profiles:
-   .bv-num    a big number field with a label, a unit and − / + steppers
+   .site-num    a big number field with a label, a unit and − / + steppers
    .bv-range  a slider with a filled track (--fill, set by core/js/bv-controls.js)
    .bv-seg    a segmented switch (links or buttons)
    Used by players/xp_calculator.html; wired by core/js/bv-controls.js. */
 
-.bv-num { display: flex; flex-direction: column; gap: 6px; min-width: 0; margin: 0; }
-.bv-num__label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8fa3b8; }
-.bv-num__box {
+.site-num { display: flex; flex-direction: column; gap: 6px; min-width: 0; margin: 0; }
+.site-num__label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8fa3b8; }
+.site-num__box {
   display: flex; align-items: center; gap: 4px; min-height: 56px; padding: 0 6px;
   border-radius: 16px; border: 1px solid #2d4257;
   background: linear-gradient(180deg, #16263a, #0f1a26);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   transition: border-color 0.15s, box-shadow 0.15s;
 }
-.bv-num__box:focus-within { border-color: #47d8c4; box-shadow: 0 0 0 3px rgba(71, 216, 196, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.04); }
-.bv-num input {
+.site-num__box:focus-within { border-color: #47d8c4; box-shadow: 0 0 0 3px rgba(71, 216, 196, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.04); }
+.site-num input {
   flex: 1; min-width: 0; width: 100%; height: 52px; margin: 0; padding: 0 6px;
   border: 0; outline: none; background: transparent; box-shadow: none;
   color: #edf4fb; font: inherit; font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums;
   -moz-appearance: textfield; appearance: textfield;
 }
-.bv-num input:focus, .bv-num input:focus-visible { outline: none; border: 0; box-shadow: none; }
-.bv-num input::-webkit-outer-spin-button, .bv-num input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.bv-num input::placeholder { color: #4f6a83; font-weight: 500; }
-.bv-num__unit { color: #8fa3b8; font-size: 0.85rem; font-weight: 600; padding-right: 2px; }
-.bv-num__step {
+.site-num input:focus, .site-num input:focus-visible { outline: none; border: 0; box-shadow: none; }
+.site-num input::-webkit-outer-spin-button, .site-num input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.site-num input::placeholder { color: #4f6a83; font-weight: 500; }
+.site-num__unit { color: #8fa3b8; font-size: 0.85rem; font-weight: 600; padding-right: 2px; }
+.site-num__step {
   width: 36px; height: 36px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
   padding: 0; margin: 0; border-radius: 10px; border: 1px solid transparent;
   background: rgba(144, 183, 255, 0.08); color: #aec1d3; font: inherit; font-size: 1.2rem; line-height: 1; cursor: pointer;
 }
-.bv-num__step:hover { background: rgba(71, 216, 196, 0.16); color: #47d8c4; }
-.bv-num__step:focus-visible { outline: 2px solid #90b7ff; outline-offset: 1px; }
-.bv-num--big input { font-size: 2rem; }
+.site-num__step:hover { background: rgba(71, 216, 196, 0.16); color: #47d8c4; }
+.site-num__step:focus-visible { outline: 2px solid #90b7ff; outline-offset: 1px; }
+.site-num--big input { font-size: 2rem; }
 
 .bv-range {
   -webkit-appearance: none; appearance: none; width: 100%; height: 32px; margin: 0; padding: 0;

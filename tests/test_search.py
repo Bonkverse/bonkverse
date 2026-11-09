@@ -51,7 +51,7 @@ class TestResults:
 
         assert response.status_code == 200
         assert _names(response) == set()
-        assert b"No skins found" in response.content
+        assert "No skins match “zzzzqqq”".encode() in response.content
 
     @pytest.mark.parametrize("mode", ["name", "creator", "description"])
     def test_contains_modes_are_case_insensitive(self, client, catalog, mode):

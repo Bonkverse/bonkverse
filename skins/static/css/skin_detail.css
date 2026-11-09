@@ -99,7 +99,7 @@
     border-radius: 10px;
     font-size: 1rem;
     font-weight: 600;
-    font-family: "Oxanium", sans-serif;
+    font-family: var(--bv-font);
     cursor: pointer;
     text-decoration: none;
     transition: background 0.2s ease;
@@ -154,7 +154,7 @@
     color: #c9a227;
     font-size: 0.875rem;
     font-weight: 600;
-    font-family: "Oxanium", sans-serif;
+    font-family: var(--bv-font);
     cursor: pointer;
     white-space: nowrap;
     transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
@@ -202,7 +202,7 @@
     color: #c9d1d9;
     font-size: 0.875rem;
     font-weight: 600;
-    font-family: "Oxanium", sans-serif;
+    font-family: var(--bv-font);
     cursor: pointer;
     white-space: nowrap;
     transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
@@ -279,7 +279,7 @@
     color: #c9d1d9;
     font-size: 0.8rem;
     font-weight: 600;
-    font-family: "Oxanium", sans-serif;
+    font-family: var(--bv-font);
     text-decoration: none;
     cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;

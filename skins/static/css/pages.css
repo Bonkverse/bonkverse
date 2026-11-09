@@ -145,7 +145,7 @@
 .staff-container {
     text-align: center;
     padding: 40px 20px;
-    font-family: 'Oxanium', sans-serif;
+    font-family: var(--bv-font);
 }
 
 .staff-title {

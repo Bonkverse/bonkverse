@@ -300,6 +300,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "skins.context_processors.latest_update",
                 "skins.context_processors.editor_urls",
+                "skins.context_processors.site_nav",
             ],
         },
     },

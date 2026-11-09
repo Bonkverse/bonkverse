@@ -19,10 +19,10 @@
   };
 
   function getStack() {
-    var stack = document.getElementById("bv-toast-stack");
+    var stack = document.getElementById("site-toast-stack");
     if (!stack) {
       stack = document.createElement("div");
-      stack.id = "bv-toast-stack";
+      stack.id = "site-toast-stack";
       document.body.appendChild(stack);
     }
     return stack;
@@ -34,33 +34,33 @@
     var duration = opts.sticky ? null : (opts.duration || 3200);
 
     var el = document.createElement("div");
-    el.className = "bv-toast bv-toast-" + type;
+    el.className = "site-toast site-toast-" + type;
 
     var iconHTML = opts.spinner
-      ? '<span class="bv-toast-spinner"></span>'
-      : '<span class="bv-toast-icon">' + (ICONS[type] || ICONS.info) + '</span>';
+      ? '<span class="site-toast-spinner"></span>'
+      : '<span class="site-toast-icon">' + (ICONS[type] || ICONS.info) + '</span>';
 
-    var closeHTML = '<button type="button" class="bv-toast-close" aria-label="Dismiss">&times;</button>';
+    var closeHTML = '<button type="button" class="site-toast-close" aria-label="Dismiss">&times;</button>';
 
-    el.innerHTML = iconHTML + '<span class="bv-toast-text"></span>' + closeHTML;
-    el.querySelector(".bv-toast-text").textContent = text;
+    el.innerHTML = iconHTML + '<span class="site-toast-text"></span>' + closeHTML;
+    el.querySelector(".site-toast-text").textContent = text;
 
     getStack().appendChild(el);
     requestAnimationFrame(function () {
-      el.classList.add("bv-toast-visible");
+      el.classList.add("site-toast-visible");
     });
 
     var dismissTimer = null;
 
     function dismiss() {
       if (dismissTimer) clearTimeout(dismissTimer);
-      el.classList.remove("bv-toast-visible");
+      el.classList.remove("site-toast-visible");
       setTimeout(function () { el.remove(); }, 300);
     }
 
     // Manual close button — the only way to dismiss a sticky (duration:
     // null) toast, since scheduleDismiss never fires one for it.
-    el.querySelector(".bv-toast-close").addEventListener("click", dismiss);
+    el.querySelector(".site-toast-close").addEventListener("click", dismiss);
 
     function scheduleDismiss(ms) {
       if (dismissTimer) clearTimeout(dismissTimer);
@@ -73,13 +73,13 @@
       newOpts = newOpts || {};
       var newType = newOpts.type || type;
 
-      el.className = "bv-toast bv-toast-" + newType + " bv-toast-visible";
+      el.className = "site-toast site-toast-" + newType + " site-toast-visible";
       var newIconHTML = newOpts.spinner
-        ? '<span class="bv-toast-spinner"></span>'
-        : '<span class="bv-toast-icon">' + (ICONS[newType] || ICONS.info) + '</span>';
-      el.innerHTML = newIconHTML + '<span class="bv-toast-text"></span>' + closeHTML;
-      el.querySelector(".bv-toast-text").textContent = newText;
-      el.querySelector(".bv-toast-close").addEventListener("click", dismiss);
+        ? '<span class="site-toast-spinner"></span>'
+        : '<span class="site-toast-icon">' + (ICONS[newType] || ICONS.info) + '</span>';
+      el.innerHTML = newIconHTML + '<span class="site-toast-text"></span>' + closeHTML;
+      el.querySelector(".site-toast-text").textContent = newText;
+      el.querySelector(".site-toast-close").addEventListener("click", dismiss);
 
       scheduleDismiss(newOpts.sticky ? null : (newOpts.duration || 3200));
     }

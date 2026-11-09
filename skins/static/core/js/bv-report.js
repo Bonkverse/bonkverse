@@ -80,8 +80,13 @@
   document.addEventListener("click", function (e) {
     var trigger = e.target.closest("[data-report-skin]");
     if (!trigger) return;
-    var menu = trigger.closest(".card-more-dropdown");
-    if (menu) menu.classList.remove("open");
+    // Close the menu it was in (opened by ui/ui.js).
+    var menu = trigger.closest(".bv-menu");
+    if (menu) {
+      menu.hidden = true;
+      var toggle = document.querySelector('[aria-controls="' + menu.id + '"]');
+      if (toggle) toggle.setAttribute("aria-expanded", "false");
+    }
     open(trigger.dataset.reportSkin, trigger.dataset.skinName);
   });
 

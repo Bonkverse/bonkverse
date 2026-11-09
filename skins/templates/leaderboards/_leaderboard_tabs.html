@@ -1,0 +1,5 @@
+{% comment %}Switch between the skin leaderboards (the header no longer has a Leaderboards menu).{% endcomment %}
+<nav class="bv-tabs site-leaderboard-tabs" aria-label="Leaderboards">
+  <a class="bv-tab" href="{% url 'leaderboards_upvoted' %}"{% if request.resolver_match.url_name == 'leaderboards_upvoted' %} aria-current="page"{% endif %}>Most upvoted</a>
+  <a class="bv-tab" href="{% url 'leaderboards_favorited' %}"{% if request.resolver_match.url_name == 'leaderboards_favorited' %} aria-current="page"{% endif %}>Most favorited</a>
+</nav>

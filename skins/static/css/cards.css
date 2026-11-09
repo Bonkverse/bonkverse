@@ -185,7 +185,7 @@
     border: none;
     color: #c9d1d9;
     font-size: 13px;
-    font-family: "Oxanium", sans-serif;
+    font-family: var(--bv-font);
     padding: 10px 14px;
     text-decoration: none;
     cursor: pointer;
@@ -270,7 +270,7 @@
     cursor: pointer;
     font-size: 0.95rem;
     font-weight: 600;
-    font-family: "Oxanium", sans-serif;
+    font-family: var(--bv-font);
     transition: background-color 0.2s ease;
 }
 

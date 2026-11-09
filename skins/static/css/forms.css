@@ -1,4 +1,6 @@
-form {
+/* Bare element styles apply only to pages not yet on Bonkverse/ui (.site-legacy),
+   so they never restyle bv- components. */
+:where(.site-legacy) form {
     width: 50%;
     margin: auto;
     padding: 28px 28px 24px;
@@ -8,7 +10,7 @@ form {
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
-label {
+:where(.site-legacy) label {
     display: block;
     margin-top: 10px;
     font-size: 16px;
@@ -22,9 +24,9 @@ label {
    `input[type="text"]` rule (2px border, different width), which made
    inputs on the same form visibly inconsistent depending on their
    `type` attribute. */
-input,
-select,
-textarea {
+:where(.site-legacy) input,
+:where(.site-legacy) select,
+:where(.site-legacy) textarea {
     width: 100%;
     box-sizing: border-box;
     margin: 8px 0;
@@ -32,7 +34,7 @@ textarea {
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 8px;
     color: #e6edf3;
-    font-family: "Oxanium", sans-serif;
+    font-family: var(--bv-font);
     font-size: 16px;
     padding: 10px 12px;
     outline: none;
@@ -41,24 +43,24 @@ textarea {
     appearance: none;
 }
 
-input:focus,
-select:focus,
-textarea:focus {
+:where(.site-legacy) input:focus,
+:where(.site-legacy) select:focus,
+:where(.site-legacy) textarea:focus {
     border-color: #009688;
     box-shadow: 0 0 0 2px rgba(0, 150, 136, 0.2);
 }
 
-textarea {
+:where(.site-legacy) textarea {
     resize: vertical;
     min-height: 90px;
     line-height: 1.5;
 }
 
-::placeholder {
+:where(.site-legacy) ::placeholder {
     color: #9aa4b2;
 }
 
-button {
+:where(.site-legacy) button {
     background-color: #795548;
     border-radius: 8px;
     color: #ddd;

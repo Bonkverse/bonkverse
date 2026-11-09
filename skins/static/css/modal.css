@@ -106,7 +106,7 @@
     border-radius: 8px;
     font-size: 0.9rem;
     font-weight: 600;
-    font-family: "Oxanium", sans-serif;
+    font-family: var(--bv-font);
     cursor: pointer;
     border: none;
     transition: background 0.15s ease, transform 0.1s ease;
@@ -183,7 +183,7 @@
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 8px;
     color: #e6edf3;
-    font-family: "Oxanium", sans-serif;
+    font-family: var(--bv-font);
     font-size: 0.9rem;
     padding: 9px 12px;
     outline: none;
