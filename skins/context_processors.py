@@ -8,6 +8,7 @@ def editor_urls(request):
         "BONKVERSE_EDITOR_URL": settings.BONKVERSE_EDITOR_URL,
         "BONKVERSE_REPLAYS_URL": settings.BONKVERSE_REPLAYS_URL,
         "BONKVERSE_DISCORD_URL": settings.BONKVERSE_DISCORD_URL,
+        "BONKVERSE_DOCS_URL": settings.BONKVERSE_DOCS_URL,
     }
 
 

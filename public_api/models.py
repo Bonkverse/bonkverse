@@ -56,3 +56,25 @@ class ApiKey(models.Model):
         self.is_active = False
         self.revoked_at = timezone.now()
         self.save(update_fields=["is_active", "revoked_at"])
+
+
+class ApiTermsAcceptance(models.Model):
+    """That a Bonkverse account agreed to the API terms, and which version.
+
+    Creating a key in the developer portal needs an acceptance of the
+    current `services.TERMS_VERSION`; changing the terms means bumping that
+    version, and everyone agrees again before their next new key. Keys they
+    already have keep working.
+    """
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="api_terms"
+    )
+    version = models.CharField(max_length=20)
+    accepted_at = models.DateTimeField()
+
+    class Meta:
+        verbose_name = "API terms acceptance"
+
+    def __str__(self):
+        return f"{self.user} accepted {self.version}"

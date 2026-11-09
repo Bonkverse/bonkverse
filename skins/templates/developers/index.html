@@ -1,0 +1,64 @@
+{% extends 'skins/base.html' %}
+{% load static %}
+
+{% block title %}Developers · Bonkverse{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/player_profile.css' %}">
+<link rel="stylesheet" href="{% static 'css/developers.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="pv dev" id="main">
+  <header class="pv-hero dev-hero">
+    <div class="pv-hero__text">
+      <span class="pv-eyebrow">Developers</span>
+      <h1 class="dev-hero__title">Build with Bonkverse</h1>
+      <p class="pv-muted dev-hero__lead">
+        bonk.io player data for your site or Discord bot: levels, when they were last seen,
+        and level history, from Bonkverse's archive of public replays.
+      </p>
+    </div>
+    <div class="pv-hero__actions">
+      <a class="pv-btn" href="{% url 'developer_keys' %}"><i data-lucide="key-round"></i>Get an API key</a>
+      <a class="pv-btn pv-btn--ghost" href="{{ BONKVERSE_DOCS_URL }}/api">Read the docs</a>
+    </div>
+  </header>
+
+  <section class="dev-grid">
+    <article class="pv-card">
+      <h2 class="pv-card__title">What you can get</h2>
+      <ul class="dev-list">
+        <li>A player's level, peak level and when it was last seen</li>
+        <li>Up to 250 players in one request, for leaderboards</li>
+        <li>Every level-up a player has had</li>
+        <li>Their bonk.io account ID and roughly when they joined</li>
+      </ul>
+      <a class="pv-link" href="{{ BONKVERSE_DOCS_URL }}/api/endpoints/bulk-lookup">See the endpoints →</a>
+    </article>
+
+    <article class="pv-card">
+      <h2 class="pv-card__title">One request</h2>
+      <pre class="dev-code"><code>curl https://bonkverse.io/api/v1/players/comet/ \
+  -H "Authorization: Bearer $BONKVERSE_API_KEY"</code></pre>
+      <a class="pv-link" href="{{ BONKVERSE_DOCS_URL }}/api/quickstart">Quickstart in curl, JavaScript and Python →</a>
+    </article>
+
+    <article class="pv-card">
+      <h2 class="pv-card__title">Fair use</h2>
+      <ul class="dev-list">
+        <li>60 requests a minute per key; bulk lookups 10 a minute</li>
+        <li>Credit Bonkverse and link to each player's profile</li>
+        <li>Players who hide their level stay hidden</li>
+      </ul>
+      <a class="pv-link" href="{% url 'developer_terms' %}">Read the API terms →</a>
+    </article>
+  </section>
+
+  <p class="pv-note">
+    <i data-lucide="message-circle"></i>
+    <span>Building something bigger, like a league leaderboard? Ask on
+    <a href="{{ BONKVERSE_DISCORD_URL }}" target="_blank" rel="noopener">Discord</a> about higher limits.</span>
+  </p>
+</main>
+{% endblock %}

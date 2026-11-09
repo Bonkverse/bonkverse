@@ -1,0 +1,72 @@
+/* Developer portal (/developers/): the pages in templates/developers/.
+   Builds on player_profile.css (.pv, .pv-card, .pv-btn, .pv-table…), so the
+   portal looks like the profile pages. */
+
+.dev-hero__title { font-size: 2.1rem; line-height: 1.15; margin: 4px 0 8px; }
+.dev-hero__lead { max-width: 60ch; font-size: 1.05rem; line-height: 1.55; margin: 0; }
+.dev-hero { margin-bottom: 28px; }
+
+.dev-grid {
+  display: grid; gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+.dev-grid .pv-card { margin-bottom: 0; display: flex; flex-direction: column; }
+.dev-grid .pv-link { margin-top: auto; padding-top: 12px; }
+.dev-list { margin: 0; padding-left: 1.1em; line-height: 1.6; color: var(--pv-muted); }
+.dev-list li { margin-bottom: 4px; }
+
+.dev-code {
+  margin: 0; padding: 14px 16px; border-radius: 12px; overflow-x: auto;
+  background: var(--pv-inset); border: 1px solid var(--pv-outline);
+  font-size: 0.85rem; line-height: 1.55; color: var(--pv-text); white-space: pre;
+}
+.dev code, .dev-code code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+/* Key list and form */
+.dev-form { display: flex; flex-direction: column; gap: 16px; align-items: flex-start; }
+.dev-field { display: flex; flex-direction: column; gap: 4px; width: 100%; }
+.dev-field__label { font-weight: 600; }
+.dev-field input {
+  min-height: 46px; padding: 0 14px; margin-top: 4px; width: 100%; max-width: 420px;
+  background: var(--pv-inset); border: 1px solid var(--pv-outline); border-radius: 12px;
+  color: var(--pv-text); font: inherit;
+}
+.dev-field input:focus { border-color: var(--pv-action); outline: none; }
+.dev-agree { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.dev-agree input { width: 18px; height: 18px; accent-color: var(--pv-action); }
+
+/* The wrapper scrolls a wide table; it also anchors the visually hidden
+   header text, which would otherwise widen the page on phones. */
+.dev .pv-tablewrap { position: relative; }
+.dev-keys { min-width: 0; }
+.dev-keys td { vertical-align: middle; }
+.dev-keys__name { font-weight: 600; overflow-wrap: anywhere; }
+.dev-keys__meta { display: block; margin-top: 2px; }
+.dev-keys__tier { margin-left: 6px; font-size: 0.75rem; }
+.dev-keys__revoked td { opacity: 0.55; }
+.dev-keys__revoke { min-height: 36px; padding: 0 14px; }
+.dev-keys code { white-space: nowrap; }
+
+/* The new key, shown once */
+.dev-reveal { border-color: var(--pv-action); }
+.dev-reveal__row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.dev-reveal__key {
+  flex: 1 1 280px; min-width: 0; min-height: 46px; padding: 0 14px;
+  background: var(--pv-inset); border: 1px solid var(--pv-outline); border-radius: 12px;
+  color: var(--pv-text); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9rem;
+}
+
+/* Terms */
+.dev-terms h2 { font-size: 1.1rem; margin: 22px 0 8px; }
+.dev-terms h2:first-child { margin-top: 0; }
+.dev-terms ol { margin: 0; padding-left: 1.4em; line-height: 1.6; }
+.dev-terms li { margin-bottom: 8px; }
+
+@media (max-width: 640px) {
+  .dev-hero__title { font-size: 1.6rem; }
+}
+
+/* Notes: icon beside the text, not on a row of its own. */
+.dev .pv-note { flex-wrap: nowrap; align-items: flex-start; }
+.dev .pv-note > i, .dev .pv-note > svg { flex-shrink: 0; margin-top: 3px; }
+.dev .pv-hero__actions .pv-btn { white-space: nowrap; }

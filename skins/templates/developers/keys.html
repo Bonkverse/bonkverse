@@ -1,0 +1,120 @@
+{% extends 'skins/base.html' %}
+{% load static %}
+
+{% block title %}API keys · Bonkverse{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/player_profile.css' %}">
+<link rel="stylesheet" href="{% static 'css/developers.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="pv pv--narrow dev" id="main">
+  <header class="pv-hero">
+    <div class="pv-hero__text">
+      <a class="pv-link pv-small" href="{% url 'developers' %}">← Developers</a>
+      <h1 class="dev-hero__title">Your API keys</h1>
+      <p class="pv-muted">{{ active_count }} of {{ max_keys }} active keys. Each key gets its own rate limit.</p>
+    </div>
+    <div class="pv-hero__actions">
+      <a class="pv-btn pv-btn--ghost" href="{{ BONKVERSE_DOCS_URL }}/api/quickstart">Quickstart</a>
+    </div>
+  </header>
+
+  {% if new_raw %}
+  <section class="pv-card pv-card--accent dev-reveal" aria-labelledby="new-key-title">
+    <h2 class="pv-card__title" id="new-key-title"><i data-lucide="key-round"></i> Copy your new key now</h2>
+    <p class="pv-muted">
+      This is the only time “{{ new_key.name }}” is shown in full. Bonkverse keeps only a fingerprint of it,
+      so if you lose it, revoke it and make another.
+    </p>
+    <div class="dev-reveal__row">
+      <input class="dev-reveal__key" id="new-key" type="text" readonly value="{{ new_raw }}"
+             aria-label="Your new API key" spellcheck="false" autocomplete="off">
+      <button type="button" class="pv-btn" data-copy="new-key" data-copied-label="Copied">
+        <i data-lucide="copy"></i><span>Copy</span>
+      </button>
+    </div>
+    <p class="pv-fine">Put it in an environment variable on your server, never in browser code or a public repo.</p>
+  </section>
+  {% endif %}
+
+  <section class="pv-card">
+    <h2 class="pv-card__title">New key</h2>
+    {% if at_limit %}
+      <p class="pv-muted">You have {{ max_keys }} active keys, the most one account can have. Revoke one you don't use to make a new one.</p>
+    {% else %}
+      <form method="post" action="{% url 'developer_keys' %}" class="dev-form">
+        {% csrf_token %}
+        <label class="dev-field">
+          <span class="dev-field__label">Name</span>
+          <span class="pv-muted pv-small">What it's for, like your site or bot. Only you see it.</span>
+          <input type="text" name="name" maxlength="100" required placeholder="My leaderboard site" autocomplete="off">
+        </label>
+        {% if not terms_accepted %}
+          <label class="dev-agree">
+            <input type="checkbox" name="agree" required>
+            <span>I agree to the <a href="{% url 'developer_terms' %}" target="_blank" rel="noopener">API terms</a>.</span>
+          </label>
+        {% endif %}
+        <button type="submit" class="pv-btn"><i data-lucide="plus"></i>Create key</button>
+      </form>
+    {% endif %}
+  </section>
+
+  <section class="pv-card">
+    <h2 class="pv-card__title">Keys</h2>
+    {% if keys %}
+      <div class="pv-tablewrap">
+        <table class="pv-table dev-keys">
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col">Key</th>
+              <th scope="col"><span class="pv-visually-hidden">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for key in keys %}
+            <tr class="{% if not key.is_active %}dev-keys__revoked{% endif %}">
+              <td>
+                <span class="dev-keys__name">{{ key.name }}</span>
+                {% if key.tier == partner_tier %}<span class="pv-pill dev-keys__tier">Partner</span>{% endif %}
+                <span class="pv-muted pv-small dev-keys__meta">
+                  Created {{ key.created_at|date:"M j, Y" }} ·
+                  {% if not key.is_active %}revoked {{ key.revoked_at|date:"M j, Y" }}
+                  {% elif key.last_used_at %}last used {{ key.last_used_at|timesince }} ago
+                  {% else %}never used{% endif %}
+                </span>
+              </td>
+              <td><code>bvk_{{ key.prefix }}_…</code></td>
+              <td class="pv-num">
+                {% if key.is_active %}
+                <form method="post" action="{% url 'developer_revoke_key' key.prefix %}"
+                      data-confirm="Revoke “{{ key.name }}”? Anything using it stops working right away.">
+                  {% csrf_token %}
+                  <button type="submit" class="pv-btn pv-btn--ghost dev-keys__revoke">Revoke</button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="pv-muted">No keys yet. Make one above, then follow the <a href="{{ BONKVERSE_DOCS_URL }}/api/quickstart">quickstart</a>.</p>
+    {% endif %}
+  </section>
+
+  <p class="pv-note">
+    <i data-lucide="gauge"></i>
+    <span>Keys made here allow 60 requests a minute (10 bulk lookups). Need more for a league or a big bot?
+    Ask on <a href="{{ BONKVERSE_DISCORD_URL }}" target="_blank" rel="noopener">Discord</a>.</span>
+  </p>
+</main>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/developers.js' %}"></script>
+{% endblock %}

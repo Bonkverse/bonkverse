@@ -29,6 +29,8 @@ Defaults are chosen so local development works with only the required ones set.
 | `BONKVERSE_EDITOR_URL` | `http://localhost:5173` | "Skin Editor" / "Open in editor" links |
 | `BONKVERSE_REPLAYS_URL` | `http://localhost:5173` | "Replays" link; player profiles read its `/api/player/<name>` (`integrations/replays.py`) |
 | `PLAYER_PROFILE_CACHE_SECONDS` | `300` | How long a player profile's replay stats are cached |
+| `BONKVERSE_DOCS_URL` | `https://docs.bonkverse.io` | Docs links on the developer portal (`/developers/`) |
+| `PUBLIC_API_MAX_KEYS_PER_USER` | `3` | Active API keys one account may create in the developer portal |
 | `BONKVERSE_RENDER_URL` | `https://editor.bonkverse.io` | Staff re-render (`/api/render-bundle`). Production's works from local. |
 | `BLSKIN_FETCHER_URL` | production fetcher | Upload from BonkLeagues |
 | `BONKBOT_API_URL` | production BonkBot | `/api/join-matchmaking/` (`integrations/bonkbot.py`) |
