@@ -13,6 +13,11 @@
 //   401 auth="bonk"             -> open the bonk.io login modal (expired token)
 //   anything else               -> show `message` (too big, rate limited, ...)
 //
+// Spam guard (incident 2026-11-09): one wear at a time per tab, and after the
+// server says to wait (429/503 with retry_after) the page waits without
+// sending anything. The server enforces the same per account
+// (skins/wear_skin.py); this just stops the requests from being sent.
+//
 // After a successful bonk.io login the wear is retried ONCE. If bonk.io still
 // wants a login, we say so instead of reopening the modal: a modal that keeps
 // coming back was the bug fixed in #39, and this keeps it from returning.
@@ -23,6 +28,19 @@
   var APPLIED = "Applied to your active slot.";
   var FAILED = "Failed to apply skin.";
   var STILL_REFUSED = "bonk.io still didn't accept the login. Please try again in a minute.";
+  var IN_PROGRESS = "Still applying your last skin. Give it a second.";
+
+  var inFlight = false;   // a wear request is waiting on the server
+  var waitUntil = 0;      // Date.now() before which we don't send wears
+
+  function secondsLeft() {
+    return Math.max(0, Math.ceil((waitUntil - Date.now()) / 1000));
+  }
+
+  function waitMessage() {
+    var s = secondsLeft();
+    return "Wearing is paused for a moment. Try again in " + s + " second" + (s === 1 ? "" : "s") + ".";
+  }
 
   function toast(text, type) {
     if (window.BVToast) window.BVToast.show(text, { type: type });
@@ -101,8 +119,26 @@
     opts = opts || {};
     var report = opts.onStatus || toast;
     if (!url) { report("This skin can't be worn.", "error"); return; }
+    if (inFlight) { report(IN_PROGRESS, "error"); return; }
+    if (secondsLeft() > 0) { report(waitMessage(), "error"); return; }
 
-    var res = await window.BVApi.post(url, opts.data || {});
+    inFlight = true;
+    var res;
+    try {
+      res = await window.BVApi.post(url, opts.data || {});
+    } finally {
+      inFlight = false;
+    }
+
+    // 429 (this account is going too fast) or 503 (bonk.io is limiting
+    // Bonkverse): remember how long to wait so repeat clicks send nothing.
+    if ((res.status === 429 || res.status === 503) && res.json.retry_after) {
+      waitUntil = Date.now() + res.json.retry_after * 1000;
+    }
+    if (res.status === 429 && res.json.error === "rate_limited") {
+      report(waitMessage(), "error");
+      return;
+    }
 
     if (res.ok && res.json.ok) { report(APPLIED, "success"); return; }
     if (window.BVApi.needsSiteLogin(res)) { window.BVApi.goToLogin(); return; }

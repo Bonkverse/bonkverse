@@ -12,6 +12,9 @@ JSON contract the frontend relies on (tests/test_wear.py):
 - any other failure         -> no modal; show `message` (a sentence):
     422 avatar_too_big   the skin is over bonk.io's size limit
     503 rate_limited     bonk.io is limiting requests from Bonkverse
+                         (+ retry_after seconds and a Retry-After header)
+    429 wear_in_progress this account already has a wear waiting on bonk.io
+    429 rate_limited     this account wore too many skins too fast (core/ratelimits)
     502 network_error    bonk.io couldn't be reached
     502 rejected         a refusal code we don't recognise (logged)
 
@@ -19,15 +22,35 @@ Only bonk.io's "token" refusal opens the login modal. Treating every refusal
 as an expired token made the modal reappear forever for a too-big skin, and
 every time bonk.io was rate-limiting the server (docs/bonk/api.md). The pages'
 side of this contract is static/core/js/bv-wear.js.
+
+Spam protection (incident 2026-11-09): bonk.io limits the server's single
+outbound IP, so one player's click-spam paused wearing for everyone. Three
+layers keep one account from spending that shared budget, all in Redis so
+every gunicorn worker sees them:
+1. One wear in flight per account (`_wear_lock`): double-clicks and parallel
+   tabs get 429 wear_in_progress instead of a second bonk.io call.
+2. Per-account rate tiers "wear_burst" and "wear" (settings.RATE_LIMITS),
+   shared by both wear endpoints.
+3. The bonk.io cooldown (integrations/bonk_api.py): after "ratelimited", no
+   worker calls bonk.io until it ends.
 """
 
+import math
+from contextlib import contextmanager
+
+from django.core.cache import cache
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
 
 from core.bonk import AvatarSlot, BonkSession
 from core.ratelimits import limit
-from integrations.bonk_api import BonkAvatarUpdateResult, BonkError, get_client
+from integrations.bonk_api import (
+    BonkAvatarUpdateResult,
+    BonkError,
+    get_client,
+    rate_limit_cooldown,
+)
 
 from .auth_guards import api_login_required, bonk_token_required
 from .events import log_event
@@ -54,6 +77,44 @@ _WEAR_FAILURES = {
 }
 _UNKNOWN_FAILURE = (502, "bonk.io didn't accept this skin.")
 
+# Both wear endpoints share one per-account counter.
+_WEAR_GROUP = "skins.wear"
+
+# Longest a wear can hold its account's lock: longer than the bonk.io
+# (connect + read) timeout, so a stuck call can't lock an account for good.
+_WEAR_LOCK_SECONDS = 15
+_IN_PROGRESS_MESSAGE = "Still applying your last skin. Give it a second."
+
+
+@contextmanager
+def _wear_lock(user_id):
+    """Hold this account's one-wear-at-a-time lock.
+
+    Yields True if this request holds the lock (or the cache is down, in which
+    case we let the wear through rather than block everyone), False if another
+    wear for the account is still waiting on bonk.io.
+
+    cache.add is atomic (Redis SET NX): of several requests arriving in the
+    same instant, exactly one gets True. A plain "read, then write" check is
+    what let bursts through before.
+    """
+    key = f"wear:inflight:{user_id}"
+    try:
+        added = cache.add(key, 1, timeout=_WEAR_LOCK_SECONDS)
+    except Exception:
+        added = None
+    if added is False:
+        yield False
+        return
+    try:
+        yield True
+    finally:
+        if added:
+            try:
+                cache.delete(key)
+            except Exception:
+                pass
+
 
 def _update_failed_response(result: BonkAvatarUpdateResult) -> JsonResponse:
     """The JSON reply when bonk.io didn't apply the skin."""
@@ -62,7 +123,18 @@ def _update_failed_response(result: BonkAvatarUpdateResult) -> JsonResponse:
         return JsonResponse({"ok": False, "auth": "bonk", "error": result.error}, status=401)
     status, message = _WEAR_FAILURES.get(result.error, _UNKNOWN_FAILURE)
     # No auth tag, so the page shows `message` and never opens the modal.
-    return JsonResponse({"ok": False, "error": result.error, "message": message}, status=status)
+    body = {"ok": False, "error": result.error, "message": message}
+    retry_after = None
+    if result.error == BonkError.RATE_LIMITED:
+        # How long every worker will keep answering this without asking bonk.io,
+        # so the page can wait instead of retrying into the pause.
+        retry_after = math.ceil(rate_limit_cooldown.remaining()) or None
+        if retry_after:
+            body["retry_after"] = retry_after
+    response = JsonResponse(body, status=status)
+    if retry_after:
+        response["Retry-After"] = str(retry_after)
+    return response
 
 
 def _wear(request, skin_code: str) -> tuple[AvatarSlot, JsonResponse | None]:
@@ -73,7 +145,13 @@ def _wear(request, skin_code: str) -> tuple[AvatarSlot, JsonResponse | None]:
     bonk = BonkSession(request.session)
     token = bonk.token  # guaranteed present by bonk_token_required
     slot = _resolve_slot(request)
-    result = get_client().update_avatar(token, slot, skin_code)
+    with _wear_lock(request.user.pk) as acquired:
+        if not acquired:
+            return slot, JsonResponse(
+                {"ok": False, "error": "wear_in_progress", "message": _IN_PROGRESS_MESSAGE},
+                status=429,
+            )
+        result = get_client().update_avatar(token, slot, skin_code)
     if not result.ok:
         # integrations/bonk_api.py logs bonk.io's refusal code.
         return slot, _update_failed_response(result)
@@ -113,7 +191,8 @@ def bonk_login_for_wear(request):
 
 @bonk_token_required
 @require_POST
-@limit("write")
+@limit("wear_burst", key="user_or_ip", group=_WEAR_GROUP)
+@limit("wear", key="user_or_ip", group=_WEAR_GROUP)
 def wear_skin_code(request):
     """Wear an unsaved editor skin from a raw skin_code (no DB row)."""
     skin_code = request.POST.get("skin_code")
@@ -129,7 +208,8 @@ def wear_skin_code(request):
 
 @bonk_token_required
 @require_POST
-@limit("write")
+@limit("wear_burst", key="user_or_ip", group=_WEAR_GROUP)
+@limit("wear", key="user_or_ip", group=_WEAR_GROUP)
 def wear_skin(request, skin_id: int):
     """Wear a gallery skin by id in the requested (or active) slot."""
     skin = get_object_or_404(Skin, id=skin_id)

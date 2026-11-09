@@ -69,7 +69,15 @@ or other Railway customers). Unconfirmed.
 
 So after any `ratelimited`, the client makes **no bonk.io calls for 120 s**
 (`RATE_LIMIT_COOLDOWN`) and answers `rate_limited` itself (`bonk_error` is
-empty for these). The cooldown is per server process. The log line is
+empty for these). The cooldown is shared by every gunicorn worker through the
+cache (`bonk:cooldown_until` in Redis), with an in-process copy as a fallback
+if Redis is down. Until 2026-11-09 it was per process, so the other workers
+kept calling bonk.io during a pause and kept extending bonk.io's limit.
+
+Wearing is also limited per account (skins/wear_skin.py): one wear in flight
+at a time, and the `wear_burst` / `wear` tiers in `RATE_LIMITS`. On
+2026-11-09 one player's 11 Wear clicks in about 1.5 s preceded a
+`ratelimited`, which then paused wearing for every user. The log line is
 `bonk.io rate-limited <script>; pausing bonk.io calls for 120.0s`.
 How long bonk.io's own limit lasts is unknown.
 
