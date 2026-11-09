@@ -43,8 +43,39 @@ keepalive = 5
 max_requests = 2000
 max_requests_jitter = 200
 
-# Log to stdout/stderr so Railway shows it. Railway's proxy already records each
+# Log to stdout so Railway shows it. Railway's proxy already records each
 # request (status, duration, path), so gunicorn's per-request access log is off.
 accesslog = None
 errorlog = "-"
 loglevel = os.environ.get("GUNICORN_LOG_LEVEL", "info")
+
+# Same one-line JSON on stdout as Django's logs (core/logs.py), so Railway
+# shows "Booting worker" as info rather than as an error. Gunicorn's default
+# handler writes to stderr, which Railway labels as errors (2026-11-09).
+logconfig_dict = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"railway": {"()": "core.logs.RailwayJsonFormatter"}},
+    "handlers": {
+        "stdout": {
+            "class": "logging.StreamHandler",
+            "formatter": "railway",
+            "stream": "ext://sys.stdout",
+        },
+    },
+    "root": {"level": "WARNING", "handlers": ["stdout"]},
+    "loggers": {
+        "gunicorn.error": {
+            "level": loglevel.upper(),
+            "handlers": ["stdout"],
+            "propagate": False,
+            "qualname": "gunicorn.error",
+        },
+        "gunicorn.access": {
+            "level": "INFO",
+            "handlers": [],
+            "propagate": False,
+            "qualname": "gunicorn.access",
+        },
+    },
+}

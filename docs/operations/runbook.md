@@ -63,12 +63,15 @@ Never type a Redis password by hand. A `/`, `#`, `?` or `@` in it breaks the URL
 ## bonk.io logins or wearing skins are failing
 
 Railway → bonkverse → Logs, filter
-`"bonk login response" OR "refused avatar update" OR "pausing bonk.io calls"`.
+`"bonk login response" OR "refused avatar update" OR "rate-limited"`.
 The codes mean ([bonk/api.md](../bonk/api.md), [ADR 0008](../adr/0008-bonk-refusals.md)):
 
-- `bonk_error=ratelimited` / `pausing bonk.io calls for 120.0s`: bonk.io is
-  limiting the server's IP. Everyone is affected; Bonkverse pauses its own
-  calls for 2 minutes at a time. Nothing to deploy. Note the time and whether
+- `bonk_error=ratelimited` / `pausing <script> calls for <s>s`: bonk.io is
+  limiting the server's IP for that script (logins and wears are paused
+  separately). Everyone is affected; Bonkverse pauses its own calls to that
+  script, starting at 2 minutes and doubling with each limit in a row up to
+  30 (`(<n> in a row)` in the line). `answered rate_limited without calling
+  it` lines are requests turned away during the pause. Nothing to deploy. Note the time and whether
   a bonk.io login from your own connection works meanwhile (that tells us the
   limit is on our IP). Bursts usually clear within an hour or two.
 - `bonk_error=avatar_too_big`: one skin is over bonk.io's size limit. Players

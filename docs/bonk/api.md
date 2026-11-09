@@ -67,18 +67,41 @@ IPs "may be shared with other customers", so the likeliest cause is other
 traffic to bonk.io from the same IP (other services in the Bonkverse project,
 or other Railway customers). Unconfirmed.
 
-So after any `ratelimited`, the client makes **no bonk.io calls for 120 s**
-(`RATE_LIMIT_COOLDOWN`) and answers `rate_limited` itself (`bonk_error` is
-empty for these). The cooldown is shared by every gunicorn worker through the
-cache (`bonk:cooldown_until` in Redis), with an in-process copy as a fallback
-if Redis is down. Until 2026-11-09 it was per process, so the other workers
-kept calling bonk.io during a pause and kept extending bonk.io's limit.
+So after a `ratelimited` from a script, the client stops calling **that
+script** and answers `rate_limited` itself (`bonk_error` is empty for these).
+The first pause is 120 s (`RATE_LIMIT_COOLDOWN`); each limit in a row doubles
+it (2, 4, 8, 16 minutes, then 30 at most, `RATE_LIMIT_COOLDOWN_MAX`), and a
+normal answer from that script starts it over. A run of limits is remembered
+for an hour (`RATE_LIMIT_STRIKE_MEMORY`).
+
+- **Per script.** bonk.io seems to limit each script on its own: on 2026-11-09
+  `login_legacy.php` and `friends.php` answered normally one second before
+  `avatar_update.php` said `ratelimited`. A single shared pause had been
+  turning away logins that would have worked.
+- **Backoff.** bonk.io's own lockout is longer than 2 minutes (the replay
+  scraper waits 65 minutes after one). With a flat 120 s pause, the first wear
+  after each pause was limited again, five times in a row on 2026-11-09.
+- **Shared by every gunicorn worker** through the cache
+  (`bonk:cooldown_until:<script>` and `bonk:cooldown_strikes:<script>` in
+  Redis), with an in-process copy as a fallback if Redis is down. Until
+  2026-11-09 the pause was per process, so the other workers kept calling
+  bonk.io during it.
+
+Log lines (one JSON object per line, see `core/logs.py`):
+- `bonk.io rate-limited <script> (<n> in a row); pausing <script> calls for <s>s`
+  (WARNING): bonk.io said `ratelimited`.
+- `bonk.io <script> paused for another <s>s; answered rate_limited without
+  calling it` (INFO): a request during the pause; nothing was sent.
+
+Players are told how long is left ("Try again in about 4 minutes."), and the
+wear reply and the login page carry the seconds (`retry_after`) so the page
+waits instead of retrying into the pause.
 
 Wearing is also limited per account (skins/wear_skin.py): one wear in flight
 at a time, and the `wear_burst` / `wear` tiers in `RATE_LIMITS`. On
 2026-11-09 one player's 11 Wear clicks in about 1.5 s preceded a
-`ratelimited`, which then paused wearing for every user. The log line is
-`bonk.io rate-limited <script>; pausing bonk.io calls for 120.0s`.
+`ratelimited`, which then paused wearing for every user.
+
 How long bonk.io's own limit lasts is unknown.
 
 ## `login_legacy.php`

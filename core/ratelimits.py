@@ -90,7 +90,7 @@ def _wants_json(request) -> bool:
     return "application/json" in accept and "text/html" not in accept
 
 
-def _describe_wait(seconds: int | None) -> str:
+def describe_wait(seconds: int | None) -> str:
     """Human wait time: "42 seconds", "about 3 minutes", or "a minute" when unknown."""
     if not seconds or seconds <= 0:
         return "a minute"
@@ -131,7 +131,7 @@ def too_many_requests(request, *, retry_after: int | None = None, tier: str | No
             request,
             "429.html",
             {
-                "wait": _describe_wait(retry_after),
+                "wait": describe_wait(retry_after),
                 "retry_after": retry_after,
                 # Reloading after a POST would make the browser resubmit the form
                 # (e.g. a login), so only page views reload themselves.

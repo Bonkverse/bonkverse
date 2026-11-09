@@ -488,17 +488,37 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    # One JSON object per line on stdout, so Railway shows each line's real
+    # level. Plain text on stderr showed every line, INFO included, as an
+    # error (core/logs.py, 2026-11-09).
     "formatters": {
-        "plain": {"format": "%(levelname)s %(name)s: %(message)s"},
+        "railway": {"()": "core.logs.RailwayJsonFormatter"},
+    },
+    "filters": {
+        "skip_expected_errors": {"()": "core.logs.SkipExpectedErrors"},
     },
     "handlers": {
-        "console": {"class": "logging.StreamHandler", "formatter": "plain"},
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "railway",
+            "stream": "ext://sys.stdout",
+        },
     },
     "root": {"handlers": ["console"], "level": "WARNING"},
     "loggers": {
-        # Unhandled exceptions in views (with traceback) and 5xx responses.
-        "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+        # Unhandled exceptions in views (with traceback) and 5xx responses,
+        # except ones a view marked as expected (core.logs.mark_expected_error).
+        # The filter is on the logger so Sentry never sees those either.
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+            "filters": ["skip_expected_errors"],
+        },
         "skins": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
         "core": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
+        # bonk.io calls: refusals (WARNING) and calls skipped during a
+        # rate-limit pause (INFO).
+        "integrations": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
     },
 }
