@@ -293,3 +293,43 @@ class TestRateLimitCooldown:
         api.update_avatar("tok", AvatarSlot(1), "CODE")
 
         assert len(mocked_http.calls) == 2
+
+
+class TestSharedCooldown:
+    """Regression for 2026-11-09: the pause lived in one gunicorn worker, so
+    the others kept calling bonk.io and extended its limit."""
+
+    def test_a_pause_started_in_one_process_stops_another(self, mocked_http):
+        from django.core.cache import cache
+
+        now = [1000.0]
+        worker_a = BonkApi(BASE, cooldown=_Cooldown(clock=lambda: now[0], store=cache))
+        worker_b = BonkApi(BASE, cooldown=_Cooldown(clock=lambda: now[0], store=cache))
+        mocked_http.post(AVATAR, json={"r": "fail", "e": "ratelimited"})
+
+        worker_a.update_avatar("tok", AvatarSlot(1), "CODE")
+        result = worker_b.update_avatar("tok", AvatarSlot(1), "CODE")
+
+        assert result.error == BonkError.RATE_LIMITED
+        assert result.bonk_error is None  # answered locally by worker B
+        assert len(mocked_http.calls) == 1
+
+    def test_store_failure_falls_back_to_this_process(self, mocked_http):
+        class Broken:
+            def get(self, *a, **k):
+                raise ConnectionError
+
+            def set(self, *a, **k):
+                raise ConnectionError
+
+            def delete(self, *a, **k):
+                raise ConnectionError
+
+        api = BonkApi(BASE, cooldown=_Cooldown(store=Broken()))
+        mocked_http.post(AVATAR, json={"r": "fail", "e": "ratelimited"})
+
+        api.update_avatar("tok", AvatarSlot(1), "CODE")
+        second = api.update_avatar("tok", AvatarSlot(1), "CODE")
+
+        assert second.bonk_error is None
+        assert len(mocked_http.calls) == 1

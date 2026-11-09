@@ -17,6 +17,7 @@ tests/fixtures/bonk/.
 from __future__ import annotations
 
 import logging
+import math
 import re
 import threading
 import time
@@ -89,25 +90,80 @@ _REFUSALS = {
 # 2026-10-30, mostly when Bonkverse itself sent little (docs/bonk/api.md).
 RATE_LIMIT_COOLDOWN = 120.0
 
+# Cache key holding the wall-clock time (epoch seconds) until which no process
+# may call bonk.io. See _Cooldown.
+COOLDOWN_STORE_KEY = "bonk:cooldown_until"
+
 
 class _Cooldown:
-    """A shared "don't call bonk.io until" time, per server process."""
+    """A "don't call bonk.io until" time shared by every server process.
 
-    def __init__(self, clock=time.monotonic):
+    The time is kept in this process and, when a `store` is attached, in a
+    shared cache (Redis in production) so that one worker hearing
+    "ratelimited" pauses all of them. Before 2026-11-09 it lived only in the
+    process: with 4 gunicorn workers the other 3 kept calling bonk.io during
+    the pause, and a recycled worker forgot it, which kept extending bonk.io's
+    limit (incident 2026-11-09).
+
+    `store` is anything with Django-cache-style get/set/delete. If it fails or
+    is unreachable, the in-process time still applies.
+
+    Times are wall-clock (time.time) because monotonic clocks differ between
+    processes.
+    """
+
+    def __init__(self, clock=time.time, store=None):
         self._clock = clock
         self._until = 0.0
         self._lock = threading.Lock()
+        self._store = store
+
+    def use_store(self, store) -> None:
+        """Share the pause through `store` (e.g. django.core.cache.cache)."""
+        self._store = store
+
+    def _shared_until(self) -> float:
+        if self._store is None:
+            return 0.0
+        try:
+            value = self._store.get(COOLDOWN_STORE_KEY)
+        except Exception:  # the store being down must never break bonk.io calls
+            logger.warning("bonk.io cooldown store unreadable; using this process only")
+            return 0.0
+        try:
+            return float(value) if value is not None else 0.0
+        except (TypeError, ValueError):
+            return 0.0
+
+    def remaining(self) -> float:
+        """Seconds left in the pause (0 when bonk.io may be called)."""
+        until = max(self._until, self._shared_until())
+        return max(0.0, until - self._clock())
 
     def active(self) -> bool:
-        return self._clock() < self._until
+        return self.remaining() > 0
 
     def start(self, seconds: float) -> None:
+        until = self._clock() + seconds
         with self._lock:
-            self._until = max(self._until, self._clock() + seconds)
+            self._until = max(self._until, until)
+        if self._store is None:
+            return
+        try:
+            if until > self._shared_until():
+                self._store.set(COOLDOWN_STORE_KEY, until, timeout=math.ceil(seconds))
+        except Exception:
+            logger.warning("bonk.io cooldown store unwritable; pausing this process only")
 
     def reset(self) -> None:
         with self._lock:
             self._until = 0.0
+        if self._store is None:
+            return
+        try:
+            self._store.delete(COOLDOWN_STORE_KEY)
+        except Exception:
+            pass
 
 
 rate_limit_cooldown = _Cooldown()
@@ -358,9 +414,15 @@ class BonkApi:
 
 
 def get_client() -> BonkApi:
-    """A BonkApi configured from Django settings (base URL and timeouts)."""
-    from django.conf import settings
+    """A BonkApi configured from Django settings (base URL and timeouts).
 
+    Also points the process-wide cooldown at Django's cache, so a "ratelimited"
+    heard by one gunicorn worker pauses every worker (Redis in production).
+    """
+    from django.conf import settings
+    from django.core.cache import cache
+
+    rate_limit_cooldown.use_store(cache)
     return BonkApi(
         settings.BONK_API_BASE_URL,
         timeout=(settings.BONK_CONNECT_TIMEOUT, settings.BONK_READ_TIMEOUT),

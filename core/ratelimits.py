@@ -32,29 +32,36 @@ def _rate_for(tier: str):
     return rate
 
 
-def limit(tier: str, *, method=ALL):
-    """Rate-limit a view by visitor IP using a named tier from settings.RATE_LIMITS.
+def limit(tier: str, *, method=ALL, key="ip", group: str | None = None):
+    """Rate-limit a view using a named tier from settings.RATE_LIMITS.
 
     Args:
         tier: Key in settings.RATE_LIMITS, e.g. "browse", "search", "write".
         method: HTTP method(s) that count toward the limit. Defaults to all.
             Use method="POST" when only submissions should count (login).
+        key: Who gets their own counter. "ip" (default) for anonymous pages;
+            "user_or_ip" for actions taken as a signed-in account, so one
+            person can't spend the budget of a whole school or household and
+            one household's busy player doesn't block the rest.
+        group: Share one counter between several views (e.g. both wear
+            endpoints). Defaults to a counter per view.
 
     Raises:
         ImproperlyConfigured: At import time, if the tier does not exist.
     """
     if tier not in settings.RATE_LIMITS:
         raise ImproperlyConfigured(f"Unknown rate-limit tier {tier!r}")
+    shared_group = group
 
     def decorator(view):
-        group = f"{view.__module__}.{view.__qualname__}"
+        group = shared_group or f"{view.__module__}.{view.__qualname__}"
 
         @functools.wraps(view)
         def wrapped(request, *args, **kwargs):
             usage = get_usage(
                 request,
-                group=group,
-                key="ip",
+                group=f"{group}:{tier}",
+                key=key,
                 rate=_rate_for(tier),
                 method=method,
                 increment=True,
@@ -67,6 +74,7 @@ def limit(tier: str, *, method=ALL):
         # Read by `manage.py audit_rate_limits` to list every route's limit.
         wrapped.rate_limit_tier = tier
         wrapped.rate_limit_method = method
+        wrapped.rate_limit_key = key
         return wrapped
 
     return decorator

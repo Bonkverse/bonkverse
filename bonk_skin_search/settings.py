@@ -424,6 +424,12 @@ RATE_LIMITS = {
         "browse": "120/m",  # page views: home, categories, leaderboards, profiles
         "search": "60/m",  # full-text skin search and player search
         "write": "30/m",  # edit / delete your own skins, logout
+        # Wearing a skin calls bonk.io's avatar_update.php from the server's
+        # one outbound IP, which bonk.io rate-limits for everyone at once.
+        # Counted per signed-in account, shared by both wear endpoints
+        # (skins/wear_skin.py). wear_burst stops click-spam; wear caps a minute.
+        "wear_burst": "2/10s",
+        "wear": "6/m",
         "vote": "500/h",  # upvotes, downvotes, favorites
         "upload": "10/m",  # skin uploads (fetch + render)
         "login": "15/h",  # bonk.io login attempts (POST only)

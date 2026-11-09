@@ -283,3 +283,69 @@ class TestBonkLoginForWear:
             "password": "hunter2",
             "remember": "false",
         }
+
+
+class TestWearSpamProtection:
+    """Regression for 2026-11-09: one player's burst of Wear clicks got
+    bonk.io to rate-limit the server's IP, pausing wearing for everyone."""
+
+    def test_second_wear_while_one_is_in_flight_is_refused(
+        self, bonk_session_client, skin, mocked_http, user
+    ):
+        from django.core.cache import cache
+
+        cache.add(f"wear:inflight:{user.pk}", 1, timeout=15)  # a wear is pending
+
+        response = bonk_session_client.post(_wear_url(skin.id))
+
+        assert response.status_code == 429
+        assert response.json()["error"] == "wear_in_progress"
+        assert len(mocked_http.calls) == 0  # nothing reached bonk.io
+
+    def test_lock_is_released_after_the_wear(self, bonk_session_client, skin, mocked_http, user):
+        from django.core.cache import cache
+
+        mocked_http.post(BONK_AVATAR_UPDATE_URL, json=load_bonk_fixture("avatar_update_success"))
+
+        bonk_session_client.post(_wear_url(skin.id))
+
+        assert cache.get(f"wear:inflight:{user.pk}") is None
+
+    def test_burst_of_wears_is_cut_off_per_account(self, bonk_session_client, skin, mocked_http):
+        mocked_http.post(BONK_AVATAR_UPDATE_URL, json=load_bonk_fixture("avatar_update_success"))
+
+        statuses = [bonk_session_client.post(_wear_url(skin.id)).status_code for _ in range(5)]
+
+        assert statuses[:2] == [200, 200]
+        assert set(statuses[2:]) == {429}
+        assert len(mocked_http.calls) == 2
+
+    def test_one_accounts_spam_does_not_use_up_another_accounts_wears(
+        self, bonk_session_client, skin, mocked_http, client, django_user_model
+    ):
+        mocked_http.post(BONK_AVATAR_UPDATE_URL, json=load_bonk_fixture("avatar_update_success"))
+        for _ in range(5):
+            bonk_session_client.post(_wear_url(skin.id))
+
+        other = django_user_model.objects.create_user(username="other-player", password="pw")
+        from django.test import Client
+
+        other_client = Client()
+        other_client.force_login(other)
+        session = other_client.session
+        session["bonk_token"] = "other-token"
+        session["bonk_token_expires"] = time.time() + 3600
+        session.save()
+
+        assert other_client.post(_wear_url(skin.id)).status_code == 200
+
+    def test_rate_limited_answer_says_how_long_to_wait(
+        self, bonk_session_client, skin, mocked_http
+    ):
+        mocked_http.post(BONK_AVATAR_UPDATE_URL, json={"r": "fail", "e": "ratelimited"})
+
+        response = bonk_session_client.post(_wear_url(skin.id))
+
+        assert response.status_code == 503
+        assert 0 < response.json()["retry_after"] <= 120
+        assert response["Retry-After"] == str(response.json()["retry_after"])
