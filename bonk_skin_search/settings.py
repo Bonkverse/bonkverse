@@ -94,6 +94,12 @@ BONKVERSE_BASE_URL = os.getenv("BONKVERSE_BASE_URL", "https://bonkverse.io").rst
 # own dev server for those apps.
 BONKVERSE_EDITOR_URL = os.getenv("BONKVERSE_EDITOR_URL", "http://localhost:5173").rstrip("/")
 BONKVERSE_REPLAYS_URL = os.getenv("BONKVERSE_REPLAYS_URL", "http://localhost:5173").rstrip("/")
+# The docs site (Bonkverse/docs, ADR 0012); the developer portal links to it.
+BONKVERSE_DOCS_URL = os.getenv("BONKVERSE_DOCS_URL", "https://docs.bonkverse.io").rstrip("/")
+
+# @login_required sends signed-out visitors here (Django's default,
+# /accounts/login/, doesn't exist on this site).
+LOGIN_URL = "login"
 # Player profiles (players/) read the replay site's /api/player/<name> and
 # keep each answer this long; the replay site caches it for 5 minutes too.
 PLAYER_PROFILE_CACHE_SECONDS = int(os.getenv("PLAYER_PROFILE_CACHE_SECONDS", "300"))
@@ -436,6 +442,10 @@ RATE_LIMITS = {
         "api_auth_fail": "20/m",
     }.items()
 }
+
+# Developer portal (/developers/): active API keys one account may create
+# for itself. Revoked keys don't count. Partner keys are issued by staff.
+PUBLIC_API_MAX_KEYS_PER_USER = int(os.getenv("PUBLIC_API_MAX_KEYS_PER_USER", "3"))
 
 # =========================================================
 # Celery

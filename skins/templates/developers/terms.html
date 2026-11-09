@@ -1,0 +1,52 @@
+{% extends 'skins/base.html' %}
+{% load static %}
+
+{% block title %}API terms · Bonkverse{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/player_profile.css' %}">
+<link rel="stylesheet" href="{% static 'css/developers.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="pv pv--narrow dev" id="main">
+  <header class="pv-hero">
+    <div class="pv-hero__text">
+      <a class="pv-link pv-small" href="{% url 'developers' %}">← Developers</a>
+      <h1 class="dev-hero__title">Bonkverse API terms</h1>
+      <p class="pv-muted">Version {{ terms_version }}. You agree to these when you create an API key.</p>
+    </div>
+  </header>
+
+  <article class="pv-card dev-terms">
+    <h2>Using the data</h2>
+    <ol>
+      <li>Show where the data came from: "Levels from Bonkverse", with a link to the player's profile (<code>profile_url</code>) where you can.</li>
+      <li>Don't resell the data, and don't republish it as a bulk dataset or a copy of Bonkverse.</li>
+      <li>Respect players' choices. A player marked <code>private</code> has hidden their level; stop showing it at your next sync.</li>
+      <li>Label times honestly. <code>seen_at</code> is when a replay showed the level, not when the player levelled up or was last online.</li>
+    </ol>
+
+    <h2>Your keys</h2>
+    <ol start="5">
+      <li>Keep your key secret: call the API from your server or bot, never from code that runs in someone's browser. If a key leaks, revoke it and make a new one.</li>
+      <li>One key per site or bot. Don't spread requests over several keys to get around the rate limits.</li>
+      <li>Keys can be revoked if they're used against these terms or in a way that strains Bonkverse. We'll try to reach you first.</li>
+    </ol>
+
+    <h2>What we promise</h2>
+    <ol start="8">
+      <li>The API is free and provided as is. Bonkverse is a fan project: it can be slow or down, and the data is only as complete as the replays we've collected.</li>
+      <li>Within <code>/api/v1/</code> we only add fields; we don't rename or remove them. Breaking changes get a new version.</li>
+      <li>If these terms change, you'll be asked to agree again before your next new key. Your existing keys keep working.</li>
+    </ol>
+
+    <p class="pv-fine">
+      Bonkverse's <a href="{% url 'terms' %}">Terms of Service</a> and
+      <a href="{% url 'privacy' %}">Privacy Policy</a> also apply. Bonkverse is not affiliated with bonk.io.
+    </p>
+  </article>
+
+  <a class="pv-btn" href="{% url 'developer_keys' %}"><i data-lucide="key-round"></i>Get an API key</a>
+</main>
+{% endblock %}

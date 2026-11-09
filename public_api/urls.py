@@ -2,7 +2,7 @@ from django.urls import path
 
 import players.urls  # noqa: F401  registers the <username:…> converter
 
-from . import views
+from .views import api as views
 
 # Mounted at /api/v1/. Usernames use the same <username:…> converter as
 # profile pages: "." and ".." are written "~." and "~.." in the path.

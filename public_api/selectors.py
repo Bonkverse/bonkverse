@@ -30,6 +30,8 @@ from players.charts import profile_path
 from players.models import ProfileVisibility
 from players.selectors import replay_profile
 
+from .models import ApiKey
+
 MAX_USERNAME_LENGTH = 100
 MAX_LOOKUP_NAMES = 250
 
@@ -222,3 +224,9 @@ def level_history(username):
         # Highest level seen on each day the player was in a replay.
         "days": [{"day": d.get("day"), "level": d.get("level")} for d in profile.get("days") or []],
     }, None
+
+
+def keys_for(user):
+    """The account's API keys for its developer portal list: active first,
+    newest first."""
+    return ApiKey.objects.filter(owner=user).order_by("-is_active", "-created_at")

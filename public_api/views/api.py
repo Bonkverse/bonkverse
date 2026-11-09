@@ -6,9 +6,9 @@ responses.py. Player names are bonk.io usernames, matched ignoring case.
 
 import json
 
-from . import selectors
-from .auth import api_endpoint
-from .responses import fail, ok
+from .. import selectors
+from ..auth import api_endpoint
+from ..responses import fail, ok
 
 _ERROR_STATUS = {
     selectors.NOT_FOUND: 404,

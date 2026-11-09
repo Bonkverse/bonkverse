@@ -72,6 +72,8 @@ urlpatterns = [
     path("staff/", staff.staff_page, name="staff"),
     # Public, versioned API for other sites and bots (public_api/, ADR 0011).
     path("api/v1/", include("public_api.urls")),
+    # Developer portal: API terms and your own API keys (public_api/, ADR 0012).
+    path("developers/", include("public_api.portal_urls")),
     # NEW: AJAX/JSON endpoints used by search cards
     path("api/", index, name="api_index"),
     path("api/skins/<int:skin_id>/vote/", vote_skin_api, name="api_vote_skin"),

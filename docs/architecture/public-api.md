@@ -42,6 +42,25 @@ the request. The single-player endpoint turns `not_found` into 404 and
 
 ## Keys
 
+**Self-serve, standard tier:** anyone signed in to Bonkverse makes their
+own keys at `/developers/keys/` (the developer portal, `public_api/views/portal.py`,
+rules in `public_api/services.py`):
+
+- They agree to the API terms first (`/developers/terms/`), recorded in
+  `ApiTermsAcceptance` with `services.TERMS_VERSION`. Changing the terms
+  means bumping that version; everyone agrees again before their next new
+  key, and existing keys keep working.
+- At most `PUBLIC_API_MAX_KEYS_PER_USER` (3) active keys per account;
+  revoked keys don't count. Owner-less keys (staff-issued) don't count.
+- The full key is shown once, in the reply to the POST that made it
+  (`Cache-Control: no-store`, never redirected, never stored).
+- They can revoke their own keys; someone else's key answers "not found".
+- `developers.bonkverse.io` is a Cloudflare redirect rule to
+  `bonkverse.io/developers/` (no Django host of its own).
+
+**Partner tier, by staff:** higher limits, issued by hand. To raise an
+existing key, change its tier in Django admin.
+
 ```bash
 # Create (prints the key ONCE; send it privately)
 railway ssh -- python manage.py create_api_key \
