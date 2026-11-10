@@ -11,20 +11,20 @@
     font-size: 0.95rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: #8fa3b5;
+    color: var(--bv-muted);
     margin: 0 0 8px;
 }
 
 .error-page__title {
     font-size: 2.6rem;
-    color: #ff6b6b;
+    color: var(--bv-danger);
     margin: 0 0 16px;
 }
 
 .error-page__message {
     font-size: 1.15rem;
     line-height: 1.6;
-    color: #ccc;
+    color: var(--bv-text);
     margin: 0 auto 28px;
 }
 
@@ -34,15 +34,15 @@
     margin: 20px auto 0;
     padding: 14px 18px;
     max-width: 34rem;
-    border: 1px solid rgba(88, 101, 242, 0.45);
+    border: 1px solid var(--bv-link);
     border-radius: 10px;
-    background: rgba(88, 101, 242, 0.12);
+    background: color-mix(in srgb, var(--bv-link) 12%, transparent);
     font-size: 1rem;
-    color: #e3e5f5;
+    color: var(--bv-text);
 }
 
 .error-page__note a {
-    color: #8ea1ff;
+    color: var(--bv-link);
     font-weight: 600;
 }
 

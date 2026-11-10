@@ -1,0 +1,23 @@
+{
+  "package": "Bonkverse/ui",
+  "version": "0.1.3",
+  "note": "Copied by scripts/sync_ui.py. Don't edit these files; change Bonkverse/ui and sync a new release.",
+  "files": {
+    "base.css": "50b24f61ede1fb28a93f4ce42da55a1534b156ca973b4e6891ea8ba35fcadaad",
+    "components.css": "16e91bcfb35558dd4b1e46cb2111c2fb5bdc82af5d9cc89c6b0dc3fe9bc2a89f",
+    "fonts/OFL.txt": "536533cad95838e13777663c4109b802aa662ef1ef285337f0c7f51d35682fdc",
+    "fonts/jost-latin-400-normal.woff2": "f94cffda16515fbb1667a2662d6b46f5610a942fd02fe88d67ff98f776288962",
+    "fonts/jost-latin-500-normal.woff2": "98dce4f076fe71a123a7cd44470e6f05e969cb6d7c9b2717766ad103e3597297",
+    "fonts/jost-latin-600-normal.woff2": "d0487d684596edca7f495d2495ee77a55448740930023c305e8a683b1daefda2",
+    "fonts/jost-latin-700-normal.woff2": "81da4d711250508c3f686d210ed07d5eb6229185d313fcc73fda7bf2b37d2ca5",
+    "fonts/jost-latin-ext-400-normal.woff2": "470fd7161407f66c9ff835c12e8e80032849bc8154fb44c0280e9b0ba92180a7",
+    "fonts/jost-latin-ext-500-normal.woff2": "a8b3af72a02fff5a20dc96316070ca95ce4a278b93a9b3a22ef8fe36abf3b442",
+    "fonts/jost-latin-ext-600-normal.woff2": "cbf14d41edf5f9741ca48317a4d1a3e6efe4e998512ebf2147900faf405c7015",
+    "fonts/jost-latin-ext-700-normal.woff2": "c0ef19f44a900563d7bb2e54275b35f329e0c7324a46ba55e53899a614b5d2b2",
+    "img/logo.png": "bf9807a7c66946fa159c34dc9deb35d20a919353822b3b575b82561515ea3c77",
+    "nav.json": "c965e360d27e5ab3bd6ecc99c72f49f96d0178ac33a362c7860a26b3f6c20e4a",
+    "theme.js": "f27ba3912e5101754c9d468e3a4699479637a1fe6cc670aff5b8c458042ae5d3",
+    "tokens.css": "d24007ace7f59099b9686da2c48eec29dce717d7db3ac2d6efffeb45b9a0f219",
+    "ui.js": "e7e1e86ec1f938ba92bf95c8316683cca908fc98e2e161a151ec9fd1cd8fc664"
+  }
+}

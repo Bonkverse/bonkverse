@@ -21,8 +21,9 @@
   const DAILY_CAP = C.daily_cap;
   const MAX_LEVEL = 5000;
   const DAY = 86400000;
-  const COLORS = ["#47d8c4", "#90b7ff", "#ffb454", "#c79bff"];
-  const PACE = { cap: "#47d8c4", pace: "#90b7ff", player: "#ffb454", history: "#edf4fb" };
+  // Series colors are theme tokens (css/base.css), so charts follow the theme.
+  const COLORS = ["var(--site-series-1)", "var(--site-series-2)", "var(--site-series-3)", "var(--site-series-4)"];
+  const PACE = { cap: "var(--site-series-1)", pace: "var(--site-series-2)", player: "var(--site-series-3)", history: "var(--bv-text)" };
 
   const $ = (sel, el = root) => el.querySelector(sel);
   const $$ = (sel, el = root) => [...el.querySelectorAll(sel)];
@@ -534,10 +535,10 @@
       const markers = compare.filter((p) => p.created && p.bonk_id).map((p) => ({
         x: parseDay(p.created), y: p.bonk_id, color: COLORS[compare.indexOf(p)], label: p.username,
       }));
-      if (est && !compare.some((p) => p.bonk_id === id)) markers.push({ x: est.t, y: id, color: "#ffb454", label: `#${num(id)}` });
+      if (est && !compare.some((p) => p.bonk_id === id)) markers.push({ x: est.t, y: id, color: "var(--site-series-3)", label: `#${num(id)}` });
       const opts = {
         xType: "time", height: 420, zoom: true, label: "Account IDs by date",
-        series: [{ name: "Accounts made then", color: "#47d8c4", points: points.map(([n, t]) => [t, n]), area: true }],
+        series: [{ name: "Accounts made then", color: "var(--site-series-1)", points: points.map(([n, t]) => [t, n]), area: true }],
         markers, yFloor: 0,
         tipValue: (v) => `ID ≈ ${num(v)}`,
       };

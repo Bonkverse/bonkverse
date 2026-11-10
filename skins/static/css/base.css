@@ -1,25 +1,48 @@
 /* The hidden attribute always hides, whatever display a class sets. */
 [hidden] { display: none !important; }
 
+/* Page, text and font come from Bonkverse/ui (static/ui/base.css). Older
+   pages still center their text; pages on bv- components don't. */
 body {
-    font-family: "Oxanium", sans-serif;
-    margin: 0;
     text-align: center;
-    background-color: #1a2733;
-    color: #ddd;
+}
+.bv-header,
+.bv-footer,
+.site-skin-tabs-wrap,
+.site-page {
+    text-align: start;
 }
 
-#particles-js {
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    background-size: cover;
-    background-position: center;
-    z-index: -1;
+/* Chart and swatch colors: one set per theme, so charts read on every page
+   color. Scripts pass these as var(--site-series-N). */
+:root, [data-bv-theme="bonkverse"], [data-bv-theme="dark"] {
+    --site-series-1: #8bd2c5;
+    --site-series-2: #90b7ff;
+    --site-series-3: #e5bf68;
+    --site-series-4: #c79bff;
+}
+[data-bv-theme="light"] {
+    --site-series-1: #15534c;
+    --site-series-2: #2f5ba8;
+    --site-series-3: #8a5a00;
+    --site-series-4: #6b3fb3;
 }
 
-h1 {
-    color: #ddd;
+.content {
+    padding-bottom: var(--bv-space-8);
+}
+
+/* Skin tab row (Search · New · Categories · Leaderboards · Upload) */
+.site-skin-tabs-wrap {
+    max-width: var(--bv-page-max);
+    margin: 0 auto;
+    padding: var(--bv-space-2) var(--bv-gutter) 0;
+}
+.site-skin-tabs-wrap .bv-tabs {
+    margin-bottom: var(--bv-space-2);
+}
+
+.site-legacy h1 {
     font-size: 28px;
 }
 
@@ -27,8 +50,7 @@ h1 {
 #loading {
     font-size: 18px;
     font-weight: bold;
-    color: #009688;
-    text-shadow: 0px 0px 5px #009688;
+    color: var(--bv-link);
 }
 
 /* Home Button */
@@ -60,15 +82,15 @@ h1 {
     padding: 10px 15px;
     margin: 5px;
     text-decoration: none;
-    color: #ddd;
-    background-color: #795548;
+    color: var(--bv-action-ink);
+    background-color: var(--bv-action);
     text-align: center;
     border-radius: 8px;
 }
 
 .pagination a.active {
     font-weight: bold;
-    background-color: #ddd;
+    background-color: var(--bv-text);
 }
 
 /* Image Modal */
@@ -80,7 +102,7 @@ h1 {
     top: 0;
     width: 100vw;
     height: 100vh;
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: var(--bv-backdrop);
     align-items: center;
     justify-content: center;
 }
@@ -98,7 +120,7 @@ h1 {
     position: absolute;
     top: 15px;
     right: 35px;
-    color: white;
+    color: var(--bv-text);
     font-size: 40px;
     font-weight: bold;
     cursor: pointer;
@@ -157,8 +179,8 @@ h1 {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    background: #1a2733;
-    color: #fff;
+    background: var(--bv-card);
+    color: var(--bv-text);
     padding: 16px;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.4);
@@ -167,12 +189,12 @@ h1 {
 }
 
 .update-popup h3 { margin: 0 0 8px; font-size: 16px; }
-.update-popup a { color: #00ffcc; text-decoration: underline; }
+.update-popup a { color: var(--bv-link); text-decoration: underline; }
 .update-popup button {
     margin-top: 10px;
-    background: #444;
-    border: none;
-    color: white;
+    background: var(--bv-action);
+    border: 1px solid var(--bv-action-border);
+    color: var(--bv-action-ink);
     padding: 6px 12px;
     border-radius: 6px;
     cursor: pointer;
@@ -182,7 +204,7 @@ h1 {
     position: fixed;
     top: 0; left: 0;
     width: 100vw; height: 100vh;
-    background: rgba(0,0,0,0.7);
+    background: var(--bv-backdrop);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -190,21 +212,20 @@ h1 {
 }
 
 .update-modal {
-    background: #1a2733;
+    background: var(--bv-card);
     padding: 30px;
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     max-width: 500px;
     width: 90%;
-    color: #fff;
+    color: var(--bv-text);
     text-align: center;
     animation: fadeIn 0.3s ease;
 }
 
 .update-modal h2 {
     margin-top: 0;
-    color: #00ffcc;
-    text-shadow: 0 0 8px #00ffcc;
+    color: var(--bv-link);
 }
 
 .update-modal p {
@@ -215,14 +236,14 @@ h1 {
 .update-modal .read-more {
     display: inline-block;
     margin: 10px 0;
-    color: #00e6c3;
+    color: var(--bv-link);
     text-decoration: underline;
 }
 
 .update-modal button {
     margin-top: 15px;
-    background: #444;
-    color: #fff;
+    background: var(--bv-selected);
+    color: var(--bv-text);
     border: none;
     padding: 10px 16px;
     border-radius: 6px;
@@ -230,10 +251,15 @@ h1 {
 }
 
 .update-modal button:hover {
-    background: #666;
+    background: var(--bv-control);
 }
 
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-20px); }
     to   { opacity: 1; transform: translateY(0); }
 }
+
+/* Plain links in tables and lists: underline on hover, so the pointer has
+   feedback in every theme. */
+a.skin-link { color: var(--bv-link); }
+a.skin-link:hover { color: var(--bv-text); text-decoration: underline; }

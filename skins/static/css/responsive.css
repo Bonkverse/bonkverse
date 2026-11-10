@@ -17,20 +17,17 @@
     }
 
     /* Forms */
-    form {
+    :where(.site-legacy) form {
         width: 90%;
         padding: 15px;
     }
 
-    input[type="text"],
-    input[type="url"],
-    input[type="email"],
-    input,
-    textarea {
+    :where(.site-legacy) input,
+    :where(.site-legacy) textarea {
         width: 90%;
     }
 
-    input[type="text"] {
+    :where(.site-legacy) input[type="text"] {
         width: 90% !important;
     }
 
@@ -175,15 +172,8 @@
    Shared pagination component
    ===================== */
 @media (max-width: 480px) {
-  .bv-pagination {
+  .site-pagination {
     gap: 4px;
-  }
-  .bv-pagination .page-btn,
-  .bv-pagination .page-nav {
-    min-width: 32px;
-    height: 32px;
-    padding: 0 6px;
-    font-size: 0.8rem;
   }
   .page-jump-label {
     display: none; /* "Go to" label drops; the number input alone is enough at this width */

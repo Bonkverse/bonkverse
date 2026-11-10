@@ -2,63 +2,188 @@
 {% load static %}
 
 {% block title %}Developers · Bonkverse{% endblock %}
+{% block content_class %}site-page{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/player_profile.css' %}">
 <link rel="stylesheet" href="{% static 'css/developers.css' %}">
 {% endblock %}
 
 {% block content %}
-<main class="pv dev" id="main">
-  <header class="pv-hero dev-hero">
-    <div class="pv-hero__text">
-      <span class="pv-eyebrow">Developers</span>
-      <h1 class="dev-hero__title">Build with Bonkverse</h1>
-      <p class="pv-muted dev-hero__lead">
-        bonk.io player data for your site or Discord bot: levels, when they were last seen,
-        and level history, from Bonkverse's archive of public replays.
-      </p>
+{% with docs=BONKVERSE_DOCS_URL %}
+<div class="bv-main dev-doc">
+  <div class="bv-page-header">
+    <div class="bv-page-header__text">
+      <span class="bv-eyebrow">Developers</span>
+      <h1>Bonkverse API</h1>
+      <p class="bv-lead">bonk.io player data for your site or Discord bot: levels, when players were last seen, and level history, from Bonkverse's archive of public replays.</p>
     </div>
-    <div class="pv-hero__actions">
-      <a class="pv-btn" href="{% url 'developer_keys' %}"><i data-lucide="key-round"></i>Get an API key</a>
-      <a class="pv-btn pv-btn--ghost" href="{{ BONKVERSE_DOCS_URL }}/api">Read the docs</a>
+    <div class="bv-page-header__actions">
+      <a class="bv-btn bv-btn--primary" href="{% url 'developer_keys' %}"><i data-lucide="key-round" aria-hidden="true"></i>Get an API key</a>
+      <a class="bv-btn" href="{{ docs }}/api"><i data-lucide="book-open" aria-hidden="true"></i>Read the docs</a>
     </div>
-  </header>
+  </div>
 
-  <section class="dev-grid">
-    <article class="pv-card">
-      <h2 class="pv-card__title">What you can get</h2>
-      <ul class="dev-list">
-        <li>A player's level, peak level and when it was last seen</li>
-        <li>Up to 250 players in one request, for leaderboards</li>
-        <li>Every level-up a player has had</li>
-        <li>Their bonk.io account ID and roughly when they joined</li>
+  <div class="dev-doc__layout">
+    <nav class="dev-doc__toc" aria-label="On this page">
+      <p class="bv-eyebrow">On this page</p>
+      <ul>
+        <li><a href="#endpoints">Endpoints</a></li>
+        <li><a href="#first-request">Your first request</a></li>
+        <li><a href="#response">The response</a></li>
+        <li><a href="#limits">Limits and fair use</a></li>
       </ul>
-      <a class="pv-link" href="{{ BONKVERSE_DOCS_URL }}/api/endpoints/bulk-lookup">See the endpoints →</a>
-    </article>
+    </nav>
 
-    <article class="pv-card">
-      <h2 class="pv-card__title">One request</h2>
-      <pre class="dev-code"><code>curl https://bonkverse.io/api/v1/players/comet/ \
+    <article class="dev-doc__body">
+      <section aria-labelledby="endpoints">
+        <h2 id="endpoints">Endpoints</h2>
+        <p>Every endpoint is under <code>https://bonkverse.io/api/v1/</code> and needs an API key.</p>
+        <div class="bv-table-wrap">
+          <table class="bv-table dev-endpoints">
+            <thead><tr><th scope="col">Endpoint</th><th scope="col">What you get</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><a href="{{ docs }}/api/endpoints/player"><span class="dev-method">GET</span><code>/players/{username}/</code></a></td>
+                <td>A player's level, peak level, when it was last seen, games played, and their bonk.io account ID and join date</td>
+              </tr>
+              <tr>
+                <td><a href="{{ docs }}/api/endpoints/bulk-lookup"><span class="dev-method dev-method--post">POST</span><code>/lookup/players/</code></a></td>
+                <td>Up to 250 players in one request, for leaderboards</td>
+              </tr>
+              <tr>
+                <td><a href="{{ docs }}/api/endpoints/level-history"><span class="dev-method">GET</span><code>/players/{username}/level-history/</code></a></td>
+                <td>Every level-up seen in their replays, and their level on each day they played</td>
+              </tr>
+              <tr>
+                <td><a href="{{ docs }}/api/endpoints/me"><span class="dev-method">GET</span><code>/me/</code></a></td>
+                <td>The key you're using, to check it works</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="first-request">
+        <h2 id="first-request">Your first request</h2>
+        <ol class="dev-steps">
+          <li>
+            <h3>Get a key</h3>
+            <p><a href="{% url 'developer_keys' %}">Make one</a> with your bonk.io account. It's free and takes a minute.</p>
+          </li>
+          <li>
+            <h3>Keep it out of your code</h3>
+            <p>Put it in an environment variable on your server, never in a file you commit or in code that runs in someone's browser.</p>
+            <div class="bv-code">
+              <div class="bv-code__bar"><span>Terminal</span>
+                <button class="bv-btn bv-btn--ghost" type="button" data-bv-copy="dev-env"><i data-lucide="copy" aria-hidden="true"></i><span>Copy</span></button>
+              </div>
+              <pre id="dev-env"><code>export BONKVERSE_API_KEY="paste your key here"</code></pre>
+            </div>
+          </li>
+          <li>
+            <h3>Look up a player</h3>
+            <div class="bv-code">
+              <div class="bv-tabs" role="tablist" aria-label="Language" data-bv-tabs="code">
+                <button class="bv-tab" type="button" role="tab" aria-selected="true" aria-controls="dev-curl" id="dev-tab-curl">curl</button>
+                <button class="bv-tab" type="button" role="tab" aria-selected="false" aria-controls="dev-js" id="dev-tab-js" tabindex="-1">JavaScript</button>
+                <button class="bv-tab" type="button" role="tab" aria-selected="false" aria-controls="dev-py" id="dev-tab-py" tabindex="-1">Python</button>
+              </div>
+              <div id="dev-curl" role="tabpanel" aria-labelledby="dev-tab-curl">
+                <div class="bv-code__bar"><span>Terminal</span>
+                  <button class="bv-btn bv-btn--ghost" type="button" data-bv-copy="dev-curl-code"><i data-lucide="copy" aria-hidden="true"></i><span>Copy</span></button>
+                </div>
+                <pre id="dev-curl-code"><code>curl https://bonkverse.io/api/v1/players/comet/ \
   -H "Authorization: Bearer $BONKVERSE_API_KEY"</code></pre>
-      <a class="pv-link" href="{{ BONKVERSE_DOCS_URL }}/api/quickstart">Quickstart in curl, JavaScript and Python →</a>
-    </article>
+              </div>
+              <div id="dev-js" role="tabpanel" aria-labelledby="dev-tab-js" hidden>
+                <div class="bv-code__bar"><span>Node 18 or newer</span>
+                  <button class="bv-btn bv-btn--ghost" type="button" data-bv-copy="dev-js-code"><i data-lucide="copy" aria-hidden="true"></i><span>Copy</span></button>
+                </div>
+                <pre id="dev-js-code"><code>const name = "comet";
+const res = await fetch(
+  `https://bonkverse.io/api/v1/players/${encodeURIComponent(name)}/`,
+  { headers: { Authorization: `Bearer ${process.env.BONKVERSE_API_KEY}` } },
+);
+const body = await res.json();
+if (body.ok) console.log(body.data.username, body.data.level?.value);
+else console.log("error:", body.error);</code></pre>
+              </div>
+              <div id="dev-py" role="tabpanel" aria-labelledby="dev-tab-py" hidden>
+                <div class="bv-code__bar"><span>Python 3 with requests</span>
+                  <button class="bv-btn bv-btn--ghost" type="button" data-bv-copy="dev-py-code"><i data-lucide="copy" aria-hidden="true"></i><span>Copy</span></button>
+                </div>
+                <pre id="dev-py-code"><code>import os
+from urllib.parse import quote
 
-    <article class="pv-card">
-      <h2 class="pv-card__title">Fair use</h2>
-      <ul class="dev-list">
-        <li>60 requests a minute per key; bulk lookups 10 a minute</li>
-        <li>Credit Bonkverse and link to each player's profile</li>
-        <li>Players who hide their level stay hidden</li>
-      </ul>
-      <a class="pv-link" href="{% url 'developer_terms' %}">Read the API terms →</a>
-    </article>
-  </section>
+import requests
 
-  <p class="pv-note">
-    <i data-lucide="message-circle"></i>
-    <span>Building something bigger, like a league leaderboard? Ask on
-    <a href="{{ BONKVERSE_DISCORD_URL }}" target="_blank" rel="noopener">Discord</a> about higher limits.</span>
-  </p>
-</main>
+name = "comet"
+res = requests.get(
+    f"https://bonkverse.io/api/v1/players/{quote(name, safe='')}/",
+    headers={"Authorization": f"Bearer {os.environ['BONKVERSE_API_KEY']}"},
+    timeout=10,
+)
+body = res.json()
+print(body["data"] if body["ok"] else body["error"])</code></pre>
+              </div>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <section aria-labelledby="response">
+        <h2 id="response">The response</h2>
+        <p>Every reply has <code>ok</code>. When it's <code>true</code> the answer is in <code>data</code>; when it's <code>false</code>, <code>error</code> says what went wrong (<a href="{{ docs }}/api/errors">all errors</a>).</p>
+        <div class="bv-code">
+          <div class="bv-code__bar"><span>200 OK · JSON</span>
+            <button class="bv-btn bv-btn--ghost" type="button" data-bv-copy="dev-json"><i data-lucide="copy" aria-hidden="true"></i><span>Copy</span></button>
+          </div>
+          <pre id="dev-json"><code>{
+  "ok": true,
+  "data": {
+    "requested": "comet",
+    "username": "Comet",
+    "status": "found",
+    "level": {
+      "value": 87,
+      "peak": 87,
+      "seen_at": "2026-11-08T03:00:00.000Z",
+      "seen_day": "2026-11-08",
+      "estimated": false
+    },
+    "games": 120,
+    "account": { "dbid": 9876543, "joined": "2019-06-02", "joined_estimated": true },
+    "profile_url": "https://bonkverse.io/player/Comet/"
+  }
+}</code></pre>
+        </div>
+        <p class="bv-muted bv-small">Shortened; the <a href="{{ docs }}/api/endpoints/player">player endpoint</a> lists every field. <code>seen_at</code> is when the level was last seen in a replay, not when the player was last online.</p>
+      </section>
+
+      <section aria-labelledby="limits">
+        <h2 id="limits">Limits and fair use</h2>
+        <div class="bv-table-wrap">
+          <table class="bv-table">
+            <thead><tr><th scope="col">Key</th><th scope="col" class="bv-num">Requests a minute</th><th scope="col" class="bv-num">Bulk lookups a minute</th></tr></thead>
+            <tbody>
+              <tr><td>Standard (made here)</td><td class="bv-num">60</td><td class="bv-num">10</td></tr>
+              <tr><td>Partner (ask us)</td><td class="bv-num">300</td><td class="bv-num">30</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <ul class="dev-rules">
+          <li>Credit Bonkverse, and link each player to their Bonkverse profile (<code>profile_url</code>).</li>
+          <li>Players who hide their level on Bonkverse stay hidden in the API too.</li>
+          <li>Going over a limit gets a <code>429</code> with <code>retry_after</code>: wait that many seconds.</li>
+        </ul>
+        <p><a href="{% url 'developer_terms' %}">Read the API terms</a> · <a href="{{ docs }}/api/rate-limits">How limits work</a></p>
+        <div class="bv-notice">
+          <i data-lucide="message-circle" aria-hidden="true"></i>
+          <span>Building something bigger, like a league leaderboard? Ask on <a href="{{ BONKVERSE_DISCORD_URL }}" target="_blank" rel="noopener">Discord</a> about a partner key.</span>
+        </div>
+      </section>
+    </article>
+  </div>
+</div>
+{% endwith %}
 {% endblock %}

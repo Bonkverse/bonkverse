@@ -1,0 +1,84 @@
+{% load static %}
+{% comment %}
+The shared Bonkverse header: the same bar on bonkverse.io, replays and the
+docs. Links come from Bonkverse/ui's nav.json (skins.context_processors.site_nav);
+styles from static/ui/components.css; the Menu button, Tools and account
+menus open with static/ui/ui.js.
+{% endcomment %}
+<a class="bv-skip-link" href="#main">Skip to content</a>
+<header class="bv-header">
+  <div class="bv-header__inner">
+    <a class="bv-header__brand" href="{% url 'home' %}">
+      <img src="{% static 'ui/img/logo.png' %}" alt="" width="30" height="30">
+      <span>Bonkverse</span>
+    </a>
+
+    <button class="bv-btn bv-btn--icon bv-header__menu-btn" type="button"
+            aria-expanded="false" aria-controls="bv-nav" aria-label="Menu" data-bv-toggle>
+      <i data-lucide="menu" aria-hidden="true"></i>
+    </button>
+
+    <nav class="bv-header__nav" id="bv-nav" aria-label="Bonkverse">
+      <ul class="bv-header__links">
+        {% for item in site_nav.header %}
+          <li>
+            {% if item.menu %}
+              <button class="bv-header__link" type="button" aria-expanded="false"
+                      aria-controls="bv-nav-{{ item.id }}" data-bv-toggle
+                      {% if item.current %}aria-current="true"{% endif %}>
+                {{ item.label }} <i data-lucide="chevron-down" aria-hidden="true"></i>
+              </button>
+              <div class="bv-menu" id="bv-nav-{{ item.id }}" hidden>
+                {% for sub in item.menu %}
+                  <a class="bv-menu__item" href="{{ sub.href }}">{{ sub.label }}</a>
+                {% endfor %}
+              </div>
+            {% else %}
+              <a class="bv-header__link" href="{{ item.href }}"
+                 {% if item.current %}aria-current="page"{% endif %}>{{ item.label }}</a>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+
+      <div class="bv-header__end">
+        <label class="bv-theme-picker">
+          <span>Theme</span>
+          <select data-bv-theme-picker>
+            <option value="bonkverse">Bonkverse</option>
+            <option value="light">Bonkverse Light</option>
+            <option value="dark">Bonkverse Dark</option>
+          </select>
+        </label>
+
+        {% if user.is_authenticated %}
+          <div class="bv-dropdown bv-header__account">
+            <a class="bv-header__link" href="{% url 'my_profile' %}"{% if request.resolver_match.url_name == 'my_profile' %} aria-current="page"{% endif %}>
+              <i data-lucide="circle-user" aria-hidden="true"></i>
+              <span class="bv-header__account-name">{{ user.username }}</span>
+            </a>
+            <button class="bv-header__link" type="button" aria-label="Account menu" aria-expanded="false"
+                    aria-controls="bv-account" data-bv-toggle>
+              <i data-lucide="chevron-down" aria-hidden="true"></i>
+            </button>
+            <div class="bv-menu bv-menu--end" id="bv-account" hidden>
+              {% for item in site_nav.account %}
+                {% if item.method == "post" %}
+                  <div class="bv-menu__divider"></div>
+                  <form method="post" action="{{ item.href }}">
+                    {% csrf_token %}
+                    <button class="bv-menu__item" type="submit">{{ item.label }}</button>
+                  </form>
+                {% else %}
+                  <a class="bv-menu__item" href="{{ item.href }}">{{ item.label }}</a>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+        {% else %}
+          <a class="bv-header__link bv-header__login" href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in</a>
+        {% endif %}
+      </div>
+    </nav>
+  </div>
+</header>

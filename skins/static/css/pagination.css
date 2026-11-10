@@ -1,92 +1,96 @@
-.bv-pagination {
+/* Page numbers under lists (skins/partials/pagination.html).
+   Colors and sizes from Bonkverse/ui tokens, so it follows the theme. */
+
+.site-pagination {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--bv-space-2);
   flex-wrap: wrap;
-  margin-top: 28px;
-  font-family: "Oxanium", sans-serif;
+  margin-top: var(--bv-space-6);
+  font-family: var(--bv-font);
 }
 
-.bv-pagination .page-btn,
-.bv-pagination .page-nav {
-  min-width: 38px;
-  height: 38px;
-  padding: 0 10px;
+.site-pagination .page-btn,
+.site-pagination .page-nav {
+  min-width: var(--bv-target);
+  min-height: var(--bv-target);
+  padding: 0 var(--bv-space-3);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 8px;
-  color: #ddd;
+  background: var(--bv-card);
+  border: 1px solid var(--bv-control);
+  border-radius: var(--bv-radius);
+  color: var(--bv-text);
   text-decoration: none;
   cursor: pointer;
-  font-size: 0.9rem;
-  font-family: inherit;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  font-size: var(--bv-text-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  transition: background-color var(--bv-fade) ease-out, border-color var(--bv-fade) ease-out;
 }
 
-.bv-pagination .page-btn:hover,
-.bv-pagination .page-nav:hover {
-  border-color: #009688;
-  color: #fff;
+.site-pagination .page-btn:hover,
+.site-pagination .page-nav:hover {
+  border-color: var(--bv-text);
+  background: var(--bv-hover);
 }
 
-.bv-pagination .page-btn.active {
-  background: #009688;
-  border-color: #009688;
-  color: #fff;
+.site-pagination .page-btn.active {
+  background: var(--bv-selected);
+  border-color: var(--bv-link);
+  box-shadow: inset 0 0 0 1px var(--bv-link);
+  color: var(--bv-text);
   font-weight: 700;
   cursor: default;
 }
 
-.bv-pagination .page-ellipsis {
-  color: #6b7280;
-  padding: 0 4px;
+.site-pagination .page-ellipsis {
+  color: var(--bv-muted);
+  padding: 0 var(--bv-space-1);
   user-select: none;
 }
 
-.bv-pagination .page-nav.disabled {
-  opacity: 0.4;
+.site-pagination .page-nav.disabled {
+  border-style: dashed;
+  opacity: 0.45;
   pointer-events: none;
 }
 
-.bv-pagination-meta {
+.site-pagination-meta {
   text-align: center;
-  margin-top: 10px;
-  color: #9aa4b2;
-  font-size: 0.82rem;
+  margin-top: var(--bv-space-3);
+  color: var(--bv-muted);
+  font-size: var(--bv-text-xs);
 }
 
-.bv-pagination .page-jump-form {
+.site-pagination .page-jump-form {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-left: 6px;
+  gap: var(--bv-space-2);
 }
 
-.bv-pagination .page-jump-label {
-  color: #9aa4b2;
-  font-size: 0.82rem;
+.site-pagination .page-jump-label {
+  color: var(--bv-muted);
+  font-size: var(--bv-text-xs);
 }
 
-.bv-pagination .page-jump-input {
+.site-pagination .page-jump-input {
   box-sizing: border-box;
-  width: 52px;
-  height: 38px;
+  width: 64px;
+  min-height: var(--bv-target);
   padding: 0;
   text-align: center;
-  background: rgba(0,0,0,0.3);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 8px;
-  color: #fff;
-  font-family: "Oxanium", sans-serif;
-  font-size: 0.9rem;
+  background: var(--bv-input);
+  border: 1px solid var(--bv-control);
+  border-radius: var(--bv-radius);
+  color: var(--bv-text);
+  font-family: var(--bv-font);
+  font-size: var(--bv-text-input);
 }
 
-.bv-pagination .page-jump-input:focus {
-  outline: none;
-  border-color: #009688;
-  box-shadow: 0 0 0 2px rgba(0,150,136,0.2);
+.site-pagination .page-jump-input:focus-visible {
+  outline: 2px solid var(--bv-link);
+  outline-offset: 2px;
 }

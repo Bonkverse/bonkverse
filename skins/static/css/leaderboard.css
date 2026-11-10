@@ -9,8 +9,7 @@
 .leaderboard-title {
     font-size: 2.2rem;
     margin-bottom: 25px;
-    color: #fff;
-    text-shadow: 0 0 12px rgba(0, 255, 204, 0.6);
+    color: var(--bv-text);
     letter-spacing: 1px;
 }
 
@@ -20,21 +19,21 @@
     border-collapse: collapse;
     border-radius: 12px;
     overflow: hidden;
-    background: rgba(26, 39, 51, 0.8);
+    background: var(--bv-card);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 .leaderboard-table th,
 .leaderboard-table td {
     padding: 14px 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    color: #ddd;
+    border-bottom: 1px solid var(--bv-outline);
+    color: var(--bv-text);
     text-align: left;
 }
 
 .leaderboard-table th {
-    background: rgba(0, 150, 136, 0.2);
-    color: #00e6c3;
+    background: color-mix(in srgb, var(--bv-link) 20%, transparent);
+    color: var(--bv-link);
     font-weight: bold;
     font-size: 1rem;
     text-transform: uppercase;
@@ -42,29 +41,30 @@
 }
 
 .leaderboard-table tr:nth-child(even) {
-    background: rgba(255, 255, 255, 0.04);
+    background: color-mix(in srgb, var(--bv-text) 4%, transparent);
 }
 
 .leaderboard-table tr:hover {
-    background: rgba(0, 150, 136, 0.2);
+    background: color-mix(in srgb, var(--bv-link) 20%, transparent);
     transition: background 0.2s ease-in-out;
 }
 
-/* Podium Ranks */
-.gold td {
-    background: linear-gradient(to right, #ffd700, #ffef9f);
-    color: #222;
+/* Podium ranks: a medal-colored edge on the row, text stays readable. */
+.gold td, .silver td, .bronze td {
     font-weight: bold;
 }
+.gold td:first-child { box-shadow: inset 4px 0 0 #d4a72c; }
+.silver td:first-child { box-shadow: inset 4px 0 0 #a7b1ba; }
+.bronze td:first-child { box-shadow: inset 4px 0 0 #b87333; }
 
-.silver td {
-    background: linear-gradient(to right, #c0c0c0, #f0f0f0);
-    color: #222;
-    font-weight: bold;
+/* Wide tables scroll inside their box on small screens, not the page. */
+.site-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
-
-.bronze td {
-    background: linear-gradient(to right, #cd7f32, #e0a96d);
-    color: #222;
-    font-weight: bold;
+.leaderboard-container {
+    padding: var(--bv-space-6) var(--bv-gutter);
+}
+.site-leaderboard-tabs {
+    justify-content: center;
 }

@@ -29,7 +29,7 @@
 </div>
 
 {% if page_obj.object_list %}
-  <div class="skins-container">
+  <div class="bv-skin-grid site-skin-grid">
     {% for skin in page_obj %}
       {% include 'skins/partials/_skin_card.html' with skin=skin mode='search' %}
     {% endfor %}

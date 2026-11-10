@@ -40,14 +40,14 @@
   const chart = BVChart.line(chartEl, {
     xType: "time", height: 420, zoom: true, yFloor: 1,
     label: "Level over time",
-    series: [{ name: "Level", color: "#47d8c4", points, step: true, area: true, extend: true }],
+    series: [{ name: "Level", color: "var(--site-series-1)", points, step: true, area: true, extend: true }],
     xDomain: [first, last],
     yFormat: (v) => `${Math.round(v)}`,
     tip: (t) => {
       const day = new Date(t); day.setHours(0, 0, 0, 0);
       const lv = BVChart.valueAt({ points, step: true, extend: true }, t);
       const up = ups.find((u) => u.t === day.getTime());
-      const rows = [{ label: "Level", value: lv == null ? "—" : String(lv), color: "#47d8c4" }];
+      const rows = [{ label: "Level", value: lv == null ? "—" : String(lv), color: "var(--site-series-1)" }];
       const n = games.get(day.getTime());
       if (n) rows.push({ label: "Replays that day", value: n.toLocaleString() });
       if (up) rows.push({ label: "Levelled up to", value: String(up.level) });

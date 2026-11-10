@@ -1,26 +1,147 @@
 /* Developer portal (/developers/): the pages in templates/developers/.
-   Builds on player_profile.css (.pv, .pv-card, .pv-btn, .pv-table…), so the
-   portal looks like the profile pages. */
+   The landing page is built on Bonkverse/ui components (.bv-*); the keys and
+   terms pages still build on player_profile.css (.pv-*). */
+
+/* The landing page reads like a doc page: a short contents list on the
+   left (wide screens), one column of sections on the right. */
+.dev-doc__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--bv-space-8);
+}
+.dev-doc__toc ul {
+  margin: var(--bv-space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.dev-doc__toc a {
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  color: var(--bv-muted);
+  font-size: var(--bv-text-sm);
+  font-weight: 500;
+  text-decoration: none;
+}
+.dev-doc__toc a:hover {
+  color: var(--bv-link);
+}
+.dev-doc__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--bv-space-12);
+  max-width: 760px;
+}
+.dev-doc__body section {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--bv-space-4);
+  scroll-margin-top: calc(var(--bv-header-height) + var(--bv-space-4));
+}
+.dev-doc__body h2 {
+  padding-bottom: var(--bv-space-2);
+  border-bottom: 1px solid var(--bv-outline);
+}
+.dev-doc__body p {
+  max-width: 68ch;
+}
+@media (min-width: 1000px) {
+  .dev-doc__layout {
+    grid-template-columns: 200px minmax(0, 1fr);
+  }
+  .dev-doc__toc {
+    position: sticky;
+    top: calc(var(--bv-header-height) + var(--bv-space-6));
+    align-self: start;
+  }
+}
+@media (max-width: 999px) {
+  .dev-doc__toc { display: none; }
+}
+
+.dev-endpoints a {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bv-space-2);
+  text-decoration: none;
+}
+.dev-endpoints code {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--bv-link);
+  white-space: nowrap;
+}
+.dev-method {
+  display: inline-block;
+  min-width: 44px;
+  padding: 1px 6px;
+  border-radius: var(--bv-radius-sm);
+  background: var(--bv-success);
+  color: var(--bv-text);
+  font-family: var(--bv-mono);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+.dev-method--post {
+  background: color-mix(in srgb, var(--bv-gold) 22%, transparent);
+}
+
+.dev-steps {
+  display: grid;
+  gap: var(--bv-space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+.dev-steps > li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--bv-space-2);
+  position: relative;
+  padding-left: 44px;
+  counter-increment: step;
+}
+.dev-steps > li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--bv-control);
+  color: var(--bv-text);
+  font-size: var(--bv-text-sm);
+  font-weight: 700;
+}
+.dev-steps h3 {
+  font-size: var(--bv-text-lg);
+}
+.dev-doc pre code {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-size: inherit;
+}
+.dev-rules {
+  margin: 0;
+  padding-left: 1.2em;
+  color: var(--bv-muted);
+  line-height: 1.6;
+}
+
+/* Code: the copy button sits in the bar, so the code needs no right gap. */
+.dev-doc .bv-code pre {
+  padding-right: var(--bv-space-4);
+}
 
 .dev-hero__title { font-size: 2.1rem; line-height: 1.15; margin: 4px 0 8px; }
-.dev-hero__lead { max-width: 60ch; font-size: 1.05rem; line-height: 1.55; margin: 0; }
-.dev-hero { margin-bottom: 28px; }
-
-.dev-grid {
-  display: grid; gap: 20px;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-}
-.dev-grid .pv-card { margin-bottom: 0; display: flex; flex-direction: column; }
-.dev-grid .pv-link { margin-top: auto; padding-top: 12px; }
-.dev-list { margin: 0; padding-left: 1.1em; line-height: 1.6; color: var(--pv-muted); }
-.dev-list li { margin-bottom: 4px; }
-
-.dev-code {
-  margin: 0; padding: 14px 16px; border-radius: 12px; overflow-x: auto;
-  background: var(--pv-inset); border: 1px solid var(--pv-outline);
-  font-size: 0.85rem; line-height: 1.55; color: var(--pv-text); white-space: pre;
-}
-.dev code, .dev-code code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 
 /* Key list and form */
 .dev-form { display: flex; flex-direction: column; gap: 16px; align-items: flex-start; }
@@ -28,7 +149,7 @@
 .dev-field__label { font-weight: 600; }
 .dev-field input {
   min-height: 46px; padding: 0 14px; margin-top: 4px; width: 100%; max-width: 420px;
-  background: var(--pv-inset); border: 1px solid var(--pv-outline); border-radius: 12px;
+  background: var(--pv-inset); border: 1px solid var(--bv-control); border-radius: 12px;
   color: var(--pv-text); font: inherit;
 }
 .dev-field input:focus { border-color: var(--pv-action); outline: none; }
@@ -44,7 +165,7 @@
 .dev-keys__meta { display: block; margin-top: 2px; }
 .dev-keys__tier { margin-left: 6px; font-size: 0.75rem; }
 .dev-keys__revoked td { opacity: 0.55; }
-.dev-keys__revoke { min-height: 36px; padding: 0 14px; }
+.dev-keys__revoke { padding: 0 14px; }
 .dev-keys code { white-space: nowrap; }
 
 /* The new key, shown once */
@@ -52,7 +173,7 @@
 .dev-reveal__row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
 .dev-reveal__key {
   flex: 1 1 280px; min-width: 0; min-height: 46px; padding: 0 14px;
-  background: var(--pv-inset); border: 1px solid var(--pv-outline); border-radius: 12px;
+  background: var(--pv-inset); border: 1px solid var(--bv-control); border-radius: 12px;
   color: var(--pv-text); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9rem;
 }
 

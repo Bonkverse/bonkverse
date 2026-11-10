@@ -28,7 +28,8 @@
   document.querySelectorAll(".selectable-tag").forEach((tag) => {
     tag.addEventListener("click", () => {
       const name = tag.dataset.tag;
-      tag.classList.toggle("active");
+      const on = !active.has(name);
+      tag.setAttribute("aria-pressed", on ? "true" : "false");
       active.has(name) ? active.delete(name) : active.add(name);
       syncInputs();
       form.submit();

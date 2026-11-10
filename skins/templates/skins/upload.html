@@ -1,34 +1,37 @@
 {% extends 'skins/base.html' %}
 {% load static %}
 
-{% block title %}Upload a Bonk.io Skin{% endblock %}
+{% block title %}Upload a skin · Bonkverse{% endblock %}
+{% block content_class %}site-page{% endblock %}
 
 {% block content %}
-  <h1>Upload a Bonk.io Skin</h1>
-
-  <!-- Who is submitting -->
-  <p class="muted">You’re uploading as: <strong>{{ user.username }}</strong></p>
-
-  <div id="loading" hidden>
-    <p>⏳ Uploading and processing your skin... Please wait!</p>
+<div class="bv-main site-narrow">
+  <div class="bv-page-header">
+    <div class="bv-page-header__text">
+      <h1>Upload a skin</h1>
+      <p class="bv-muted">Share a skin from Bonkleagues. You're uploading as <strong>{{ user.username }}</strong>.</p>
+    </div>
   </div>
 
-  <div class="form-container">
-    <form id="upload-form" method="POST" action="{% url 'upload_skin' %}">
-      {% csrf_token %}
-
-      <label for="skin_name">Skin Name</label>
-      <input type="text" id="skin_name" name="skin_name" placeholder="Enter skin name..." required maxlength="1000">
-
-      <label for="bonkleagues_link">Bonkleagues Skin URL</label>
-      <input type="url" id="bonkleagues_link" name="bonkleagues_link" placeholder="https://bonkleagues.io/s/ABCDEFG" required>
-
-      <p id="error-message" class="error upload-error" hidden></p>
-
-      <button type="submit">Upload Skin</button>
-    </form>
+  <div id="loading" class="bv-card" hidden>
+    <span class="bv-loader" role="status"><span class="bv-loader__ring" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>Uploading and drawing your skin. This takes a few seconds.</span>
   </div>
 
+  <form id="upload-form" method="POST" action="{% url 'upload_skin' %}" class="bv-card bv-form site-form-card">
+    {% csrf_token %}
+    <div class="bv-field">
+      <label class="bv-label" for="skin_name">Skin name</label>
+      <input class="bv-input" type="text" id="skin_name" name="skin_name" placeholder="Midnight Comet" required maxlength="1000">
+    </div>
+    <div class="bv-field">
+      <label class="bv-label" for="bonkleagues_link">Bonkleagues link</label>
+      <span class="bv-hint" id="bonkleagues-hint">Open the skin on bonkleagues.io and copy its address, like https://bonkleagues.io/s/ABCDEFG</span>
+      <input class="bv-input" type="url" id="bonkleagues_link" name="bonkleagues_link" placeholder="https://bonkleagues.io/s/ABCDEFG" required aria-describedby="bonkleagues-hint">
+    </div>
+    <p id="error-message" class="bv-error upload-error" role="alert" hidden></p>
+    <button type="submit" class="bv-btn bv-btn--primary">Upload skin</button>
+  </form>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}

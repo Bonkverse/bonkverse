@@ -19,6 +19,7 @@ from django.contrib.auth import login, logout
 from django.core import signing
 from django.shortcuts import redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.http import require_POST
 
 from core.bonk import BonkSession, BonkUsername
 from core.ratelimits import describe_wait, limit
@@ -225,8 +226,11 @@ def login_view(request):
     return redirect("my_profile")
 
 
+@require_POST
 @limit("write")
 def logout_view(request):
+    """POST only (the header's Log out is a form), so another site can't
+    sign people out with a link or an <img>."""
     BonkSession(request.session).clear()
     logout(request)
     messages.success(request, "Logged out!")

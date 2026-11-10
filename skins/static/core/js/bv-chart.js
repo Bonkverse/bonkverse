@@ -245,7 +245,7 @@
     }
     for (const m of o.markers || []) {
       if (m.x < x0 || m.x > x1) continue;
-      svg("circle", { cx: X(m.x), cy: Y(m.y), r: 6, class: "bv-chart__marker", style: `--c: ${m.color || "#ffb454"}` }, plot);
+      svg("circle", { cx: X(m.x), cy: Y(m.y), r: 6, class: "bv-chart__marker", style: `--c: ${m.color || "var(--site-series-3)"}` }, plot);
       if (m.label) svg("text", { x: X(m.x), y: Y(m.y) - 12, "text-anchor": "middle", class: "bv-chart__mlabel" }, plot).textContent = m.label;
     }
     this.hover = svg("g", { class: "bv-chart__hover" }, this.svg);

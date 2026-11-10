@@ -13,10 +13,10 @@
       const name = tag.dataset.tag;
       if (selected.has(name)) {
         selected.delete(name);
-        tag.classList.remove("active");
+        tag.setAttribute("aria-pressed", "false");
       } else {
         selected.add(name);
-        tag.classList.add("active");
+        tag.setAttribute("aria-pressed", "true");
       }
 
       selectedTagsDiv.replaceChildren(

@@ -1,21 +1,42 @@
-<!-- templates/login.html -->
 {% extends 'skins/base.html' %}
 {% load static %}
 
-{% block content %}
-  <h2>Login to Bonkverse with your Bonk.io Account</h2>
+{% block title %}Log in · Bonkverse{% endblock %}
+{% block content_class %}site-page{% endblock %}
 
-  <form method="post">
+{% block content %}
+<div class="bv-main site-narrow">
+  <div class="bv-page-header">
+    <div class="bv-page-header__text">
+      <h1>Log in</h1>
+      <p class="bv-muted">Use your bonk.io account. Your password goes to bonk.io to check it; Bonkverse never stores it.</p>
+    </div>
+  </div>
+
+  <form method="post" class="bv-card bv-form site-form-card">
     {% csrf_token %}
-    {{ form.as_p }}
+    {% if form.non_field_errors %}
+      <div class="bv-notice bv-notice--danger" role="alert">
+        <i data-lucide="triangle-alert" aria-hidden="true"></i>
+        <span>{% for error in form.non_field_errors %}{{ error }} {% endfor %}</span>
+      </div>
+    {% endif %}
+    {% for field in form %}
+      <div class="bv-field">
+        <label class="bv-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% for error in field.errors %}<span class="bv-error">{{ error }}</span>{% endfor %}
+      </div>
+    {% endfor %}
     {% if retry_after %}
       {# bonk.io is limiting logins from Bonkverse: the button stays off until the
          pause ends (static/js/login_wait.js; skins/login.py). #}
-      <button type="submit" id="login-submit" disabled data-retry-after="{{ retry_after }}">Login (wait {{ retry_after }}s)</button>
+      <button type="submit" class="bv-btn bv-btn--primary" id="login-submit" disabled data-retry-after="{{ retry_after }}">Log in (wait {{ retry_after }}s)</button>
     {% else %}
-      <button type="submit" id="login-submit">Login</button>
+      <button type="submit" class="bv-btn bv-btn--primary" id="login-submit">Log in</button>
     {% endif %}
   </form>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}

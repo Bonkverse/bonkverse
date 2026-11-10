@@ -1,0 +1,199 @@
+/*
+ * Bonkverse UI tokens (v0.1.3)
+ *
+ * Every color, size and timing the Bonkverse sites share. Components use
+ * these roles, never raw hex values, so a theme only has to change this file.
+ *
+ * Themes: set data-bv-theme on <html> to "bonkverse" (default), "light" or
+ * "dark". theme.js does that before the page paints. The attribute also
+ * works on any element, which then shows that theme inside it (the gallery
+ * uses this to compare themes side by side; give it .bv-theme-scope). The attribute is
+ * data-bv-theme, not data-theme, because Docusaurus already owns data-theme.
+ *
+ * Colors come from the Skin card design guide (section 03). danger and
+ * danger-surface are additions; scripts/contrast.mjs checks every pair.
+ */
+
+/* ── Bonkverse (default): slate and teal, Bonk.io's feel ─────────────────── */
+:root,
+[data-bv-theme="bonkverse"] {
+  color-scheme: dark;
+
+  --bv-page: #192630;
+  --bv-card: #263845;           /* cards, menus, dialogs */
+  --bv-thumb: #1c2b36;          /* skin artwork stage */
+  --bv-header: #2a4054;
+  --bv-outline: #405464;        /* decorative borders and separators */
+  --bv-control: #83949e;        /* borders of things you can click or type in */
+  --bv-text: #e7ecee;
+  --bv-muted: #b3bec4;
+  --bv-heading: #e7ecee;
+  --bv-link: #8bd2c5;           /* links and the focus ring */
+  --bv-input: #1c2b36;
+
+  --bv-action: #79554a;         /* the one main action on a screen (Wear, Create key) */
+  --bv-action-hover: #855e52;
+  --bv-action-pressed: #6b4a40;
+  --bv-action-ink: #f5ede7;
+  --bv-action-border: #a37b69;
+
+  --bv-hover: #34505f;          /* hover fill; bordered controls also darken their border */
+  --bv-selected: #2b5450;       /* a chosen vote, chip or tab (with a teal border) */
+  --bv-success: #293e3d;        /* success surface (text stays --bv-text) */
+  --bv-gold: #e5bf68;           /* favorites only */
+  --bv-danger: #ff8a80;
+  --bv-danger-surface: #3a2a2e;
+  --bv-danger-solid: #c62828;    /* destructive buttons: Delete, Revoke */
+  --bv-danger-solid-hover: #d63a3a;
+  --bv-danger-solid-pressed: #a92222;
+  --bv-danger-ink: #ffffff;
+  --bv-danger-border: #c62828;
+
+  --bv-header-title: #e7ecee;
+  --bv-header-meta: #b3bec4;
+  --bv-header-link: #8bd2c5;
+
+  --bv-search-action: transparent;
+  --bv-search-action-hover: #263845;
+  --bv-divider: #405464;        /* between a card's artwork and its text */
+
+  --bv-backdrop: rgb(8 12 16 / 72%);
+  --bv-shadow: 0 12px 32px rgb(0 0 0 / 35%);
+}
+
+/* ── Bonkverse Light: cool page and thumbnails, a warmer card ─────────── */
+[data-bv-theme="light"] {
+  color-scheme: light;
+
+  --bv-page: #d5dfe4;
+  --bv-card: #efeee9;
+  --bv-thumb: #c9d7df;
+  --bv-header: #2a4054;
+  --bv-outline: #748792;
+  --bv-control: #5e707b;
+  --bv-text: #2a4054;
+  --bv-muted: #394c57;
+  --bv-heading: #15534c;
+  --bv-link: #15534c;
+  --bv-input: #f4f2ec;
+
+  --bv-action: #79554a;
+  --bv-action-hover: #67473e;
+  --bv-action-pressed: #5a3e36;
+  --bv-action-ink: #f5ede7;
+  --bv-action-border: #79554a;
+
+  --bv-hover: #e0e4e3;          /* hover fill; bordered controls also darken their border */
+  --bv-selected: #bfdcd3;       /* a chosen vote, chip or tab (with a teal border) */
+  --bv-success: #dce8df;
+  --bv-gold: #705000;
+  --bv-danger: #b3261e;
+  --bv-danger-surface: #f6e1de;
+  --bv-danger-solid: #b3261e;    /* destructive buttons: Delete, Revoke */
+  --bv-danger-solid-hover: #8f1d17;
+  --bv-danger-solid-pressed: #7a1813;
+  --bv-danger-ink: #ffffff;
+  --bv-danger-border: #b3261e;
+
+  --bv-header-title: #ffffff;
+  --bv-header-meta: #b3bec4;
+  --bv-header-link: #a8e2d6;
+
+  --bv-search-action: #becdd5;
+  --bv-search-action-hover: #b0c2cd;
+  --bv-divider: #a4b4be;
+
+  --bv-backdrop: rgb(25 38 48 / 55%);
+  --bv-shadow: 0 12px 32px rgb(42 64 84 / 22%);
+}
+
+/* ── Bonkverse Dark: near-black and charcoal, same brown, teal and gold ── */
+[data-bv-theme="dark"] {
+  color-scheme: dark;
+
+  --bv-page: #080809;
+  --bv-card: #161719;
+  --bv-thumb: #101113;
+  --bv-header: #121315;
+  --bv-outline: #34373b;
+  --bv-control: #83949e;
+  --bv-text: #e7ecee;
+  --bv-muted: #b3bec4;
+  --bv-heading: #e7ecee;
+  --bv-link: #8bd2c5;
+  --bv-input: #101113;
+
+  --bv-action: #79554a;
+  --bv-action-hover: #855e52;
+  --bv-action-pressed: #6b4a40;
+  --bv-action-ink: #f5ede7;
+  --bv-action-border: #a37b69;
+
+  --bv-hover: #272b2f;          /* hover fill; bordered controls also darken their border */
+  --bv-selected: #24433f;       /* a chosen vote, chip or tab (with a teal border) */
+  --bv-success: #293e3d;
+  --bv-gold: #e5bf68;
+  --bv-danger: #ff8a80;
+  --bv-danger-surface: #2e1e20;
+  --bv-danger-solid: #c62828;    /* destructive buttons: Delete, Revoke */
+  --bv-danger-solid-hover: #d63a3a;
+  --bv-danger-solid-pressed: #a92222;
+  --bv-danger-ink: #ffffff;
+  --bv-danger-border: #c62828;
+
+  --bv-header-title: #e7ecee;
+  --bv-header-meta: #b3bec4;
+  --bv-header-link: #8bd2c5;
+
+  --bv-search-action: transparent;
+  --bv-search-action-hover: #161719;
+  --bv-divider: #34373b;
+
+  --bv-backdrop: rgb(0 0 0 / 75%);
+  --bv-shadow: 0 12px 32px rgb(0 0 0 / 55%);
+}
+
+/* ── Everything that doesn't change with the theme ───────────────────────── */
+:root {
+  --bv-font: "Jost", system-ui, sans-serif;
+  --bv-mono: ui-monospace, "SFMono-Regular", "Cascadia Code", Menlo, Consolas, monospace;
+
+  /* Type scale (size / line height). Guide section 04. */
+  --bv-text-xs: 13px;   --bv-leading-xs: 18px;   /* metadata */
+  --bv-text-sm: 14px;   --bv-leading-sm: 20px;   /* buttons, labels */
+  --bv-text-md: 15px;   --bv-leading-md: 21px;   /* body */
+  --bv-text-input: 16px;                         /* inputs: 16px stops iOS zooming in */
+  --bv-text-lg: 17px;   --bv-leading-lg: 22px;   /* card titles */
+  --bv-text-xl: 22px;   --bv-leading-xl: 29px;   /* detail and section titles */
+  --bv-text-2xl: 30px;  --bv-leading-2xl: 36px;  /* page titles */
+
+  /* Spacing: a 4 px step */
+  --bv-space-1: 4px;
+  --bv-space-2: 8px;
+  --bv-space-3: 12px;
+  --bv-space-4: 16px;
+  --bv-space-5: 20px;
+  --bv-space-6: 24px;
+  --bv-space-8: 32px;
+  --bv-space-12: 48px;
+
+  /* Shape */
+  --bv-radius: 9px;
+  --bv-radius-sm: 6px;
+  --bv-radius-pill: 999px;
+  --bv-target: 44px;          /* smallest tap target */
+  --bv-header-height: 60px;
+  --bv-page-max: 1280px;      /* page column; the card grid inside is 1,228 px */
+  --bv-gutter: 16px;
+
+  /* Motion. Guide section 06; reduced-motion turns these off in base.css. */
+  --bv-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --bv-press: 110ms;
+  --bv-fade: 150ms;
+  --bv-enter: 170ms;
+  --bv-pop: 250ms;
+}
+
+@media (min-width: 600px) {
+  :root { --bv-gutter: 26px; }
+}

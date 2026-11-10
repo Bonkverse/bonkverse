@@ -79,10 +79,11 @@ def _with_rate_headers(response, usage):
 
 
 def _too_many(usage):
-    wait = usage.get("time_left") or None
-    response = fail("rate_limited", 429, **({"retry_after": wait} if wait else {}))
-    if wait:
-        response["Retry-After"] = str(wait)
+    # At least 1 second: right at the end of a window time_left can be 0, and
+    # a 429 must still say when to try again (was a flaky test, 2026-11-09).
+    wait = max(int(usage.get("time_left") or 0), 1)
+    response = fail("rate_limited", 429, retry_after=wait)
+    response["Retry-After"] = str(wait)
     return response
 
 

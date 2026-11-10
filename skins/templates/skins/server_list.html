@@ -33,14 +33,10 @@
       <input type="hidden" name="q" value="{{ query }}">
     {% endif %}
 
-    <div class="tag-bubbles">
+    <div class="tag-bubbles bv-chips" role="group" aria-label="Filter by tag">
       {% for tag in tags %}
-        <span
-          class="tag-bubble selectable-tag {% if tag.name in active_tags %}active{% endif %}"
-          data-tag="{{ tag.name }}"
-        >
-          {{ tag.name }}
-        </span>
+        <button type="button" class="bv-chip selectable-tag" data-tag="{{ tag.name }}"
+                aria-pressed="{% if tag.name in active_tags %}true{% else %}false{% endif %}">{{ tag.name }}</button>
       {% endfor %}
     </div>
 
@@ -90,7 +86,7 @@
 
       <div class="tags {% if not server.tags.exists %}empty{% endif %}">
         {% for tag in server.tags.all|slice:":4" %}
-          <span class="tag-bubble">{{ tag.name }}</span>
+          <span class="bv-pill">{{ tag.name }}</span>
         {% endfor %}
 
         {% if server.tags.count > 4 %}
@@ -108,9 +104,8 @@
       </div>
 
       <div class="server-actions">
-        <a href="{{ server.invite_url }}" class="discord-button">Join Discord</a>
-        <a href="{% url 'detail' server.id %}" class="discord-button">See Details</a>
-
+        <a href="{{ server.invite_url }}" class="bv-btn bv-btn--primary">Join Discord</a>
+        <a href="{% url 'detail' server.id %}" class="bv-btn">See details</a>
       </div>
 
     </div>

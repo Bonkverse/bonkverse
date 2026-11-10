@@ -6,35 +6,35 @@
 .bv-chart--zoom { padding-top: 44px; }
 .bv-chart__svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; cursor: crosshair; }
 
-.bv-chart__grid line { stroke: rgba(174, 193, 211, 0.12); stroke-width: 1; }
-.bv-chart__grid .bv-chart__xtick { stroke: rgba(174, 193, 211, 0.3); }
-.bv-chart__tick { fill: #8fa3b8; font-size: 12px; font-variant-numeric: tabular-nums; }
+.bv-chart__grid line { stroke: var(--bv-muted); stroke-width: 1; }
+.bv-chart__grid .bv-chart__xtick { stroke: var(--bv-muted); }
+.bv-chart__tick { fill: var(--bv-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 
 .bv-chart__line { fill: none; stroke: var(--c); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
 .bv-chart__line--dashed { stroke-dasharray: 6 6; }
 .bv-chart__area { fill: var(--c); fill-opacity: 0.1; stroke: none; }
-.bv-chart__hline { stroke: rgba(237, 244, 251, 0.35); stroke-dasharray: 5 6; }
-.bv-chart__hlabel, .bv-chart__mlabel { fill: #edf4fb; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: #141f2b; stroke-width: 4px; }
-.bv-chart__marker { fill: var(--c); stroke: #141f2b; stroke-width: 3; }
-.bv-chart__vmark { stroke: #ffb454; stroke-width: 2; stroke-dasharray: 4 4; }
+.bv-chart__hline { stroke: var(--bv-muted); stroke-dasharray: 5 6; }
+.bv-chart__hlabel, .bv-chart__mlabel { fill: var(--bv-muted); font-size: 12px; font-weight: 600; paint-order: stroke; stroke: var(--bv-page); stroke-width: 4px; }
+.bv-chart__marker { fill: var(--c); stroke: var(--bv-page); stroke-width: 3; }
+.bv-chart__vmark { stroke: var(--bv-gold); stroke-width: 2; stroke-dasharray: 4 4; }
 
-.bv-chart__cross { stroke: rgba(237, 244, 251, 0.45); stroke-width: 1; }
-.bv-chart__dot { fill: var(--c); stroke: #141f2b; stroke-width: 2.5; }
-.bv-chart__sel { fill: rgba(71, 216, 196, 0.14); stroke: rgba(71, 216, 196, 0.8); stroke-width: 1; }
+.bv-chart__cross { stroke: var(--bv-muted); stroke-width: 1; }
+.bv-chart__dot { fill: var(--c); stroke: var(--bv-page); stroke-width: 2.5; }
+.bv-chart__sel { fill: var(--bv-link); stroke: var(--bv-link); stroke-width: 1; }
 
-.bv-chart__bar { fill: var(--c, #2a6f69); transition: fill 0.12s; }
-.bv-chart__bar.is-here { fill: #ffb454; }
-.bv-chart__bar.is-hover { fill: #47d8c4; }
+.bv-chart__bar { fill: var(--c, var(--site-series-1)); transition: fill 0.12s; }
+.bv-chart__bar.is-here { fill: var(--bv-gold); }
+.bv-chart__bar.is-hover { fill: var(--bv-link); }
 
 .bv-chart__tip {
   position: absolute; left: 0; top: 0; transform: translate(var(--tx, 0), var(--ty, 0));
   z-index: 3; pointer-events: none; min-width: 150px; max-width: 280px;
   padding: 10px 12px; border-radius: 12px;
-  background: rgba(16, 26, 37, 0.96); border: 1px solid #354a5f;
+  background: var(--bv-card); border: 1px solid var(--bv-outline);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  color: #edf4fb; font-size: 0.85rem; line-height: 1.35;
+  color: var(--bv-text); font-size: 0.85rem; line-height: 1.35;
 }
-.bv-chart__tip-title { color: #aec1d3; margin-bottom: 6px; font-weight: 600; }
+.bv-chart__tip-title { color: var(--bv-muted); margin-bottom: 6px; font-weight: 600; }
 .bv-chart__tip-row { display: flex; align-items: center; gap: 8px; }
 .bv-chart__tip-row span:nth-child(2), .bv-chart__tip-row > span:first-child:not(.bv-chart__sw) { flex: 1; }
 .bv-chart__tip-row strong { font-variant-numeric: tabular-nums; }
@@ -43,19 +43,19 @@
 .bv-chart__reset {
   position: absolute; top: 0; right: 0; z-index: 2;
   min-height: 36px; padding: 0 14px; border-radius: 999px;
-  border: 1px solid #47d8c4; background: rgba(16, 26, 37, 0.9); color: #47d8c4;
+  border: 1px solid var(--bv-link); background: var(--bv-card); color: var(--bv-link);
   font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer;
 }
-.bv-chart__reset:hover { background: #47d8c4; color: #101a25; }
-.bv-chart__hint { margin-top: 4px; font-size: 0.78rem; color: #8fa3b8; text-align: right; }
-.bv-chart__empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #8fa3b8; }
+.bv-chart__reset:hover { background: var(--bv-hover); color: var(--bv-link); box-shadow: inset 0 0 0 1px var(--bv-link); }
+.bv-chart__hint { margin-top: 4px; font-size: 0.78rem; color: var(--bv-muted); text-align: right; }
+.bv-chart__empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--bv-muted); }
 @media (hover: none) { .bv-chart__hint { display: none; } }
 
 /* Charts sit on a solid panel so the site's particle background doesn't
    show through the plot. */
 .bv-chart {
   box-sizing: border-box; padding: 16px 16px 10px; border-radius: 16px;
-  background: #101a25; border: 1px solid #22364c;
+  background: var(--bv-card); border: 1px solid var(--bv-outline);
 }
 .bv-chart--zoom { padding-top: 56px; }
 .bv-chart__reset { top: 12px; right: 12px; }

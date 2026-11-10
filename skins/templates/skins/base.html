@@ -5,12 +5,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Bonk.io Skin Search{% endblock %}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&display=swap" rel="stylesheet">
+    {# Bonkverse/ui (scripts/sync_ui.py). theme.js runs before any CSS so the saved theme never flashes. #}
+    {% block theme_color %}<meta name="theme-color" content="#2a4054">{% endblock %}
+    <script src="{% static 'ui/theme.js' %}"></script>
+    <link rel="preload" href="{% static 'ui/fonts/jost-latin-400-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{% static 'ui/fonts/jost-latin-600-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="{% static 'ui/tokens.css' %}">
+    <link rel="stylesheet" href="{% static 'ui/base.css' %}">
+    <link rel="stylesheet" href="{% static 'ui/components.css' %}">
+    <script src="{% static 'ui/ui.js' %}" defer></script>
+    {# The site's own styles, until each page moves onto bv- components #}
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
     <link rel="stylesheet" href="{% static 'css/pagination.css' %}">
     <link rel="stylesheet" href="{% static 'css/forms.css' %}">
-    <link rel="stylesheet" href="{% static 'css/navbar.css' %}">
     <link rel="stylesheet" href="{% static 'css/cards.css' %}">
+    <link rel="stylesheet" href="{% static 'css/skin_cards.css' %}">
     <link rel="stylesheet" href="{% static 'css/skin_detail.css' %}">
     <link rel="stylesheet" href="{% static 'css/leaderboard.css' %}">
     <link rel="stylesheet" href="{% static 'css/carousel.css' %}">
@@ -29,8 +38,7 @@
 
     <script src="{% static 'js/scripts.js' %}" defer></script>
     <script src="{% static 'js/pagination.js' %}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
-    <link rel="icon" type="image/png" href="{% static 'images/BonkverseLogo.png' %}">
+    <link rel="icon" type="image/png" href="{% static 'ui/img/logo.png' %}">
     {% block social_meta %}{% endblock %}
 
     <link rel="stylesheet" href="{% static 'css/toast.css' %}">
@@ -42,9 +50,9 @@
     <script src="{% static 'core/js/bv-report.js' %}"></script>
 
 </head>
-<body>
+<body class="bv-app">
 
-    {% include 'skins/navbar.html' %}
+    {% include 'skins/partials/_site_header.html' %}
 
     {% if messages %}
     {# Shown as toasts by core/js/bv-boot.js #}
@@ -55,13 +63,20 @@
     </ul>
     {% endif %}
 
-    <div id="particles-js"></div>
+    {% if site_nav.show_skin_tabs %}
+      <div class="site-skin-tabs-wrap">{% include 'skins/partials/_skin_tabs.html' %}</div>
+    {% endif %}
 
-    <div class="content">
+    {# Pages built on bv- components set content_class to "site-page". The rest #}
+    {# are "site-legacy": every page follows the theme, but the old bare form,  #}
+    {# input and button rules (css/forms.css) apply only inside site-legacy.    #}
+    <div class="content {% block content_class %}site-legacy{% endblock %}" id="main">
         {% block content %}{% endblock %}
     </div>
 
-    {# Messages to toasts, particle background, icons #}
+    {% include 'skins/partials/_site_footer.html' %}
+
+    {# Messages to toasts, icons #}
     <script src="{% static 'core/js/bv-boot.js' %}"></script>
 
     {% block extra_scripts %}{% endblock %}

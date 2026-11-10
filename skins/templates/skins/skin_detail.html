@@ -1,8 +1,10 @@
 {% extends 'skins/base.html' %}
 {% load static %}
 
+{# Discord colors the link embed with this; the browser toolbar follows the theme (ui/theme.js). #}
+{% block theme_color %}<meta name="theme-color" content="#009688">{% endblock %}
+
 {% block social_meta %}
-  <meta name="theme-color" content="#009688">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="{{ og.site_name }}">
   <meta property="og:title" content="{{ og.title }}">
@@ -17,120 +19,93 @@
   <meta name="twitter:image" content="{{ og.image }}">
 {% endblock %}
 
+{% block content_class %}site-page{% endblock %}
+
 {% block content %}
-{# Behavior: static/js/skin_detail.js reads the URLs from here #}
-<div class="skin-detail-container" id="skin-detail"
-     data-wear-url="{% url 'wear_skin' skin.id %}"
-     data-favorite-url="{% url 'api_toggle_favorite' skin.id %}"
-     data-vote-url="{% url 'api_vote_skin' skin.id %}">
+{% load bv_links %}
+{% with image=skin.image_url|default:'/static/images/default_skin.png' creator_url=skin.creator|profile_url %}
+{% comment %}
+The skin's page (Skin card design guide: "Details is for deeper actions").
+The art sits on the page with no box behind it, votes sit beside Wear, and
+every other action is a labeled button in one row (no menus). Favorite, Wear and Enlarge are
+core/js/bv-cards.js (data-skin-card); votes, Re-render and Back are
+js/skin_detail.js; Copy link is ui/ui.js; Report is core/js/bv-report.js.
+{% endcomment %}
+<div class="bv-main">
+  <section class="bv-skin-detail" id="skin-detail" data-skin-card
+           data-id="{{ skin.id }}"
+           data-wear-url="{% url 'wear_skin' skin.id %}"
+           data-vote-url="{% url 'api_vote_skin' skin.id %}"
+           data-rerender-url="{% url 'rerender_skin' skin.id %}"
+           aria-labelledby="skin-title">
 
-  <a href="{% url 'search_skins' %}" class="skin-back-link">
-    <i data-lucide="arrow-left"></i> Back to search
-  </a>
+    <a class="bv-back" href="{% url 'search_skins' %}" data-back-to-search>
+      <span aria-hidden="true">←</span> Search results
+    </a>
 
-  <div class="skin-hero">
+    <button class="bv-skin-detail__art" type="button" aria-label="Enlarge {{ skin.name }}">
+      <img class="bv-skin-art" src="{{ image }}" alt="" width="144" height="144" data-fallback>
+      <span class="bv-enlarge" aria-hidden="true">Enlarge</span>
+    </button>
 
-    <!-- Left: image -->
-    <div class="skin-image-panel">
-      <img src="{{ skin.image_url }}" alt="{{ skin.name }}" class="skin-image-large" data-fallback
-           width="512" height="512">
-    </div>
-
-    <!-- Right: meta + actions -->
-    <div class="skin-meta-panel">
-
-      <div>
-        <h1 class="skin-title">{{ skin.name }}</h1>
-        <p class="skin-creator">by <strong>{{ skin.creator }}</strong></p>
+    <div class="bv-skin-detail__content">
+      <div class="site-detail-heading">
+        <div>
+          <h1 class="bv-skin-detail__title" id="skin-title">{{ skin.name }}</h1>
+          {% if skin.creator %}
+            <p class="bv-creator">by {% if creator_url %}<a href="{{ creator_url }}">{{ skin.creator }}</a>{% else %}{{ skin.creator }}{% endif %}</p>
+          {% endif %}
+        </div>
+        <button class="bv-fav" type="button" aria-pressed="{% if is_favorited %}true{% else %}false{% endif %}"
+                aria-label="Favorite {{ skin.name }}">
+          <i data-lucide="star" aria-hidden="true"></i><span class="bv-fav__count">{{ fav_count }}</span>
+        </button>
       </div>
 
-      {% if user.is_authenticated %}
-        <button class="skin-wear-btn" id="wear-btn">
-          <i data-lucide="shirt"></i>
-          Wear This Skin
-        </button>
-        <p id="wear-msg" class="skin-wear-msg"></p>
-      {% else %}
-        <a href="{% url 'login' %}?next={{ request.path }}" class="skin-wear-btn skin-wear-btn--login">
-          <i data-lucide="log-in"></i>
-          Login to Wear
-        </a>
-      {% endif %}
-
-      {% if user.is_authenticated %}
-        {# is_favorited, fav_count, current_vote are all pre-computed in the view — no DB hits here #}
-        <div class="skin-action-row">
-          <button class="skin-fav-btn {% if is_favorited %}active{% endif %}"
-                  id="fav-btn">
-            <i data-lucide="star"></i>
-            <span id="fav-label">{% if is_favorited %}Favorited{% else %}Favorite{% endif %}</span>
-            <span class="skin-fav-count" id="fav-count">{{ fav_count }}</span>
+      <div class="bv-skin-detail__actions">
+        <div class="bv-votes" role="group" aria-label="Vote">
+          <button class="bv-btn bv-vote" type="button" data-vote="up" aria-label="Upvote"
+                  aria-pressed="{% if current_vote == 'up' %}true{% else %}false{% endif %}">
+            <i data-lucide="arrow-up" aria-hidden="true"></i><span class="up-count">{{ skin.upvotes }}</span>
           </button>
-
-          <button class="skin-vote-btn vote-up {% if current_vote == 'up' %}active{% endif %}"
-                  id="btn-up" data-vote="up">
-            <i data-lucide="thumbs-up"></i>
-            <span id="up-count">{{ skin.upvotes }}</span>
-          </button>
-
-          <button class="skin-vote-btn vote-down {% if current_vote == 'down' %}active{% endif %}"
-                  id="btn-down" data-vote="down">
-            <i data-lucide="thumbs-down"></i>
-            <span id="down-count">{{ skin.downvotes }}</span>
+          <button class="bv-btn bv-vote" type="button" data-vote="down" aria-label="Downvote"
+                  aria-pressed="{% if current_vote == 'down' %}true{% else %}false{% endif %}">
+            <i data-lucide="arrow-down" aria-hidden="true"></i><span class="down-count">{{ skin.downvotes }}</span>
           </button>
         </div>
-      {% else %}
-        <div class="skin-action-row-static">
-          <span class="skin-vote-static"><i data-lucide="star"></i> {{ fav_count }}</span>
-          <span class="skin-vote-static"><i data-lucide="thumbs-up"></i> {{ skin.upvotes }}</span>
-          <span class="skin-vote-static"><i data-lucide="thumbs-down"></i> {{ skin.downvotes }}</span>
-        </div>
-      {% endif %}
-
-      <div class="skin-links">
-        {% if skin.link %}
-          <a href="{{ skin.link }}" target="_blank" rel="noopener" class="skin-link-chip">
-            <i data-lucide="external-link"></i> Bonkleagues
-          </a>
-        {% endif %}
         {% if user.is_authenticated %}
-          <a href="{{ editor_url }}" target="_blank" rel="noopener" class="skin-link-chip">
-            <i data-lucide="pencil"></i> Open in Editor
-          </a>
-          <a href="{{ share_url }}" class="skin-link-chip">
-            <i data-lucide="share-2"></i> Share
+          <button class="bv-btn bv-btn--primary bv-wear" type="button">Wear</button>
+        {% else %}
+          <a class="bv-btn bv-btn--primary bv-wear" href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in to wear</a>
+        {% endif %}
+      </div>
+      <p class="bv-status" role="status" aria-live="polite"></p>
+
+      <div class="bv-skin-detail__tools">
+        <button class="bv-btn bv-btn--ghost" type="button" data-bv-copy-text="{{ share_url }}" data-bv-copied-label="Link copied">
+          <i data-lucide="link" aria-hidden="true"></i><span>Copy link</span>
+        </button>
+        <a class="bv-btn bv-btn--ghost" href="{{ editor_url }}" target="_blank" rel="noopener">
+          <i data-lucide="pencil" aria-hidden="true"></i>Skin editor
+        </a>
+        {% if skin.link %}
+          <a class="bv-btn bv-btn--ghost" href="{{ skin.link }}" target="_blank" rel="noopener">
+            <i data-lucide="external-link" aria-hidden="true"></i>Bonkleagues
           </a>
         {% endif %}
-        <button class="skin-link-chip skin-link-chip--danger"
-                data-report-skin="{{ skin.id }}" data-skin-name="{{ skin.name }}">
-          <i data-lucide="flag"></i> Report
+        {% if user.is_staff %}
+          <button class="bv-btn bv-btn--ghost" type="button" data-rerender>
+            <i data-lucide="refresh-cw" aria-hidden="true"></i><span>Re-render image</span>
+          </button>
+        {% endif %}
+        <button class="bv-btn bv-btn--danger-outline" type="button" data-report-skin="{{ skin.id }}" data-skin-name="{{ skin.name }}">
+          <i data-lucide="flag" aria-hidden="true"></i>Report
         </button>
       </div>
-
     </div>
-  </div>
-
-  {% if skin.description %}
-  <div class="skin-section">
-    <h2 class="skin-section-title">Description</h2>
-    <p class="skin-description-text">{{ skin.description }}</p>
-  </div>
-  {% endif %}
-
-  {% if skin.labels %}
-  <div class="skin-section">
-    <h2 class="skin-section-title">Tags</h2>
-    <div class="tag-bubbles">
-      {% for key, value in skin.labels.items %}
-        {% for tag in value %}
-          <span class="tag-bubble">{{ tag }}</span>
-        {% endfor %}
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
-
+  </section>
 </div>
+{% endwith %}
 
 {% include 'skins/partials/_report_skin_modal.html' %}
 

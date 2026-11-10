@@ -1,8 +1,10 @@
 {% extends 'skins/base.html' %}
 {% load static %}
 
+{# Discord colors the link embed with this; the browser toolbar follows the theme (ui/theme.js). #}
+{% block theme_color %}<meta name="theme-color" content="#009688">{% endblock %}
+
 {% block social_meta %}
-  <meta name="theme-color" content="#009688">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="{{ og.site_name }}">
   <meta property="og:title" content="{{ og.title }}">

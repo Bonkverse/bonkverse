@@ -11,7 +11,7 @@
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.65);
+    background: var(--bv-backdrop);
     backdrop-filter: blur(3px);
     z-index: 8000;
     align-items: center;
@@ -24,8 +24,8 @@
 
 /* Modal box */
 .modal-box {
-    background: #1a2733;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--bv-card);
+    border: 1px solid var(--bv-outline);
     border-radius: 14px;
     padding: 28px 28px 24px;
     width: 90%;
@@ -57,7 +57,7 @@
 .modal-title {
     font-size: 1.2rem;
     font-weight: 700;
-    color: #fff;
+    color: var(--bv-text);
     margin: 0;
     line-height: 1.3;
 }
@@ -65,7 +65,7 @@
 .modal-close-btn {
     background: none;
     border: none;
-    color: #9aa4b2;
+    color: var(--bv-muted);
     cursor: pointer;
     padding: 2px;
     display: flex;
@@ -76,8 +76,8 @@
 }
 
 .modal-close-btn:hover {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.08);
+    color: var(--bv-text);
+    background: color-mix(in srgb, var(--bv-text) 8%, transparent);
 }
 
 .modal-close-btn i[data-lucide] {
@@ -87,7 +87,7 @@
 
 /* Body */
 .modal-body {
-    color: #c9d1d9;
+    color: var(--bv-text);
     font-size: 0.95rem;
     line-height: 1.55;
 }
@@ -100,57 +100,14 @@
     margin-top: 22px;
 }
 
-/* Generic modal buttons */
-.modal-btn {
-    padding: 9px 18px;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    font-family: "Oxanium", sans-serif;
-    cursor: pointer;
-    border: none;
-    transition: background 0.15s ease, transform 0.1s ease;
-}
-
-.modal-btn:active {
-    transform: translateY(1px);
-}
-
-.modal-btn-ghost {
-    background: rgba(255, 255, 255, 0.07);
-    color: #c9d1d9;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.modal-btn-ghost:hover {
-    background: rgba(255, 255, 255, 0.12);
-    color: #fff;
-}
-
-.modal-btn-primary {
-    background: #009688;
-    color: #fff;
-}
-
-.modal-btn-primary:hover {
-    background: #00796b;
-}
-
-.modal-btn-danger {
-    background: #dc2626;
-    color: #fff;
-}
-
-.modal-btn-danger:hover {
-    background: #b91c1c;
-}
+/* Modal buttons are Bonkverse/ui .bv-btn (--primary, --danger). */
 
 /* Form elements inside modals */
 .modal-label {
     display: block;
     font-size: 0.85rem;
     font-weight: 600;
-    color: #9aa4b2;
+    color: var(--bv-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-bottom: 6px;
@@ -159,13 +116,13 @@
 
 /* "(optional)" after a label */
 .modal-label-hint {
-    color: #6b7280;
+    color: var(--bv-muted);
     font-weight: 400;
 }
 
 /* The line under the title naming what the modal is about ("Skin name") */
 .modal-subtitle {
-    color: #9aa4b2;
+    color: var(--bv-muted);
     font-size: 0.9rem;
     margin: 0 0 14px;
 }
@@ -179,11 +136,11 @@
 .modal-input {
     width: 100%;
     box-sizing: border-box;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: var(--bv-input);
+    border: 1px solid var(--bv-outline);
     border-radius: 8px;
-    color: #e6edf3;
-    font-family: "Oxanium", sans-serif;
+    color: var(--bv-text);
+    font-family: var(--bv-font);
     font-size: 0.9rem;
     padding: 9px 12px;
     outline: none;
@@ -195,8 +152,7 @@
 .modal-select:focus,
 .modal-textarea:focus,
 .modal-input:focus {
-    border-color: #009688;
-    box-shadow: 0 0 0 2px rgba(0, 150, 136, 0.2);
+    border-color: var(--bv-link);
 }
 
 .modal-textarea {
@@ -211,11 +167,11 @@
     font-size: 0.875rem;
     text-align: center;
     min-height: 20px;
-    color: #9aa4b2;
+    color: var(--bv-muted);
 }
 
-.modal-feedback.success { color: #34d399; }
-.modal-feedback.error   { color: #f87171; }
+.modal-feedback.success { color: var(--bv-link); }
+.modal-feedback.error   { color: var(--bv-danger); }
 
 /* Close on overlay click area */
 .modal-overlay > *:not(.modal-box) {
@@ -229,7 +185,7 @@
 
 /* Small explanatory line under a modal title (e.g. the bonk.io login modal). */
 .modal-hint {
-  color: #9aa4b2;
+  color: var(--bv-muted);
   margin: 0 0 14px;
   font-size: 0.9rem;
 }

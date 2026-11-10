@@ -24,6 +24,7 @@ from django.shortcuts import render
 from django.utils import timezone
 
 from skins.models import Skin
+from skins.selectors import decorate_skins_for_user
 from .pagination_utils import elided_page_range
 
 # slug -> display metadata + keyword set
@@ -224,6 +225,7 @@ def category_detail(request, slug):
         "skins/skin_browse.html",
         {
             "page_obj": page_obj,
+            "skins": decorate_skins_for_user(page_obj.object_list, request.user),
             "heading": meta["label"],
             "blurb": meta["blurb"],
             "sort": sort,
@@ -253,6 +255,7 @@ def new_releases(request):
         "skins/skin_browse.html",
         {
             "page_obj": page_obj,
+            "skins": decorate_skins_for_user(page_obj.object_list, request.user),
             "heading": "New Releases",
             "blurb": "Fresh uploads, newest first.",
             "period": period,

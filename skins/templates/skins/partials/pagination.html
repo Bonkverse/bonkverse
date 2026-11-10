@@ -18,7 +18,7 @@ Usage:
 - ajax: optional. True marks this nav as AJAX-driven (see above).
 {% endcomment %}
 {% if page_obj.has_other_pages %}
-<nav class="bv-pagination" aria-label="Pagination" {% if ajax %}data-ajax="true"{% endif %}>
+<nav class="site-pagination" aria-label="Pagination" {% if ajax %}data-ajax="true"{% endif %}>
   {% if page_obj.has_previous %}
     <a class="page-nav" href="?{% if base_qs %}{{ base_qs }}&{% endif %}page={{ page_obj.previous_page_number }}">‹ Prev</a>
   {% else %}
@@ -54,7 +54,7 @@ Usage:
     </div>
   {% endif %}
 </nav>
-<div class="bv-pagination-meta">
+<div class="site-pagination-meta">
   Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
 </div>
 {% endif %}

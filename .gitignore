@@ -59,3 +59,7 @@ htmlcov/
 
 # Local Redis snapshots (redis-server run from the repo folder)
 dump.rdb
+
+# scripts/check_responsive.mjs
+node_modules
+shots/

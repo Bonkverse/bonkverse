@@ -17,6 +17,7 @@ HTTP_CLIENTS = {"requests", "httpx", "aiohttp", "urllib.request", "http.client",
 # Standalone tools run by hand, never by the site. Add here only with a reason.
 HTTP_ALLOWED_OUTSIDE_INTEGRATIONS = {
     "scripts/load_test_search.py",  # dev load test; refuses to target production
+    "scripts/sync_ui.py",  # dev tool: downloads a Bonkverse/ui release into static/ui
 }
 
 

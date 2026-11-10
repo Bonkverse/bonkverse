@@ -5,10 +5,10 @@
     font-weight: bold;
     width: 100%;
     padding: 10px;
-    border: 2px solid #009688;
+    border: 2px solid var(--bv-link);
     border-radius: 6px;
-    background: #0f1923;
-    color: #fff;
+    background: var(--bv-card);
+    color: var(--bv-text);
     text-align: center;
 }
 
@@ -22,8 +22,8 @@
     height: 240px;
     object-fit: contain;
     border-radius: 50%;
-    border: 3px solid #009688;
-    background-color: black;
+    border: 3px solid var(--bv-link);
+    background-color: var(--bv-thumb);
 }
 
 .skin-description-edit {
@@ -31,9 +31,9 @@
     min-height: 150px;
     padding: 12px;
     border-radius: 6px;
-    border: 1px solid #009688;
-    background: rgba(255,255,255,0.05);
-    color: #fff;
+    border: 1px solid var(--bv-link);
+    background: color-mix(in srgb, var(--bv-text) 5%, transparent);
+    color: var(--bv-text);
     margin: 10px auto 20px;
     line-height: 1.6;
 }
@@ -42,10 +42,10 @@
     width: 100%;
     padding: 10px;
     margin-bottom: 20px;
-    border: 1px solid #009688;
+    border: 1px solid var(--bv-link);
     border-radius: 6px;
-    background: #0f1923;
-    color: #fff;
+    background: var(--bv-card);
+    color: var(--bv-text);
 }
 
 .tag-bubbles {
@@ -53,17 +53,17 @@
     flex-wrap: wrap;
     gap: 10px;
     padding: 10px;
-    background: rgba(0,0,0,0.3);
+    background: var(--bv-input);
     border-radius: 8px;
 }
 
 .tag-bubble {
     padding: 6px 14px;
     border-radius: 999px;
-    background: #4a90e2;
+    background: color-mix(in srgb, var(--bv-link) 16%, transparent);
     font-weight: bold;
     font-size: 14px;
-    color: #fff;
+    color: var(--bv-text);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -72,7 +72,7 @@
 .tag-bubble button {
     background: none;
     border: none;
-    color: #fff;
+    color: var(--bv-text);
     cursor: pointer;
     font-size: 14px;
 }
@@ -85,5 +85,5 @@
 .tag-input {
   background: transparent;
   border: none;
-  color: #ddd;
+  color: var(--bv-text);
 }

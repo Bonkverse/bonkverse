@@ -31,7 +31,7 @@ const BVPagination = (function () {
     if (totalPages <= 1) return;
 
     const nav = document.createElement('nav');
-    nav.className = 'bv-pagination';
+    nav.className = 'site-pagination';
     nav.setAttribute('aria-label', 'Pagination');
 
     const prev = document.createElement('button');
@@ -101,7 +101,7 @@ const BVPagination = (function () {
     container.appendChild(nav);
 
     const meta = document.createElement('div');
-    meta.className = 'bv-pagination-meta';
+    meta.className = 'site-pagination-meta';
     const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
     const end = Math.min(page * pageSize, total);
     meta.textContent = `Showing ${start}–${end} of ${total}`;

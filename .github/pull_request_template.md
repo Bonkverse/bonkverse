@@ -21,4 +21,4 @@ Refactor commits contain no behavior changes, and feature commits contain no ref
 - [ ] Config read from settings/env, not hardcoded
 - [ ] Docs updated in this PR if behavior changed (README, `docs/`, bonk.io quirks tagged `# BONK:`)
 - [ ] Changes `/api/v1/`? Matching `Bonkverse/docs` PR linked here
-- [ ] Changelog entry added; `navbar.html` updated if a nav item was added
+- [ ] Changelog entry added; nav items change in `Bonkverse/ui` `nav.json`, then `scripts/sync_ui.py`

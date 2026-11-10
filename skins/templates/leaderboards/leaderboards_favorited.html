@@ -3,6 +3,8 @@
 {% block content %}
 <div class="leaderboard-container">
   <h2 class="leaderboard-title">Most Favorited Skins</h2>
+  {% include 'leaderboards/_leaderboard_tabs.html' %}
+  <div class="site-scroll">
   <table class="leaderboard-table">
     <thead>
       <tr>
@@ -25,6 +27,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
 </div>
 
 {% endblock %}
