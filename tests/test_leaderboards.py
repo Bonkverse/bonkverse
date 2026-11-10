@@ -1,19 +1,25 @@
-"""Skin leaderboards (skins/leaderboards.py): one view, one template, a config
-entry per board. Same URLs and URL names as the three old views."""
+"""Leaderboards (stats/leaderboards.py, stats/views.py): one view, one template,
+a config entry per board. Same URLs and URL names as the three old views."""
+
+import ast
+from pathlib import Path
 
 import pytest
 from django.http import Http404
+from django.template.loader import get_template
 from django.test import RequestFactory
 from django.urls import reverse
 
-from skins import leaderboards
+from stats import leaderboards, views
 from tests.factories import SkinFactory, UserFactory
 
 pytestmark = pytest.mark.django_db
 
+REPO = Path(__file__).resolve().parent.parent
+
 
 def _rows(response):
-    return [(skin.name, skin.value) for skin in response.context["skins"]]
+    return [(skin.name, skin.value) for skin in response.context["rows"]]
 
 
 @pytest.fixture
@@ -68,7 +74,7 @@ def test_downvoted_board_has_no_tabs(client):
 def test_shows_the_top_50(client):
     SkinFactory.create_batch(55)
 
-    assert len(client.get(reverse("leaderboards_upvoted")).context["skins"]) == 50
+    assert len(client.get(reverse("leaderboards_upvoted")).context["rows"]) == 50
 
 
 def test_unknown_board_is_404():
@@ -76,7 +82,7 @@ def test_unknown_board_is_404():
     request.user = UserFactory()
 
     with pytest.raises(Http404):
-        leaderboards.leaderboard(request, board="nope")
+        views.leaderboard(request, board="nope")
 
 
 @pytest.mark.parametrize("board", list(leaderboards.LEADERBOARDS))
@@ -87,3 +93,24 @@ def test_one_query_for_the_board_however_many_skins(client, django_assert_max_nu
     # went away with the changelog.)
     with django_assert_max_num_queries(1):
         client.get(reverse(f"leaderboards_{board}"))
+
+
+@pytest.mark.parametrize("board", list(leaderboards.LEADERBOARDS))
+def test_every_board_has_a_table_partial(board):
+    get_template(leaderboards.LEADERBOARDS[board].table)
+
+
+def test_stats_reads_other_apps_only_through_selectors():
+    """Boards get their rows from the owning app's selectors, so stats never
+    imports another app's models (counting stays with the data's owner)."""
+    apps = {path.parent.name for path in REPO.glob("*/apps.py")}
+    found = []
+    for path in (REPO / "stats").rglob("*.py"):
+        if "migrations" in path.parts:
+            continue
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+                top, _, rest = node.module.partition(".")
+                if top != "stats" and rest == "models" and top in apps:
+                    found.append(f"{path.name}: {node.module}")
+    assert found == []

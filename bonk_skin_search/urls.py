@@ -22,7 +22,6 @@ from skins.skin_detail import skin_detail
 from skins.skin_votes import vote_skin_api, toggle_favorite_api
 from skins.wear_skin import wear_skin, bonk_login_for_wear, wear_skin_code
 from skins import flash_friends
-from skins import leaderboards
 from skins import players
 from skins import api
 from skins.social_stats import social_stats
@@ -75,18 +74,8 @@ urlpatterns = [
     path("new/", categories.new_releases, name="new_releases"),
     path("categories/", categories.category_index, name="category_index"),
     path("category/<slug:slug>/", categories.category_detail, name="category_detail"),
-    # Leaderboards
-    # One page per entry in skins/leaderboards.py LEADERBOARDS, e.g.
-    # /leaderboards/upvoted/ named "leaderboards_upvoted".
-    *[
-        path(
-            f"leaderboards/{board}/",
-            leaderboards.leaderboard,
-            {"board": board},
-            name=leaderboards.url_name(board),
-        )
-        for board in leaderboards.LEADERBOARDS
-    ],
+    # Leaderboards: one page per stats/leaderboards.py entry (stats/, docs/apps/stats.md).
+    path("", include("stats.urls")),
     path("api/friends-sync-status/", api.friends_sync_status, name="friends_sync_status"),
     # Discord server directory (communities/, docs/apps/communities.md).
     path("", include("communities.urls")),

@@ -1,0 +1,13 @@
+{% extends "skins/base.html" %}
+{% comment %}Any leaderboard (stats/leaderboards.py: LEADERBOARDS). The board's own table partial draws its rows.{% endcomment %}
+
+{% block content %}
+<div class="leaderboard-container">
+  <h2 class="leaderboard-title">{{ board.title }}</h2>
+{% if board.tab %}  {% include 'stats/_tabs.html' %}
+{% endif %}  <div class="site-scroll">
+  {% include board.table %}
+  </div>
+</div>
+
+{% endblock %}

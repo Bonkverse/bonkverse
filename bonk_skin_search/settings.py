@@ -261,6 +261,7 @@ INSTALLED_APPS = [
     "public_api",
     "site_pages",
     "communities",
+    "stats",
 ]
 
 # =========================================================
