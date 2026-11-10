@@ -122,6 +122,8 @@ def test_publish_with_an_undrawable_svg_creates_no_skin(client, monkeypatch):
     )
 
     assert response.status_code == 500
+    assert response.json() == {"error": "Couldn't make this skin's images. Try again later."}
+    assert "bad svg" not in response.text  # exception text stays in the log
     assert Skin.objects.count() == count
 
 

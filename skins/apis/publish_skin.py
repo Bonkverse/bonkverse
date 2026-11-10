@@ -26,6 +26,10 @@ from skins.svg_sanitizer import (
 
 logger = logging.getLogger(__name__)
 
+# Error replies are shown to the player as-is: plain sentences, never
+# exception text (details go to the server log).
+IMAGES_FAILED = "Couldn't make this skin's images. Try again later."
+
 # Validation
 SKIN_NAME_PATTERN = re.compile(r"^[A-Za-z0-9 _]+$")
 
@@ -66,8 +70,9 @@ def publish_skin(request):
 
     try:
         svg_content = svg_file.read() if svg_file else svg_text.encode("utf-8")
-    except Exception as e:
-        return JsonResponse({"error": f"Failed to read SVG content: {e}"}, status=400)
+    except Exception:
+        logger.warning("publish skin: could not read the SVG", exc_info=True)
+        return JsonResponse({"error": "Couldn't read the SVG."}, status=400)
 
     # Reject active content (script, event handlers, javascript:/data: URIs,
     # foreignObject, ...) before anything is written to disk or the DB.
@@ -81,8 +86,9 @@ def publish_skin(request):
     # The editor sends only the SVG; the PNG and thumbnail are drawn here.
     try:
         bundle = bundle_from_svg(svg_content)
-    except Exception as e:
-        return JsonResponse({"error": f"Failed to generate skin images: {e}"}, status=500)
+    except Exception:
+        logger.exception("publish skin: could not draw PNGs from the SVG")
+        return JsonResponse({"error": IMAGES_FAILED}, status=500)
 
     skin = Skin.objects.create(
         name=skin_name,
@@ -93,10 +99,10 @@ def publish_skin(request):
     )
     try:
         save_render(skin, bundle)
-    except OSError as e:
+    except OSError:
         logger.exception("publish skin %s: could not write media files", skin.id)
         skin.delete()
-        return JsonResponse({"error": f"Failed to generate skin images: {e}"}, status=500)
+        return JsonResponse({"error": IMAGES_FAILED}, status=500)
 
     share_url = request.build_absolute_uri(
         reverse("share_skin", kwargs={"skin_id": skin.id, "uuid": skin.uuid})
