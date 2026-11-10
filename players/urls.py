@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import api, social_stats, views
 
 # Usernames go in the path URL-encoded; bonk.io names can't contain "/".
 # Names like "." and ".." get a "~" in front (players/converters.py).
@@ -26,4 +26,13 @@ urlpatterns = [
     path("tools/xp/", views.xp_calculator, name="xp_calculator"),
     path("tools/xp/player.json", views.xp_calculator_player, name="xp_calculator_player"),
     path("tools/xp/levels.json", views.xp_calculator_levels, name="xp_calculator_levels"),
+    path("social-stats/", social_stats.social_stats, name="social_stats"),
+    # JSON for the player search pages and the post-login friend sync toast.
+    path("api/players/search/", api.search_players_view, name="players_search"),
+    path(
+        "api/flash-friends/search/",
+        api.search_flash_friends_view,
+        name="flash_friends_search",
+    ),
+    path("api/friends-sync-status/", api.friends_sync_status, name="friends_sync_status"),
 ]

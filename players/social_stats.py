@@ -1,4 +1,6 @@
-# skins/social_stats.py
+"""The social stats page (/social-stats/): friend-graph totals, the most
+connected players and Flash friends, and account-age estimates
+(players/dbid_lookup.py)."""
 
 import math
 from core.ratelimits import limit
@@ -6,7 +8,7 @@ from django.shortcuts import render
 from django.db.models import Count
 from django.db import connection
 
-from .models import BonkPlayer, Friendship, FlashFriend
+from skins.models import BonkPlayer, FlashFriend, Friendship
 from .dbid_lookup import estimate_registration_date, format_registration
 
 
@@ -131,7 +133,7 @@ def social_stats(request):
 
     return render(
         request,
-        "skins/social_stats.html",
+        "players/social_stats.html",
         {
             "total_players": total_players,
             "total_edges": total_edges,

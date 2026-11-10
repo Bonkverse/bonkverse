@@ -88,8 +88,8 @@ def test_login_and_wear_go_through_the_bonk_client():
         "skins/login.py",
         "skins/sign_in.py",
         "skins/wear_skin.py",
-        "skins/friends_sync.py",
-        "skins/flash_friends_sync.py",
+        "players/friends_sync.py",
+        "players/flash_friends_sync.py",
     ):
         assert not _http_imports(REPO / rel), rel
         assert "bonk2.io" not in (REPO / rel).read_text(), rel

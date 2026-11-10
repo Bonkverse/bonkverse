@@ -192,7 +192,7 @@ bonkverse/
 ├── bonk_skin_search/       # Django project: settings, root urls, celery app
 ├── core/                   # shared helpers; core/bonk/ = bonk.io types (slots, usernames, skin codes, session)
 ├── integrations/           # one client per outside service; the only code that makes outside HTTP calls
-├── players/                # player profiles, replay sync, profile privacy, XP calculator
+├── players/                # player profiles, directory and search, friend sync, social stats, XP calculator
 ├── public_api/             # /api/v1/, API keys, developer portal
 ├── site_pages/             # home, privacy, terms, staff, map decoder
 ├── communities/            # Discord server directory

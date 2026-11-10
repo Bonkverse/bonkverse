@@ -7,7 +7,7 @@ the worker.
 Does not own: the /login/ page and its messages (login.py), trying the
 bonk.io login and the limit on wrong passwords (login_attempts.py), the
 bonk.io session rules (core/bonk/session.py) or friend storage
-(friends_sync.py, flash_friends_sync.py).
+(players/friends_sync.py, players/flash_friends_sync.py).
 """
 
 import logging
@@ -16,15 +16,17 @@ from django.conf import settings
 from django.contrib.auth import login
 from django.utils import timezone
 
-from core.background import enqueue
 from core.bonk import BonkSession, BonkUsername
 from integrations.bonk_api import BonkLoginResult
 
+from players.services import (
+    adopt_replay_names,
+    queue_friend_sync as queue_players_friend_sync,
+    sync_flash_friends_for_user,
+)
+
 from .events import log_event
-from .flash_friends_sync import sync_flash_friends_for_user
-from .friends_sync import adopt_replay_names
 from .models import BonkAccountLink, BonkPlayer, BonkUser
-from .tasks import sync_friends
 
 logger = logging.getLogger(__name__)
 
@@ -141,7 +143,7 @@ def queue_friend_sync(request, link_id: int) -> bool:
     the task logs `friends_synced`; it's only shown when the sync was queued.
     Returns whether it was queued.
     """
-    queued = enqueue(sync_friends, link_id)
+    queued = queue_players_friend_sync(link_id)
     if queued:
         request.session["show_friend_sync_toast"] = True
     return queued
