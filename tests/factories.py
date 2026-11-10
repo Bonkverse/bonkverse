@@ -9,6 +9,13 @@ import factory
 from skins.models import BonkPlayer, BonkUser, Skin
 
 
+# A real one-layer skin code (shape 13, light gray on a black base). Codes are
+# checked (core.bonk.SkinCode.parse) wherever a client supplies one.
+SKIN_CODE = "CgcDYQACCQMBCgcFYWwAAQANPhmZmgAAAAAAAAAAAAAAAAAAAPr6+gAAAAA="
+# The same code URL-encoded twice, as some BonkLeagues/BonxBot codes arrive.
+SKIN_CODE_DOUBLE_ENCODED = SKIN_CODE.replace("+", "%252B").replace("=", "%253D")
+
+
 class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = BonkUser
@@ -32,5 +39,5 @@ class SkinFactory(factory.django.DjangoModelFactory):
 
     name = factory.Sequence(lambda n: f"Test Skin {n}")
     creator = "tester0"
-    skin_code = "CgcDYQACCQkBCgcFYWwAAQBNPlt5PUI19d8"
+    skin_code = SKIN_CODE
     labels = {"style": "Minimalist", "themes": [], "objects": [], "colors": ["red"]}

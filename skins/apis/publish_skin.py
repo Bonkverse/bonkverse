@@ -1,8 +1,8 @@
 """Publishing a skin from the Bonkverse skin editor (POST /api/skins/publish/).
 
 Owns: the endpoint, its validation and its JSON reply.
-Does not own: SVG safety rules (svg_sanitizer.py) or writing the files and
-image rows (skin_media.py).
+Does not own: SVG safety rules (svg_sanitizer.py), what counts as a skin code
+(core/bonk/skin_codes.py) or writing the files and image rows (skin_media.py).
 """
 
 import logging
@@ -12,6 +12,7 @@ import uuid
 from django.http import HttpResponseNotAllowed, JsonResponse
 from django.urls import reverse
 
+from core.bonk import InvalidSkinCode, SkinCode
 from core.ratelimits import limit
 from skins.events import log_event
 from skins.models import Skin
@@ -29,6 +30,7 @@ logger = logging.getLogger(__name__)
 # Error replies are shown to the player as-is: plain sentences, never
 # exception text (details go to the server log).
 IMAGES_FAILED = "Couldn't make this skin's images. Try again later."
+INVALID_CODE = "That isn't a bonk.io skin code. Publish from the skin editor."
 
 # Validation
 SKIN_NAME_PATTERN = re.compile(r"^[A-Za-z0-9 _]+$")
@@ -67,6 +69,15 @@ def publish_skin(request):
         return JsonResponse({"error": "Skin name must be under 1000 characters"}, status=422)
     if not svg_file and not svg_text:
         return JsonResponse({"error": "SVG content is required"}, status=422)
+    # The code is stored and served as this skin's code (wear, editor,
+    # re-render), so it must be a real skin: text or other data is refused.
+    try:
+        SkinCode(skin_code).parse()
+    except InvalidSkinCode as e:
+        logger.warning(
+            "publish skin: rejected skin code from user %s: %s", request.user.pk, e.reason
+        )
+        return JsonResponse({"error": INVALID_CODE}, status=422)
 
     try:
         svg_content = svg_file.read() if svg_file else svg_text.encode("utf-8")
