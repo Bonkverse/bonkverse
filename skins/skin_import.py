@@ -38,7 +38,8 @@ from django.db import connection, transaction
 from core.bonk import SkinCode
 from integrations.bl_skin_fetcher import FetchResult, fetch_skin
 from integrations.editor_render import RenderResult, render_skin_code
-from skins.models import Skin, SkinImage
+from skins.models import Skin
+from skins.skin_media import RenderBundle, save_render
 from skins.svg_sanitizer import SVGTooLargeError, UnsafeSVGError, validate_svg_upload
 
 logger = logging.getLogger(__name__)
@@ -237,8 +238,12 @@ def _get_media(link, skin_code, render, fetch):
 
 
 def _save(link, name, creator, media: _Media) -> Skin:
-    """Write the row and its three files together; on any failure keep neither."""
-    written = []
+    """Write the row and its three files together; on any failure keep neither.
+
+    A failed file write rolls the row back (skin_media leaves no files); a
+    failure after the files are in place rolls back the row and removes them.
+    """
+    paths = {}
     try:
         with transaction.atomic():
             skin = Skin.objects.create(
@@ -249,26 +254,16 @@ def _save(link, name, creator, media: _Media) -> Skin:
                 image_url="",
                 uuid=uuid.uuid4(),
             )
-            files = {
-                "svg": (f"skins/{skin.id}.svg", media.svg.encode("utf-8")),
-                "png": (f"skins/{skin.id}.png", media.png),
-                "thumbnail": (f"skins/{skin.id}_thumb.png", media.thumbnail),
-            }
-            os.makedirs(os.path.join(settings.MEDIA_ROOT, "skins"), exist_ok=True)
-            for rel_path, content in files.values():
-                full_path = os.path.join(settings.MEDIA_ROOT, rel_path)
-                with open(full_path, "wb") as f:
-                    f.write(content)
-                written.append(full_path)
-
-            skin.image_url = f"{settings.MEDIA_URL}{files['svg'][0]}"
-            skin.save(update_fields=["image_url"])
-            SkinImage.objects.bulk_create(
-                [SkinImage(skin=skin, kind=kind, path=rel) for kind, (rel, _) in files.items()]
+            paths = save_render(
+                skin,
+                RenderBundle(
+                    svg=media.svg.encode("utf-8"), png=media.png, thumbnail=media.thumbnail
+                ),
             )
             return skin
     except Exception:
-        for path in written:
-            if os.path.exists(path):
-                os.remove(path)
+        for rel_path in paths.values():
+            full_path = os.path.join(settings.MEDIA_ROOT, rel_path)
+            if os.path.exists(full_path):
+                os.remove(full_path)
         raise

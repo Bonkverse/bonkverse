@@ -1,10 +1,10 @@
 """Re-rendering a gallery skin's images from its stored code (staff only).
 
-Owns: the /skins/<id>/rerender/ endpoint, overwriting the skin's SVG, PNG and
-thumbnail files, updating its image rows, and asking Cloudflare to drop the
-old cached copies.
-Does not own: rendering (integrations/editor_render.py), the cache purge
-request (integrations/cloudflare.py) or SVG safety rules (svg_sanitizer.py).
+Owns: the /skins/<id>/rerender/ endpoint, and asking Cloudflare to drop the
+old cached copies of the skin's files.
+Does not own: rendering (integrations/editor_render.py), writing the files and
+image rows (skin_media.py), the cache purge request (integrations/cloudflare.py)
+or SVG safety rules (svg_sanitizer.py).
 
 Replies are JSON for the button on the search page, which shows `error` to
 staff as-is, so `error` is always a readable sentence. Service details go to
@@ -13,9 +13,7 @@ the server log only.
 
 import functools
 import logging
-import os
 
-from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
@@ -25,7 +23,8 @@ from core.ratelimits import limit
 from integrations.cloudflare import purge_media_paths
 from integrations.editor_render import render_skin_code
 from skins.events import log_event
-from skins.models import Skin, SkinImage
+from skins.models import Skin
+from skins.skin_media import RenderBundle, save_render
 from skins.svg_sanitizer import (
     TOO_LARGE_MESSAGE,
     SVGTooLargeError,
@@ -79,29 +78,19 @@ def rerender_skin(request, skin_id):
         logger.warning("rerender skin %s: rendered SVG rejected: %s", skin.id, exc)
         return _error("The rendered image failed the SVG safety check; nothing was changed.", 422)
 
-    files = {
-        "svg": (f"skins/{skin.id}.svg", rendered.svg.encode("utf-8")),
-        "png": (f"skins/{skin.id}.png", rendered.png),
-        "thumbnail": (f"skins/{skin.id}_thumb.png", rendered.thumbnail),
-    }
-    # Overwrites the files in place (Railway volume; persists across deploys).
+    # Replaces the files on the media volume; a failed write keeps the old ones.
+    bundle = RenderBundle(
+        svg=rendered.svg.encode("utf-8"), png=rendered.png, thumbnail=rendered.thumbnail
+    )
     try:
-        os.makedirs(os.path.join(settings.MEDIA_ROOT, "skins"), exist_ok=True)
-        for rel_path, content in files.values():
-            with open(os.path.join(settings.MEDIA_ROOT, rel_path), "wb") as f:
-                f.write(content)
+        paths = save_render(skin, bundle)
     except OSError:
         logger.exception("rerender skin %s: could not write media files", skin.id)
         return _error("Couldn't save the new images. Try again later.", 500)
 
-    skin.image_url = f"{settings.MEDIA_URL}{files['svg'][0]}"
-    skin.save(update_fields=["image_url"])
-    for kind, (rel_path, _) in files.items():
-        SkinImage.objects.update_or_create(skin=skin, kind=kind, defaults={"path": rel_path})
-
     # Drop Cloudflare's cached copies so the new files show immediately. A
     # failure is logged by the client; the copies expire on their own anyway.
-    purge = purge_media_paths([f"/media/{rel_path}" for rel_path, _ in files.values()])
+    purge = purge_media_paths([f"/media/{rel_path}" for rel_path in paths.values()])
 
     log_event(request.user, "skin_rerendered", skin=skin)
     return JsonResponse(
