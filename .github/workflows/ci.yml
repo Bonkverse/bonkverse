@@ -113,5 +113,19 @@ jobs:
           -e DATABASE_URL=postgresql://unused@localhost/unused
           -e REDIS_URL=redis://localhost:6379/0
           bonkverse:ci python manage.py check
+      - name: The Celery worker can load its Redis transport inside the image
+        # Opens no connection: building it resolves the transport, which is
+        # where a missing dependency crashed the first worker deploy.
+        run: >-
+          docker run --rm
+          -e SECRET_KEY=ci-only-not-a-secret
+          -e DATABASE_URL=postgresql://unused@localhost/unused
+          -e REDIS_URL=redis://localhost:6379/0
+          -e DJANGO_SETTINGS_MODULE=bonk_skin_search.settings
+          bonkverse:ci python -c
+          "import django; django.setup();
+          from bonk_skin_search.celery_app import app;
+          app.connection_for_read(); app.loader.import_default_modules();
+          print('celery ok:', sorted(t for t in app.tasks if not t.startswith('celery.')))"
       - name: Audit packages actually installed in the image
         run: docker run --rm bonkverse:ci sh -c "pip install -q pip-audit && pip-audit"
