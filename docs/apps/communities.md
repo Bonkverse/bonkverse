@@ -26,7 +26,7 @@ The detail path sits at the site root (`/<uuid>/`), which is why it's matched by
 
 ## Models
 
-`DiscordTag`, `DiscordServer` (UUID primary key, unique `guild_id`, `tags` many-to-many) and `DiscordServerSnapshot` still live in `skins/models.py` (tables `skins_discordtag`, `skins_discordserver`, `skins_discordserver_tags`, `skins_discordserversnapshot`). They move here in the next step without moving any data.
+`communities/models.py`: `DiscordTag`, `DiscordServer` (UUID primary key, unique `guild_id`, `tags` many-to-many), `DiscordServerSnapshot` (indexed on server + time). Moved from `skins/` in 5.2b **without moving data**: they keep the tables `skins_discordtag`, `skins_discordserver`, `skins_discordserver_tags` and `skins_discordserversnapshot` (`db_table` on each model and on `tags`), and the snapshot index keeps its name. Don't rename them; Django would rename the real tables. Not registered in `/admin`.
 
 ## Open product question
 

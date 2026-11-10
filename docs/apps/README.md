@@ -9,7 +9,7 @@ RFC-0001 Phase 5 splits the old do-everything `skins` app into domain apps. This
 | App | Owns | State |
 |---|---|---|
 | [`site_pages`](site_pages.md) | Home, privacy, terms, staff page, small tools (map decoder) | Exists (5.1); no models of its own |
-| [`communities`](communities.md) | Discord server directory: servers, tags, snapshots, submit, the hourly refresh | Exists (5.2); its models move next |
+| [`communities`](communities.md) | Discord server directory: servers, tags, snapshots, submit, the hourly refresh | Exists (5.2), models moved (5.2b) |
 | `stats` | Leaderboards (one config entry per board) and archived win/loss rows; future stat tracking | Planned (5.3) |
 | `players` | bonk.io players, friendships, Flash friends, friend sync, player search and profiles, social stats, replay sync, XP calculator, profile privacy | Exists (profiles, replay sync, privacy); the rest moves in 5.4 |
 | `accounts` | Site accounts (`BonkUser`), bonk.io account links and their tokens, sign in / out, `/api/me/` | Planned (5.5) |
@@ -44,6 +44,20 @@ One app per PR, in two kinds of PR:
 
 1. **Code first.** Views, templates, static files, URLs, services, tasks, commands move into the new app; the app's `urls.py` is included from the root URL conf. Models stay where they are. Refactor only: no behavior change, same paths, full suite green.
 2. **Models last, one app per deploy.** The model classes move with `SeparateDatabaseAndState` and `Meta.db_table` set to the existing table name, so the tables and data stay exactly where they are (no `migrate --fake`). The same migration updates `django_content_type.app_label`, so admin history and permissions follow the model. Before merging, check `manage.py migrate --plan` and `sqlmigrate`: the move must run no SQL against the moved tables, on a fresh database and when upgrading from `main`.
+
+### Moving models, step by step
+
+The first model move was `communities` (5.2b); its `communities/migrations/0001_initial.py` and `skins/migrations/0030_move_discord_models_to_communities.py` are the template.
+
+1. Copy the model classes into the new app's `models.py` and delete them from the old one. In the moved classes set:
+   - `Meta.db_table` to the existing table (`skins_<model>`);
+   - `db_table` on every `ManyToManyField` to the existing join table (`skins_<model>_<field>`), or Django will want a new one;
+   - the existing `name` on every `Meta.indexes` entry (copy it from the old migration or `\d table` in psql), because auto names include the app label.
+2. Point every import at the new app.
+3. `makemigrations <new> <old>` generates a `CreateModel` set and a `DeleteModel` set. Wrap each in `SeparateDatabaseAndState(state_operations=[...], database_operations=[])`.
+4. Order them: the new app's migration depends on the old app's latest; the old app's migration depends on the new app's. Add a reversible `RunPython` in the new app's migration that relabels `django_content_type` rows in place (skip a model whose row already has the new label, as on a fresh database).
+5. Check on a database at `main`'s schema with a few rows: `migrate --plan`, `sqlmigrate` for both (no-op plus the `RunPython`), `pg_dump --schema-only -t '<tables>'` identical before and after, rows still there, content types relabelled, `migrate <new> zero` then `migrate` again, a fresh database, `makemigrations --check` clean.
+6. Add a test pinning `_meta.db_table` for each model, the join table and index names, and the relabel both ways (see `tests/test_communities.py`).
 
 A task that moves keeps working for already-queued messages and saved schedules: either keep its registered name (`@shared_task(name="skins.tasks.x")`) or migrate the `PeriodicTask.task` rows in the same PR.
 
