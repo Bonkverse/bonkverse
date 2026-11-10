@@ -10,7 +10,7 @@ from datetime import timedelta
 from django.db.models import Q
 from django_celery_beat.models import PeriodicTask
 
-from skins.models import DiscordServer, DiscordTag
+from .models import DiscordServer, DiscordTag
 
 # The refresh task's registered name (kept from when it lived in skins/, so
 # saved schedules and queued runs keep working).

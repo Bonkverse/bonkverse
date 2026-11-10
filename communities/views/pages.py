@@ -3,9 +3,9 @@
 from django.shortcuts import get_object_or_404, render
 
 from core.ratelimits import limit
-from skins.models import DiscordServer
 
 from .. import selectors
+from ..models import DiscordServer
 
 
 @limit("browse")
