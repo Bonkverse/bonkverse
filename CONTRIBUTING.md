@@ -20,7 +20,7 @@ The repo is moving from one `skins` app to six domain apps (`accounts`, `skins`,
 - `integrations/` — one client per external system (bonk.io, editor render service, BLSkinFetcher, BonkBot, Discord, Cloudflare, map decoder). **Only these files make outside HTTP calls** (any HTTP library; enforced by `tests/test_architecture.py`). How to add one: [docs/architecture/integrations.md](docs/architecture/integrations.md).
 - `core/` — cross-cutting helpers: auth guards, event logging, pagination, the one definition of today/week/month periods, JSON response helpers.
 
-Until a phase lands, put new code where its future home will be, or as close as the current layout allows.
+Until a phase lands, put new code where its future home will be, or as close as the current layout allows ([docs/apps/README.md](docs/apps/README.md) shows each app's state).
 
 Inside an app, dependencies point one way:
 
@@ -40,7 +40,7 @@ views -> services / selectors -> models
 | `management/commands/` | Thin, idempotent CLI wrappers with `--dry-run` for writes | One-off logic that belongs in a service |
 | `templates/` | Markup, partials (`_name.html`), `json_script` data | Inline JS logic, inline `style=""` |
 
-Apps talk to each other only through another app's `services.py`.
+Apps use each other only through another app's `services`, `selectors` or `models`, and `core/` and `integrations/` import no app (enforced by `tests/test_app_boundaries.py`). Which app owns what, and how to create or move one: [docs/apps/README.md](docs/apps/README.md). Every URL path is pinned by `tests/test_url_snapshot.py`; a new route means updating `tests/fixtures/url_routes.json` in the same PR.
 
 **Background work** goes to the Celery worker, queued with `core.background.enqueue` (never `.delay()`, never a thread); tasks set their own time limits, take ids, and are safe to run twice. Standard and checklist: [docs/architecture/background-work.md](docs/architecture/background-work.md) (enforced by `tests/test_background.py`).
 
