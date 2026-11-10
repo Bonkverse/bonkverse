@@ -306,16 +306,6 @@ class FlashFriendship(models.Model):
         return f"{self.user.username} ↔ {self.flash_friend.name}"
 
 
-class Changelog(models.Model):
-    title = models.CharField(max_length=200)
-    content = models.TextField()
-    created_at = models.DateTimeField(default=timezone.now)
-    version = models.CharField(max_length=20, blank=True, null=True)  # optional
-
-    def __str__(self):
-        return f"{self.version or ''} - {self.title}"
-
-
 class SkinImage(models.Model):
     skin = models.ForeignKey("skins.Skin", on_delete=models.CASCADE, related_name="images")
     kind = models.CharField(max_length=50, default="original")
