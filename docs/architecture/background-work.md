@@ -19,7 +19,7 @@ flowchart LR
 
 | Task | When | Notes |
 |---|---|---|
-| `skins.tasks.sync_friends` | Queued by every login (`skins/sign_in.py`) | The player's bonk.io friend list (`friends.php`). Takes the account-link id; reads the token from the link. Retries twice when bonk.io is unreachable, never on a refusal. Logs `friends_synced`, which the profile toast polls for. |
+| `skins.tasks.sync_friends` | Queued by every login (`skins/sign_in.py` → `players.services.queue_friend_sync`) | The player's bonk.io friend list (`friends.php`). Takes the account-link id; reads the token from the link. Retries twice when bonk.io is unreachable, never on a refusal. Logs `friends_synced`, which the profile toast polls for. Code in `players/tasks.py` since Phase 5.4; it keeps its original registered name (logger `players.tasks`). |
 | `skins.tasks.refresh_discord_servers` | Hourly (`CELERY_BEAT_SCHEDULE`) | Member/online counts for the Discord directory. At most once per hour (see "Running twice"). Code in `communities/tasks.py` since Phase 5.2; it keeps its original registered name, so its logs come from logger `communities.tasks` but carry the task name `skins.tasks.refresh_discord_servers`. |
 | `players.tasks.sync_replays` | Every `REPLAY_SYNC_INTERVAL_SECONDS` (1 hour) | Names in, DBIDs out with the replay archive (`players/replay_sync.py`). Carries on from saved cursors; skipped while another run holds its lock, or when `BONKVERSE_SYNC_TOKEN` isn't set. |
 
@@ -40,7 +40,7 @@ skin, voting). Those stay in the view, however slow the other service is.
 
 ## Writing a task
 
-The friend sync task (`skins/tasks.py`), without its retry:
+The friend sync task (`players/tasks.py`), without its retry:
 
 ```python
 from celery import shared_task
@@ -57,7 +57,7 @@ def sync_friends(self, account_link_id: int) -> dict:
     if link is None:
         logger.info("friends sync skipped: account link %s is gone or inactive", account_link_id)
         return {"skipped": "link_gone"}
-    outcome = sync_friends_for_link(link)  # the service: skins/friends_sync.py
+    outcome = sync_friends_for_link(link)  # the service: players/friends_sync.py
     if outcome.error:
         return {"error": outcome.error}
     logger.info("friends sync done for bonk_id=%s: %s", link.bonk_player.bonk_id, outcome.stats)
@@ -128,7 +128,7 @@ worker too ([ADR 0008](../adr/0008-bonk-refusals.md)); a task that gets
 
 ```python
 from core.background import enqueue
-from skins.tasks import sync_friends
+from players.tasks import sync_friends
 
 enqueue(sync_friends, link.id)
 ```
