@@ -517,6 +517,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "skins.tasks.refresh_discord_servers",
         "schedule": 60 * 60,
     },
+    # Names in, DBIDs out with the replay archive (players/replay_sync.py).
+    "sync-replays": {
+        "task": "players.tasks.sync_replays",
+        "schedule": REPLAY_SYNC_INTERVAL_SECONDS,
+    },
 }
 
 # =========================================================

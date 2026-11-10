@@ -85,7 +85,8 @@ def _tasks_run_inline(settings):
 
 @pytest.fixture(autouse=True)
 def _no_background_friend_sync(settings):
-    """Login normally starts a background thread for friend sync; keep tests synchronous."""
+    """Login normally queues a friend sync (bonk.io friends.php); tests that
+    want it turn it on (tests/test_friend_sync_task.py)."""
     settings.SYNC_FRIENDS_ON_LOGIN = False
 
 

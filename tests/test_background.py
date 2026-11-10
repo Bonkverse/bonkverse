@@ -104,10 +104,6 @@ def test_work_is_queued_only_through_enqueue():
 def test_no_new_background_threads():
     """Background work goes to the worker, which survives deploys; threads don't."""
     allowed = {
-        # RFC-0001 4.3 moves these to the worker and removes the entries: the
-        # friend sync after login, and the hourly replay sync started by page views.
-        REPO / "skins" / "login.py",
-        REPO / "players" / "replay_sync.py",
         # Load-test script run by hand, not part of the site.
         REPO / "scripts" / "load_test_search.py",
     }

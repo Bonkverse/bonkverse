@@ -1,7 +1,8 @@
 """Signing in to Bonkverse with a bonk.io account, and signing out.
 
 Owns: the /login/ and /logout/ views, finding or creating the site account
-for a bonk.io name, linking it to its BonkPlayer, and starting friend syncs.
+for a bonk.io name, linking it to its BonkPlayer, syncing Flash friends from
+the login reply, and queueing the regular friend sync on the worker.
 Does not own: talking to bonk.io (integrations/bonk_api.py), the bonk.io
 session rules (core/bonk/session.py) or friend storage (friends_sync.py,
 flash_friends_sync.py).
@@ -9,18 +10,16 @@ flash_friends_sync.py).
 
 import logging
 import math
-import threading
-import time
 
 from django.conf import settings
 from django.utils import timezone
 from django.contrib import messages
 from django.contrib.auth import login, logout
-from django.core import signing
 from django.shortcuts import redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
+from core.background import enqueue
 from core.bonk import BonkSession, BonkUsername
 from core.ratelimits import describe_wait, limit
 from integrations.bonk_api import (
@@ -34,8 +33,9 @@ from skins.events import log_event
 
 from .flash_friends_sync import sync_flash_friends_for_user
 from .forms import LoginForm
-from .friends_sync import adopt_replay_names, sync_friends_for_player
+from .friends_sync import adopt_replay_names
 from .models import BonkAccountLink, BonkPlayer, BonkUser
+from .tasks import sync_friends
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +94,7 @@ def site_account_for(username: BonkUsername) -> BonkUser:
     return BonkUser.objects.create_user(username=username.value)
 
 
-def _link_bonk_player(user: BonkUser, result: BonkLoginResult) -> None:
+def _link_bonk_player(user: BonkUser, result: BonkLoginResult) -> BonkAccountLink:
     """Create or refresh the BonkPlayer and its link to the site account."""
     adopt_replay_names({result.bonk_id: result.username.value})
     player, created = BonkPlayer.objects.get_or_create(
@@ -114,43 +114,26 @@ def _link_bonk_player(user: BonkUser, result: BonkLoginResult) -> None:
         player.xp = result.xp
         player.xp_seen_at = timezone.now()
         player.save(update_fields=["xp", "xp_seen_at", "updated_at"])
-    BonkAccountLink.objects.update_or_create(
+    link, _ = BonkAccountLink.objects.update_or_create(
         user=user,
         bonk_player=player,
         defaults={
-            "token_encrypted": signing.dumps({"t": result.token}, salt="bonk_token"),
+            "token_encrypted": BonkAccountLink.sign_token(result.token),
             "scopes": {"friends": True},
             "active": True,
         },
     )
+    return link
 
 
-def _sync_friends_bg(user, current_bonk_id: int | None, current_username: str, token: str) -> None:
-    """Background sync of regular friends (friends.php). Flash friends sync at login."""
-    t0 = time.monotonic()
-    try:
-        result = get_client().get_friends(token)
-        if not result.ok:
-            logger.warning(
-                "friends sync skipped: %s (bonk_error=%s)", result.error, result.bonk_error
-            )
-            return
+def _queue_friend_sync(request, link_id: int) -> None:
+    """Hand the regular friend sync (friends.php) to the worker.
 
-        stats = sync_friends_for_player(
-            current_bonk_id=current_bonk_id,
-            current_username=current_username,
-            friends=result.friends,
-            requests=result.requests,
-        )
-        logger.info(
-            "regular friends synced for bonk_id=%s: %s (%.2fs)",
-            current_bonk_id,
-            stats,
-            time.monotonic() - t0,
-        )
-        log_event(user, "friends_synced", **stats)
-    except Exception:
-        logger.exception("background friends sync failed for bonk_id=%s", current_bonk_id)
+    The profile page shows a toast that polls /api/friends-sync-status/ until
+    the task logs `friends_synced`; it's only shown when the sync was queued.
+    """
+    if enqueue(sync_friends, link_id):
+        request.session["show_friend_sync_toast"] = True
 
 
 def _sign_in(request, result: BonkLoginResult) -> None:
@@ -165,9 +148,10 @@ def _sign_in(request, result: BonkLoginResult) -> None:
     login(request, user)
     log_event(user, "user_logged_in")
 
+    link = None
     if result.bonk_id is not None:
         try:
-            _link_bonk_player(user, result)
+            link = _link_bonk_player(user, result)
         except Exception:
             logger.exception("Could not persist account link")
 
@@ -179,15 +163,12 @@ def _sign_in(request, result: BonkLoginResult) -> None:
     except Exception:
         logger.exception("flash friends sync at login failed")
 
-    # The profile page shows a toast that polls /api/friends-sync-status/
-    # until this background sync finishes.
-    if settings.SYNC_FRIENDS_ON_LOGIN:
-        threading.Thread(
-            target=_sync_friends_bg,
-            args=(user, result.bonk_id, result.username.value, result.token),
-            daemon=True,
-        ).start()
-        request.session["show_friend_sync_toast"] = True
+    # Regular friends come from a second bonk.io call, so they sync on the
+    # worker; the task reads the token from the link, never from the queue.
+    # Requests run in autocommit (no ATOMIC_REQUESTS; a test pins it), so the
+    # link is committed already and the worker can't run before it exists.
+    if settings.SYNC_FRIENDS_ON_LOGIN and link is not None:
+        _queue_friend_sync(request, link.id)
 
 
 @limit("login", method="POST")
