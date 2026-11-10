@@ -14,7 +14,7 @@ import requests
 from django.db.models import Q
 from django.urls import reverse
 
-from skins import login as login_module
+from skins import sign_in as sign_in_module
 from skins.friends_sync import NO_TOKEN, sync_friends_for_link
 from skins.models import BonkAccountLink, BonkPlayer, Friendship, UserEvent
 from skins.tasks import sync_friends
@@ -165,7 +165,7 @@ class TestLoginQueuesTheSync:
         assert status["friends_now"] == 3
 
     def test_queues_only_the_link_id_never_the_token(self, client):
-        with mock.patch.object(login_module, "enqueue", return_value=True) as enqueue:
+        with mock.patch.object(sign_in_module, "enqueue", return_value=True) as enqueue:
             client.post("/login/", {"username": "TestPlayer", "password": "x"})
 
         link = BonkAccountLink.objects.get(bonk_player__bonk_id=1234567)
@@ -178,7 +178,7 @@ class TestLoginQueuesTheSync:
         assert not settings.DATABASES["default"].get("ATOMIC_REQUESTS", False)
 
     def test_no_toast_when_the_sync_could_not_be_queued(self, client):
-        with mock.patch.object(login_module, "enqueue", return_value=False):
+        with mock.patch.object(sign_in_module, "enqueue", return_value=False):
             response = client.post("/login/", {"username": "TestPlayer", "password": "x"})
 
         assert response.status_code == 302  # the login itself still works
@@ -186,7 +186,7 @@ class TestLoginQueuesTheSync:
 
     def test_off_switch(self, client, settings):
         settings.SYNC_FRIENDS_ON_LOGIN = False
-        with mock.patch.object(login_module, "enqueue") as enqueue:
+        with mock.patch.object(sign_in_module, "enqueue") as enqueue:
             client.post("/login/", {"username": "TestPlayer", "password": "x"})
 
         enqueue.assert_not_called()
