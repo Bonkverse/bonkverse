@@ -8,7 +8,7 @@ RFC-0001 Phase 5 splits the old do-everything `skins` app into domain apps. This
 
 | App | Owns | State |
 |---|---|---|
-| `site_pages` | Home, privacy, terms, staff page, small tools (map decoder) | Planned (step 5.1) |
+| [`site_pages`](site_pages.md) | Home, privacy, terms, staff page, small tools (map decoder) | Exists (5.1); no models of its own |
 | `communities` | Discord server directory: servers, tags, snapshots, submit, the hourly refresh | Planned (5.2) |
 | `stats` | Leaderboards (one config entry per board) and archived win/loss rows; future stat tracking | Planned (5.3) |
 | `players` | bonk.io players, friendships, Flash friends, friend sync, player search and profiles, social stats, replay sync, XP calculator, profile privacy | Exists (profiles, replay sync, privacy); the rest moves in 5.4 |
@@ -26,6 +26,7 @@ Enforced by `tests/test_app_boundaries.py`:
 - Writes to another app's data go through that app's `services` (reviews check this; the test can't).
 - `core/` and `integrations/` import no app.
 - Need something another app has in a helper module? Add a function to its `selectors` or `services` and use that.
+- **Templates:** every page extends the shared frame `skins/base.html` and may include the skin partials in `skins/templates/skins/partials/` (cards, carousels, search bar, modals): those are the skins app's public UI, the template equivalent of its selectors. Other apps' page templates are off-limits. The frame moves out of `skins/` in step 5.6.
 
 Exceptions are listed in the test's `ALLOWED` with a reason; the list only shrinks.
 

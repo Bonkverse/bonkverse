@@ -26,7 +26,7 @@ Setting names and defaults: [configuration.md](../operations/configuration.md).
 | Cloudflare cache purge | `cloudflare.py` | `skins/rerender.py` (one skin's files), `rerender_skins --purge-cache` (everything) | None; staff get `cache_purged: false`, the command prints the failure, logs say `cloudflare purge failed` |
 | Discord invite API (public, no auth) | `discord_api.py` | `skins/discord_views.py` (submit), `skins/tasks.py` (hourly refresh) | Invalid / inaccessible invite, "Couldn't reach Discord right now" |
 | BonkBot API | `bonkbot.py` | `skins/bonkbot.py` (`/api/join-matchmaking/`) | `{"error": "matchmaking_unavailable"}` (502) |
-| Map decoder service | `map_decoder.py` | `skins/utils/tools/map_decode.py` | "Couldn't decode that map string" (400, with the decoder's reason) or "isn't responding" (502) |
+| Map decoder service | `map_decoder.py` | `site_pages/views/tools.py` | "Couldn't decode that map string" (400, with the decoder's reason) or "isn't responding" (502) |
 | Replay site player API (`/api/player/<name>`, `/api/player/<name>/map/<mapid>`, `/api/players/lookup`, `/api/players?q=`, `/api/levels/distribution`) | `replays.py` | `players/selectors.py` (profile tabs, Players page cards, XP calculator) | "Replay stats can't be loaded right now" (page still renders); unknown name → 404 page |
 | BonxBot's Postgres (one-time migration) | `bonxbot_db.py` | `import_bonxbot_skins` command | Command output |
 
