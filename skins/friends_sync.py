@@ -1,13 +1,16 @@
 """Storing a player's bonk.io friend list (friends.php) as Friendship edges.
 
-Owns: upserting BonkPlayer rows for friends and requests, adding and pruning
-Friendship edges, and friend-count history.
-Does not own: fetching the list from bonk.io (integrations/bonk_api.py) or
-Flash-era friends (flash_friends_sync.py).
+Owns: syncing a linked player's friends (sync_friends_for_link, run by the
+skins.tasks.sync_friends worker task after login), upserting BonkPlayer rows
+for friends and requests, adding and pruning Friendship edges, and
+friend-count history.
+Does not own: talking to bonk.io (integrations/bonk_api.py), queueing the
+sync (skins/login.py) or Flash-era friends (flash_friends_sync.py).
 """
 
 import logging
 from collections.abc import Iterable
+from dataclasses import dataclass
 from typing import Dict, List, Set, Tuple
 
 from django.db import transaction
@@ -15,11 +18,57 @@ from django.db.models import Q
 from django.db.models.functions import Lower
 from django.utils import timezone
 
-from integrations.bonk_api import BonkFriend
+from integrations.bonk_api import BonkFriend, get_client
 
-from .models import BonkPlayer, FriendCountHistory, Friendship
+from .events import log_event
+from .models import BonkAccountLink, BonkPlayer, FriendCountHistory, Friendship
 
 logger = logging.getLogger(__name__)
+
+# sync_friends_for_link's error when the link has no usable stored token.
+NO_TOKEN = "no_token"
+
+
+@dataclass(frozen=True)
+class LinkSyncResult:
+    """What one friend sync did: counts when it ran, or why it didn't."""
+
+    stats: dict | None = None
+    error: str | None = None  # a BonkError code, or NO_TOKEN
+
+
+def sync_friends_for_link(link: BonkAccountLink) -> LinkSyncResult:
+    """Fetch the linked player's bonk.io friends and store them.
+
+    Logs a `friends_synced` event with the counts; the profile page's toast
+    polls /api/friends-sync-status/ for that event. Safe to run twice: the
+    stored list is computed from what bonk.io returns now.
+
+    Args:
+        link: an account link with its user and bonk_player loaded.
+
+    Returns:
+        LinkSyncResult with `stats` on success, or `error` (a BonkError code,
+        or NO_TOKEN) when bonk.io didn't give a friend list.
+    """
+    bonk_token = link.bonk_token()
+    if not bonk_token:
+        logger.warning("friends sync skipped: no usable token on account link %s", link.id)
+        return LinkSyncResult(error=NO_TOKEN)
+
+    result = get_client().get_friends(bonk_token)
+    if not result.ok:
+        logger.warning("friends sync skipped: %s (bonk_error=%s)", result.error, result.bonk_error)
+        return LinkSyncResult(error=result.error)
+
+    stats = sync_friends_for_player(
+        current_bonk_id=link.bonk_player.bonk_id,
+        current_username=link.bonk_player.username,
+        friends=result.friends,
+        requests=result.requests,
+    )
+    log_event(link.user, "friends_synced", **stats)
+    return LinkSyncResult(stats=stats)
 
 
 def _ordered_pair(a_id: int, b_id: int) -> Tuple[int, int]:

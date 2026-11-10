@@ -19,12 +19,12 @@ flowchart LR
 
 | Task | When | Notes |
 |---|---|---|
+| `skins.tasks.sync_friends` | Queued by every login (`skins/login.py`) | The player's bonk.io friend list (`friends.php`). Takes the account-link id; reads the token from the link. Retries twice when bonk.io is unreachable, never on a refusal. Logs `friends_synced`, which the profile toast polls for. |
 | `skins.tasks.refresh_discord_servers` | Hourly (`CELERY_BEAT_SCHEDULE`) | Member/online counts for the Discord directory. At most once per hour (see "Running twice"). |
+| `players.tasks.sync_replays` | Every `REPLAY_SYNC_INTERVAL_SECONDS` (1 hour) | Names in, DBIDs out with the replay archive (`players/replay_sync.py`). Carries on from saved cursors; skipped while another run holds its lock, or when `BONKVERSE_SYNC_TOKEN` isn't set. |
 
-RFC-0001 4.3 moves two jobs here that still run in web-server threads: the
-friend sync after login (`skins/login.py`), and the replay-archive sync
-(`players/replay_sync.py`), which a page view starts at most hourly as a
-stand-in for a schedule.
+Flash friends still sync inside the login request: they come in bonk.io's
+login reply, so there is nothing to wait for.
 
 ## Is it a job for the worker?
 
@@ -40,23 +40,28 @@ skin, voting). Those stay in the view, however slow the other service is.
 
 ## Writing a task
 
-A sketch of the friend sync task 4.3 adds:
+The friend sync task (`skins/tasks.py`), without its retry:
 
 ```python
-# skins/tasks.py (each app's tasks.py)
 from celery import shared_task
 
 
-@shared_task(soft_time_limit=60, time_limit=90)
-def sync_friends(account_link_id: int) -> dict:
-    """Fetch a player's bonk.io friends and store them (skins/friends_sync.py)."""
-    link = BonkAccountLink.objects.filter(id=account_link_id).first()
+@shared_task(bind=True, soft_time_limit=60, time_limit=90, max_retries=2)
+def sync_friends(self, account_link_id: int) -> dict:
+    """Store the bonk.io friend list of the player on this account link."""
+    link = (
+        BonkAccountLink.objects.select_related("user", "bonk_player")
+        .filter(id=account_link_id, active=True)
+        .first()
+    )
     if link is None:
-        logger.info("friend sync skipped: account link %s is gone", account_link_id)
-        return {"skipped": True}
-    stats = friends_service.sync_for_link(link)
-    logger.info("friend sync done for bonk_id=%s: %s", link.bonk_player.bonk_id, stats)
-    return stats
+        logger.info("friends sync skipped: account link %s is gone or inactive", account_link_id)
+        return {"skipped": "link_gone"}
+    outcome = sync_friends_for_link(link)  # the service: skins/friends_sync.py
+    if outcome.error:
+        return {"error": outcome.error}
+    logger.info("friends sync done for bonk_id=%s: %s", link.bonk_player.bonk_id, outcome.stats)
+    return outcome.stats
 ```
 
 1. **It lives in an app's `tasks.py` (tested).** Celery finds tasks there, and
@@ -135,11 +140,14 @@ enqueue(sync_friends, link.id)
   queueing failure never breaks the page. `.delay()` and `.apply_async()` are
   not used anywhere else.
 - **No threads (tested).** `threading.Thread` dies with its gunicorn worker on
-  every deploy and every `max_requests` recycle, silently. The friend sync's
-  threads in `skins/login.py` and `players/replay_sync.py` are the last ones;
-  4.3 removes them.
-- Queue after the database write the task depends on is committed. Inside a
-  transaction, use `transaction.on_commit(lambda: enqueue(task, obj.id))`, or
+  every deploy and every `max_requests` recycle, silently. The last two (the
+  friend sync after login and the page-view-started replay sync) moved to the
+  worker in RFC-0001 4.3.
+- Queue after the database write the task depends on is committed. Requests
+  run in autocommit (no `ATOMIC_REQUESTS`, pinned by a test), so a row saved
+  earlier in the view is already committed; login queues the friend sync
+  right after saving the link. Inside a `transaction.atomic()` block, use
+  `transaction.on_commit(lambda: enqueue(task, obj.id))`, or
   the worker can run before the row exists.
 
 ## Schedules

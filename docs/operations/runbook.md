@@ -106,7 +106,8 @@ Open the browser console on the broken page:
 ## Background jobs aren't running
 
 Symptoms: the Discord directory's counts and "next refresh" stop moving; after
-login, the friend-sync toast never finishes (from RFC-0001 4.3); logs show no
+login, the friend-sync toast never finishes; new replay names stop showing on
+the Players page; logs show no
 `celery` lines.
 
 1. Railway → `worker` service: is the latest deploy up? Its log should start
