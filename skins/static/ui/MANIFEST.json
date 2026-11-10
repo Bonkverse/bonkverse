@@ -4,7 +4,7 @@
   "note": "Copied by scripts/sync_ui.py. Don't edit these files; change Bonkverse/ui and sync a new release.",
   "files": {
     "base.css": "50b24f61ede1fb28a93f4ce42da55a1534b156ca973b4e6891ea8ba35fcadaad",
-    "components.css": "01a166b84d4606dab2c9ab9a3a9e6081af70d5fcc7231f3bd3f0e19fb88ae94a",
+    "components.css": "16e91bcfb35558dd4b1e46cb2111c2fb5bdc82af5d9cc89c6b0dc3fe9bc2a89f",
     "fonts/OFL.txt": "536533cad95838e13777663c4109b802aa662ef1ef285337f0c7f51d35682fdc",
     "fonts/jost-latin-400-normal.woff2": "f94cffda16515fbb1667a2662d6b46f5610a942fd02fe88d67ff98f776288962",
     "fonts/jost-latin-500-normal.woff2": "98dce4f076fe71a123a7cd44470e6f05e969cb6d7c9b2717766ad103e3597297",
