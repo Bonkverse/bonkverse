@@ -161,9 +161,7 @@ def _sign_in(request, result: BonkLoginResult) -> None:
             logger.exception("Could not persist account link")
 
     try:
-        flash_stats = sync_flash_friends_for_user(
-            user=user, friends_json={"legacyFriends": result.legacy_friends}
-        )
+        flash_stats = sync_flash_friends_for_user(user=user, legacy_friends=result.legacy_friends)
         log_event(user, "flash_friends_synced", **flash_stats)
     except Exception:
         logger.exception("flash friends sync at login failed")
