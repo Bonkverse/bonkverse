@@ -29,7 +29,7 @@ from integrations.replays import (
     lookup_players_configured,
     search_players_configured,
 )
-from skins.pagination_utils import elided_page_range
+from core.pagination import elided_page_range
 from skins.selectors import (
     SKIN_SORTS,
     account_links_for,

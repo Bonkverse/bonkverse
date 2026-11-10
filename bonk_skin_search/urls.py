@@ -1,18 +1,10 @@
-"""
-URL configuration for bonk_skin_search project.
+"""Root URL conf: mounts each app's routes.
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+RFC-0001 Phase 5 moves routes out of this file into each app's own `urls.py`,
+included here, one app per step. Every path is pinned by
+`tests/test_url_snapshot.py`, so a move can't change one.
+
+Order matters: Django answers with the first pattern that matches.
 """
 
 from django.contrib import admin
@@ -74,7 +66,7 @@ urlpatterns = [
     path("api/v1/", include("public_api.urls")),
     # Developer portal: API terms and your own API keys (public_api/, ADR 0012).
     path("developers/", include("public_api.portal_urls")),
-    # NEW: AJAX/JSON endpoints used by search cards
+    # JSON endpoints used by skin cards and pages (core/js/bv-api.js).
     path("api/", index, name="api_index"),
     path("api/skins/<int:skin_id>/vote/", vote_skin_api, name="api_vote_skin"),
     path("api/skins/<int:skin_id>/favorite/", toggle_favorite_api, name="api_toggle_favorite"),
@@ -103,7 +95,6 @@ urlpatterns = [
         )
         for board in leaderboards.LEADERBOARDS
     ],
-    # Players Search navigation
     path("changelog/add/", add_changelog, name="add_changelog"),
     path("api/friends-sync-status/", api.friends_sync_status, name="friends_sync_status"),
     path("serverlist/", discord.server_list, name="list"),
@@ -118,12 +109,12 @@ urlpatterns = [
     path("skins/<int:skin_id>/rerender/", rerender_skin, name="rerender_skin"),
     path("privacy/", privacy, name="privacy"),
     path("terms/", terms, name="terms"),
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+]
 
-# Static files (always safe)
+# Static files (WhiteNoise serves them in production; this covers DEBUG).
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
-# Media files (needed for your volume-stored images)
+# Skin images on the media volume (skins/media.py adds cache headers + limits).
 urlpatterns += [
     path("media/<path:path>", serve_media),
 ]

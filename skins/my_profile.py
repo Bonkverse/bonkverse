@@ -8,7 +8,7 @@ from django.db.models import Sum
 from django.core.paginator import Paginator
 import json
 from django.contrib import messages
-from .pagination_utils import elided_page_range
+from core.pagination import elided_page_range
 from .selectors import decorate_skins_for_user
 
 

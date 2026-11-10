@@ -24,7 +24,7 @@ from skins.models import Skin
 from skins.querysets import MIN_NAME_SIMILARITY
 from skins.selectors import decorate_skins_for_user
 
-from .pagination_utils import elided_page_range
+from core.pagination import elided_page_range
 
 logger = logging.getLogger(__name__)
 

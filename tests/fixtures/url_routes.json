@@ -1,0 +1,274 @@
+[
+  {
+    "route": "",
+    "name": "home"
+  },
+  {
+    "route": "<uuid:server_id>/",
+    "name": "detail"
+  },
+  {
+    "route": "api/",
+    "name": "api_index"
+  },
+  {
+    "route": "api/bonk/login/",
+    "name": "bonk_login_for_wear"
+  },
+  {
+    "route": "api/bot/skins/",
+    "name": "api_bot_submit_skin"
+  },
+  {
+    "route": "api/discords/submit/",
+    "name": "api_submit_server"
+  },
+  {
+    "route": "api/flash-friends/search/",
+    "name": "flash_friends_search"
+  },
+  {
+    "route": "api/friends-sync-status/",
+    "name": "friends_sync_status"
+  },
+  {
+    "route": "api/join-matchmaking/",
+    "name": null
+  },
+  {
+    "route": "api/me/",
+    "name": "api_me"
+  },
+  {
+    "route": "api/players/search/",
+    "name": "players_search"
+  },
+  {
+    "route": "api/publish-skin/",
+    "name": "publish_skin"
+  },
+  {
+    "route": "api/skins/<int:skin_id>/favorite/",
+    "name": "api_toggle_favorite"
+  },
+  {
+    "route": "api/skins/<int:skin_id>/report/",
+    "name": "report_skin"
+  },
+  {
+    "route": "api/skins/<int:skin_id>/vote/",
+    "name": "api_vote_skin"
+  },
+  {
+    "route": "api/skins/<int:skin_id>/wear/",
+    "name": "wear_skin"
+  },
+  {
+    "route": "api/skins/wear-code/",
+    "name": "wear_skin_code"
+  },
+  {
+    "route": "api/tools/map-decode/",
+    "name": "api_map_decode"
+  },
+  {
+    "route": "api/v1/lookup/players/",
+    "name": "api_v1_lookup_players"
+  },
+  {
+    "route": "api/v1/me/",
+    "name": "api_v1_me"
+  },
+  {
+    "route": "api/v1/players/<username:username>/",
+    "name": "api_v1_player"
+  },
+  {
+    "route": "api/v1/players/<username:username>/level-history/",
+    "name": "api_v1_player_level_history"
+  },
+  {
+    "route": "categories/",
+    "name": "category_index"
+  },
+  {
+    "route": "category/<slug:slug>/",
+    "name": "category_detail"
+  },
+  {
+    "route": "changelog/add/",
+    "name": "add_changelog"
+  },
+  {
+    "route": "developers/",
+    "name": "developers"
+  },
+  {
+    "route": "developers/keys/",
+    "name": "developer_keys"
+  },
+  {
+    "route": "developers/keys/<str:prefix>/revoke/",
+    "name": "developer_revoke_key"
+  },
+  {
+    "route": "developers/terms/",
+    "name": "developer_terms"
+  },
+  {
+    "route": "leaderboards/downvoted/",
+    "name": "leaderboards_downvoted"
+  },
+  {
+    "route": "leaderboards/favorited/",
+    "name": "leaderboards_favorited"
+  },
+  {
+    "route": "leaderboards/upvoted/",
+    "name": "leaderboards_upvoted"
+  },
+  {
+    "route": "login/",
+    "name": "login"
+  },
+  {
+    "route": "logout/",
+    "name": "logout"
+  },
+  {
+    "route": "matchmaking/",
+    "name": "matchmaking"
+  },
+  {
+    "route": "media/<path:path>",
+    "name": null
+  },
+  {
+    "route": "my-profile/",
+    "name": "my_profile"
+  },
+  {
+    "route": "my-profile/skins-partial/",
+    "name": "my_skins_partial"
+  },
+  {
+    "route": "new/",
+    "name": "new_releases"
+  },
+  {
+    "route": "player/<username:username>/",
+    "name": "player_profile"
+  },
+  {
+    "route": "player/<username:username>/activity/",
+    "name": "player_activity"
+  },
+  {
+    "route": "player/<username:username>/friends/",
+    "name": "player_friends"
+  },
+  {
+    "route": "player/<username:username>/level/",
+    "name": "player_level"
+  },
+  {
+    "route": "player/<username:username>/maps/",
+    "name": "player_maps"
+  },
+  {
+    "route": "player/<username:username>/people/",
+    "name": "player_people"
+  },
+  {
+    "route": "player/<username:username>/skins/",
+    "name": "player_skins"
+  },
+  {
+    "route": "players/",
+    "name": "players_directory"
+  },
+  {
+    "route": "players_search/flash-friends/",
+    "name": "flash_friends_page"
+  },
+  {
+    "route": "players_search/players/",
+    "name": "players_page"
+  },
+  {
+    "route": "privacy/",
+    "name": "privacy"
+  },
+  {
+    "route": "search/",
+    "name": "search_skins"
+  },
+  {
+    "route": "serverlist/",
+    "name": "list"
+  },
+  {
+    "route": "settings/profile/",
+    "name": "profile_settings"
+  },
+  {
+    "route": "skin/<int:skin_id>/delete/",
+    "name": "delete_skin"
+  },
+  {
+    "route": "skin/<int:skin_id>/edit/",
+    "name": "edit_skin"
+  },
+  {
+    "route": "skins/<int:skin_id>/rerender/",
+    "name": "rerender_skin"
+  },
+  {
+    "route": "skins/bulk-delete/",
+    "name": "bulk_delete_skins"
+  },
+  {
+    "route": "skins/detail/<int:skin_id>",
+    "name": "skin_detail"
+  },
+  {
+    "route": "skins/share/<int:skin_id>/<uuid:uuid>/",
+    "name": "share_skin"
+  },
+  {
+    "route": "social-stats/",
+    "name": "social_stats"
+  },
+  {
+    "route": "staff/",
+    "name": "staff"
+  },
+  {
+    "route": "submit/",
+    "name": "submit_server"
+  },
+  {
+    "route": "terms/",
+    "name": "terms"
+  },
+  {
+    "route": "tools/map-decode/",
+    "name": "map_decode_page"
+  },
+  {
+    "route": "tools/xp/",
+    "name": "xp_calculator"
+  },
+  {
+    "route": "tools/xp/levels.json",
+    "name": "xp_calculator_levels"
+  },
+  {
+    "route": "tools/xp/player.json",
+    "name": "xp_calculator_player"
+  },
+  {
+    "route": "upload/",
+    "name": "upload_skin"
+  }
+]

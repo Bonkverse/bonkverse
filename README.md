@@ -192,7 +192,9 @@ bonkverse/
 ├── bonk_skin_search/       # Django project: settings, root urls, celery app
 ├── core/                   # shared helpers; core/bonk/ = bonk.io types (slots, usernames, skin codes, session)
 ├── integrations/           # one client per outside service; the only code that makes outside HTTP calls
-├── skins/                  # the main app (being split into domain apps, see RFC-0001)
+├── players/                # player profiles, replay sync, profile privacy, XP calculator
+├── public_api/             # /api/v1/, API keys, developer portal
+├── skins/                  # the original app, being split into domain apps (docs/apps/README.md)
 │   ├── models.py
 │   ├── querysets.py        # Skin.objects: with_favorite_count, with_score, created_in, search
 │   ├── auth_guards.py      # JSON auth decorators (auth="bonkverse" / auth="bonk")
@@ -208,8 +210,8 @@ bonkverse/
 │   ├── static/core/js/     # shared page helpers: BVApi, BVWear, BVCards, BVReport, bv-boot
 │   ├── static/js/, css/    # one script / stylesheet per page (docs/architecture/frontend.md)
 │   └── management/commands/
-├── tests/                  # pytest suite + recorded bonk.io fixtures
-├── docs/                   # how things work: architecture, operations/runbook, bonk.io reference, incidents, ADRs
+├── tests/                  # pytest suite, recorded bonk.io fixtures, pinned URL paths (fixtures/url_routes.json)
+├── docs/                   # how things work: apps, architecture, operations/runbook, bonk.io reference, incidents, ADRs
 ├── scripts/                # one-off maintenance scripts
 ├── .github/                # CI workflow, Dependabot, PR template
 ├── Dockerfile              # production image (runs collectstatic at build time)

@@ -8,6 +8,7 @@ development are in the [README](../README.md); code conventions in
 
 | Page | Read it when |
 |---|---|
+| [apps/](apps/README.md) | Deciding which app owns new code, using another app from yours, or creating / moving an app |
 | [architecture/request-flow.md](architecture/request-flow.md) | You want to know what happens between a click and a response |
 | [architecture/frontend.md](architecture/frontend.md) | Changing a page: where its script and styles go, the shared `BV*` helpers, skin cards, what `tests/test_frontend.py` checks |
 | [architecture/background-work.md](architecture/background-work.md) | Writing or queueing a background job, adding a schedule, or jobs aren't running |
