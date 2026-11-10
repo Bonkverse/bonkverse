@@ -7,6 +7,8 @@ import json
 from datetime import timedelta
 
 import pytest
+from celery.exceptions import SoftTimeLimitExceeded
+from django.core.cache import cache
 from django.core.management import call_command
 from django.urls import reverse
 from django.utils import timezone
@@ -15,6 +17,7 @@ from integrations.bonk_api import BonkFriend
 from integrations.replay_sync import SyncError, fetch_replay_names, push_player_ids
 from players import charts, replay_sync
 from players.models import SyncCursor
+from players.tasks import sync_replays
 from skins.friends_sync import adopt_replay_names, sync_friends_for_player
 from skins.models import BonkPlayer
 
@@ -177,30 +180,51 @@ def test_push_pages_through_rows_with_the_same_timestamp(mocked_http, monkeypatc
 def test_run_is_off_without_a_token(settings, mocked_http):
     settings.BONKVERSE_SYNC_TOKEN = ""
     assert "skipped" in replay_sync.run()
-    assert replay_sync.maybe_start() is False
     assert len(mocked_http.calls) == 0
 
 
 @pytest.mark.django_db
-def test_maybe_start_runs_at_most_once_an_hour(monkeypatch):
-    started = []
-    monkeypatch.setattr(
-        replay_sync.threading,
-        "Thread",
-        lambda **kw: type("T", (), {"start": lambda self: started.append(1)})(),
-    )
-    assert replay_sync.maybe_start() is True
-    assert replay_sync.maybe_start() is False
-    assert started == [1]
+def test_task_runs_one_sync(mocked_http):
+    mocked_http.get(NAMES_URL, json=names_page(["(%)"], "6:1", True))
+    mocked_http.post(IDS_URL, json={"ok": True})
+
+    result = sync_replays()
+
+    assert result["names"]["added"] == 1
+    assert BonkPlayer.objects.filter(username="(%)", bonk_id__isnull=True).exists()
 
 
 @pytest.mark.django_db
-def test_players_page_starts_the_sync(client, mocked_http, monkeypatch):
-    calls = []
-    monkeypatch.setattr(replay_sync, "maybe_start", lambda: calls.append(1))
+def test_task_skips_while_another_sync_runs(mocked_http):
+    cache.add(replay_sync.LOCK_KEY, "now", 60)
+
+    assert sync_replays() == {"skipped": "another sync is running"}
+    assert len(mocked_http.calls) == 0
+
+
+@pytest.mark.django_db
+def test_task_stops_cleanly_at_its_time_limit(monkeypatch):
+    def time_out(**kwargs):
+        raise SoftTimeLimitExceeded()
+
+    monkeypatch.setattr(replay_sync, "run", time_out)
+
+    assert sync_replays() == {"stopped_time_limit": True}
+
+
+def test_runs_hourly_on_the_worker(settings):
+    schedule = settings.CELERY_BEAT_SCHEDULE["sync-replays"]
+    assert schedule["task"] == "players.tasks.sync_replays"
+    assert schedule["schedule"] == settings.REPLAY_SYNC_INTERVAL_SECONDS
+
+
+@pytest.mark.django_db
+def test_players_page_no_longer_starts_a_sync(client, mocked_http):
     mocked_http.get(f"{REPLAYS}/api/players/lookup", json={"results": []})
+
     client.get(reverse("players_directory"))
-    assert calls == [1]
+
+    assert not any("sync" in call.request.url for call in mocked_http.calls)
 
 
 @pytest.mark.django_db

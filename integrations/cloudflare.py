@@ -49,12 +49,26 @@ def purge_files(
         return PurgeResult(ok=True)
     if len(urls) > MAX_FILES_PER_REQUEST:
         raise ValueError(f"Cloudflare purges at most {MAX_FILES_PER_REQUEST} URLs per request")
+    return _purge(zone_id, api_token, {"files": urls}, f"{len(urls)} files", timeout)
 
+
+def purge_everything(zone_id: str, api_token: str, *, timeout=DEFAULT_TIMEOUT) -> PurgeResult:
+    """Empty Cloudflare's whole cache for one zone (every page, script and image).
+
+    For changes too big to list file by file, like re-rendering every skin.
+    The cache refills from the site as visitors ask for things.
+    """
+    if not zone_id or not api_token:
+        return PurgeResult(ok=False, skipped=True)
+    return _purge(zone_id, api_token, {"purge_everything": True}, "everything", timeout)
+
+
+def _purge(zone_id: str, api_token: str, body: dict, what: str, timeout) -> PurgeResult:
     try:
         response = requests.post(
             f"{API_BASE}/zones/{zone_id}/purge_cache",
             headers={"Authorization": f"Bearer {api_token}"},
-            json={"files": urls},
+            json=body,
             timeout=timeout,
         )
     except requests.RequestException as exc:
@@ -72,12 +86,19 @@ def purge_files(
     # but codes are all we need to look an error up.
     codes = [e.get("code") for e in data.get("errors") or [] if isinstance(e, dict)]
     logger.warning(
-        "cloudflare purge failed | http=%s | error_codes=%s | files=%s",
+        "cloudflare purge failed | http=%s | error_codes=%s | purged=%s",
         response.status_code,
         codes,
-        len(urls),
+        what,
     )
     return PurgeResult(ok=False, error=f"status_{response.status_code}")
+
+
+def purge_whole_site() -> PurgeResult:
+    """Empty Cloudflare's cache for bonkverse.io, using Django settings."""
+    from django.conf import settings
+
+    return purge_everything(settings.CLOUDFLARE_ZONE_ID, settings.CLOUDFLARE_CACHE_API_TOKEN)
 
 
 def purge_media_paths(paths: list[str]) -> PurgeResult:

@@ -104,10 +104,6 @@ def test_work_is_queued_only_through_enqueue():
 def test_no_new_background_threads():
     """Background work goes to the worker, which survives deploys; threads don't."""
     allowed = {
-        # RFC-0001 4.3 moves these to the worker and removes the entries: the
-        # friend sync after login, and the hourly replay sync started by page views.
-        REPO / "skins" / "login.py",
-        REPO / "players" / "replay_sync.py",
         # Load-test script run by hand, not part of the site.
         REPO / "scripts" / "load_test_search.py",
     }
@@ -120,6 +116,13 @@ def test_no_new_background_threads():
 
 
 class TestEnqueue:
+    def test_tests_run_queued_tasks_inline(self, settings):
+        """Guards tests/conftest.py: without this, enqueue in a test tries a real broker."""
+        from bonk_skin_search.celery_app import app
+
+        assert app.conf.task_always_eager is True
+        assert app.conf.task_eager_propagates is True
+
     def test_queues_with_the_arguments(self):
         task = mock.Mock(name="task")
 
@@ -205,3 +208,50 @@ class TestWorkerDeployConfig:
 
     def test_worker_builds_the_same_image_as_the_site(self):
         assert self._config("railway.worker.json")["build"] == self._config("railway.json")["build"]
+
+
+@pytest.mark.django_db(transaction=True)
+class TestBeatScheduler:
+    """core.beat: a never-run schedule runs at worker start, not one interval later."""
+
+    MAPPING = {
+        "hourly-job": {"task": "skins.tasks.refresh_discord_servers", "schedule": 3600},
+    }
+
+    def _scheduler(self):
+        from core.beat import Scheduler
+
+        return Scheduler(app=celery_app, lazy=True)
+
+    def test_settings_use_it(self):
+        assert settings.CELERY_BEAT_SCHEDULER == "core.beat:Scheduler"
+
+    def test_never_run_schedule_is_due_at_start(self):
+        scheduler = self._scheduler()
+        scheduler.update_from_dict(self.MAPPING)
+
+        due, _ = scheduler.schedule["hourly-job"].is_due()
+
+        assert due is True
+
+    def test_still_due_after_another_restart_before_it_ran(self):
+        """The bug: each restart re-saved the row and pushed the first run out."""
+        self._scheduler().update_from_dict(self.MAPPING)
+        scheduler = self._scheduler()
+        scheduler.update_from_dict(self.MAPPING)
+
+        assert scheduler.schedule["hourly-job"].is_due()[0] is True
+
+    def test_a_schedule_that_has_run_keeps_its_interval(self):
+        from django.utils import timezone
+        from django_celery_beat.models import PeriodicTask
+
+        self._scheduler().update_from_dict(self.MAPPING)
+        PeriodicTask.objects.filter(name="hourly-job").update(last_run_at=timezone.now())
+
+        scheduler = self._scheduler()
+        scheduler.update_from_dict(self.MAPPING)
+        due, next_check = scheduler.schedule["hourly-job"].is_due()
+
+        assert due is False
+        assert next_check > 3000  # about an hour away

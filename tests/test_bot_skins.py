@@ -8,6 +8,7 @@ import responses
 
 import threading
 import time
+from urllib.parse import quote
 
 from django.db import connection
 
@@ -23,7 +24,7 @@ from skins.skin_import import (
     existing_skin,
     import_bonkleagues_skin,
 )
-from tests.factories import SkinFactory
+from tests.factories import SKIN_CODE, SKIN_CODE_DOUBLE_ENCODED, SkinFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -222,36 +223,46 @@ def test_clean_creator_keeps_spaces_but_fills_blanks():
 def test_skin_code_is_rendered_by_the_editor_not_fetched(client, mocked_http):
     _editor_renders(mocked_http)
 
-    response = _submit(client, skin_code="CgcDYQAC%252BCQk")  # double URL-encoded
+    response = _submit(client, skin_code=SKIN_CODE_DOUBLE_ENCODED)  # double URL-encoded
 
     assert response.status_code == 201
     assert [c.request.url for c in mocked_http.calls] == [f"{EDITOR}/api/render-bundle"]
-    assert json.loads(mocked_http.calls[0].request.body)["skinCode"] == "CgcDYQAC+CQk"
+    assert json.loads(mocked_http.calls[0].request.body)["skinCode"] == SKIN_CODE
     skin = Skin.objects.get()
-    assert skin.skin_code == "CgcDYQAC+CQk"
+    assert skin.skin_code == SKIN_CODE
     assert SkinImage.objects.filter(skin=skin).count() == 3
 
 
 def test_editor_refusing_the_code_is_retryable_and_stores_nothing(client, mocked_http):
     _editor_renders(mocked_http, ok=False)
 
-    response = _submit(client, skin_code="CODE")
+    response = _submit(client, skin_code=SKIN_CODE)
 
     assert response.status_code == 502
     assert response.json() == {"error": "render_failed", "retryable": True}
     assert not Skin.objects.exists()
 
 
+def test_fake_skin_code_is_refused_for_good(client, mocked_http):
+    """Text posing as a code never reaches the editor and isn't retried."""
+    response = _submit(client, skin_code="POC-FINAL-002")
+
+    assert response.status_code == 422
+    assert response.json() == {"error": "invalid_skin_code", "retryable": False}
+    assert len(mocked_http.calls) == 0
+    assert not Skin.objects.exists()
+
+
 def test_editor_down_is_retryable(client, mocked_http):
     _editor_renders(mocked_http, status=503)
 
-    assert _submit(client, skin_code="CODE").json()["error"] == "render_failed"
+    assert _submit(client, skin_code=SKIN_CODE).json()["error"] == "render_failed"
 
 
 def test_duplicate_with_code_renders_nothing(client, mocked_http):
     SkinFactory(link=LINK)
 
-    assert _submit(client, skin_code="CODE").status_code == 200
+    assert _submit(client, skin_code=SKIN_CODE).status_code == 200
     assert len(mocked_http.calls) == 0
 
 
@@ -281,9 +292,9 @@ class FakeBonxBotDB:
 
 def _rows():
     return [
-        BotSkin(1, "Fire🔥Dragon", "https://bonkleagues.io/s/AAAAAA1", "artist", 111, "CODE1"),
-        BotSkin(2, "On site already", "https://bonkleagues.io/s/EXISTS1", "x", 222, "CODE2"),
-        BotSkin(3, "Imgur", "https://imgur.com/abc", "y", 333, "CODE3"),
+        BotSkin(1, "Fire🔥Dragon", "https://bonkleagues.io/s/AAAAAA1", "artist", 111, SKIN_CODE),
+        BotSkin(2, "On site already", "https://bonkleagues.io/s/EXISTS1", "x", 222, SKIN_CODE),
+        BotSkin(3, "Imgur", "https://imgur.com/abc", "y", 333, SKIN_CODE),
         BotSkin(4, "No code", "https://bonkleagues.io/s/AAAAAA4", "z", 444, None),
     ]
 
@@ -336,7 +347,7 @@ def test_migration_imports_and_records_every_outcome_on_the_bot(mocked_http):
 
 def test_migration_leaves_render_failures_for_the_bot_to_retry(mocked_http):
     _editor_renders(mocked_http, status=503)
-    db = FakeBonxBotDB([BotSkin(1, "A", "https://bonkleagues.io/s/AAAAAA1", "a", 1, "CODE")])
+    db = FakeBonxBotDB([BotSkin(1, "A", "https://bonkleagues.io/s/AAAAAA1", "a", 1, SKIN_CODE)])
 
     report = migrate(db, dry_run=False, sleep=lambda _s: None)
 
@@ -410,7 +421,9 @@ def test_different_case_is_a_different_skin():
 def test_variant_link_returns_existing_skin_without_rendering(client, mocked_http):
     existing = SkinFactory(link="https://www.bonkleagues.io/s/AbC1234/")
 
-    response = _submit(client, link="http://bonkleagues.io/s/AbC1234?ref=discord", skin_code="C")
+    response = _submit(
+        client, link="http://bonkleagues.io/s/AbC1234?ref=discord", skin_code=SKIN_CODE
+    )
 
     assert response.status_code == 200
     assert response.json()["skin"]["id"] == existing.id
@@ -420,7 +433,7 @@ def test_variant_link_returns_existing_skin_without_rendering(client, mocked_htt
 def test_new_skin_stores_the_canonical_link(client, mocked_http):
     _editor_renders(mocked_http)
 
-    _submit(client, link="http://www.bonkleagues.io/s/AbC1234/?ref=discord", skin_code="C")
+    _submit(client, link="http://www.bonkleagues.io/s/AbC1234/?ref=discord", skin_code=SKIN_CODE)
 
     assert Skin.objects.get().link == LINK
 
@@ -429,8 +442,8 @@ def test_migration_rows_that_are_spellings_of_one_link_make_one_skin(mocked_http
     _editor_renders(mocked_http)
     db = FakeBonxBotDB(
         [
-            BotSkin(1, "A", "https://bonkleagues.io/s/AbC1234", "a", 1, "CODE"),
-            BotSkin(2, "A again", "https://www.bonkleagues.io/s/AbC1234/", "a", 2, "CODE"),
+            BotSkin(1, "A", "https://bonkleagues.io/s/AbC1234", "a", 1, SKIN_CODE),
+            BotSkin(2, "A again", "https://www.bonkleagues.io/s/AbC1234/", "a", 2, SKIN_CODE),
         ]
     )
 
@@ -460,7 +473,7 @@ def test_two_imports_of_one_link_at_once_make_one_skin(settings, tmp_path):
     def run(link):
         try:
             results.append(
-                import_bonkleagues_skin(link, "A", "a", skin_code="C", render=slow_render)
+                import_bonkleagues_skin(link, "A", "a", skin_code=SKIN_CODE, render=slow_render)
             )
         finally:
             connection.close()  # each thread has its own connection
@@ -485,13 +498,17 @@ def test_lock_is_released_after_a_failed_import(settings, tmp_path):
     settings.MEDIA_ROOT = tmp_path
 
     failed = import_bonkleagues_skin(
-        LINK, "A", "a", skin_code="C", render=lambda _c: RenderResult(error="render_status_503")
+        LINK,
+        "A",
+        "a",
+        skin_code=SKIN_CODE,
+        render=lambda _c: RenderResult(error="render_status_503"),
     )
     ok = import_bonkleagues_skin(
         LINK,
         "A",
         "a",
-        skin_code="C",
+        skin_code=SKIN_CODE,
         render=lambda _c: RenderResult(skin=RenderedSkin(svg=SVG, png=PNG, thumbnail=PNG)),
     )
 
@@ -504,13 +521,15 @@ def test_lock_is_released_after_a_failed_import(settings, tmp_path):
 
 # ── Older bot rows: no skin_code, but final_url may carry it ─────────────────
 
-REDIRECT = "https://bonkleagues.io/skins.html#Fire%20Dragon%7Csome%20artist%7CCgcDYQAC%2BCQk%3D"
+REDIRECT = (
+    f"https://bonkleagues.io/skins.html#Fire%20Dragon%7Csome%20artist%7C{quote(SKIN_CODE, safe='')}"
+)
 
 
 @pytest.mark.parametrize(
     ("url", "code"),
     [
-        (REDIRECT, "CgcDYQAC+CQk="),
+        (REDIRECT, SKIN_CODE),
         ("https://bonkleagues.io/skins.html#Name|Author|CgcDYQ", "CgcDYQ"),
         ("https://bonkleagues.io/api/avatar.svg?skinCode=CgcDYQAC%252BCQk", "CgcDYQAC+CQk"),
         ("https://bonkleagues.io/s/AbC1234", None),  # og:url page link: no code in it
@@ -533,13 +552,13 @@ def test_migration_uses_the_code_in_final_url_instead_of_bonkleagues(mocked_http
 
     assert report.counts == {"created_from_final_url": 1}
     assert [c.request.url for c in mocked_http.calls] == [f"{EDITOR}/api/render-bundle"]
-    assert Skin.objects.get().skin_code == "CgcDYQAC+CQk="
+    assert Skin.objects.get().skin_code == SKIN_CODE
 
 
 def test_dry_run_reports_where_each_code_comes_from():
     db = FakeBonxBotDB(
         [
-            BotSkin(1, "A", "https://bonkleagues.io/s/AAAAAA1", "a", 1, "CODE"),
+            BotSkin(1, "A", "https://bonkleagues.io/s/AAAAAA1", "a", 1, SKIN_CODE),
             BotSkin(2, "B", "https://bonkleagues.io/s/AAAAAA2", "b", 2, None, REDIRECT),
             BotSkin(3, "C", "https://bonkleagues.io/s/AAAAAA3", "c", 3, None, LINK),
         ]
@@ -605,7 +624,7 @@ def test_a_success_resets_the_failure_streak(mocked_http):
     _editor_renders(mocked_http)
     mocked_http.add(responses.GET, FETCHER, status=503)
     bad = [BotSkin(i, "A", f"https://bonkleagues.io/s/BADBAD{i}", "a", i, None) for i in range(4)]
-    good = BotSkin(10, "G", "https://bonkleagues.io/s/GOOD001", "g", 10, "CODE")
+    good = BotSkin(10, "G", "https://bonkleagues.io/s/GOOD001", "g", 10, SKIN_CODE)
     db = FakeBonxBotDB(bad + [good] + bad[:3])
 
     report = migrate(db, dry_run=False, sleep=lambda _s: None)

@@ -199,7 +199,7 @@ class TestFailedLogin:
 
         assert [str(m) for m in response.context["messages"]] == [
             "Bonk.io login failed: bonk.io is limiting logins from Bonkverse right now. "
-            "Try again in about 2 minutes."
+            "Try again in about 17 minutes."
         ]
 
     def test_rate_limited_page_holds_the_login_button(self, client, mocked_http):
@@ -209,8 +209,8 @@ class TestFailedLogin:
 
         response = _post_login(client)
 
-        assert response.context["retry_after"] == 120
-        assert b'id="login-submit" disabled data-retry-after="120"' in response.content
+        assert response.context["retry_after"] == 1020
+        assert b'id="login-submit" disabled data-retry-after="1020"' in response.content
 
     def test_wrong_password_page_does_not_hold_the_button(self, client, mocked_http):
         mocked_http.post(BONK_LOGIN_URL, json={"r": "fail", "e": "password"})

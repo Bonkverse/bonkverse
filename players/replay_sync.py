@@ -12,21 +12,19 @@ the replay archive knows every registered name that has played. Each run:
    the last run (name, DBID, estimated join day) to the replay site, for
    "A player's DBID" and "A player joined" replay searches.
 
-Runs: `python manage.py sync_replays` (first run: the whole archive, in
-batches), and at most once an hour in the background from a Players page
-view (maybe_start). Off unless BONKVERSE_SYNC_TOKEN is set. HTTP lives in
-integrations/replay_sync.py.
+Runs: hourly on the worker (players.tasks.sync_replays, every
+REPLAY_SYNC_INTERVAL_SECONDS), and by hand with `python manage.py
+sync_replays` (first run: the whole archive, in batches). Off unless
+BONKVERSE_SYNC_TOKEN is set. HTTP lives in integrations/replay_sync.py.
 """
 
 from __future__ import annotations
 
 import logging
-import threading
 from datetime import datetime
 
 from django.conf import settings
 from django.core.cache import cache
-from django.db import close_old_connections, connection
 from django.db.models import Q
 from django.db.models.functions import Lower
 from django.utils import timezone
@@ -46,7 +44,6 @@ logger = logging.getLogger(__name__)
 NAMES_CURSOR = "replay-names"
 IDS_CURSOR = "player-ids"
 LOCK_KEY = "players:replay-sync:lock"
-LAST_START_KEY = "players:replay-sync:started"
 LOCK_SECONDS = 30 * 60
 NAMES_BATCH = 5000  # replays per request
 MAX_NAME_LENGTH = 100
@@ -178,25 +175,3 @@ def run(*, names=True, ids=True, max_batches=20):
         return out
     finally:
         cache.delete(LOCK_KEY)
-
-
-def maybe_start():
-    """Start a background sync from a page view at most once per
-    REPLAY_SYNC_INTERVAL_SECONDS (across every web worker, via the cache).
-    Never blocks the request."""
-    if not enabled():
-        return False
-    if not cache.add(LAST_START_KEY, 1, settings.REPLAY_SYNC_INTERVAL_SECONDS):
-        return False
-    threading.Thread(target=_run_in_thread, name="replay-sync", daemon=True).start()
-    return True
-
-
-def _run_in_thread():
-    close_old_connections()
-    try:
-        run()
-    except Exception:  # a background thread must not take the worker down
-        logger.exception("replay sync failed")
-    finally:
-        connection.close()

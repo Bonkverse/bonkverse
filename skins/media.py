@@ -1,7 +1,7 @@
 """Serving uploaded and rendered skin files (/media/...).
 
 Owns: rate limiting and cache headers for media files served by Django.
-Does not own: writing those files (upload.py, rerender.py, apis/publish_skin.py).
+Does not own: writing those files (skin_media.py).
 
 On 2026-11-03 one client fetched ~30k skin images in under an hour (1.9 GB),
 each URL once, so Cloudflare's cache could not absorb it and every request

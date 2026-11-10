@@ -15,7 +15,9 @@ from core.bonk import AvatarSlot
 from integrations.bonk_api import (
     BROWSER_HEADERS,
     AVATAR_UPDATE_SCRIPT,
-    RATE_LIMIT_COOLDOWN,
+    FRIENDS_SCRIPT,
+    LOGIN_RATE_LIMIT_PAUSE,
+    LOGIN_SCRIPT,
     RATE_LIMIT_COOLDOWN_MAX,
     BonkApi,
     BonkError,
@@ -291,7 +293,7 @@ class TestRateLimitCooldown:
         mocked_http.post(LOGIN, json={"r": "fail", "e": "ratelimited"})
         api.login("TestPlayer", "pw")
 
-        now[0] += RATE_LIMIT_COOLDOWN - 1
+        now[0] += LOGIN_RATE_LIMIT_PAUSE - 1
         assert api.login("TestPlayer", "pw").bonk_error is None  # still paused
         now[0] += 2
         mocked_http.replace("POST", LOGIN, json=load_bonk_fixture("login_success"))
@@ -304,6 +306,40 @@ class TestRateLimitCooldown:
         api.update_avatar("tok", AvatarSlot(1), "CODE")
 
         assert len(mocked_http.calls) == 2
+
+
+class TestLoginPause:
+    """Measured 2026-11-10 (docs/bonk/login-rate-limit.md): bonk.io's login
+    block lasts ~15 min after the last request it saw, and any request during
+    it restarts the 15 min. The old 2/4/8/16-min checks kept restarting it."""
+
+    def test_login_pauses_once_for_17_minutes_however_many_in_a_row(self, mocked_http):
+        now = [1000.0]
+        cooldowns = _Cooldowns(clock=lambda: now[0])
+        api = BonkApi(BASE, cooldowns=cooldowns)
+        mocked_http.post(LOGIN, json={"r": "fail", "e": "ratelimited"})
+
+        for _ in range(3):
+            api.login("TestPlayer", "pw")
+            assert cooldowns.remaining(LOGIN_SCRIPT) == LOGIN_RATE_LIMIT_PAUSE == 17 * 60
+            now[0] += LOGIN_RATE_LIMIT_PAUSE + 1
+
+    def test_nothing_reaches_bonk_during_the_login_pause(self, mocked_http):
+        now = [1000.0]
+        api = BonkApi(BASE, cooldowns=_Cooldowns(clock=lambda: now[0]))
+        bonk = mocked_http.post(LOGIN, json={"r": "fail", "e": "ratelimited"})
+        api.login("TestPlayer", "pw")
+
+        for minutes in (2, 4, 8, 16):
+            now[0] = 1000.0 + minutes * 60
+            api.login("TestPlayer", "pw")
+
+        assert bonk.call_count == 1
+
+    def test_other_scripts_keep_the_doubling_pause(self):
+        assert backoff_seconds(1, LOGIN_SCRIPT) == backoff_seconds(5, LOGIN_SCRIPT) == 1020
+        assert backoff_seconds(1, AVATAR_UPDATE_SCRIPT) == 120
+        assert backoff_seconds(2, FRIENDS_SCRIPT) == 240
 
 
 class TestBackoff:

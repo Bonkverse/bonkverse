@@ -10,7 +10,7 @@ from django.db import OperationalError, connection
 
 from core.db import time_limited_queries
 from skins.models import Skin
-from skins.search import MIN_NAME_SIMILARITY, _relevance
+from skins.querysets import MIN_NAME_SIMILARITY
 from tests.factories import SkinFactory
 
 pytestmark = pytest.mark.django_db
@@ -92,7 +92,7 @@ class TestIndexes:
             return queryset.explain()
 
     def test_relevance_uses_search_vector_and_name_indexes(self, catalog):
-        plan = self._plan(_relevance(Skin.objects.all(), "dragon"))
+        plan = self._plan(Skin.objects.relevant_to("dragon"))
 
         assert "skin_search_vector_gin" in plan
         assert "skin_name_trgm" in plan

@@ -48,7 +48,7 @@ Used by login, friend sync and wearing skins (`integrations/bonk_api.py`,
 |---|---|
 | `BONK_API_BASE_URL` | `https://bonk2.io/scripts` |
 | `BONK_CONNECT_TIMEOUT` / `BONK_READ_TIMEOUT` | `4` / `8` seconds, for every call (wear used a flat 10 before Phase 2.2) |
-| `SYNC_FRIENDS_ON_LOGIN` | `1` (sync friends in a background thread after login) |
+| `SYNC_FRIENDS_ON_LOGIN` | `1` (queue the friend sync on the worker after login) |
 
 ## Capacity and limits
 
@@ -72,8 +72,15 @@ How background jobs work: [architecture/background-work.md](../architecture/back
 The `worker` Railway service needs the variables its code reads at startup and
 its tasks' integrations use, set as references to `bonkverse`'s values
 (`${{bonkverse.SECRET_KEY}}` and so on, never copies): `SECRET_KEY`,
-`DATABASE_URL`, `REDIS_URL`, `ENV`, `SENTRY_DSN`, and for the friend sync the
+`DATABASE_URL`, `REDIS_URL`, `ENV`, `SENTRY_DSN`; for the replay sync
+`BONKVERSE_SYNC_TOKEN` and `BONKVERSE_REPLAYS_URL` (and
+`REPLAY_SYNC_INTERVAL_SECONDS` if `bonkverse` sets it); for the friend sync the
 `BONK_*` variables if `bonkverse` sets any. It needs no `PORT` and no volume.
+
+| Variable | Default | Notes |
+|---|---|---|
+| `BONKVERSE_SYNC_TOKEN` | unset → replay sync off | Shared secret for the replay site's internal sync endpoints (`integrations/replay_sync.py`). Worker and web. |
+| `REPLAY_SYNC_INTERVAL_SECONDS` | `3600` | How often the worker runs `players.tasks.sync_replays`. Its time limit (28 min) must stay under this. |
 
 ## Railway build and deploy
 

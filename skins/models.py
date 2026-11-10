@@ -8,13 +8,12 @@ from django.urls import reverse
 
 from core.bonk import BonkUsername, InvalidUsername
 
+from django.core import signing
 from django.core.exceptions import ValidationError
 
-# Create your models here.
-
-# Text-search language for skins. Stored in Skin.search_vector and used by every
-# SearchQuery against it; the two must match or searches miss.
-SKIN_SEARCH_CONFIG = "english"
+# SKIN_SEARCH_CONFIG: the text-search language Skin.search_vector is built
+# with; every SearchQuery against it must use the same one.
+from .querysets import SKIN_SEARCH_CONFIG, SkinQuerySet
 
 
 class Skin(models.Model):
@@ -56,6 +55,8 @@ class Skin(models.Model):
         output_field=SearchVectorField(),
         db_persist=True,
     )
+
+    objects = SkinQuerySet.as_manager()
 
     class Meta:
         indexes = [
@@ -228,6 +229,24 @@ class BonkAccountLink(models.Model):
 
     class Meta:
         unique_together = ("user", "bonk_player")
+
+    # Signed with SECRET_KEY, not encrypted: anyone who has both the database
+    # and the key can read the token (an open item in the RFC-0001 progress doc).
+    TOKEN_SALT = "bonk_token"
+
+    @classmethod
+    def sign_token(cls, bonk_token: str) -> str:
+        """The value stored in `token_encrypted` for a bonk.io token."""
+        return signing.dumps({"t": bonk_token}, salt=cls.TOKEN_SALT)
+
+    def bonk_token(self) -> str | None:
+        """The stored bonk.io token, or None if there is none or it doesn't verify."""
+        if not self.token_encrypted:
+            return None
+        try:
+            return signing.loads(self.token_encrypted, salt=self.TOKEN_SALT)["t"]
+        except (signing.BadSignature, KeyError, TypeError):
+            return None
 
 
 class FlashFriend(models.Model):
