@@ -28,7 +28,7 @@ site_pages/
   static/site_pages/js/           # map_decoder.js
 ```
 
-No models yet. The changelog was retired in 5.1 (it had no page and no visible banner); its `Changelog` model and table are still in `skins` and are dropped in the next step.
+No models. The changelog was retired in 5.1 (it had no page and no visible banner); its `Changelog` model and `skins_changelog` table were deleted in 5.1b (`skins/migrations/0029_delete_changelog.py`, rows not kept, owner decision).
 
 ## Changing the staff page
 
