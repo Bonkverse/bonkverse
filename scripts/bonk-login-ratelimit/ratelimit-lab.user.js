@@ -298,13 +298,20 @@
     return { tripper, prober };
   }
 
+  // 8 random hex characters for a username nobody has registered.
+  function randomTag() {
+    const bytes = new Uint8Array(4);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
   // Requests go out on schedule without waiting for the previous answer
   // (over a VPN an answer can take longer than the interval). Once any answer
   // says "ratelimited", nothing new is sent; requests already in flight finish.
   async function runTrip(exp, account) {
     const { interval, max, unknownUser } = exp.trip;
     const user = unknownUser
-      ? { username: `bvlab_nouser_${Math.random().toString(36).slice(2, 10)}`, password: "" }
+      ? { username: `bvlab_nouser_${randomTag()}`, password: "" }
       : account;
     const start = Date.now() + 1000;
     let limited = false;
