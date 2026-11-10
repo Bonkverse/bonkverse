@@ -9,8 +9,17 @@ bonk.io SDK (RFC-0001, "Path to an SDK").
 """
 
 from core.bonk.session import BonkSession
-from core.bonk.skin_codes import SkinCode
+from core.bonk.skin_codes import InvalidSkinCode, ParsedSkin, SkinCode, SkinLayer
 from core.bonk.slots import AvatarSlot
 from core.bonk.usernames import BonkUsername, InvalidUsername
 
-__all__ = ["AvatarSlot", "BonkSession", "BonkUsername", "InvalidUsername", "SkinCode"]
+__all__ = [
+    "AvatarSlot",
+    "BonkSession",
+    "BonkUsername",
+    "InvalidSkinCode",
+    "InvalidUsername",
+    "ParsedSkin",
+    "SkinCode",
+    "SkinLayer",
+]

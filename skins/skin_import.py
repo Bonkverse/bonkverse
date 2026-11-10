@@ -35,7 +35,7 @@ from urllib.parse import urlparse
 from django.conf import settings
 from django.db import connection, transaction
 
-from core.bonk import SkinCode
+from core.bonk import InvalidSkinCode, SkinCode
 from integrations.bl_skin_fetcher import FetchResult, fetch_skin
 from integrations.editor_render import RenderResult, render_skin_code
 from skins.models import Skin
@@ -72,8 +72,9 @@ class ImportFailure:
     RENDER_FAILED = "render_failed"  # editor down or could not render the code
     FETCH_FAILED = "fetch_failed"  # no code given; fetcher down or could not read the link
     STORAGE_FAILED = "storage_failed"
+    INVALID_SKIN_CODE = "invalid_skin_code"  # the given code isn't a bonk.io skin
 
-    PERMANENT = {INVALID_LINK, LINK_TOO_LONG, UNSAFE_SVG, SVG_TOO_LARGE}
+    PERMANENT = {INVALID_LINK, LINK_TOO_LONG, UNSAFE_SVG, SVG_TOO_LARGE, INVALID_SKIN_CODE}
 
 
 @dataclass(frozen=True)
@@ -223,7 +224,12 @@ def _import_lock(link: str):
 def _get_media(link, skin_code, render, fetch):
     """(media, error, detail): render the code if we have one, otherwise ask BonkLeagues."""
     if skin_code:
-        code = SkinCode(skin_code).decoded  # bot codes may be URL-encoded once or twice
+        given = SkinCode(skin_code)
+        try:
+            given.parse()  # refuse text or other data posing as a code
+        except InvalidSkinCode as exc:
+            return None, ImportFailure.INVALID_SKIN_CODE, exc.reason
+        code = given.decoded  # bot codes may be URL-encoded once or twice
         rendered = render(code)
         if rendered.error:
             return None, ImportFailure.RENDER_FAILED, rendered.error

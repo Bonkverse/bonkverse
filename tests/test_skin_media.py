@@ -21,7 +21,7 @@ from skins.skin_media import (
     media_paths,
     save_render,
 )
-from tests.factories import SkinFactory
+from tests.factories import SKIN_CODE, SkinFactory
 
 REPO = Path(__file__).resolve().parent.parent
 SVG = b'<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><circle cx="5" cy="5" r="4" fill="red"/></svg>'
@@ -118,7 +118,7 @@ def test_publish_with_an_undrawable_svg_creates_no_skin(client, monkeypatch):
     count = Skin.objects.count()
 
     response = client.post(
-        "/api/publish-skin/", {"skin_name": "My Skin", "skin_code": "CODE", "svg": SVG.decode()}
+        "/api/publish-skin/", {"skin_name": "My Skin", "skin_code": SKIN_CODE, "svg": SVG.decode()}
     )
 
     assert response.status_code == 500
