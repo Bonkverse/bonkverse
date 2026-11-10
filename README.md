@@ -62,7 +62,7 @@ pip install -r requirements-dev.txt
 pre-commit install
 ```
 
-`requirements.txt` is what production installs. `requirements-dev.txt` adds pytest, ruff and the security scanners.
+`requirements.txt` is what production installs. `requirements-dev.txt` adds pytest, ruff and the security scanners. `requirements-scripts.txt` adds what the hand-run scripts in `scripts/` need (openai for `label_skins.py`).
 
 
 ### 2. Environment variables
@@ -215,7 +215,8 @@ bonkverse/
 ├── Dockerfile              # production image (runs collectstatic at build time)
 ├── pyproject.toml          # ruff + pytest config
 ├── requirements.txt        # production dependencies
-└── requirements-dev.txt    # + test and lint tooling
+├── requirements-dev.txt    # + test and lint tooling
+└── requirements-scripts.txt # + what scripts/ needs (not in the production image)
 ```
 
 `staticfiles/` is build output and is not committed; the Dockerfile rebuilds it with `collectstatic`.

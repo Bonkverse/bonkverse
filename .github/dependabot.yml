@@ -9,6 +9,14 @@ updates:
     groups:
       dev-tooling:
         patterns: ["pytest*", "ruff", "factory_boy", "responses", "pre-commit", "pip-audit", "bandit"]
+    ignore:
+      # Major versions of packages only used by hand-run tools (CSV restore
+      # commands, scripts/label_skins.py): upgrade them when that tool is next
+      # used and can be checked, not on Dependabot's schedule.
+      - dependency-name: "pandas"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "openai"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
