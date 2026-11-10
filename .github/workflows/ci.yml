@@ -93,7 +93,8 @@ jobs:
         run: pip-audit -r requirements.txt
       - name: bandit (new medium+ findings only)
         # .bandit-baseline.json holds findings that existed when CI was added.
-        run: bandit -q -r skins bonk_skin_search core integrations -x skins/migrations -ll -ii -b .bandit-baseline.json
+        # Every app (any top-level folder with an apps.py) plus the shared packages.
+        run: bandit -q -r bonk_skin_search core integrations $(dirname */apps.py) -x $(ls -d */migrations | paste -sd, -) -ll -ii -b .bandit-baseline.json
       - name: Django deploy checks
         # Fails on errors. The HSTS / SSL-redirect warnings are tracked for Phase 1.
         run: ENV=production python manage.py check --deploy --fail-level ERROR
