@@ -324,9 +324,11 @@ def sync_friends_for_player(
     touched_edges = len(edge_pairs)
 
     if edge_pairs:
+        # Only this player's edges. (Filtering low in one list and high in the
+        # other also matched edges between two of their friends.)
         Friendship.objects.filter(
-            player_low_id__in=touched_lo_ids,
-            player_high_id__in=touched_hi_ids,
+            Q(player_low=current, player_high_id__in=touched_hi_ids)
+            | Q(player_high=current, player_low_id__in=touched_lo_ids)
         ).update(last_confirmed_at=now)
 
     # --------- Remove edges that no longer exist ----------

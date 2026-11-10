@@ -3,7 +3,11 @@
 Input is the typed list integrations/bonk_api.py returns (BonkFriend).
 """
 
+from datetime import timedelta
+
 import pytest
+from django.db.models import Q
+from django.utils import timezone
 
 from integrations.bonk_api import BonkFriend
 from skins.friends_sync import sync_friends_for_player
@@ -89,3 +93,25 @@ def test_without_bonk_id_matches_current_player_case_insensitively():
     assert BonkPlayer.objects.filter(username__iexact="me myself").count() == 1
     assert _friend_ids() == {2001}
     assert existing.pk == BonkPlayer.objects.get(bonk_id=ME).pk
+
+
+def test_confirms_only_this_players_edges():
+    """Regression: confirming edges matched any edge whose low end was in one
+    list and high end in the other, so an edge between two of the player's
+    friends was marked confirmed too."""
+    long_ago = timezone.now() - timedelta(days=30)
+    low = BonkPlayerFactory(bonk_id=2001, username="Low")  # pk below the player's
+    BonkPlayerFactory(bonk_id=ME, username="Me Myself")
+    high = BonkPlayerFactory(bonk_id=2002, username="High")  # pk above it
+    between = Friendship.objects.create(
+        player_low=low, player_high=high, last_confirmed_at=long_ago
+    )
+
+    _sync([BonkFriend(2001, "Low"), BonkFriend(2002, "High")])
+
+    between.refresh_from_db()
+    assert between.last_confirmed_at == long_ago
+    me = BonkPlayer.objects.get(bonk_id=ME)
+    mine = Friendship.objects.filter(Q(player_low=me) | Q(player_high=me))
+    assert all(edge.last_confirmed_at > long_ago for edge in mine)
+    assert mine.count() == 2
