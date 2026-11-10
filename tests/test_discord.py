@@ -1,5 +1,6 @@
 """Discord invite lookups: the client (integrations/discord_api.py), the
-submit view (skins/discord_views.py) and the hourly refresh (skins/tasks.py).
+submit service and view (communities/services.py, communities/views/submit.py)
+and the hourly refresh (communities/tasks.py).
 
 Discord is faked with `responses`. Bodies follow Discord's documented invite
 object plus the undocumented `profile` block Bonkverse has always read.
@@ -12,7 +13,7 @@ import requests
 
 from integrations.discord_api import InviteError, fetch_invite
 from skins.models import DiscordServer, DiscordServerSnapshot, DiscordTag
-from skins.tasks import refresh_discord_servers
+from communities.tasks import refresh_discord_servers
 
 API = "https://discord.com/api/v10/invites"
 SUBMIT_URL = "/api/discords/submit/"
@@ -174,7 +175,7 @@ def test_submit_same_server_twice_keeps_one(client, mocked_http):
 @pytest.fixture
 def sleeps(monkeypatch):
     calls = []
-    monkeypatch.setattr("skins.tasks.time.sleep", calls.append)
+    monkeypatch.setattr("communities.tasks.time.sleep", calls.append)
     return calls
 
 
@@ -212,7 +213,7 @@ def test_refresh_logs_failures_and_keeps_going(mocked_http, sleeps, caplog):
     mocked_http.get(f"{API}/aaa", body=requests.ConnectionError("down"))
     mocked_http.get(f"{API}/bbb", json=_invite_body("2"))
 
-    with caplog.at_level(logging.WARNING, logger="skins.tasks"):
+    with caplog.at_level(logging.WARNING, logger="communities.tasks"):
         stats = refresh_discord_servers()
 
     assert (stats["failed"], stats["refreshed"]) == (1, 1)
@@ -289,7 +290,7 @@ def test_refresh_stops_cleanly_at_its_time_limit(mocked_http, monkeypatch):
         # The limit lands while pausing after the first server.
         raise SoftTimeLimitExceeded()
 
-    monkeypatch.setattr("skins.tasks.time.sleep", sleep_then_time_out)
+    monkeypatch.setattr("communities.tasks.time.sleep", sleep_then_time_out)
 
     stats = refresh_discord_servers()
 
