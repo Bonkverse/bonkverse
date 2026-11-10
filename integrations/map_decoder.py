@@ -3,7 +3,7 @@
 Owns: the `POST /decode/map` request, the optional `X-Decoder-Key` header,
 the timeout, and sorting the reply into decoded / rejected input / no
 usable answer. Every call returns a `DecodeResult` instead of raising.
-Does not own: the Tools page or what it shows (skins/utils/tools/map_decode.py).
+Does not own: the Tools page or what it shows (site_pages/views/tools.py).
 
 Free of Django at import time; `decode_map_configured()` reads the URL and
 key from settings.

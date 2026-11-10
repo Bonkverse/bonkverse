@@ -259,6 +259,7 @@ INSTALLED_APPS = [
     "skins",
     "players",
     "public_api",
+    "site_pages",
 ]
 
 # =========================================================

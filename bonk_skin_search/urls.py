@@ -24,9 +24,7 @@ from skins.wear_skin import wear_skin, bonk_login_for_wear, wear_skin_code
 from skins import flash_friends
 from skins import leaderboards
 from skins import players
-from skins import home
 from skins import api
-from skins import staff
 from skins import discord
 from skins import discord_views
 from skins.social_stats import social_stats
@@ -36,16 +34,14 @@ from skins.apis import bot_skins
 from skins.share_skin import share_skin
 from skins.apis.auth.who_am_i import me
 from skins.report_skin import report_skin
-from skins.utils.tools.map_decode import map_decode_page, api_map_decode
-from skins.privacy import privacy
-from skins.terms import terms
 from skins import categories
 
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("search/", search_skins, name="search_skins"),
-    path("", home.home, name="home"),
+    # Home, privacy, terms, staff, map decoder (site_pages/, docs/apps/site_pages.md).
+    path("", include("site_pages.urls")),
     path("api/publish-skin/", publish_skin, name="publish_skin"),
     path("api/bot/skins/", bot_skins.submit_skin, name="api_bot_submit_skin"),
     path("skins/share/<int:skin_id>/<uuid:uuid>/", share_skin, name="share_skin"),
@@ -60,7 +56,6 @@ urlpatterns = [
     path("skin/<int:skin_id>/edit/", edit_skin, name="edit_skin"),
     path("matchmaking/", matchmaking_page, name="matchmaking"),
     path("skins/detail/<int:skin_id>", skin_detail, name="skin_detail"),
-    path("staff/", staff.staff_page, name="staff"),
     # Public, versioned API for other sites and bots (public_api/, ADR 0011).
     path("api/v1/", include("public_api.urls")),
     # Developer portal: API terms and your own API keys (public_api/, ADR 0012).
@@ -99,14 +94,10 @@ urlpatterns = [
     path("<uuid:server_id>/", discord.server_detail, name="detail"),
     path("submit/", discord.submit_server_page, name="submit_server"),
     path("api/discords/submit/", discord_views.submit_server, name="api_submit_server"),
-    path("tools/map-decode/", map_decode_page, name="map_decode_page"),
-    path("api/tools/map-decode/", api_map_decode, name="api_map_decode"),
     path("api/skins/<int:skin_id>/report/", report_skin, name="report_skin"),
     path("social-stats/", social_stats, name="social_stats"),
     path("", include("players.urls")),
     path("skins/<int:skin_id>/rerender/", rerender_skin, name="rerender_skin"),
-    path("privacy/", privacy, name="privacy"),
-    path("terms/", terms, name="terms"),
 ]
 
 # Static files (WhiteNoise serves them in production; this covers DEBUG).
