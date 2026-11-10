@@ -3,7 +3,7 @@ Django==5.2.17
 django-cors-headers==4.9.0
 gunicorn
 # playwright==1.46.0
-psycopg2-binary==2.9.12
+psycopg2-binary==2.9.13
 requests
 whitenoise
 python-dotenv==1.2.4
@@ -19,5 +19,5 @@ celery==5.6.3
 # kombu's Redis transport imports `packaging` without declaring it; without this
 # the worker crashes at startup (2026-11-10). CI's docker job checks the import.
 packaging==26.3
-django-celery-beat==2.8.1
+django-celery-beat==2.9.0
 sentry-sdk[django]==2.67.1
