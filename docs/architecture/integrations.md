@@ -23,7 +23,7 @@ Setting names and defaults: [configuration.md](../operations/configuration.md).
 | bonk.io account scripts (login, friends, avatar) | `bonk_api.py` (`BonkApi`) | `skins/login.py`, `skins/wear_skin.py`, friend sync | Wrong password / unknown name / "bonk.io isn't responding" (502, no login modal). Details: [bonk/api.md](../bonk/api.md) |
 | Skin editor render service (`/api/render-bundle`) | `editor_render.py` | `skins/rerender.py`, `skins/skin_import.py` | "The render service couldn't render this skin" |
 | BLSkinFetcher (BonkLeagues link → skin) | `bl_skin_fetcher.py` | `skins/skin_import.py` (upload form, BonxBot) | "Couldn't get that skin from BonkLeagues right now" |
-| Cloudflare cache purge | `cloudflare.py` | `skins/rerender.py` | None; staff get `cache_purged: false`, logs say `cloudflare purge failed` |
+| Cloudflare cache purge | `cloudflare.py` | `skins/rerender.py` (one skin's files), `rerender_skins --purge-cache` (everything) | None; staff get `cache_purged: false`, the command prints the failure, logs say `cloudflare purge failed` |
 | Discord invite API (public, no auth) | `discord_api.py` | `skins/discord_views.py` (submit), `skins/tasks.py` (hourly refresh) | Invalid / inaccessible invite, "Couldn't reach Discord right now" |
 | BonkBot API | `bonkbot.py` | `skins/bonkbot.py` (`/api/join-matchmaking/`) | `{"error": "matchmaking_unavailable"}` (502) |
 | Map decoder service | `map_decoder.py` | `skins/utils/tools/map_decode.py` | "Couldn't decode that map string" (400, with the decoder's reason) or "isn't responding" (502) |

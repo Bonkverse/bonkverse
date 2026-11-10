@@ -71,6 +71,32 @@ def media_paths(skin_id: int) -> dict[str, str]:
     return {kind: pattern.format(id=skin_id) for kind, pattern in _FILE_NAMES.items()}
 
 
+_PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+
+
+def file_problems(skin_id: int) -> list[str]:
+    """What's wrong with a skin's files on disk, e.g. ["png: missing"]; [] if they look fine.
+
+    Cheap checks only (exists, not empty, starts like an SVG / a PNG), so it
+    can run over every skin. A file that passes can still draw wrong.
+    """
+    problems = []
+    for kind, rel_path in media_paths(skin_id).items():
+        try:
+            with open(os.path.join(settings.MEDIA_ROOT, rel_path), "rb") as f:
+                head = f.read(512)
+        except FileNotFoundError:
+            problems.append(f"{kind}: missing")
+            continue
+        if not head:
+            problems.append(f"{kind}: empty")
+        elif kind == "svg" and b"<svg" not in head.lower():
+            problems.append(f"{kind}: not an SVG")
+        elif kind != "svg" and not head.startswith(_PNG_SIGNATURE):
+            problems.append(f"{kind}: not a PNG")
+    return problems
+
+
 def save_render(skin: Skin, bundle: RenderBundle) -> dict[str, str]:
     """Write a skin's three image files and point the skin and its image rows at them.
 
