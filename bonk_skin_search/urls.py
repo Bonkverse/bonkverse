@@ -21,7 +21,6 @@ from skins.bonkbot import matchmaking_page, join_matchmaking
 from skins.skin_detail import skin_detail
 from skins.skin_votes import vote_skin_api, toggle_favorite_api
 from skins.wear_skin import wear_skin, bonk_login_for_wear, wear_skin_code
-from skins.create_changelog import add_changelog
 from skins import flash_friends
 from skins import leaderboards
 from skins import players
@@ -95,7 +94,6 @@ urlpatterns = [
         )
         for board in leaderboards.LEADERBOARDS
     ],
-    path("changelog/add/", add_changelog, name="add_changelog"),
     path("api/friends-sync-status/", api.friends_sync_status, name="friends_sync_status"),
     path("serverlist/", discord.server_list, name="list"),
     path("<uuid:server_id>/", discord.server_detail, name="detail"),

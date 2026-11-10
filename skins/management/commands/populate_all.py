@@ -13,7 +13,6 @@ class Command(BaseCommand):
             "populate_bonkplayers",
             "populate_friendships",
             "populate_skins",
-            "populate_changelog",
             "populate_player_stats",
             "populate_discord",
             "populate_flashfriends",
