@@ -109,7 +109,7 @@ What production logs showed before the tests, and how they fit:
 None of this can stop four different players' wrong passwords from adding up.
 The lasting fix is for logins to leave from **each player's own IP**, so a
 wrong password only ever blocks the person who typed it: the Bonkverse
-extension can make the request itself; a normal web page probably can't,
+extension can make the request itself; a normal web page can't,
 because bonk2.io doesn't allow other sites to read its answers (checked
 2026-11-10: a `fetch` from bonkverse.io to `login_legacy.php` was blocked by
 CORS, no `Access-Control-Allow-Origin` header).
