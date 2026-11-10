@@ -82,6 +82,12 @@ What production logs showed before the tests, and how they fit:
   This decides whether wrong passwords spread over a busy afternoon add up to
   4. The lab's `memory-5/15/30/60min` experiments measure it (3 wrong, a quiet
   wait, then count how many more get through).
+- **Whether made-up remember-me tokens sent to `login_auto.php` count**, and
+  whether `login_auto.php` is blocked along with `login_legacy.php`. This
+  decides how a login made by the extension (from the player's IP) can be
+  checked on the server. The lab's `tokens-alone-1s`, `tokens-then-wrong` and
+  `token-during-block` experiments measure it. bonk.io's own client posts
+  `{rememberToken}` to `login_auto.php` (seen in its `alpha2s.js`).
 - Whether successful logins count toward some other, much higher limit
   (a player said about 500 an hour).
 - Whether `friends.php` and `avatar_update.php` follow the same rules. They
@@ -104,7 +110,9 @@ None of this can stop four different players' wrong passwords from adding up.
 The lasting fix is for logins to leave from **each player's own IP**, so a
 wrong password only ever blocks the person who typed it: the Bonkverse
 extension can make the request itself; a normal web page probably can't,
-because bonk.io likely only accepts these requests from its own site (CORS).
+because bonk2.io doesn't allow other sites to read its answers (checked
+2026-11-10: a `fetch` from bonkverse.io to `login_legacy.php` was blocked by
+CORS, no `Access-Control-Allow-Origin` header).
 Remember-me logins (`login_auto.php`) would also mean fewer typed passwords.
 
 The pause, holds and log lines are described in [api.md](api.md#rate-limits-and-the-cooldown).
