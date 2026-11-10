@@ -31,6 +31,7 @@ PUBLIC_MODULES = {"services", "selectors", "models"}
 ALLOWED: dict[tuple[str, str], str] = {
     ("public_api/selectors.py", "players.calculator"): "players exposes account_age via selectors",
     ("public_api/selectors.py", "players.charts"): "players exposes profile_path via selectors",
+    ("players/friends_sync.py", "skins.events"): "log_event's home (UserEvent) is decided in 5.6",
 }
 
 

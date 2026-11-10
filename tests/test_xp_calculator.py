@@ -209,6 +209,6 @@ def test_calculator_script_builds_profile_links_like_the_url_conf():
     page data); keep it in step with players/urls.py."""
     from pathlib import Path
 
-    script = Path("skins/static/js/xp_calculator.js").read_text(encoding="utf-8")
+    script = Path("players/static/players/js/xp_calculator.js").read_text(encoding="utf-8")
     assert reverse("player_profile", args=["x"]) == "/player/x/"
     assert "`/player/${encodeURIComponent(urlName(String(name)))}/`" in script

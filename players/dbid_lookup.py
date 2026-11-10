@@ -1,4 +1,8 @@
-# skins/dbid_lookup.py
+"""Account registration dates estimated from a bonk.io DBID, for the social
+stats page. An older, separate table from core/bonk/dbid.py (which profiles
+and the public API use); merging them would change the estimates shown.
+"""
+
 from datetime import datetime, date
 from bisect import bisect_right
 

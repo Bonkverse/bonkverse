@@ -1,11 +1,11 @@
 """Storing a player's bonk.io friend list (friends.php) as Friendship edges.
 
 Owns: syncing a linked player's friends (sync_friends_for_link, run by the
-skins.tasks.sync_friends worker task after login), upserting BonkPlayer rows
+sync_friends worker task in players/tasks.py after login), upserting BonkPlayer rows
 for friends and requests, adding and pruning Friendship edges, and
 friend-count history.
 Does not own: talking to bonk.io (integrations/bonk_api.py), queueing the
-sync (skins/sign_in.py) or Flash-era friends (flash_friends_sync.py).
+sync (players.services.queue_friend_sync, called by skins/sign_in.py) or Flash-era friends (flash_friends_sync.py).
 
 A sync is a fixed list of steps, each its own function with its own tests
 (tests/test_friends_sync.py), run in this order by sync_friends_for_player:
@@ -34,8 +34,8 @@ from django.utils import timezone
 
 from integrations.bonk_api import BonkFriend, get_client
 
-from .events import log_event
-from .models import BonkAccountLink, BonkPlayer, FriendCountHistory, Friendship
+from skins.events import log_event
+from skins.models import BonkAccountLink, BonkPlayer, FriendCountHistory, Friendship
 
 logger = logging.getLogger(__name__)
 

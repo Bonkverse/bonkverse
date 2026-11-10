@@ -1,4 +1,5 @@
-"""The regular friend sync after login runs on the worker (skins.tasks.sync_friends).
+"""The regular friend sync after login runs on the worker (players/tasks.py,
+registered as skins.tasks.sync_friends).
 
 Login queues the task with the account link's id once the link is saved; the
 task reads the token from the link, asks bonk.io for the friend list and
@@ -14,10 +15,10 @@ import requests
 from django.db.models import Q
 from django.urls import reverse
 
-from skins import sign_in as sign_in_module
-from skins.friends_sync import NO_TOKEN, sync_friends_for_link
+from players import services as players_services
+from players.friends_sync import NO_TOKEN, sync_friends_for_link
 from skins.models import BonkAccountLink, BonkPlayer, Friendship, UserEvent
-from skins.tasks import sync_friends
+from players.tasks import sync_friends
 from tests.conftest import load_bonk_fixture
 from tests.factories import UserFactory
 
@@ -165,7 +166,7 @@ class TestLoginQueuesTheSync:
         assert status["friends_now"] == 3
 
     def test_queues_only_the_link_id_never_the_token(self, client):
-        with mock.patch.object(sign_in_module, "enqueue", return_value=True) as enqueue:
+        with mock.patch.object(players_services, "enqueue", return_value=True) as enqueue:
             client.post("/login/", {"username": "TestPlayer", "password": "x"})
 
         link = BonkAccountLink.objects.get(bonk_player__bonk_id=1234567)
@@ -178,7 +179,7 @@ class TestLoginQueuesTheSync:
         assert not settings.DATABASES["default"].get("ATOMIC_REQUESTS", False)
 
     def test_no_toast_when_the_sync_could_not_be_queued(self, client):
-        with mock.patch.object(sign_in_module, "enqueue", return_value=False):
+        with mock.patch.object(players_services, "enqueue", return_value=False):
             response = client.post("/login/", {"username": "TestPlayer", "password": "x"})
 
         assert response.status_code == 302  # the login itself still works
@@ -186,7 +187,7 @@ class TestLoginQueuesTheSync:
 
     def test_off_switch(self, client, settings):
         settings.SYNC_FRIENDS_ON_LOGIN = False
-        with mock.patch.object(sign_in_module, "enqueue") as enqueue:
+        with mock.patch.object(players_services, "enqueue") as enqueue:
             client.post("/login/", {"username": "TestPlayer", "password": "x"})
 
         enqueue.assert_not_called()
@@ -194,3 +195,14 @@ class TestLoginQueuesTheSync:
 
 def Q_player(player):
     return Q(player_low=player) | Q(player_high=player)
+
+
+def test_task_keeps_its_registered_name():
+    """Runs queued at login just before a deploy name the task by its old path."""
+    from bonk_skin_search.celery_app import app as celery_app
+
+    celery_app.loader.import_default_modules()
+
+    assert sync_friends.name == "skins.tasks.sync_friends"
+    # shared_task hands back a proxy, so compare the code the worker would run.
+    assert celery_app.tasks["skins.tasks.sync_friends"].run.__module__ == "players.tasks"

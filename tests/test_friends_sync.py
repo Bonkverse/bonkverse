@@ -1,4 +1,4 @@
-"""Tests for storing a bonk.io friend list (skins/friends_sync.py).
+"""Tests for storing a bonk.io friend list (players/friends_sync.py).
 
 Input is the typed list integrations/bonk_api.py returns (BonkFriend).
 """
@@ -12,7 +12,7 @@ from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 from integrations.bonk_api import BonkFriend
-from skins.friends_sync import (
+from players.friends_sync import (
     EdgeChanges,
     PlayerUpsert,
     PruneResult,

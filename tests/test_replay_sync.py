@@ -18,7 +18,7 @@ from integrations.replay_sync import SyncError, fetch_replay_names, push_player_
 from players import charts, replay_sync
 from players.models import SyncCursor
 from players.tasks import sync_replays
-from skins.friends_sync import adopt_replay_names, sync_friends_for_player
+from players.friends_sync import adopt_replay_names, sync_friends_for_player
 from skins.models import BonkPlayer
 
 REPLAYS = "http://replays.test"
