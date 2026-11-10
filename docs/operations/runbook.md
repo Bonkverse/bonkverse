@@ -125,7 +125,9 @@ the Players page; logs show no
    `[skins.tasks.refresh_discord_servers 0d4fcc8a]`); filter on
    `@task_id:<id>` to read the whole run.
 4. Is the schedule there? `/admin` → Periodic tasks: each entry from
-   `CELERY_BEAT_SCHEDULE` with a recent "Last run at". An entry missing or
+   `CELERY_BEAT_SCHEDULE` with a recent "Last run at". A schedule with no
+   last run should run within a minute of the worker starting (the worker
+   log says `schedule <name> has never run: running it now`). An entry missing or
    disabled in /admin is restored on the worker's next deploy (schedules are
    code).
 5. **Never scale the worker above 1 replica**: it runs the scheduler, and two
