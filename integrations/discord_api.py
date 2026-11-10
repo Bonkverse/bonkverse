@@ -5,7 +5,7 @@ no auth), checking the code before it goes into the URL, the timeout,
 reading the reply into a `DiscordInvite`, and Discord's 404 / 429 answers.
 Every call returns an `InviteResult` instead of raising.
 Does not own: how often to call (the caller paces itself; see
-skins/tasks.py), database rows, or messages people see.
+communities/tasks.py), database rows, or messages people see.
 
 Free of Django at import time. Unauthenticated calls share Discord's per-IP
 limits, so callers must honour `retry_after` on RATE_LIMITED.

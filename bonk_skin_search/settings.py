@@ -260,6 +260,7 @@ INSTALLED_APPS = [
     "players",
     "public_api",
     "site_pages",
+    "communities",
 ]
 
 # =========================================================
@@ -514,6 +515,8 @@ CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 # schedule that has never run as soon as the worker starts.
 CELERY_BEAT_SCHEDULER = "core.beat:Scheduler"
 CELERY_BEAT_SCHEDULE = {
+    # Defined in communities/tasks.py, registered under its old skins.tasks
+    # name so saved schedules and queued runs keep working.
     "refresh-discord-servers": {
         "task": "skins.tasks.refresh_discord_servers",
         "schedule": 60 * 60,

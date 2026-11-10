@@ -25,8 +25,6 @@ from skins import flash_friends
 from skins import leaderboards
 from skins import players
 from skins import api
-from skins import discord
-from skins import discord_views
 from skins.social_stats import social_stats
 from skins.apis.index import index
 from skins.apis.publish_skin import publish_skin
@@ -90,10 +88,8 @@ urlpatterns = [
         for board in leaderboards.LEADERBOARDS
     ],
     path("api/friends-sync-status/", api.friends_sync_status, name="friends_sync_status"),
-    path("serverlist/", discord.server_list, name="list"),
-    path("<uuid:server_id>/", discord.server_detail, name="detail"),
-    path("submit/", discord.submit_server_page, name="submit_server"),
-    path("api/discords/submit/", discord_views.submit_server, name="api_submit_server"),
+    # Discord server directory (communities/, docs/apps/communities.md).
+    path("", include("communities.urls")),
     path("api/skins/<int:skin_id>/report/", report_skin, name="report_skin"),
     path("social-stats/", social_stats, name="social_stats"),
     path("", include("players.urls")),

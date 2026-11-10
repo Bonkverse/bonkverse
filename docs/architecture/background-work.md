@@ -20,7 +20,7 @@ flowchart LR
 | Task | When | Notes |
 |---|---|---|
 | `skins.tasks.sync_friends` | Queued by every login (`skins/sign_in.py`) | The player's bonk.io friend list (`friends.php`). Takes the account-link id; reads the token from the link. Retries twice when bonk.io is unreachable, never on a refusal. Logs `friends_synced`, which the profile toast polls for. |
-| `skins.tasks.refresh_discord_servers` | Hourly (`CELERY_BEAT_SCHEDULE`) | Member/online counts for the Discord directory. At most once per hour (see "Running twice"). |
+| `skins.tasks.refresh_discord_servers` | Hourly (`CELERY_BEAT_SCHEDULE`) | Member/online counts for the Discord directory. At most once per hour (see "Running twice"). Code in `communities/tasks.py` since Phase 5.2; it keeps its original registered name, so its logs come from logger `communities.tasks` but carry the task name `skins.tasks.refresh_discord_servers`. |
 | `players.tasks.sync_replays` | Every `REPLAY_SYNC_INTERVAL_SECONDS` (1 hour) | Names in, DBIDs out with the replay archive (`players/replay_sync.py`). Carries on from saved cursors; skipped while another run holds its lock, or when `BONKVERSE_SYNC_TOKEN` isn't set. |
 
 Flash friends still sync inside the login request: they come in bonk.io's
