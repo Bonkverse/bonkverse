@@ -1,0 +1,5 @@
+# Scripts run by hand from scripts/, not by the site (not in the production image).
+# pip install -r requirements-scripts.txt
+-r requirements.txt
+
+openai==2.17.0  # scripts/label_skins.py
