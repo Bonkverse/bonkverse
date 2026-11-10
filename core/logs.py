@@ -34,10 +34,15 @@ class RailwayJsonFormatter(logging.Formatter):
     ...") so searches written for the old logs still match. Tracebacks are
     folded into `message` so the whole entry stays one line. Query extra
     fields in Railway with @logger:skins.login.
+
+    Inside a Celery task (core.background.TaskContextFilter), `message` names
+    the task after the logger ("INFO skins.tasks [skins.tasks.x 0d4fcc8a]: ...")
+    and the entry gains `task` and `task_id`: find one run with @task_id:<id>.
     """
 
     def format(self, record: logging.LogRecord) -> str:
-        message = f"{record.levelname} {record.name}: {record.getMessage()}"
+        task_tag = getattr(record, "task", "") or ""
+        message = f"{record.levelname} {record.name}{task_tag}: {record.getMessage()}"
         if record.exc_info:
             message = f"{message}\n{self.formatException(record.exc_info)}"
         if record.stack_info:
@@ -47,6 +52,10 @@ class RailwayJsonFormatter(logging.Formatter):
             "level": _RAILWAY_LEVELS.get(record.levelno, "info"),
             "logger": record.name,
         }
+        task_name = getattr(record, "task_name", None)
+        if task_name:
+            entry["task"] = task_name
+            entry["task_id"] = getattr(record, "task_id", None)
         status_code = getattr(record, "status_code", None)
         if isinstance(status_code, int):
             entry["status_code"] = status_code

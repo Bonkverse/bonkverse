@@ -3,7 +3,8 @@
 Every setting is read once, in `bonk_skin_search/settings.py`, from environment
 variables. App code reads `django.conf.settings`, never `os.environ` (a test
 enforces this). Locally, put values in `.env` (start from `.env.example`);
-in production, set them on the Railway `bonkverse` service.
+in production, set them on the Railway `bonkverse` service (and the `worker`
+service where it needs them; see "Background worker").
 
 Defaults are chosen so local development works with only the required ones set.
 
@@ -59,9 +60,29 @@ Used by login, friend sync and wearing skins (`integrations/bonk_api.py`,
 | `TRUST_PROXY_HEADERS` | `true` in production | [rate-limiting.md](rate-limiting.md) |
 | `LOG_LEVEL` | `INFO` | Level for this app's loggers (`skins.*`, `core.*`) |
 
+## Background worker
+
+How background jobs work: [architecture/background-work.md](../architecture/background-work.md).
+
+| Variable | Default | Notes |
+|---|---|---|
+| `CELERY_CONCURRENCY` | `2` | Worker processes. Each holds one Postgres connection while it works. |
+| `CELERY_TASK_ALWAYS_EAGER` | `0` | Local only: run queued tasks inline, no worker needed. **Never in production.** |
+
+The `worker` Railway service needs the variables its code reads at startup and
+its tasks' integrations use, set as references to `bonkverse`'s values
+(`${{bonkverse.SECRET_KEY}}` and so on, never copies): `SECRET_KEY`,
+`DATABASE_URL`, `REDIS_URL`, `ENV`, `SENTRY_DSN`, and for the friend sync the
+`BONK_*` variables if `bonkverse` sets any. It needs no `PORT` and no volume.
+
 ## Railway build and deploy
 
 Pinned in `railway.json`, not the dashboard: build from the `Dockerfile`
 (which runs `collectstatic`; the container runs `migrate` then gunicorn), and a
 healthcheck on `/` that must pass before a deploy takes traffic.
 See [ADR 0004](../adr/0004-dockerfile-build-and-healthcheck.md).
+
+The `worker` service uses `railway.worker.json` (set as its config file path in
+the service settings): the same Dockerfile, started with
+`celery -A bonk_skin_search worker --beat`, no healthcheck, one replica
+([ADR 0010](../adr/0010-background-work-on-celery.md)).

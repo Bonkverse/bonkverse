@@ -37,8 +37,10 @@ Work top to bottom; stop when you find it.
 
 ## Deploying
 
-Merging to `main` deploys. The container runs `python manage.py migrate` and
+Merging to `main` deploys both services built from this repo: `bonkverse` (the
+site) and `worker` (background jobs). The site's container runs `python manage.py migrate` and
 then gunicorn; the deploy takes traffic only after `/` answers (healthcheck).
+The worker runs Celery only (no migrate, no healthcheck).
 After a merge with a migration, check the deploy log shows `Applying ...` and
 then gunicorn booting 4 workers.
 
@@ -100,6 +102,36 @@ Open the browser console on the broken page:
   work; `bv-boot.js` skips what didn't load. Nothing to deploy unless it lasts.
 - **Only the GitHub icon on /terms/ is blank**: expected. Lucide dropped
   brand icons in 1.0.
+
+## Background jobs aren't running
+
+Symptoms: the Discord directory's counts and "next refresh" stop moving; after
+login, the friend-sync toast never finishes (from RFC-0001 4.3); logs show no
+`celery` lines.
+
+1. Railway → `worker` service: is the latest deploy up? Its log should start
+   with `beat: Starting...` and `celery@... ready.` A crash loop usually means a
+   missing variable (`ImproperlyConfigured`) or a bad `REDIS_URL`; the worker
+   needs the same references as `bonkverse` (see
+   [configuration.md](configuration.md#background-worker)).
+2. Is work arriving? Search the worker's logs for `received`. Nothing at all
+   while people log in means jobs aren't being queued: search `bonkverse`'s
+   logs for `could not queue task` (Redis down or unreachable from the web
+   service).
+3. Is it failing? Search for `raised unexpected` (a task's exception, with
+   traceback) or `TimeLimitExceeded`. Every line from one run carries the
+   same `task_id` (and a short form in the message, e.g.
+   `[skins.tasks.refresh_discord_servers 0d4fcc8a]`); filter on
+   `@task_id:<id>` to read the whole run.
+4. Is the schedule there? `/admin` → Periodic tasks: each entry from
+   `CELERY_BEAT_SCHEDULE` with a recent "Last run at". An entry missing or
+   disabled in /admin is restored on the worker's next deploy (schedules are
+   code).
+5. **Never scale the worker above 1 replica**: it runs the scheduler, and two
+   would send every scheduled job twice.
+
+Restarting the worker is always safe: an unfinished at-least-once task runs
+again; an at-most-once task (the Discord refresh) waits for its next hour.
 
 ## Giving someone admin access
 
