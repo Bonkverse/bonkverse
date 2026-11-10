@@ -120,6 +120,13 @@ def test_no_new_background_threads():
 
 
 class TestEnqueue:
+    def test_tests_run_queued_tasks_inline(self, settings):
+        """Guards tests/conftest.py: without this, enqueue in a test tries a real broker."""
+        from bonk_skin_search.celery_app import app
+
+        assert app.conf.task_always_eager is True
+        assert app.conf.task_eager_propagates is True
+
     def test_queues_with_the_arguments(self):
         task = mock.Mock(name="task")
 
