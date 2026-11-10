@@ -24,7 +24,7 @@ from django.shortcuts import render
 
 from skins.models import Skin
 from skins.selectors import decorate_skins_for_user
-from .pagination_utils import elided_page_range
+from core.pagination import elided_page_range
 
 # slug -> display metadata + keyword set
 CATEGORIES = {

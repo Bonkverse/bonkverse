@@ -1,3 +1,6 @@
+"""Pagination helpers shared by every app's list pages."""
+
+
 def elided_page_range(page_obj, on_each_side=1, on_ends=1):
     """
     Wraps Paginator.get_elided_page_range so templates never call it
