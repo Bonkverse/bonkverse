@@ -1,6 +1,5 @@
 from django.shortcuts import render
 from core.ratelimits import limit
-from django.db.models import Count
 from skins.models import Skin
 
 
@@ -18,7 +17,5 @@ def most_downvoted_skins(request):
 
 @limit("browse")
 def most_favorited_skins(request):
-    skins = Skin.objects.annotate(favorites_count=Count("favorited_by")).order_by(
-        "-favorites_count"
-    )[:50]
+    skins = Skin.objects.with_favorite_count().order_by("-fav_count")[:50]
     return render(request, "leaderboards/leaderboards_favorited.html", {"skins": skins})

@@ -11,11 +11,9 @@ from core.bonk import BonkUsername, InvalidUsername
 from django.core import signing
 from django.core.exceptions import ValidationError
 
-# Create your models here.
-
-# Text-search language for skins. Stored in Skin.search_vector and used by every
-# SearchQuery against it; the two must match or searches miss.
-SKIN_SEARCH_CONFIG = "english"
+# SKIN_SEARCH_CONFIG: the text-search language Skin.search_vector is built
+# with; every SearchQuery against it must use the same one.
+from .querysets import SKIN_SEARCH_CONFIG, SkinQuerySet
 
 
 class Skin(models.Model):
@@ -57,6 +55,8 @@ class Skin(models.Model):
         output_field=SearchVectorField(),
         db_persist=True,
     )
+
+    objects = SkinQuerySet.as_manager()
 
     class Meta:
         indexes = [

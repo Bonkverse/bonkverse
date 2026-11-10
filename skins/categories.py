@@ -13,15 +13,14 @@
 # colors is intentionally NOT searched (it's a filter axis, not a category,
 # and matching it would make "dark" hit "dark blue", etc).
 
-from datetime import timedelta
+from core.periods import PERIODS
 from core.ratelimits import limit
 
 from django.core.cache import cache
 from django.core.paginator import Paginator
-from django.db.models import Q, Count, F
+from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import render
-from django.utils import timezone
 
 from skins.models import Skin
 from skins.selectors import decorate_skins_for_user
@@ -179,12 +178,8 @@ def _apply_sort(qs, sort):
     if sort == "newest":
         return qs.order_by("-created_at"), "newest"
     if sort == "upvotes":
-        return qs.annotate(score=F("upvotes") - F("downvotes")).order_by(
-            "-score", "-created_at"
-        ), "upvotes"
-    return qs.annotate(fav_count=Count("favorited_by")).order_by(
-        "-fav_count", "-upvotes"
-    ), "favorites"
+        return qs.with_score().order_by("-score", "-created_at"), "upvotes"
+    return qs.with_favorite_count().order_by("-fav_count", "-upvotes"), "favorites"
 
 
 @limit("browse")
@@ -239,15 +234,9 @@ def category_detail(request, slug):
 @limit("browse")
 def new_releases(request):
     period = request.GET.get("period", "all")
-    qs = _base_queryset().order_by("-created_at")
-
-    now = timezone.now()
-    if period == "today":
-        qs = qs.filter(created_at__gte=now - timedelta(days=1))
-    elif period == "week":
-        qs = qs.filter(created_at__gte=now - timedelta(days=7))
-    else:
+    if period not in PERIODS:
         period = "all"
+    qs = _base_queryset().created_in(period).order_by("-created_at")
 
     page_obj = Paginator(qs, 60).get_page(request.GET.get("page", 1))
     return render(

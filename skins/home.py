@@ -1,5 +1,4 @@
 # views/search.py
-from django.db.models import Count, F
 from core.ratelimits import limit
 from django.shortcuts import render
 
@@ -12,14 +11,10 @@ def home(request):
     recent = Skin.objects.order_by("-created_at")[:24]
 
     # Most favorited
-    top_favs = Skin.objects.annotate(fav_count=Count("favorited_by")).order_by(
-        "-fav_count", "-upvotes"
-    )[:24]
+    top_favs = Skin.objects.with_favorite_count().order_by("-fav_count", "-upvotes")[:24]
 
     # “Trending” = upvotes - downvotes (simple, fast)
-    trending = Skin.objects.annotate(score=F("upvotes") - F("downvotes")).order_by(
-        "-score", "-created_at"
-    )[:24]
+    trending = Skin.objects.with_score().order_by("-score", "-created_at")[:24]
 
     # A light random strip (OK at small size)
     random_strip = Skin.objects.order_by("?")[:24]
