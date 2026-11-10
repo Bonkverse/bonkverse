@@ -23,7 +23,9 @@ background work is planned (syncing, data aggregation).
   safe to run twice. They are acknowledged after they finish (at-least-once);
   a task that must not repeat opts out with `acks_late=False`.
 - Schedules are code (`CELERY_BEAT_SCHEDULE`), kept in the database by
-  django-celery-beat's `DatabaseScheduler` for `last_run_at`.
+  django-celery-beat's `DatabaseScheduler` for `last_run_at`, through
+  `core.beat.Scheduler`, which runs a never-run schedule at worker start
+  (added 2026-11-10, after deploys kept postponing new schedules).
 - No result backend: tasks report through logs and the rows they write.
 - Every log line inside a task carries the task name and id
   (`core.background.TaskContextFilter`).
