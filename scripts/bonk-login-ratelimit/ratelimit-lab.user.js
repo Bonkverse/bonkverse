@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bonk.io Rate-Limit Lab
 // @namespace    https://bonkverse.io/
-// @version      1.1.0
+// @version      1.2.0
 // @description  Runs a fixed, timed set of bonk.io login experiments (wrong-password speed, whether a success resets the count, how long a block lasts, whether retrying extends it) and logs every request to the millisecond. Passwords stay in local Tampermonkey storage and never appear in the log or export.
 // @author       Bonkverse
 // @match        https://bonk.io/
@@ -42,6 +42,9 @@
   const W = unsafeWindow;
   const pageFetch = W.fetch.bind(W);
   const LOGIN_URL = "https://bonk2.io/scripts/login_legacy.php";
+  // Remember-me login: bonk.io's own client posts {rememberToken} here
+  // (seen in bonk.io's alpha2s.js, 2026-11-10).
+  const AUTO_URL = "https://bonk2.io/scripts/login_auto.php";
   const IPIFY = "https://api.ipify.org?format=json";
 
   const KEYS = {
@@ -124,6 +127,28 @@
       wait: m * MIN,
       trip: { interval: 1000, max: 10 },
     })),
+    // Remember-me tokens (added 2026-11-10): can junk tokens sent to
+    // login_auto.php use up an IP's budget, and is login_auto.php blocked
+    // along with login_legacy.php? Decides how an extension login can be
+    // checked on the server.
+    {
+      id: "tokens-alone-1s",
+      what: "A made-up remember-me token to login_auto.php every 1 s",
+      trip: { interval: 1000, max: 20, tokens: true },
+    },
+    {
+      id: "tokens-then-wrong",
+      what: "3 made-up tokens, then wrong passwords every 1 s until limited",
+      pre: { count: 3, interval: 1000, tokens: true },
+      wait: 1000,
+      trip: { interval: 1000, max: 10 },
+    },
+    {
+      id: "token-during-block",
+      what: "Trip with wrong passwords, then one made-up token to login_auto.php",
+      trip: { interval: 1000, max: 40 },
+      after: { tokens: 1, delay: 3000 },
+    },
   ];
 
   // ── Storage ───────────────────────────────────────────────────
@@ -192,13 +217,24 @@
 
   // One login_legacy.php call, the same three fields bonk.io's client sends.
   async function bonkLogin(username, password) {
-    const body = new URLSearchParams({ username, password, remember: "false" });
+    return bonkPost(LOGIN_URL, { username, password, remember: "false" });
+  }
+
+  // A made-up remember-me token: 32 random hex characters.
+  function fakeToken() {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  async function bonkPost(url, fields) {
+    const body = new URLSearchParams(fields);
     const sent = Date.now();
     let status = 0;
     let text = "";
     let netError = "";
     try {
-      const res = await pageFetch(LOGIN_URL, {
+      const res = await pageFetch(url, {
         method: "POST",
         body,
         credentials: "omit",
@@ -229,10 +265,17 @@
   }
 
   // Sends one request at `planned` and logs it. Checks the IP hasn't moved.
+  // pwKind: "correct" / "wrong" password on login_legacy.php, or "fake token"
+  // on login_auto.php (account is then just a label).
   async function request(exp, step, account, pwKind, planned) {
     await sleepUntil(planned);
-    const password = pwKind === "correct" ? account.password : config().wrongPassword;
-    const r = await bonkLogin(account.username, password);
+    let r;
+    if (pwKind === "fake token") {
+      r = await bonkPost(AUTO_URL, { rememberToken: fakeToken() });
+    } else {
+      const password = pwKind === "correct" ? account.password : config().wrongPassword;
+      r = await bonkLogin(account.username, password);
+    }
     const entry = {
       exp: exp.id,
       step,
@@ -320,7 +363,7 @@
       await sleepUntil(start + i * interval);
       if (limited) break;
       inFlight.push(
-        request(exp, "trip", user, "wrong", start + i * interval).then((r) => {
+        request(exp, "trip", user, exp.trip.tokens ? "fake token" : "wrong", start + i * interval).then((r) => {
           if (r.error === "ratelimited") limited = true;
           return r;
         })
@@ -328,7 +371,9 @@
     }
     const answers = (await Promise.all(inFlight)).sort((a, b) => a.sent - b.sent);
     const first = answers.find((r) => r.error === "ratelimited");
-    const counted = (r) => r.error === "password" || r.error === "username_fail";
+    // In token mode every answer that isn't "ratelimited" counts as a try.
+    const counted = (r) =>
+      exp.trip.tokens ? r.error !== "ratelimited" : r.error === "password" || r.error === "username_fail";
     const wrongBefore = answers.filter((r) => counted(r) && (!first || r.sent < first.sent)).length;
     return {
       limited: Boolean(first),
@@ -379,15 +424,18 @@
 
   // The wrong passwords before a memory experiment's wait, one at a time.
   async function runPre(exp, account) {
-    const { count, interval } = exp.pre;
+    const { count, interval, tokens } = exp.pre;
     const start = Date.now() + 1000;
     let wrong = 0;
+    const answers = [];
     for (let i = 0; i < count; i++) {
-      const r = await request(exp, `before wait ${i + 1}/${count}`, account, "wrong", start + i * interval);
-      if (r.error === "ratelimited") return { wrong, limited: true, lastAt: r.sent };
-      if (r.error === "password") wrong++;
+      const kind = tokens ? "fake token" : "wrong";
+      const r = await request(exp, `before wait ${i + 1}/${count}`, account, kind, start + i * interval);
+      answers.push(r.error || r.result);
+      if (r.error === "ratelimited") return { wrong, limited: true, lastAt: r.sent, answers };
+      if (tokens || r.error === "password") wrong++;
     }
-    return { wrong, limited: false, lastAt: Date.now() };
+    return { wrong, limited: false, lastAt: Date.now(), answers };
   }
 
   async function runExperiment(exp, index) {
@@ -402,6 +450,7 @@
         if (exp.pre) {
           const pre = await runPre(exp, tripper);
           result.wrongBeforeWait = pre.wrong;
+          result.preAnswers = pre.answers.join(" ");
           if (pre.limited) throw new Error(`${exp.id}: limited before the wait (IP already used?)`);
           await sleepUntil(pre.lastAt + exp.wait - 5000, `${exp.id}: quiet wait, next request in`);
           await assertSameIp();
@@ -414,6 +463,11 @@
           wrongBeforeLimit: trip.wrongBefore,
           secondsToLimit: trip.limited ? +((trip.tripAt - trip.firstAt) / 1000).toFixed(2) : null,
         });
+        if (exp.after && trip.limited) {
+          const at = trip.tripAt + exp.after.delay;
+          const r = await request(exp, "token after block", tripper, "fake token", at);
+          result.tokenAnswerDuringBlock = r.error || r.result;
+        }
         if (exp.probe && trip.limited) {
           Object.assign(result, await runProbe(exp, prober, trip.tripAt));
         } else if (exp.probe) {
@@ -615,7 +669,7 @@
         h(
           "div",
           { className: "muted" },
-          "Rough time: 1½ h for the first 12, about 2 h for the memory ones. Keep this tab visible."
+          "Rough time: memory ones about 2 h, token ones a few minutes. Keep this tab visible."
         )
       );
       root.appendChild(proto);
@@ -688,7 +742,8 @@
     function describe(r) {
       if (r.valid === false) return r.note;
       const parts = [];
-      if ("wrongBeforeWait" in r) parts.push(`${r.wrongBeforeWait} wrong, then wait`);
+      if ("wrongBeforeWait" in r) parts.push(`${r.wrongBeforeWait} before (${r.preAnswers || ""}), then`);
+      if ("tokenAnswerDuringBlock" in r) parts.push(`token during block: ${r.tokenAnswerDuringBlock}`);
       if (r.limited === false) parts.push(`never limited (${r.wrongBeforeLimit} wrong)`);
       if (r.limited) parts.push(`limited after ${r.wrongBeforeLimit} wrong in ${r.secondsToLimit}s`);
       if (r.sequence) parts.push(r.limitedAtStep ? `limited at step ${r.limitedAtStep}` : "never limited");
