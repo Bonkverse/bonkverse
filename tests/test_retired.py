@@ -31,10 +31,12 @@ def test_retired_endpoint_is_gone(client, url, method):
 
 
 def test_player_session_model_is_gone_but_win_loss_data_is_kept():
-    labels = {model.__name__ for model in apps.get_app_config("skins").get_models()}
+    skins_models = {model.__name__ for model in apps.get_app_config("skins").get_models()}
+    stats_models = {model.__name__ for model in apps.get_app_config("stats").get_models()}
 
-    assert "PlayerSession" not in labels
-    assert {"PlayerWin", "PlayerLoss"} <= labels
+    assert "PlayerSession" not in skins_models
+    # Moved to stats in RFC-0001 Phase 5.3b, same tables.
+    assert {"PlayerWin", "PlayerLoss"} <= stats_models
 
 
 class TestFriendsSyncStatus:

@@ -6,10 +6,9 @@ from django.utils import timezone
 import uuid
 from django.urls import reverse
 
-from core.bonk import BonkUsername, InvalidUsername
+from core.validators import validate_bonk_username
 
 from django.core import signing
-from django.core.exceptions import ValidationError
 
 # SKIN_SEARCH_CONFIG: the text-search language Skin.search_vector is built
 # with; every SearchQuery against it must use the same one.
@@ -316,32 +315,8 @@ class SkinImage(models.Model):
         return f"{self.kind} image for {self.skin.name}"
 
 
-def validate_username(value: str):
-    """Model-field validator for bonk.io usernames (rules in core/bonk/usernames.py).
-
-    Only used by the archived PlayerWin/PlayerLoss tables; kept because their
-    migrations import it by this path.
-    """
-    try:
-        BonkUsername.validate(value)
-    except InvalidUsername as error:
-        raise ValidationError(str(error)) from None
-
-
-class PlayerWin(models.Model):
-    username = models.CharField(max_length=35, db_index=True, validators=[validate_username])
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.username} win at {self.created_at}"
-
-
-class PlayerLoss(models.Model):
-    username = models.CharField(max_length=35, db_index=True, validators=[validate_username])
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.username} loss at {self.created_at}"
+# Old migrations (0016) import the validator by this path; keep it.
+validate_username = validate_bonk_username
 
 
 class SkinReport(models.Model):

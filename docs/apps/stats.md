@@ -43,4 +43,6 @@ Styles are the shared `skins/static/css/leaderboard.css`.
 
 ## Models
 
-None yet. The archived win/loss rows (`PlayerWin`, `PlayerLoss`, from the retired win/loss tracker) still live in `skins/models.py` and move here next, read-only, without moving data.
+`stats/models.py`: `PlayerWin` and `PlayerLoss`, the archived rows from the retired win/loss tracker userscript. Read-only: nothing writes them (the tracker's endpoints were removed in Phase 1) and no page shows them; they're kept for future stat tracking. Moved from `skins/` in 5.3b **without moving data**: they keep the tables `skins_playerwin` and `skins_playerloss` (`db_table`). Not registered in `/admin`.
+
+Their `username` validator is `core.validators.validate_bonk_username`. `skins.models.validate_username` stays as an alias because skins migration 0016 imports it by that path.

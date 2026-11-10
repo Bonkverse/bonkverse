@@ -71,11 +71,18 @@ class TestBonkUsername:
     def test_model_validator_uses_the_same_rules(self):
         from django.core.exceptions import ValidationError
 
+        from core.validators import validate_bonk_username
+
+        validate_bonk_username("Guest99")
+        with pytest.raises(ValidationError, match="required"):
+            validate_bonk_username("")
+
+    def test_old_validator_path_still_imports(self):
+        """skins migration 0016 imports skins.models.validate_username."""
+        from core.validators import validate_bonk_username
         from skins.models import validate_username
 
-        validate_username("Guest99")
-        with pytest.raises(ValidationError, match="required"):
-            validate_username("")
+        assert validate_username is validate_bonk_username
 
 
 class TestSkinCode:
