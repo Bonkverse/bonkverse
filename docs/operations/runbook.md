@@ -138,6 +138,8 @@ again; an at-most-once task (the Discord refresh) waits for its next hour.
 
 ## Skin images are broken: re-render them
 
+How images are made and where they live: [skin-images.md](../architecture/skin-images.md).
+
 One skin: the **Re-render** button on the search page (staff), which also
 purges that skin's three files from Cloudflare.
 
@@ -147,17 +149,27 @@ else). It renders each skin from its stored code through the editor's render
 service, like the button, and points `image_url` at `/media/`. A skin that
 fails keeps its old images. Skins with no stored code can't be re-rendered.
 
+0. **Check the editor first.** The render service silently leaves out any
+   layer whose shape it doesn't have and still reports success, so a bulk run
+   would save those skins without that layer
+   ([incident](../incidents/2026-11-10-rerender-dropped-layers.md)). Make sure
+   the deployed editor has every shape in use (`TOTAL_BONK_SHAPES`, 115 with
+   the whisp), and run `python manage.py audit_skin_codes`: a code it refuses
+   can't be rendered either.
 1. **Dry run** (changes nothing): `railway ssh` into `bonkverse`, then
    `python manage.py rerender_skins`. It reports how many skins have a code,
    how many have missing / empty / non-image files (with example ids), and how
-   long a run would take (2 skins/s: about 4 h for 30,000).
+   long a run would take.
 2. **Run it in the background** so closing the SSH session doesn't stop it:
    ```
-   nohup python manage.py rerender_skins --run --purge-cache > /tmp/rerender.log 2>&1 &
-   tail -f /tmp/rerender.log
+   nohup python manage.py rerender_skins --run --per-second 8 --purge-cache > /tmp/rerender.log 2>&1 &
+   tail -n 15 /tmp/rerender.log
    ```
-   `--only-broken` limits it to skins whose files look broken. Avoid merging
-   to `main` while it runs: a deploy restarts the container and stops it.
+   8 per second is safe (a render takes 20–250 ms, one at a time): about 20
+   minutes for 9,400 skins. The default is 2. `--only-broken` limits it to
+   skins whose files look broken. **Don't merge to `main` while it runs**: a
+   deploy restarts the container and stops it. It's done when the log ends
+   with `Re-rendered N skin(s).` and the failures by reason.
 3. **If it stops** (a deploy, or 10 render failures in a row, which usually
    means the editor's render service is down): the log's last progress line
    says `resume with --start-after <id>`. Run the same command with that
@@ -167,9 +179,46 @@ fails keeps its old images. Skins with no stored code can't be re-rendered.
    few minutes while the cache refills. Browsers keep their own copy of an
    image for up to an hour (`media.py`). If the run was stopped and resumed,
    add `--purge-cache` to the last run.
-5. Failures are listed at the end by reason (`render_failed`, `unsafe_svg`,
-   `too_large`, `storage_failed`) with skin ids; re-render those one by one
-   later, or leave them.
+5. **Failures** are listed at the end by reason (`render_failed`,
+   `unsafe_svg`, `too_large`, `storage_failed`) with skin ids. A
+   `render_failed` the editor answered with 400 is a code it couldn't read:
+   send the codes to whoever maintains the editor's decoder
+   (`python manage.py shell -c "from skins.models import Skin; [print(s.id, s.skin_code) for s in Skin.objects.filter(id__in=[...])]"`).
+6. **A few skins only** (the failures, or skins using one shape): there's no
+   `--ids` option yet. Re-render them from `python manage.py shell`, then
+   purge just their files:
+   ```python
+   from integrations.cloudflare import purge_media_paths
+   from skins.models import Skin
+   from skins.rerender import rerender
+
+   paths = []
+   for skin in Skin.objects.filter(id__in=[166, 543]):
+       result = rerender(skin)
+       print(skin.id, result.error or "ok")
+       paths += [f"/media/{p}" for p in (result.paths or {}).values()]
+   for n in range(0, len(paths), 30):
+       purge_media_paths(paths[n : n + 30])
+   ```
+
+## Vote counts look wrong
+
+Symptoms: a skin's up/down numbers don't match what people say they did, or
+a leaderboard order looks off. A skin's `upvotes`/`downvotes` must always
+equal its `SkinVote` rows ([ADR 0014](../adr/0014-counters-follow-their-rows.md)).
+
+1. **Check** (read-only): `railway ssh` into `bonkverse`, then
+   `python manage.py audit_vote_counts`. It prints how many skins differ;
+   add `--show 50` to list them with stored and real counts.
+2. **Repair:** `python manage.py audit_vote_counts --fix`. It sets each
+   drifted skin's counters to the real counts, under the skin's row lock, so
+   it's safe while people vote. Re-running is harmless.
+3. **If drift comes back** after a repair, something is changing the counters
+   outside `skins/votes.py: cast_vote` (an admin edit, a script, a new view).
+   Every vote change must go through `cast_vote`; search the code for
+   `upvotes`/`downvotes` writes.
+
+The 2026-11-10 audit after RFC-0001 4.1 found no drift.
 
 ## Giving someone admin access
 

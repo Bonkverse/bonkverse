@@ -46,7 +46,13 @@ Apps talk to each other only through another app's `services.py`.
 
 ## Conventions
 
-**Views.** Function-based by default. A class-based base view only for a family of three or more pages that differ only in data (the leaderboards are the first case).
+**Views.** Function-based. A family of pages that differ only in data is one view plus a config dict (`skins/leaderboards.py: LEADERBOARDS`), not a class hierarchy.
+
+**Querysets.** Skin filters and annotations live on `Skin.objects` (`skins/querysets.py`: `with_favorite_count()`, `with_score()`, `created_in(period)`, `search(q, mode)`); periods come from `core/periods.py`. Don't rewrite those expressions in a view; a test fails if you do.
+
+**Stored counters** (like `Skin.upvotes`) change only in one service, in SQL with `F()`, under the parent row's lock, and get an audit command that recounts them from their rows ([ADR 0014](docs/adr/0014-counters-follow-their-rows.md)). If you don't need to sort by it, count it in the query instead.
+
+**Skin images and codes.** Only `skins/skin_media.py: save_render` writes a skin's files; a code a client sends must pass `core.bonk.SkinCode.parse()` ([docs/architecture/skin-images.md](docs/architecture/skin-images.md), [ADR 0015](docs/adr/0015-skin-images-from-skin-codes.md)).
 
 **JSON endpoints** return one of two shapes:
 
