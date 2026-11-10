@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import base64
 import binascii
-import math
 import re
 import struct
 from dataclasses import dataclass
@@ -25,13 +24,15 @@ _BASE64 = re.compile(r"^[A-Za-z0-9+/]+={0,2}$")
 # Shapes the skin editor can draw (public/output_shapes/1..115.svg; 115 is
 # the whisp). Raise this with the editor's TOTAL_BONK_SHAPES.
 MAX_SHAPE_ID = 115
-# bonk.io's limit; the editor refuses to wear or publish more.
-MAX_LAYERS = 16
-# Slot indexes go a little past MAX_LAYERS when layers were removed in
-# bonk.io (empty slots stay in the list).
-_MAX_SLOT_INDEX = 63
-# 16 layers are about 520 bytes; base64 and URL-encoding make that ~900.
-MAX_CODE_LENGTH = 4000
+# bonk.io's own editor stops at 16 layers, but real skins have more: the
+# gallery has skins with up to 51 (BonkLeagues and older tools allow it).
+# This is a sanity bound, well above any real skin.
+MAX_LAYERS = 128
+# Slot indexes go past the layer count when layers were removed (empty
+# slots stay in the list).
+_MAX_SLOT_INDEX = 255
+# 128 layers are about 3.6 KB; base64 and URL-encoding make that ~6 KB.
+MAX_CODE_LENGTH = 12000
 
 _HEADER = bytes([0x0A, 0x07, 0x03, 0x61])  # object, externalizable, class "a"
 _ARRAY = 0x09
@@ -184,7 +185,7 @@ class _Reader:
             if (layer := self._slot()) is not None:
                 slots.append((index, layer))
         if len(slots) > MAX_LAYERS:
-            raise InvalidSkinCode(f"{len(slots)} layers (bonk.io allows {MAX_LAYERS})")
+            raise InvalidSkinCode(f"{len(slots)} layers (at most {MAX_LAYERS})")
 
         # Skins saved with no layers have AMF3 nulls before the base color.
         rest = self.data[self.i :]
@@ -218,8 +219,6 @@ class _Reader:
             raise InvalidSkinCode("layer isn't bonk.io's layer type")
         if not 1 <= shape <= MAX_SHAPE_ID:
             raise InvalidSkinCode(f"shape {shape} doesn't exist")
-        if not all(math.isfinite(v) for v in (scale, angle, x, y)):
-            raise InvalidSkinCode("layer position or size isn't a number")
         if flip_x > 1 or flip_y > 1 or color > 0xFFFFFF:
             raise InvalidSkinCode("layer flip or color out of range")
         return SkinLayer(shape, scale, angle, x, y, bool(flip_x), bool(flip_y), color)

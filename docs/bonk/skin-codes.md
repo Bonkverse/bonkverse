@@ -41,9 +41,11 @@ submissions), it must `parse()`. Otherwise the request is refused (publish: 422
 "That isn't a bonk.io skin code"; bot: 422 `invalid_skin_code`, not
 retryable). A code that passes:
 
-- is base64, at most `MAX_CODE_LENGTH` characters (URL-encoding included);
+- is base64, at most `MAX_CODE_LENGTH` (12000) characters (URL-encoding included);
 - has the format above and nothing after the base color;
-- has at most `MAX_LAYERS` (16) layers, bonk.io's limit;
+- has at most `MAX_LAYERS` (128) layers. bonk.io's own editor stops at 16,
+  but the gallery has real skins with up to 51, so this is only a sanity
+  bound. NaN or infinite layer values are allowed: some real skins have them;
 - uses only shapes `1 … MAX_SHAPE_ID` (115, the editor's shapes; 115 is the
   whisp, which bonk.io's own editor doesn't list but skins can wear).
   Raise `MAX_SHAPE_ID` together with the editor's `TOTAL_BONK_SHAPES`.
