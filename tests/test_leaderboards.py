@@ -83,6 +83,7 @@ def test_unknown_board_is_404():
 def test_one_query_for_the_board_however_many_skins(client, django_assert_max_num_queries, board):
     SkinFactory.create_batch(30)
 
-    # An anonymous visitor: the page frame's changelog banner, then the board.
-    with django_assert_max_num_queries(2):
+    # An anonymous visitor: only the board. (The page frame's changelog query
+    # went away with the changelog.)
+    with django_assert_max_num_queries(1):
         client.get(reverse(f"leaderboards_{board}"))

@@ -50,6 +50,17 @@ def decorate_skins_for_user(skins, user=None):
     return skins
 
 
+def home_strips(size=24):
+    """The home page's four skin strips: newest, random, most favorited and
+    trending (upvotes minus downvotes)."""
+    return {
+        "recent": Skin.objects.order_by("-created_at")[:size],
+        "top_favs": Skin.objects.with_favorite_count().order_by("-fav_count", "-upvotes")[:size],
+        "trending": Skin.objects.with_score().order_by("-score", "-created_at")[:size],
+        "random_strip": Skin.objects.order_by("?")[:size],
+    }
+
+
 # Sort orders for a player's skins (profile Skins tab): key -> order_by fields.
 SKIN_SORTS = {
     "top": ("-upvotes", "-id"),

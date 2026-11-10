@@ -18,7 +18,7 @@ from integrations.map_decoder import DecodeError, decode_map_configured
 
 @limit("browse")
 def map_decode_page(request):
-    return render(request, "tools/map_decoder.html")
+    return render(request, "site_pages/map_decoder.html")
 
 
 @require_http_methods(["POST"])

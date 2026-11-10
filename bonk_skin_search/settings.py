@@ -259,6 +259,7 @@ INSTALLED_APPS = [
     "skins",
     "players",
     "public_api",
+    "site_pages",
 ]
 
 # =========================================================
@@ -298,7 +299,6 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                "skins.context_processors.latest_update",
                 "skins.context_processors.editor_urls",
                 "skins.context_processors.site_nav",
             ],

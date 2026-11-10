@@ -96,10 +96,6 @@
     "name": "category_detail"
   },
   {
-    "route": "changelog/add/",
-    "name": "add_changelog"
-  },
-  {
     "route": "developers/",
     "name": "developers"
   },

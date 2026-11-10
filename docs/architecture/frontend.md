@@ -114,6 +114,13 @@ skins/static/js/skin_detail.js           behavior, loaded from {% block extra_sc
 skins/static/css/skin_detail.css         styles, if no shared file fits
 ```
 
+Pages in apps created in RFC-0001 Phase 5 keep the same three files inside
+their app, namespaced by the app's name:
+`site_pages/templates/site_pages/privacy.html`,
+`site_pages/static/site_pages/css/privacy.css` (`{% static 'site_pages/css/privacy.css' %}`).
+The shared page frame (`skins/base.html`) and the skin partials stay in
+`skins/` until the frame moves in step 5.6.
+
 - **Data from the template** goes in `data-` attributes or `json_script`,
   never as template tags inside JavaScript:
   ```html

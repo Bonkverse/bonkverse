@@ -31,6 +31,23 @@ SHARED = {
     STATIC_JS / "core" / "js" / "bv-wear.js",
     STATIC_JS / "core" / "js" / "bv-cards.js",
 }
+
+# Every app's templates and scripts are checked, not only skins/: pages move
+# into their own apps in RFC-0001 Phase 5 (docs/apps/README.md).
+TEMPLATE_ROOTS = sorted(REPO.glob("*/templates"))
+STATIC_ROOTS = sorted(REPO.glob("*/static"))
+
+
+def _templates():
+    for root in TEMPLATE_ROOTS:
+        yield from root.rglob("*.html")
+
+
+def _scripts():
+    for root in STATIC_ROOTS:
+        yield from root.rglob("*.js")
+
+
 PARTIALS = TEMPLATES / "skins" / "partials"
 CARD_PARTIALS = {PARTIALS / "_skin_card.html", PARTIALS / "_skin_card_compact.html"}
 
@@ -59,7 +76,7 @@ FORBIDDEN = [
 
 
 def _page_sources():
-    for path in [*TEMPLATES.rglob("*.html"), *STATIC_JS.rglob("*.js")]:
+    for path in [*_templates(), *_scripts()]:
         if path in SHARED or path.name.endswith(".min.js"):
             continue
         yield path
@@ -80,7 +97,7 @@ def test_no_page_has_its_own_request_or_bonk_login_helpers():
 def test_only_the_partial_defines_the_bonk_login_modal():
     defining = [
         path.relative_to(REPO).as_posix()
-        for path in TEMPLATES.rglob("*.html")
+        for path in _templates()
         if 'id="bonk-login-modal"' in path.read_text(encoding="utf-8")
     ]
     assert defining == ["skins/templates/skins/partials/_bonk_login_modal.html"]
@@ -112,7 +129,7 @@ def test_modal_points_at_the_wear_login_endpoint(logged_in_client):
 def test_only_the_card_partials_write_card_markup():
     found = [
         f"{path.relative_to(REPO)}: {m.group(0)}"
-        for path in TEMPLATES.rglob("*.html")
+        for path in _templates()
         if path not in CARD_PARTIALS
         for m in CARD_MARKUP.finditer(path.read_text(encoding="utf-8"))
     ]
@@ -165,10 +182,7 @@ def test_skin_page_shows_the_visitors_vote(logged_in_client, user):
     assert re.search(r'data-vote="up" aria-label="Upvote"\s+aria-pressed="false"', html)
 
 
-ALL_TEMPLATES = [
-    *TEMPLATES.rglob("*.html"),
-    *(REPO / "bonk_skin_search" / "templates").rglob("*.html"),
-]
+ALL_TEMPLATES = list(_templates())
 # The 500 page renders without the static files on purpose (see its comment).
 STANDALONE = {TEMPLATES / "500.html"}
 STYLE_ATTR = re.compile(r'\sstyle="([^"]*)"')
@@ -195,7 +209,9 @@ def test_no_inline_styles():
                 found.append(f"{path.relative_to(REPO)}: {m.group(0).strip()}")
         if "<style" in text:
             found.append(f"{path.relative_to(REPO)}: <style> block")
-    assert found == [], "move these into a stylesheet in skins/static/css/:\n" + "\n".join(found)
+    assert found == [], "move these into a stylesheet in the app's static/ folder:\n" + "\n".join(
+        found
+    )
 
 
 def test_icon_library_is_pinned():
@@ -272,13 +288,13 @@ def test_no_inline_scripts_or_handlers():
                 found.append(f"{path.relative_to(REPO)}: inline <script>")
         for m in HANDLER_ATTR.finditer(text):
             found.append(f"{path.relative_to(REPO)}: {m.group(0).strip()} handler")
-    assert found == [], "move these into a script in skins/static/js/:\n" + "\n".join(found)
+    assert found == [], "move these into a script in the app's static/ folder:\n" + "\n".join(found)
 
 
 def test_only_the_partial_defines_the_report_modal():
     defining = [
         path.relative_to(REPO).as_posix()
-        for path in TEMPLATES.rglob("*.html")
+        for path in _templates()
         if 'id="report-modal"' in path.read_text(encoding="utf-8")
     ]
     assert defining == ["skins/templates/skins/partials/_report_skin_modal.html"]

@@ -1,4 +1,4 @@
-"""The Map Decoder tool (skins/utils/tools/map_decode.py, integrations/map_decoder.py)."""
+"""The Map Decoder tool (site_pages/views/tools.py, integrations/map_decoder.py)."""
 
 import json
 

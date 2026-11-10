@@ -14,7 +14,7 @@ body {
 }
 
 /* --- HEADINGS --- */
-:where(.site-legacy) h1, .leaderboard-title, .changelog-header {
+:where(.site-legacy) h1, .leaderboard-title {
   color: #ff8c00;
   text-shadow: 0 0 12px #ff6a00, 0 0 28px rgba(255, 140, 0, 0.6);
   animation: halloween-glow 3s infinite alternate;
@@ -175,14 +175,10 @@ body {
 }
 
 /* --- POPUPS + MODALS --- */
-.update-modal, .changelog-card, .changelog-form-container {
+.update-modal {
   background: rgba(30, 10, 20, 0.95);
   border: 1px solid #b34700;
   box-shadow: 0 0 20px rgba(255, 94, 0, 0.3);
-}
-.changelog-title {
-  color: #ffb347;
-  text-shadow: 0 0 8px #ff7b00;
 }
 
 /* --- HALLOWEEN TOUCHES --- */
