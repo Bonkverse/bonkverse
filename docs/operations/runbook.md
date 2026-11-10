@@ -134,6 +134,41 @@ the Players page; logs show no
 Restarting the worker is always safe: an unfinished at-least-once task runs
 again; an at-most-once task (the Discord refresh) waits for its next hour.
 
+## Skin images are broken: re-render them
+
+One skin: the **Re-render** button on the search page (staff), which also
+purges that skin's three files from Cloudflare.
+
+Many or all skins: `manage.py rerender_skins`, on the **`bonkverse`** service
+(the media volume is only mounted there; the command refuses `--run` anywhere
+else). It renders each skin from its stored code through the editor's render
+service, like the button, and points `image_url` at `/media/`. A skin that
+fails keeps its old images. Skins with no stored code can't be re-rendered.
+
+1. **Dry run** (changes nothing): `railway ssh` into `bonkverse`, then
+   `python manage.py rerender_skins`. It reports how many skins have a code,
+   how many have missing / empty / non-image files (with example ids), and how
+   long a run would take (2 skins/s: about 4 h for 30,000).
+2. **Run it in the background** so closing the SSH session doesn't stop it:
+   ```
+   nohup python manage.py rerender_skins --run --purge-cache > /tmp/rerender.log 2>&1 &
+   tail -f /tmp/rerender.log
+   ```
+   `--only-broken` limits it to skins whose files look broken. Avoid merging
+   to `main` while it runs: a deploy restarts the container and stops it.
+3. **If it stops** (a deploy, or 10 render failures in a row, which usually
+   means the editor's render service is down): the log's last progress line
+   says `resume with --start-after <id>`. Run the same command with that
+   added. Re-running from earlier is harmless; it only redoes work.
+4. **Cache:** `--purge-cache` empties Cloudflare's whole cache once, at the
+   end of a run that wasn't stopped early. The site is a little slower for a
+   few minutes while the cache refills. Browsers keep their own copy of an
+   image for up to an hour (`media.py`). If the run was stopped and resumed,
+   add `--purge-cache` to the last run.
+5. Failures are listed at the end by reason (`render_failed`, `unsafe_svg`,
+   `too_large`, `storage_failed`) with skin ids; re-render those one by one
+   later, or leave them.
+
 ## Giving someone admin access
 
 They sign in to Bonkverse with bonk.io once, then, from a shell on the

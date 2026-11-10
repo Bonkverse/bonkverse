@@ -1,15 +1,21 @@
-import uuid
-from core.ratelimits import limit
-import os
+"""Publishing a skin from the Bonkverse skin editor (POST /api/skins/publish/).
+
+Owns: the endpoint, its validation and its JSON reply.
+Does not own: SVG safety rules (svg_sanitizer.py) or writing the files and
+image rows (skin_media.py).
+"""
+
+import logging
 import re
-import cairosvg
+import uuid
 
-from django.http import JsonResponse, HttpResponseNotAllowed
+from django.http import HttpResponseNotAllowed, JsonResponse
 from django.urls import reverse
-from django.conf import settings
 
+from core.ratelimits import limit
 from skins.events import log_event
-from skins.models import Skin, SkinImage
+from skins.models import Skin
+from skins.skin_media import bundle_from_svg, save_render
 from skins.auth_guards import api_login_required
 from skins.svg_sanitizer import (
     TOO_LARGE_MESSAGE,
@@ -17,6 +23,12 @@ from skins.svg_sanitizer import (
     UnsafeSVGError,
     validate_svg_upload,
 )
+
+logger = logging.getLogger(__name__)
+
+# Error replies are shown to the player as-is: plain sentences, never
+# exception text (details go to the server log).
+IMAGES_FAILED = "Couldn't make this skin's images. Try again later."
 
 # Validation
 SKIN_NAME_PATTERN = re.compile(r"^[A-Za-z0-9 _]+$")
@@ -58,8 +70,9 @@ def publish_skin(request):
 
     try:
         svg_content = svg_file.read() if svg_file else svg_text.encode("utf-8")
-    except Exception as e:
-        return JsonResponse({"error": f"Failed to read SVG content: {e}"}, status=400)
+    except Exception:
+        logger.warning("publish skin: could not read the SVG", exc_info=True)
+        return JsonResponse({"error": "Couldn't read the SVG."}, status=400)
 
     # Reject active content (script, event handlers, javascript:/data: URIs,
     # foreignObject, ...) before anything is written to disk or the DB.
@@ -70,6 +83,13 @@ def publish_skin(request):
     except UnsafeSVGError as e:
         return JsonResponse({"error": f"Unsafe SVG rejected: {e}"}, status=422)
 
+    # The editor sends only the SVG; the PNG and thumbnail are drawn here.
+    try:
+        bundle = bundle_from_svg(svg_content)
+    except Exception:
+        logger.exception("publish skin: could not draw PNGs from the SVG")
+        return JsonResponse({"error": IMAGES_FAILED}, status=500)
+
     skin = Skin.objects.create(
         name=skin_name,
         creator=creator,
@@ -77,38 +97,12 @@ def publish_skin(request):
         image_url="",
         uuid=uuid.uuid4(),
     )
-
-    skin_dir = os.path.join(settings.MEDIA_ROOT, "skins")
-    os.makedirs(skin_dir, exist_ok=True)
-    svg_path = os.path.join(skin_dir, f"{skin.id}.svg")
-    png_path = os.path.join(skin_dir, f"{skin.id}.png")
-    thumb_path = os.path.join(skin_dir, f"{skin.id}_thumb.png")
-
     try:
-        with open(svg_path, "wb") as f:
-            f.write(svg_content)
-        cairosvg.svg2png(
-            bytestring=svg_content, write_to=png_path, output_width=512, output_height=512
-        )
-        cairosvg.svg2png(
-            bytestring=svg_content, write_to=thumb_path, output_width=128, output_height=128
-        )
-        skin.image_url = f"{settings.MEDIA_URL}skins/{skin.id}.svg"
-        skin.save()
-    except Exception as e:
-        for path in (svg_path, png_path, thumb_path):
-            if os.path.exists(path):
-                os.remove(path)
+        save_render(skin, bundle)
+    except OSError:
+        logger.exception("publish skin %s: could not write media files", skin.id)
         skin.delete()
-        return JsonResponse({"error": f"Failed to generate skin images: {e}"}, status=500)
-
-    SkinImage.objects.bulk_create(
-        [
-            SkinImage(skin=skin, kind="svg", path=f"skins/{skin.id}.svg"),
-            SkinImage(skin=skin, kind="png", path=f"skins/{skin.id}.png"),
-            SkinImage(skin=skin, kind="thumbnail", path=f"skins/{skin.id}_thumb.png"),
-        ]
-    )
+        return JsonResponse({"error": IMAGES_FAILED}, status=500)
 
     share_url = request.build_absolute_uri(
         reverse("share_skin", kwargs={"skin_id": skin.id, "uuid": skin.uuid})
