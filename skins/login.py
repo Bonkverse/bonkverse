@@ -3,13 +3,13 @@
 Owns: the /login/ and /logout/ views, finding or creating the site account
 for a bonk.io name, linking it to its BonkPlayer, syncing Flash friends from
 the login reply, and queueing the regular friend sync on the worker.
-Does not own: talking to bonk.io (integrations/bonk_api.py), the bonk.io
+Does not own: trying the bonk.io login and the limit on wrong passwords
+(login_attempts.py), talking to bonk.io (integrations/bonk_api.py), the bonk.io
 session rules (core/bonk/session.py) or friend storage (friends_sync.py,
 flash_friends_sync.py).
 """
 
 import logging
-import math
 
 from django.conf import settings
 from django.utils import timezone
@@ -22,18 +22,13 @@ from django.views.decorators.http import require_POST
 from core.background import enqueue
 from core.bonk import BonkSession, BonkUsername
 from core.ratelimits import describe_wait, limit
-from integrations.bonk_api import (
-    LOGIN_SCRIPT,
-    BonkError,
-    BonkLoginResult,
-    get_client,
-    rate_limit_cooldowns,
-)
+from integrations.bonk_api import BonkError, BonkLoginResult
 from skins.events import log_event
 
 from .flash_friends_sync import sync_flash_friends_for_user
 from .forms import LoginForm
 from .friends_sync import adopt_replay_names
+from .login_attempts import COUNTED_FAILURES, TOO_MANY_ATTEMPTS, attempt_login
 from .models import BonkAccountLink, BonkPlayer, BonkUser
 from .tasks import sync_friends
 
@@ -47,27 +42,37 @@ LOGIN_FAILURE_MESSAGES = {
     BonkError.RATE_LIMITED: (
         "bonk.io is limiting logins from Bonkverse right now. Try again in {wait}."
     ),
+    # Held by Bonkverse (login_attempts.py) before bonk.io saw it. Says why, so
+    # it doesn't read as the site being broken.
+    TOO_MANY_ATTEMPTS: (
+        "Too many wrong passwords. Wait {wait} before trying again, so bonk.io "
+        "doesn't block logins for everyone on Bonkverse."
+    ),
     BonkError.REJECTED: "bonk.io didn't accept that login.",
     BonkError.UNAVAILABLE: "Network error talking to bonk.io. Try again in a minute.",
 }
+
+# Added to "Wrong password." when it used up the player's tries for now.
+LAST_TRY_MESSAGE = (
+    "That was your last try for now: wait {wait} before trying again, so bonk.io "
+    "doesn't block logins for everyone on Bonkverse."
+)
 
 
 def login_failure_message(error: str | None, retry_after: int | None = None) -> str:
     """The user-facing sentence for a failed bonk.io login.
 
-    `retry_after` is the seconds left in bonk.io's login pause, for the
-    rate-limited sentence ("a few minutes" when unknown).
+    `retry_after` is the seconds to wait, for the sentences that say how long
+    ("a few minutes" when unknown).
     """
     message = LOGIN_FAILURE_MESSAGES.get(error, LOGIN_FAILURE_MESSAGES[BonkError.REJECTED])
-    if error == BonkError.RATE_LIMITED:
+    if error in COUNTED_FAILURES and retry_after:
+        # That wrong try was the last one for now (login_attempts.py).
+        message = f"{message} {LAST_TRY_MESSAGE}"
+    if "{wait}" in message:
         wait = describe_wait(retry_after) if retry_after else "a few minutes"
         message = message.format(wait=wait)
     return message
-
-
-def login_retry_after() -> int | None:
-    """Whole seconds until a bonk.io login may be tried, or None if it may now."""
-    return math.ceil(rate_limit_cooldowns.remaining(LOGIN_SCRIPT)) or None
 
 
 def site_account_for(username: BonkUsername) -> BonkUser:
@@ -180,25 +185,20 @@ def login_view(request):
     if not form.is_valid():
         return render(request, "skins/login.html", {"form": form})
 
-    result = get_client().login(form.cleaned_data["username"], form.cleaned_data["password"])
-    # Outcome only: a success holds the player's token, username, id and avatar.
-    logger.info(
-        "bonk login response | result=%s | error=%s | bonk_error=%s",
-        "success" if result.ok else "fail",
-        result.error,
-        result.bonk_error,
+    attempt = attempt_login(
+        request, form.cleaned_data["username"], form.cleaned_data["password"], via="page"
     )
-    if not result.ok:
-        retry_after = login_retry_after() if result.error == BonkError.RATE_LIMITED else None
+    if not attempt.ok:
+        retry_after = attempt.retry_after
         messages.error(
             request,
-            f"Bonk.io login failed: {login_failure_message(result.error, retry_after)}",
+            f"Bonk.io login failed: {login_failure_message(attempt.error, retry_after)}",
         )
-        # The page keeps the Login button off until the pause ends, so players
+        # The page keeps the Login button off until the wait ends, so players
         # don't resubmit into it (6 tries in a minute on 2026-11-09).
         return render(request, "skins/login.html", {"form": form, "retry_after": retry_after})
 
-    _sign_in(request, result)
+    _sign_in(request, attempt.result)
     messages.success(request, "Logged in successfully!")
 
     next_url = request.POST.get("next") or request.GET.get("next")

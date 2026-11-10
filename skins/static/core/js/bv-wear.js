@@ -84,12 +84,23 @@
     pendingSuccess = null;
   }
 
+  // One bonk.io login at a time: extra presses while one is in flight would
+  // each send bonk.io another password (skins/login_attempts.py).
+  var loginInFlight = false;
+
   async function submitLogin(e) {
     e.preventDefault();
+    if (loginInFlight) return;
     var form = e.target;
     var url = modal.dataset.loginUrl;
     setMsg("Logging in…", "");
-    var res = await window.BVApi.post(url, new FormData(form));
+    loginInFlight = true;
+    var res;
+    try {
+      res = await window.BVApi.post(url, new FormData(form));
+    } finally {
+      loginInFlight = false;
+    }
     if (!res.ok || !res.json.ok) {
       setMsg("❌ " + (res.json.message || res.json.error || "Login failed"), "error");
       return;

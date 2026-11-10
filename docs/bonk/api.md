@@ -37,6 +37,7 @@ instead of raising. `error` is one of Bonkverse's codes (`BonkError`);
 | `token_rejected` | bonk.io `e: "token"` (expired or invalid token) | Wear: 401 `auth: "bonk"`. **The only case that opens the bonk.io login modal.** |
 | `avatar_too_big` | bonk.io `e: "avatar_too_big"` | Wear: 422 "This skin is too big for bonk.io…" |
 | `rate_limited` | bonk.io `e: "ratelimited"`, or Bonkverse is cooling down (below) | Login: "bonk.io is limiting logins from Bonkverse right now…" Wear: 503 |
+| `too_many_attempts` | Not from bonk.io: Bonkverse held the login after too many wrong passwords ("Wrong passwords" below) | Login: "Too many wrong passwords. Wait …" Wear login: 401 |
 | `rejected` | Any other refusal (unknown `e`, logged) | Login: "bonk.io didn't accept that login." Wear: 502 "bonk.io didn't accept this skin." |
 | `network_error` | No usable answer | Login: "Network error talking to bonk.io." Wear: 502 |
 
@@ -59,7 +60,11 @@ bursts on most days since at least 2026-10-30 (the oldest we could read),
 usually 5–15 per hour for an hour or two. Before #31 players saw them as
 "Bonk.io login failed: fail".
 
-**What triggers it is unknown.** It doesn't track Bonkverse's own traffic:
+**What triggers it is only partly known.** On `login_legacy.php`, nearly
+every `ratelimited` in the logs for 2026-11-08 to 11-10 came seconds to
+minutes after one to three wrong passwords (`e: "password"`), so failed
+logins set it off; see "Wrong passwords" below. Otherwise it doesn't track
+Bonkverse's own traffic:
 bursts happen in hours when Bonkverse sent almost nothing, and the busiest
 hours (including the too-big modal loop) had none. Every Bonkverse user
 reaches bonk.io from the server's outbound IP, and Railway says outbound
@@ -103,6 +108,45 @@ at a time, and the `wear_burst` / `wear` tiers in `RATE_LIMITS`. On
 `ratelimited`, which then paused wearing for every user.
 
 How long bonk.io's own limit lasts is unknown.
+
+### Wrong passwords
+
+Because one player's wrong passwords could pause logins for every Bonkverse
+user (over an hour, twice, on 2026-11-09), Bonkverse limits failed logins
+itself before bonk.io sees them (`skins/login_attempts.py`, used by both the
+/login/ page and the in-page login on wear):
+
+- Only bonk.io's `password` and `username_fail` answers count. Rate limits,
+  network errors and unknown refusals don't.
+- **Per account** (the name, case-insensitive): 2 wrong tries in 15 minutes,
+  then the account is held for 15 minutes. The wrong try that uses up the
+  allowance already tells the player to wait.
+- **Per visitor** (`core/client_ip.py`), across accounts: 4 wrong tries in
+  15 minutes, then held for 15 minutes.
+- When bonk.io answers `ratelimited` to an account or visitor that had a wrong
+  try in the window, they're held for 30 minutes (or the site-wide pause, if
+  longer), so their retry isn't the first login bonk.io sees when the pause
+  ends.
+- A successful login clears the account's count.
+- Counts live in the cache (`login:failures:<kind>:<tag>`,
+  `login:hold:<kind>:<tag>`). If the cache fails, logins go ahead unlimited.
+
+This doesn't change bonk.io's own limit or the site-wide cooldown above. If
+bonk.io limits by our IP, a held player can still have tripped it; holding
+them keeps it from happening again and again.
+
+Every attempt is logged on `skins.login` with a pseudonym for the account and
+the visitor (`core/pseudonym.py`: an HMAC with `SECRET_KEY`, never the name or
+IP) and where it came from:
+
+- `bonk login response | result=... | error=... | bonk_error=... | account=<tag> | client=<tag> | via=page|wear`
+- `bonk login held | account=<tag> | client=<tag> | via=... | account_failures=<n> | client_failures=<n> | retry_after=<s>`
+- `bonk.io rate-limited a login after wrong passwords; holding it for <s>s | ...` (WARNING)
+- `bonk.io rate-limited a login with no recent wrong passwords from it | ...` (WARNING)
+
+The last line is the one to watch: if logins from accounts with no wrong
+passwords are limited (especially the first one after a pause), bonk.io is
+limiting by our IP, not by account.
 
 ## `login_legacy.php`
 

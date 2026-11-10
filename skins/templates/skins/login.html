@@ -29,8 +29,8 @@
       </div>
     {% endfor %}
     {% if retry_after %}
-      {# bonk.io is limiting logins from Bonkverse: the button stays off until the
-         pause ends (static/js/login_wait.js; skins/login.py). #}
+      {# The login has to wait (bonk.io's pause, or too many wrong passwords): the
+         button stays off until the wait ends (static/js/login.js; skins/login.py). #}
       <button type="submit" class="bv-btn bv-btn--primary" id="login-submit" disabled data-retry-after="{{ retry_after }}">Log in (wait {{ retry_after }}s)</button>
     {% else %}
       <button type="submit" class="bv-btn bv-btn--primary" id="login-submit">Log in</button>
@@ -40,7 +40,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-  {% if retry_after %}
-    <script src="{% static 'js/login_wait.js' %}" defer></script>
-  {% endif %}
+  <script src="{% static 'js/login.js' %}" defer></script>
 {% endblock %}
