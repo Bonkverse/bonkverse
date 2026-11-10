@@ -17,7 +17,7 @@ development are in the [README](../README.md); code conventions in
 | [operations/runbook.md](operations/runbook.md) | Something is wrong in production, or you're deploying / rotating a secret |
 | [operations/rate-limiting.md](operations/rate-limiting.md) | Adding a route, changing a limit, or someone hits a 429 / Cloudflare 1015 |
 | [search.md](search.md) | Changing search, sorting, or the skin indexes |
-| [bonk/](bonk/) | What bonk.io sends and accepts: [the account API](bonk/api.md) (login, friends, avatar update), [accounts and usernames](bonk/accounts.md) and [skin codes](bonk/skin-codes.md) (format, what a code must pass) |
+| [bonk/](bonk/) | What bonk.io sends and accepts: [the account API](bonk/api.md) (login, friends, avatar update), [how bonk.io limits logins](bonk/login-rate-limit.md) (measured rules, and what Bonkverse does about them), [accounts and usernames](bonk/accounts.md) and [skin codes](bonk/skin-codes.md) (format, what a code must pass) |
 | [incidents/](incidents/) | What went wrong before, and what changed because of it |
 | [adr/](adr/) | Why a hard-to-reverse decision was made |
 
@@ -27,6 +27,7 @@ development are in the [README](../README.md); code conventions in
 - [2026-11-03 Redis password rotation takes the site down](incidents/2026-11-03-redis-rotation.md)
 - [2026-11-03 Skin image scrape](incidents/2026-11-03-media-scrape.md)
 - [2026-11-05 The reappearing bonk.io login modal, and bonk.io rate limits](incidents/2026-11-05-bonk-rate-limit.md)
+- [2026-11-09 Wrong passwords lock everyone out of bonk.io login](incidents/2026-11-09-login-lockouts.md)
 
 ## Decisions (ADRs)
 

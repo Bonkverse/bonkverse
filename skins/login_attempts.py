@@ -9,18 +9,17 @@ pause after a "ratelimited" (the cooldown there), the sentences players see
 (skins/login.py), or the per-IP request tier on the login views
 (core/ratelimits.py, "login").
 
-Why: in the logs for 2026-11-08 to 11-10, nearly every "ratelimited" from
-login_legacy.php came seconds to minutes after one to three wrong passwords.
-Every Bonkverse login reaches bonk.io from the server's IP, so each of those
-paused logins for everyone, twice for over an hour on 2026-11-09. Holding a
-player's next try here, once they have used up their wrong passwords, keeps
-one person's typos from locking everyone else out.
+Why (measured 2026-11-10, docs/bonk/login-rate-limit.md): bonk.io limits
+login_legacy.php by IP. From a datacenter IP like Railway's, it answers about
+4 wrong passwords and then "ratelimited" to every login from that IP, correct
+passwords included, for about 15 minutes. Every Bonkverse login comes from the
+server's IP, so those 4 wrong passwords are shared by everyone on the site,
+and one player's typos lock everyone out. Holding a player's next try here,
+before bonk.io sees it, keeps any one person from using up that budget.
 
 Every attempt is logged with a pseudonym for the account and the visitor
 (core/pseudonym.py), never the name or IP, so a run of wrong passwords and the
-rate limit that follows can be traced to one person. That also tells us
-whether bonk.io limits by account or by our IP: if the first login after a
-pause comes from a different, clean account and is still limited, it's the IP.
+rate limit that follows can be traced to one person.
 """
 
 from __future__ import annotations
@@ -54,22 +53,27 @@ TOO_MANY_ATTEMPTS = "too_many_attempts"
 # Failures that count: bonk.io answered and said the login was wrong. Rate
 # limits and network errors aren't the player's fault and don't count.
 COUNTED_FAILURES = {BonkError.WRONG_PASSWORD, BonkError.UNKNOWN_USERNAME}
+# Only wrong passwords count per account: bonk.io answered 20 unknown
+# usernames in a row without limiting (2026-11-10). Unknown usernames still
+# count per visitor, so nobody can guess names through Bonkverse.
+ACCOUNT_COUNTED_FAILURES = {BonkError.WRONG_PASSWORD}
 
 # How long failures are remembered, counted from the first one.
 FAILURE_WINDOW = 15 * 60
-# Wrong tries allowed in the window before the next one is held. bonk.io was
-# seen limiting after two or three (2026-11-10: 3:52am ET, three wrong, then
-# limited; 8:21am ET, two wrong, then limited).
+# Wrong passwords allowed per account from one visitor (name + visitor IP)
+# before the next try is held. bonk.io allows about 4 for the whole site, so
+# this leaves room for someone else's typo. Keyed on the visitor too, so a
+# stranger typing someone's name with wrong passwords holds only the stranger.
 ACCOUNT_FAILURES_ALLOWED = 2
-# Per visitor, across accounts: a household sharing an IP gets some slack, but
-# one visitor can't cycle through usernames.
-CLIENT_FAILURES_ALLOWED = 4
+# Per visitor, across accounts: below bonk.io's 4, so one visitor can't use up
+# the site's budget by switching names.
+CLIENT_FAILURES_ALLOWED = 3
 # How long a hold lasts once the allowance is used up.
 HOLD_SECONDS = 15 * 60
 # When bonk.io answers "ratelimited" to someone who already had a wrong
 # password, hold them at least this long, and never less than the site-wide
-# pause, so their retry isn't the first call when the pause ends (that first
-# call restarted bonk.io's lockout five times in a row on 2026-11-09).
+# pause (17 min, integrations/bonk_api.py), so their retry isn't the first
+# call when the pause ends. A request during bonk.io's block restarts it.
 TRIGGER_HOLD_SECONDS = 30 * 60
 
 
@@ -98,19 +102,19 @@ def normalize_username(username: str) -> str:
 
 
 class _Tracker:
-    """Failure counts and holds for one subject (an account or a visitor).
+    """Failure counts and holds for one subject (an account from a visitor, or
+    a visitor).
 
     Kept in Django's cache (Redis in production) so every gunicorn worker sees
     the same counts. If the cache fails, logins go ahead unlimited: this is a
     courtesy to bonk.io, and it must never be the reason a player can't log in.
     """
 
-    def __init__(self, kind: str, tag: str, allowed: int):
+    def __init__(self, kind: str, key: str, allowed: int):
         self.kind = kind
-        self.tag = tag
         self.allowed = allowed
-        self._failures_key = f"login:failures:{kind}:{tag}"
-        self._hold_key = f"login:hold:{kind}:{tag}"
+        self._failures_key = f"login:failures:{kind}:{key}"
+        self._hold_key = f"login:hold:{kind}:{key}"
 
     def _cache(self, method: str, *args, **kwargs):
         try:
@@ -165,11 +169,17 @@ def attempt_login(request, username: str, password: str, *, via: str) -> LoginAt
     Returns:
         A LoginAttempt. On a hold, bonk.io isn't called.
     """
+    name = normalize_username(username)
+    ip = client_ip(request)
+    account_tag = pseudonym("account", name)
+    client_tag = pseudonym("client", ip)
+    # The account count is per name AND visitor: nobody else's wrong
+    # passwords can hold your account.
     account = _Tracker(
-        "account", pseudonym("account", normalize_username(username)), ACCOUNT_FAILURES_ALLOWED
+        "account", pseudonym("account_client", f"{name}\n{ip}"), ACCOUNT_FAILURES_ALLOWED
     )
-    visitor = _Tracker("client", pseudonym("client", client_ip(request)), CLIENT_FAILURES_ALLOWED)
-    tags = f"account={account.tag} | client={visitor.tag} | via={via}"
+    visitor = _Tracker("client", client_tag, CLIENT_FAILURES_ALLOWED)
+    tags = f"account={account_tag} | client={client_tag} | via={via}"
 
     held_for = max(account.hold_remaining(), visitor.hold_remaining())
     if held_for:
@@ -197,7 +207,8 @@ def attempt_login(request, username: str, password: str, *, via: str) -> LoginAt
         return LoginAttempt(result=result)
 
     if result.error in COUNTED_FAILURES:
-        account.record_failure()
+        if result.error in ACCOUNT_COUNTED_FAILURES:
+            account.record_failure()
         visitor.record_failure()
         # If that was their last try for now, say so on this page already,
         # rather than letting them find out on the next one.
