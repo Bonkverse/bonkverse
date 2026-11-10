@@ -78,11 +78,34 @@ class TestPerAccount:
         """bonk.io names are unique ignoring case, so these are one account."""
         bonk = _bonk_says(mocked_http, "login_wrong_password")
         _post_login(client, username="TestPlayer")
-        _post_login(client, username="testplayer ", ip="198.51.100.1")
+        _post_login(client, username="testplayer ")
 
-        _post_login(client, username="TESTPLAYER", ip="198.51.100.2")
+        _post_login(client, username="TESTPLAYER")
 
         assert bonk.call_count == 2
+
+    def test_a_strangers_wrong_passwords_do_not_hold_the_player(self, client, mocked_http):
+        """The count is per name AND visitor, so typing someone's name with
+        wrong passwords holds only the person typing."""
+        _bonk_says(mocked_http, "login_wrong_password")
+        for _ in range(ACCOUNT_FAILURES_ALLOWED + 1):
+            stranger = _post_login(client, username="TestPlayer", ip="198.51.100.66")
+        assert _messages(stranger)[0].startswith(HELD_MESSAGE_START)
+        bonk = mocked_http.replace("POST", BONK_LOGIN_URL, json=load_bonk_fixture("login_success"))
+
+        response = _post_login(client, username="TestPlayer", ip="203.0.113.7")
+
+        assert bonk.call_count == 1
+        assert response.status_code == 302
+
+    def test_unknown_usernames_count_per_visitor_not_per_account(self, client, mocked_http):
+        """bonk.io didn't limit 20 unknown usernames in a row (2026-11-10)."""
+        bonk = _bonk_says(mocked_http, "login_unknown_username")
+        for _ in range(ACCOUNT_FAILURES_ALLOWED):
+            response = _post_login(client, username="Typo")
+
+        assert bonk.call_count == ACCOUNT_FAILURES_ALLOWED
+        assert response.context["retry_after"] is None  # not held after 2
 
     def test_other_accounts_still_reach_bonk(self, client, mocked_http):
         _bonk_says(mocked_http, "login_wrong_password")
@@ -187,9 +210,9 @@ class TestWhenBonkRateLimits:
 
         assert _messages(response) == [
             "Bonk.io login failed: bonk.io is limiting logins from Bonkverse right now. "
-            "Try again in about 2 minutes."
+            "Try again in about 17 minutes."
         ]
-        assert response.context["retry_after"] == 120
+        assert response.context["retry_after"] == 1020
 
 
 class TestLogs:
@@ -250,9 +273,11 @@ class TestWearLogin:
 
     def test_page_and_wear_share_one_count(self, client, logged_in_client, mocked_http):
         bonk = _bonk_says(mocked_http, "login_wrong_password")
-        _post_login(client, username="TestPlayer")
+        _post_login(client, username="TestPlayer", ip="198.51.100.4")
         logged_in_client.post(
-            WEAR_LOGIN_URL, {"bonk_username": "TestPlayer", "bonk_password": "wrong"}
+            WEAR_LOGIN_URL,
+            {"bonk_username": "TestPlayer", "bonk_password": "wrong"},
+            REMOTE_ADDR="198.51.100.4",
         )
 
         response = _post_login(client, username="TestPlayer", ip="198.51.100.4")

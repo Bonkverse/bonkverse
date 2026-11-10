@@ -63,9 +63,9 @@ class BonkError:
     UNKNOWN_USERNAME = "unknown_username"
     TOKEN_REJECTED = "token_rejected"  # expired or invalid token: log in again
     AVATAR_TOO_BIG = "avatar_too_big"  # the skin is over bonk.io's size limit
-    # bonk.io is limiting requests. It appears to limit by IP, and every
-    # Bonkverse user reaches bonk.io from the server's IP, which Railway may
-    # share with others. See RATE_LIMIT_COOLDOWN and _Cooldown.
+    # bonk.io is limiting requests from this IP. Every Bonkverse user reaches
+    # bonk.io from the server's IP, so this is everyone's limit. See
+    # docs/bonk/login-rate-limit.md, LOGIN_RATE_LIMIT_PAUSE and _Cooldown.
     RATE_LIMITED = "rate_limited"
     REJECTED = "rejected"  # a refusal code we don't recognise (see bonk_error)
     # bonk.io didn't give a usable answer: connection failed, timed out,
@@ -86,11 +86,21 @@ _REFUSALS = {
 
 # After bonk.io says "ratelimited" for a script, Bonkverse stops calling that
 # script and answers RATE_LIMITED itself, so we don't add requests while bonk.io
-# is limiting the IP. The pause doubles with each limit in a row (2, 4, 8, 16
-# minutes, then 30 at most) and starts over once bonk.io answers that script
-# normally. A flat 2-minute pause only probed bonk.io every 2 minutes and kept
-# restarting its longer lockout: on 2026-11-09 the first wear after each pause
-# was limited again, five times in a row (docs/bonk/api.md).
+# is limiting the IP.
+#
+# login_legacy.php: one fixed pause, no checks inside it. Measured on
+# 2026-11-10 (docs/bonk/login-rate-limit.md): bonk.io's block lasts about 15
+# minutes after the LAST request it saw from the IP, and every request during
+# the block, even a correct password, starts the 15 minutes over. A correct
+# login every minute stayed blocked for 45 minutes; one single login after 20
+# minutes worked. The old 2/4/8/16-minute checks each landed inside the block
+# and restarted it, which is why 2026-11-09 had outages of over an hour.
+# 17 minutes leaves room for clock and network differences.
+LOGIN_RATE_LIMIT_PAUSE = 17 * 60.0
+
+# Other scripts (friends.php, avatar_update.php) haven't been measured, so
+# they keep the doubling pause: 2, 4, 8, 16 minutes, then 30 at most, starting
+# over once bonk.io answers that script normally.
 RATE_LIMIT_COOLDOWN = 120.0  # the first pause
 RATE_LIMIT_COOLDOWN_MAX = 1800.0
 # How long a run of limits is remembered. A limit after this much quiet starts
@@ -98,8 +108,14 @@ RATE_LIMIT_COOLDOWN_MAX = 1800.0
 RATE_LIMIT_STRIKE_MEMORY = 3600
 
 
-def backoff_seconds(strikes: int) -> float:
-    """The pause after `strikes` limits in a row: 120, 240, 480, ... up to 1800."""
+def backoff_seconds(strikes: int, script: str | None = None) -> float:
+    """The pause after `strikes` limits in a row for `script`.
+
+    login_legacy.php: always LOGIN_RATE_LIMIT_PAUSE. Others: 120, 240, 480, ...
+    up to 1800.
+    """
+    if script == LOGIN_SCRIPT:
+        return LOGIN_RATE_LIMIT_PAUSE
     return min(RATE_LIMIT_COOLDOWN * 2 ** max(strikes - 1, 0), RATE_LIMIT_COOLDOWN_MAX)
 
 
@@ -169,7 +185,7 @@ class _Cooldown:
             self._store_call("set", self._until_key, until, timeout=math.ceil(seconds))
 
     def strike(self) -> tuple[float, int]:
-        """bonk.io said "ratelimited": pause, longer for each limit in a row.
+        """bonk.io said "ratelimited": pause (see backoff_seconds).
 
         Returns (seconds paused, limits in a row).
         """
@@ -181,7 +197,7 @@ class _Cooldown:
         if isinstance(shared, int) and shared > 0:
             strikes = shared
             self._store_call("touch", self._strikes_key, RATE_LIMIT_STRIKE_MEMORY)
-        seconds = backoff_seconds(strikes)
+        seconds = backoff_seconds(strikes, self.scope)
         self.start(seconds)
         return seconds, strikes
 
