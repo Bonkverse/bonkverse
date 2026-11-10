@@ -11,7 +11,7 @@ import struct
 import pytest
 
 from core.bonk import InvalidSkinCode, SkinCode
-from core.bonk.skin_codes import MAX_LAYERS, MAX_SHAPE_ID
+from core.bonk.skin_codes import MAX_CODE_LENGTH, MAX_LAYERS, MAX_SHAPE_ID
 from tests.factories import SKIN_CODE, SKIN_CODE_DOUBLE_ENCODED
 
 # Real codes from the gallery, one per shape of layer list.
@@ -42,8 +42,17 @@ def _code(data: bytes) -> str:
 
 def _skin(layers: list[bytes], base_color=0x112233) -> bytes:
     """Build a code the way the editor's encoder does (dense layers)."""
-    body = bytes([0x0A, 0x07, 0x03, 0x61, 0x00, 0x02, 0x09, 2 * len(layers) + 1, 0x01])
+    body = bytes([0x0A, 0x07, 0x03, 0x61, 0x00, 0x02, 0x09]) + _u29(2 * len(layers) + 1) + b"\x01"
     return body + b"".join(layers) + base_color.to_bytes(4, "big")
+
+
+def _u29(n: int) -> bytes:
+    """AMF3 variable-length integer (up to 2**21 - 1 here)."""
+    if n < 0x80:
+        return bytes([n])
+    if n < 0x4000:
+        return bytes([0x80 | n >> 7, n & 0x7F])
+    return bytes([0x80 | n >> 14, 0x80 | (n >> 7) & 0x7F, n & 0x7F])
 
 
 def _layer(shape=13, *, first=False, color=0xFAFAFA) -> bytes:
@@ -79,6 +88,16 @@ class TestRealCodes:
         assert len(SkinCode(REAL["empty_first_slot"]).parse().layers) == 5
         assert SkinCode(REAL["no_layers"]).parse().layers == ()
 
+    def test_more_layers_than_bonk_editor_allows(self):
+        """Real skins have up to 51 layers; bonk.io's own editor stops at 16."""
+        assert len(SkinCode(_code(_skin(_layers([13] * 51)))).parse().layers) == 51
+
+    def test_layer_floats_bonk_stored_as_nan(self):
+        """9 gallery skins have a NaN or infinite position or size; they're real skins."""
+        data = bytearray(_skin(_layers([13])))
+        data[18:22] = struct.pack(">f", float("nan"))  # scale
+        SkinCode(_code(bytes(data))).parse()
+
     def test_the_whisp_and_the_layer_limit(self):
         SkinCode(_code(_skin(_layers([MAX_SHAPE_ID] * MAX_LAYERS)))).parse()
 
@@ -103,7 +122,7 @@ class TestRefused:
             SkinCode(_code(_skin(_layers([13, MAX_SHAPE_ID + 1])))).parse()
 
     def test_more_layers_than_bonk_allows(self):
-        with pytest.raises(InvalidSkinCode, match="17 layers"):
+        with pytest.raises(InvalidSkinCode, match=f"{MAX_LAYERS + 1} layers"):
             SkinCode(_code(_skin(_layers([13] * (MAX_LAYERS + 1))))).parse()
 
     def test_bytes_after_the_skin(self):
@@ -118,7 +137,7 @@ class TestRefused:
 
     def test_too_long(self):
         with pytest.raises(InvalidSkinCode, match="longer than"):
-            SkinCode("A" * 5000).parse()
+            SkinCode("A" * (MAX_CODE_LENGTH + 1)).parse()
 
     def test_reason_is_kept_for_logs(self):
         with pytest.raises(InvalidSkinCode) as caught:
