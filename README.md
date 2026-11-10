@@ -194,13 +194,15 @@ bonkverse/
 ├── integrations/           # one client per outside service; the only code that makes outside HTTP calls
 ├── players/                # player profiles, replay sync, profile privacy, XP calculator
 ├── public_api/             # /api/v1/, API keys, developer portal
+├── site_pages/             # home, privacy, terms, staff, map decoder
+├── communities/            # Discord server directory
+├── stats/                  # leaderboards: one LEADERBOARDS entry per board
 ├── skins/                  # the original app, being split into domain apps (docs/apps/README.md)
 │   ├── models.py
 │   ├── querysets.py        # Skin.objects: with_favorite_count, with_score, created_in, search
 │   ├── auth_guards.py      # JSON auth decorators (auth="bonkverse" / auth="bonk")
 │   ├── selectors.py        # read-only page queries (decorate_skins_for_user for skin cards)
 │   ├── votes.py            # cast_vote: the one way vote counters change (ADR 0014)
-│   ├── leaderboards.py     # LEADERBOARDS config + the one leaderboard view
 │   ├── skin_media.py       # the one writer of skin image files (docs/architecture/skin-images.md)
 │   ├── rerender.py         # re-render a skin from its code (button + rerender_skins)
 │   ├── sign_in.py          # what a successful bonk.io login does; login.py has the pages

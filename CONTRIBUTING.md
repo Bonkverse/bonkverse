@@ -46,7 +46,7 @@ Apps use each other only through another app's `services`, `selectors` or `model
 
 ## Conventions
 
-**Views.** Function-based. A family of pages that differ only in data is one view plus a config dict (`skins/leaderboards.py: LEADERBOARDS`), not a class hierarchy.
+**Views.** Function-based. A family of pages that differ only in data is one view plus a config dict (`stats/leaderboards.py: LEADERBOARDS`), not a class hierarchy.
 
 **Querysets.** Skin filters and annotations live on `Skin.objects` (`skins/querysets.py`: `with_favorite_count()`, `with_score()`, `created_in(period)`, `search(q, mode)`); periods come from `core/periods.py`. Don't rewrite those expressions in a view; a test fails if you do.
 
