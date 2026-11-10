@@ -16,8 +16,9 @@ import struct
 from dataclasses import dataclass
 from urllib.parse import parse_qs, unquote, urlparse
 
-# BonkLeagues imports sometimes stored codes URL-encoded twice (%252F for "/").
-_MAX_DECODE_PASSES = 2
+# Some imports stored codes URL-encoded more than once: twice from
+# BonkLeagues (%252F for "/"), three times in at least one gallery skin.
+_MAX_DECODE_PASSES = 3
 # A decoded code is base64.
 _BASE64 = re.compile(r"^[A-Za-z0-9+/]+={0,2}$")
 
@@ -85,7 +86,7 @@ class SkinCode:
 
     @property
     def decoded(self) -> str:
-        """The code with URL-encoding removed (up to two passes)."""
+        """The code with URL-encoding removed (up to three passes)."""
         code = self.raw
         for _ in range(_MAX_DECODE_PASSES):
             if "%" not in code:
@@ -110,7 +111,16 @@ class SkinCode:
             data = base64.b64decode(text + "=" * (-len(text) % 4), validate=True)
         except (binascii.Error, ValueError) as e:
             raise InvalidSkinCode("not base64") from e
-        return _Reader(data).skin()
+        try:
+            return _Reader(data).skin()
+        except InvalidSkinCode as error:
+            # The skin editor's encoder wrote the slot count as one byte, not
+            # an AMF3 integer, so its skins with more than 63 layers carry a
+            # count byte of 0x80 or more. Read those the way it wrote them.
+            try:
+                return _Reader(data, one_byte_count=True).skin()
+            except InvalidSkinCode:
+                raise error from None
 
     @classmethod
     def from_image_url(cls, image_url: str) -> SkinCode | None:
@@ -157,8 +167,9 @@ class SkinCode:
 class _Reader:
     """Reads one skin's bytes; every problem is an InvalidSkinCode."""
 
-    def __init__(self, data: bytes):
+    def __init__(self, data: bytes, *, one_byte_count: bool = False):
         self.data = data
+        self.one_byte_count = one_byte_count
         self.i = 0
         # AMF3 string table, in stream order: class "a", then keys and "al".
         self.strings = ["a"]
@@ -172,7 +183,7 @@ class _Reader:
             raise InvalidSkinCode("no layer list")
 
         slots: list[tuple[int, SkinLayer]] = []
-        dense = self._u29() >> 1
+        dense = (self._byte() if self.one_byte_count else self._u29()) >> 1
         if dense > _MAX_SLOT_INDEX + 1:
             raise InvalidSkinCode(f"{dense} layer slots")
         # Slots past a gap come first, as "index" -> layer pairs, ended by "".

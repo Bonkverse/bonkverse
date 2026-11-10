@@ -98,6 +98,23 @@ class TestRealCodes:
         data[18:22] = struct.pack(">f", float("nan"))  # scale
         SkinCode(_code(bytes(data))).parse()
 
+    def test_editor_codes_with_more_than_63_layers(self):
+        """The editor's encoder writes the slot count as one byte (85 layers -> 0xab),
+        not an AMF3 integer (0x81 0x2b). Gallery skins 9670 and 12027 are like this."""
+        layers = _layers([13] * 85)
+        data = bytes([0x0A, 0x07, 0x03, 0x61, 0x00, 0x02, 0x09, 2 * 85 + 1, 0x01])
+        data += b"".join(layers) + (0x112233).to_bytes(4, "big")
+
+        skin = SkinCode(_code(data)).parse()
+
+        assert len(skin.layers) == 85
+        assert skin.base_color == 0x112233
+
+    def test_url_encoded_three_times(self):
+        """Gallery skin 7520 is stored with "/" as %25252F."""
+        triple = SKIN_CODE.replace("+", "%25252B").replace("=", "%25253D")
+        assert SkinCode(triple).parse() == SkinCode(SKIN_CODE).parse()
+
     def test_the_whisp_and_the_layer_limit(self):
         SkinCode(_code(_skin(_layers([MAX_SHAPE_ID] * MAX_LAYERS)))).parse()
 
