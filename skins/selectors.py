@@ -11,7 +11,7 @@ bonk_players_matching / flash_friends_matching / flash_friend_counts: the
 player directory (players/ "Players" page).
 """
 
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, F, Q, Sum
 
 from .models import BonkAccountLink, BonkPlayer, FlashFriendship, Skin, SkinVote
 
@@ -59,6 +59,23 @@ def home_strips(size=24):
         "trending": Skin.objects.with_score().order_by("-score", "-created_at")[:size],
         "random_strip": Skin.objects.order_by("?")[:size],
     }
+
+
+# How skins can be ranked for a leaderboard: metric -> annotate `value`, order
+# by it. Ties have no defined order.
+SKIN_RANKINGS = {
+    "upvotes": lambda skins: skins.annotate(value=F("upvotes")).order_by("-upvotes"),
+    "favorites": lambda skins: (
+        skins.with_favorite_count().annotate(value=F("fav_count")).order_by("-fav_count")
+    ),
+    "downvotes": lambda skins: skins.annotate(value=F("downvotes")).order_by("-downvotes"),
+}
+
+
+def top_skins(metric: str, limit: int):
+    """The `limit` skins ranked highest by `metric` (a SKIN_RANKINGS key), each
+    with its count as `value`."""
+    return SKIN_RANKINGS[metric](Skin.objects.all())[:limit]
 
 
 # Sort orders for a player's skins (profile Skins tab): key -> order_by fields.

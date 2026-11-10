@@ -1,4 +1,4 @@
-{% comment %}Switch between the skin leaderboards (the header no longer has a Leaderboards menu). Tabs come from skins/leaderboards.py.{% endcomment %}
+{% comment %}Switch between the skin leaderboards (the header no longer has a Leaderboards menu). Tabs come from stats/leaderboards.py.{% endcomment %}
 <nav class="bv-tabs site-leaderboard-tabs" aria-label="Leaderboards">
 {% for tab in tabs %}  <a class="bv-tab" href="{% url tab.url_name %}"{% if tab.current %} aria-current="page"{% endif %}>{{ tab.label }}</a>
 {% endfor %}</nav>

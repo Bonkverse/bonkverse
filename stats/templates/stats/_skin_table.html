@@ -1,12 +1,4 @@
-{% extends "skins/base.html" %}
-{% comment %}Any skin leaderboard (skins/leaderboards.py: LEADERBOARDS).{% endcomment %}
-
-{% block content %}
-<div class="leaderboard-container">
-  <h2 class="leaderboard-title">{{ board.title }}</h2>
-{% if board.tab %}  {% include 'leaderboards/_leaderboard_tabs.html' %}
-{% endif %}  <div class="site-scroll">
-  <table class="leaderboard-table">
+{% comment %}Table for a skin board: rows are skins with their count as `value` (skins.selectors.top_skins).{% endcomment %}<table class="leaderboard-table">
     <thead>
       <tr>
         <th>Rank</th>
@@ -17,7 +9,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for skin in skins %}
+      {% for skin in rows %}
       <tr>
         <td>#{{ forloop.counter }}</td>
         <td><img src="{{ skin.image_url }}" alt="{{ skin.name }}'s Avatar" class="skin-avatar" data-zoom></td>
@@ -28,7 +20,3 @@
       {% endfor %}
     </tbody>
   </table>
-  </div>
-</div>
-
-{% endblock %}
