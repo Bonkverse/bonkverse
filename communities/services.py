@@ -15,7 +15,8 @@ from django.db import transaction
 from django.utils import timezone
 
 from integrations.discord_api import InviteError, fetch_invite
-from skins.models import DiscordServer, DiscordServerSnapshot, DiscordTag
+
+from .models import DiscordServer, DiscordServerSnapshot, DiscordTag
 
 
 class SubmitOutcome(StrEnum):

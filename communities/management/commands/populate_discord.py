@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from skins.models import DiscordServer, DiscordServerSnapshot, DiscordTag
+from communities.models import DiscordServer, DiscordServerSnapshot, DiscordTag
 import random
 
 

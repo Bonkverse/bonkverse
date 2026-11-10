@@ -14,8 +14,8 @@ from django.db.models import F
 from django.utils import timezone
 
 from integrations.discord_api import InviteError, fetch_invite
-from skins.models import DiscordServer, DiscordServerSnapshot
 
+from .models import DiscordServer, DiscordServerSnapshot
 from .selectors import REFRESH_TASK
 
 logger = logging.getLogger(__name__)

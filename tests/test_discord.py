@@ -12,7 +12,7 @@ import pytest
 import requests
 
 from integrations.discord_api import InviteError, fetch_invite
-from skins.models import DiscordServer, DiscordServerSnapshot, DiscordTag
+from communities.models import DiscordServer, DiscordServerSnapshot, DiscordTag
 from communities.tasks import refresh_discord_servers
 
 API = "https://discord.com/api/v10/invites"
