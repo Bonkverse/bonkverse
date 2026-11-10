@@ -170,6 +170,15 @@ refresh" from it; `/admin` shows every schedule's last run). **Change a
 schedule in code, not in /admin**; an /admin edit is overwritten on the next
 deploy. Every entry must name a real task **(tested)**.
 
+**A new schedule runs as soon as the worker starts** (`core.beat.Scheduler`,
+**tested**), then every interval after. Without that, django-celery-beat
+counts a never-run schedule's first interval from the moment the worker
+last started, so each deploy pushed it back again; on 2026-11-10 four
+deploys within an hour kept the new hourly jobs from running at all. If the
+worker restarts before a first run has been saved (beat saves every few
+minutes), that first run happens once more, so a scheduled task must be
+safe to run twice or opt out with `acks_late=False` and check for itself.
+
 Because the scheduler lives in the worker, **there must be exactly one worker
 replica.** Two would send every scheduled job twice. To scale out later, run
 `celery beat` as its own one-replica service and drop `--beat` from the

@@ -510,8 +510,9 @@ CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 
 # Schedules live here, in code. django-celery-beat's DatabaseScheduler copies
 # them into its PeriodicTask table at startup (the Discord page reads
-# last_run_at from there); edit them here, not in /admin.
-CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+# last_run_at from there); edit them here, not in /admin. core.beat runs a
+# schedule that has never run as soon as the worker starts.
+CELERY_BEAT_SCHEDULER = "core.beat:Scheduler"
 CELERY_BEAT_SCHEDULE = {
     "refresh-discord-servers": {
         "task": "skins.tasks.refresh_discord_servers",

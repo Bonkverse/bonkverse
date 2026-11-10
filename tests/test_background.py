@@ -208,3 +208,50 @@ class TestWorkerDeployConfig:
 
     def test_worker_builds_the_same_image_as_the_site(self):
         assert self._config("railway.worker.json")["build"] == self._config("railway.json")["build"]
+
+
+@pytest.mark.django_db(transaction=True)
+class TestBeatScheduler:
+    """core.beat: a never-run schedule runs at worker start, not one interval later."""
+
+    MAPPING = {
+        "hourly-job": {"task": "skins.tasks.refresh_discord_servers", "schedule": 3600},
+    }
+
+    def _scheduler(self):
+        from core.beat import Scheduler
+
+        return Scheduler(app=celery_app, lazy=True)
+
+    def test_settings_use_it(self):
+        assert settings.CELERY_BEAT_SCHEDULER == "core.beat:Scheduler"
+
+    def test_never_run_schedule_is_due_at_start(self):
+        scheduler = self._scheduler()
+        scheduler.update_from_dict(self.MAPPING)
+
+        due, _ = scheduler.schedule["hourly-job"].is_due()
+
+        assert due is True
+
+    def test_still_due_after_another_restart_before_it_ran(self):
+        """The bug: each restart re-saved the row and pushed the first run out."""
+        self._scheduler().update_from_dict(self.MAPPING)
+        scheduler = self._scheduler()
+        scheduler.update_from_dict(self.MAPPING)
+
+        assert scheduler.schedule["hourly-job"].is_due()[0] is True
+
+    def test_a_schedule_that_has_run_keeps_its_interval(self):
+        from django.utils import timezone
+        from django_celery_beat.models import PeriodicTask
+
+        self._scheduler().update_from_dict(self.MAPPING)
+        PeriodicTask.objects.filter(name="hourly-job").update(last_run_at=timezone.now())
+
+        scheduler = self._scheduler()
+        scheduler.update_from_dict(self.MAPPING)
+        due, next_check = scheduler.schedule["hourly-job"].is_due()
+
+        assert due is False
+        assert next_check > 3000  # about an hour away
