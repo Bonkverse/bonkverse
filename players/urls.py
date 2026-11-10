@@ -1,11 +1,10 @@
-from django.urls import path, register_converter
+from django.urls import path
 
 from . import views
-from .converters import UsernameConverter
 
 # Usernames go in the path URL-encoded; bonk.io names can't contain "/".
 # Names like "." and ".." get a "~" in front (players/converters.py).
-register_converter(UsernameConverter, "username")
+# <username:…> is registered in PlayersConfig.ready().
 
 urlpatterns = [
     path("players/", views.directory, name="players_directory"),
