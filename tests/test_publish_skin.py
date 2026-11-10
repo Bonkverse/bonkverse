@@ -3,7 +3,7 @@
 import pytest
 
 from skins.models import Skin
-from tests.factories import UserFactory
+from tests.factories import SKIN_CODE, UserFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -20,7 +20,7 @@ def _media_in_tmp(settings, tmp_path):
 
 
 def _publish(client, **extra):
-    return client.post(URL, {"skin_name": "My Skin", "skin_code": "CODE", "svg": SVG, **extra})
+    return client.post(URL, {"skin_name": "My Skin", "skin_code": SKIN_CODE, "svg": SVG, **extra})
 
 
 def test_creator_name_is_never_trimmed(client):
@@ -61,3 +61,27 @@ def test_oversized_svg_gets_a_size_message_not_unsafe(client):
     assert "too detailed" in response.json()["error"]
     assert "Unsafe" not in response.json()["error"]
     assert not Skin.objects.exists()
+
+
+@pytest.mark.parametrize("code", ["POC-FINAL-002", "POCFINAL002", "CgcDYQACCQ"])
+def test_fake_skin_code_is_refused(client, code):
+    """Regression: the API stored any text as the code (two pentest skins had
+    "POC-FINAL-002" and "JOKE-PRES-002")."""
+    client.force_login(UserFactory(username="Publisher"))
+
+    response = _publish(client, skin_code=code)
+
+    assert response.status_code == 422
+    assert (
+        response.json()["error"] == "That isn't a bonk.io skin code. Publish from the skin editor."
+    )
+    assert not Skin.objects.exists()
+
+
+def test_editor_code_is_accepted_url_encoded(client):
+    """The editor sends its code URL-encoded (encodeURIComponent)."""
+    client.force_login(UserFactory(username="Publisher"))
+
+    response = _publish(client, skin_code=SKIN_CODE.replace("+", "%2B").replace("=", "%3D"))
+
+    assert response.status_code == 201

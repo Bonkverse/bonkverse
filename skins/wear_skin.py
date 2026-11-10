@@ -50,7 +50,6 @@ from core.logs import mark_expected_error
 from core.ratelimits import describe_wait, limit
 from integrations.bonk_api import (
     AVATAR_UPDATE_SCRIPT,
-    LOGIN_SCRIPT,
     BonkAvatarUpdateResult,
     BonkError,
     get_client,
@@ -60,6 +59,7 @@ from integrations.bonk_api import (
 from .auth_guards import api_login_required, bonk_token_required
 from .events import log_event
 from .login import login_failure_message
+from .login_attempts import attempt_login
 from .models import Skin
 
 
@@ -184,21 +184,22 @@ def bonk_login_for_wear(request):
     if not bonk_username or not password:
         return JsonResponse({"ok": False, "error": "missing_params"}, status=400)
 
-    result = get_client().login(bonk_username, password)
-    if not result.ok:
-        # Bad bonk credentials — 401 WITHOUT an `auth` tag so the client treats
-        # it as a credential error, not a session-expired redirect.
-        retry_after = None
-        if result.error == BonkError.RATE_LIMITED:
-            retry_after = retry_after_for(LOGIN_SCRIPT)
+    attempt = attempt_login(request, bonk_username, password, via="wear")
+    if not attempt.ok:
+        # Bad bonk credentials (or held for too many) — 401 WITHOUT an `auth`
+        # tag so the client treats it as a credential error, not a
+        # session-expired redirect.
+        retry_after = attempt.retry_after
         body = {
             "ok": False,
-            "error": result.error,
-            "message": login_failure_message(result.error, retry_after),
+            "error": attempt.error,
+            "message": login_failure_message(attempt.error, retry_after),
         }
         if retry_after:
             body["retry_after"] = retry_after
         return JsonResponse(body, status=401)
+
+    result = attempt.result
 
     bonk = BonkSession(request.session)
     bonk.store_token(result.token)

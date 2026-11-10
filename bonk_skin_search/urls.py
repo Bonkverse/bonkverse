@@ -92,13 +92,17 @@ urlpatterns = [
     path("categories/", categories.category_index, name="category_index"),
     path("category/<slug:slug>/", categories.category_detail, name="category_detail"),
     # Leaderboards
-    path("leaderboards/upvoted/", leaderboards.most_upvoted_skins, name="leaderboards_upvoted"),
-    path(
-        "leaderboards/downvoted/", leaderboards.most_downvoted_skins, name="leaderboards_downvoted"
-    ),
-    path(
-        "leaderboards/favorited/", leaderboards.most_favorited_skins, name="leaderboards_favorited"
-    ),
+    # One page per entry in skins/leaderboards.py LEADERBOARDS, e.g.
+    # /leaderboards/upvoted/ named "leaderboards_upvoted".
+    *[
+        path(
+            f"leaderboards/{board}/",
+            leaderboards.leaderboard,
+            {"board": board},
+            name=leaderboards.url_name(board),
+        )
+        for board in leaderboards.LEADERBOARDS
+    ],
     # Players Search navigation
     path("changelog/add/", add_changelog, name="add_changelog"),
     path("api/friends-sync-status/", api.friends_sync_status, name="friends_sync_status"),

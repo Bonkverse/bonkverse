@@ -37,6 +37,7 @@ instead of raising. `error` is one of Bonkverse's codes (`BonkError`);
 | `token_rejected` | bonk.io `e: "token"` (expired or invalid token) | Wear: 401 `auth: "bonk"`. **The only case that opens the bonk.io login modal.** |
 | `avatar_too_big` | bonk.io `e: "avatar_too_big"` | Wear: 422 "This skin is too big for bonk.io…" |
 | `rate_limited` | bonk.io `e: "ratelimited"`, or Bonkverse is cooling down (below) | Login: "bonk.io is limiting logins from Bonkverse right now…" Wear: 503 |
+| `too_many_attempts` | Not from bonk.io: Bonkverse held the login after too many wrong passwords ("Wrong passwords" below) | Login: "Too many wrong passwords. Wait …" Wear login: 401 |
 | `rejected` | Any other refusal (unknown `e`, logged) | Login: "bonk.io didn't accept that login." Wear: 502 "bonk.io didn't accept this skin." |
 | `network_error` | No usable answer | Login: "Network error talking to bonk.io." Wear: 502 |
 
@@ -59,28 +60,33 @@ bursts on most days since at least 2026-10-30 (the oldest we could read),
 usually 5–15 per hour for an hour or two. Before #31 players saw them as
 "Bonk.io login failed: fail".
 
-**What triggers it is unknown.** It doesn't track Bonkverse's own traffic:
-bursts happen in hours when Bonkverse sent almost nothing, and the busiest
-hours (including the too-big modal loop) had none. Every Bonkverse user
-reaches bonk.io from the server's outbound IP, and Railway says outbound
-IPs "may be shared with other customers", so the likeliest cause is other
-traffic to bonk.io from the same IP (other services in the Bonkverse project,
-or other Railway customers). Unconfirmed.
+**What triggers it on login is now known** (measured 2026-11-10, see
+[login-rate-limit.md](login-rate-limit.md)): bonk.io limits by IP; from a
+datacenter IP like Railway's it allows about 4 wrong passwords, then refuses
+every login from that IP for about 15 minutes after the last request it sees.
+Every Bonkverse user logs in from the server's IP, so that budget is shared
+by the whole site. Bursts on hours with almost no Bonkverse traffic (before
+2026-11-08) may still have come from other traffic on Railway's shared
+outbound IP; that part is unconfirmed.
 
 So after a `ratelimited` from a script, the client stops calling **that
-script** and answers `rate_limited` itself (`bonk_error` is empty for these).
-The first pause is 120 s (`RATE_LIMIT_COOLDOWN`); each limit in a row doubles
-it (2, 4, 8, 16 minutes, then 30 at most, `RATE_LIMIT_COOLDOWN_MAX`), and a
-normal answer from that script starts it over. A run of limits is remembered
-for an hour (`RATE_LIMIT_STRIKE_MEMORY`).
+script** and answers `rate_limited` itself (`bonk_error` is empty for these):
 
+- **`login_legacy.php`: one 17-minute pause, nothing sent inside it**
+  (`LOGIN_RATE_LIMIT_PAUSE`). Any request during bonk.io's block restarts its
+  15 minutes, so checking early only makes it longer: on 2026-11-09 the old
+  2/4/8/16-minute checks turned blocks into 68- and 78-minute outages, and in
+  testing a correct login once a minute stayed blocked for 45 minutes.
+- **Other scripts** (`friends.php`, `avatar_update.php`), not yet measured:
+  the first pause is 120 s (`RATE_LIMIT_COOLDOWN`); each limit in a row
+  doubles it (2, 4, 8, 16 minutes, then 30 at most, `RATE_LIMIT_COOLDOWN_MAX`),
+  and a normal answer from that script starts it over. A run of limits is
+  remembered for an hour (`RATE_LIMIT_STRIKE_MEMORY`). If they turn out to
+  follow the login rules, they should get a fixed pause too.
 - **Per script.** bonk.io seems to limit each script on its own: on 2026-11-09
   `login_legacy.php` and `friends.php` answered normally one second before
   `avatar_update.php` said `ratelimited`. A single shared pause had been
   turning away logins that would have worked.
-- **Backoff.** bonk.io's own lockout is longer than 2 minutes (the replay
-  scraper waits 65 minutes after one). With a flat 120 s pause, the first wear
-  after each pause was limited again, five times in a row on 2026-11-09.
 - **Shared by every gunicorn worker** through the cache
   (`bonk:cooldown_until:<script>` and `bonk:cooldown_strikes:<script>` in
   Redis), with an in-process copy as a fallback if Redis is down. Until
@@ -93,7 +99,7 @@ Log lines (one JSON object per line, see `core/logs.py`):
 - `bonk.io <script> paused for another <s>s; answered rate_limited without
   calling it` (INFO): a request during the pause; nothing was sent.
 
-Players are told how long is left ("Try again in about 4 minutes."), and the
+Players are told how long is left ("Try again in about 17 minutes."), and the
 wear reply and the login page carry the seconds (`retry_after`) so the page
 waits instead of retrying into the pause.
 
@@ -102,7 +108,43 @@ at a time, and the `wear_burst` / `wear` tiers in `RATE_LIMITS`. On
 2026-11-09 one player's 11 Wear clicks in about 1.5 s preceded a
 `ratelimited`, which then paused wearing for every user.
 
-How long bonk.io's own limit lasts is unknown.
+### Wrong passwords
+
+With about 4 wrong passwords allowed for the whole site, Bonkverse limits
+failed logins itself before bonk.io sees them (`skins/login_attempts.py`,
+used by both the /login/ page and the in-page login on wear). The numbers and
+why are in [login-rate-limit.md](login-rate-limit.md#what-bonkverse-does-about-it).
+
+- Only bonk.io's `password` answers count per account; `username_fail` counts
+  per visitor only (bonk.io didn't limit 20 unknown usernames in a row). Rate
+  limits, network errors and unknown refusals don't count.
+- **Per account, per visitor** (the name, case-insensitive, together with the
+  visitor's IP from `core/client_ip.py`): 2 wrong passwords in 15 minutes,
+  then held for 15 minutes. A stranger's wrong passwords for your name hold
+  only the stranger. The wrong try that uses up the allowance already tells
+  the player to wait.
+- **Per visitor**, across accounts: 3 wrong tries in 15 minutes (below
+  bonk.io's 4), then held for 15 minutes.
+- When bonk.io answers `ratelimited` to an account or visitor that had a wrong
+  try in the window, they're held for 30 minutes (or the site-wide pause, if
+  longer), so their retry isn't the first login bonk.io sees when the pause
+  ends.
+- A successful login clears that account's count for that visitor.
+- Counts live in the cache (`login:failures:<kind>:<key>`,
+  `login:hold:<kind>:<key>`). If the cache fails, logins go ahead unlimited.
+
+Every attempt is logged on `skins.login` with a pseudonym for the account and
+the visitor (`core/pseudonym.py`: an HMAC with `SECRET_KEY`, never the name or
+IP) and where it came from:
+
+- `bonk login response | result=... | error=... | bonk_error=... | account=<tag> | client=<tag> | via=page|wear`
+- `bonk login held | account=<tag> | client=<tag> | via=... | account_failures=<n> | client_failures=<n> | retry_after=<s>`
+- `bonk.io rate-limited a login after wrong passwords; holding it for <s>s | ...` (WARNING)
+- `bonk.io rate-limited a login with no recent wrong passwords from it | ...` (WARNING)
+
+The last line means a login was limited although nobody had recent wrong
+passwords through Bonkverse: either bonk.io remembers wrong passwords for
+longer than our 15-minute window, or other traffic shares Railway's IP.
 
 ## `login_legacy.php`
 

@@ -8,6 +8,12 @@ hour or two at a time.
 **Fixed by:** #39 (the modal). The rate-limit bursts are not fixed; their
 cause is unknown (below).
 
+> **Update 2026-11-10:** the login bursts are now explained, at least from
+> 2026-11-08 on: about 4 wrong passwords from anyone on the site block the
+> server's IP for ~15 minutes, and any request during the block restarts it.
+> See [2026-11-09](2026-11-09-login-lockouts.md) and
+> [bonk/login-rate-limit.md](../bonk/login-rate-limit.md).
+
 > This page was first written with the wrong cause: that the modal loop
 > generated enough logins to get Bonkverse rate-limited. A closer read of
 > the logs disproved that (see "Rate limits"). Corrected the same night.

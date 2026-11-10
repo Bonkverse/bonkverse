@@ -33,9 +33,7 @@ def decorate_skins_for_user(skins, user=None):
         return skins
 
     fav_counts = dict(
-        Skin.objects.filter(id__in=ids)
-        .annotate(fav_count=Count("favorited_by"))
-        .values_list("id", "fav_count")
+        Skin.objects.filter(id__in=ids).with_favorite_count().values_list("id", "fav_count")
     )
 
     votes, favorited = {}, set()

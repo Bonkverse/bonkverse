@@ -402,5 +402,5 @@ class TestRateLimitedWearMessages:
 
         body = response.json()
         assert response.status_code == 401
-        assert body["retry_after"] == 120
-        assert body["message"].endswith("Try again in about 2 minutes.")
+        assert body["retry_after"] == 1020
+        assert body["message"].endswith("Try again in about 17 minutes.")

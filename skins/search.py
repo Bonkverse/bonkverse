@@ -2,7 +2,8 @@
 
 Every query narrows the table with an index first, then applies the relevance
 rules to the few rows left, so a search costs milliseconds instead of reading
-every skin. Indexes are declared on Skin.Meta (skins/models.py).
+every skin. The search modes live on Skin.objects (skins/querysets.py);
+indexes are declared on Skin.Meta (skins/models.py).
 """
 
 import logging
@@ -11,16 +12,16 @@ from datetime import timedelta
 from urllib.parse import urlencode
 
 from django.conf import settings
-from django.contrib.postgres.search import SearchQuery, SearchRank, TrigramSimilarity
 from django.core.paginator import Paginator
 from django.db import OperationalError
-from django.db.models import Count, F, Max, Min, Q
+from django.db.models import Max, Min
 from django.shortcuts import render
 from django.utils import timezone
 
 from core.db import time_limited_queries
 from core.ratelimits import limit
-from skins.models import SKIN_SEARCH_CONFIG, Skin
+from skins.models import Skin
+from skins.querysets import MIN_NAME_SIMILARITY
 from skins.selectors import decorate_skins_for_user
 
 from .pagination_utils import elided_page_range
@@ -28,26 +29,6 @@ from .pagination_utils import elided_page_range
 logger = logging.getLogger(__name__)
 
 PER_PAGE = 50
-# Relevance thresholds. Unchanged from the original search; the index prefilter
-# below only skips rows that could never pass them.
-MIN_RANK = 0.1
-MIN_NAME_SIMILARITY = 0.2
-
-
-def _relevance(skins, query: str):
-    """Full-text + fuzzy-name matches, ranked. Index-backed (search_vector, name trigram)."""
-    search_query = SearchQuery(query, config=SKIN_SEARCH_CONFIG)
-    return (
-        # Narrow with the GIN indexes: full-text hit OR name similar enough. With
-        # pg_trgm.similarity_threshold = MIN_NAME_SIMILARITY this keeps every row
-        # the rule below can accept.
-        skins.filter(Q(search_vector=search_query) | Q(name__trigram_similar=query))
-        .annotate(
-            rank=SearchRank(F("search_vector"), search_query),
-            similarity=TrigramSimilarity("name", query),
-        )
-        .filter(Q(rank__gte=MIN_RANK) | Q(similarity__gt=MIN_NAME_SIMILARITY))
-    )
 
 
 def _random_sample(size: int):
@@ -72,27 +53,15 @@ def search_skins(request):
     sort = request.GET.get("sort", "relevance")
     page_number = request.GET.get("page", 1)
 
-    if query:
-        if mode == "name":
-            skins = Skin.objects.filter(name__ilike_contains=query)
-        elif mode == "creator":
-            skins = Skin.objects.filter(creator__ilike_contains=query)
-        elif mode == "tags":
-            skins = Skin.objects.filter(labels__icontains=[query.lower()])
-        elif mode == "description":
-            skins = Skin.objects.filter(description__ilike_contains=query)
-        else:  # relevance
-            skins = _relevance(Skin.objects.all(), query)
-    else:
-        skins = _random_sample(PER_PAGE)
+    skins = Skin.objects.search(query, mode) if query else _random_sample(PER_PAGE)
 
     # ── Sorting ───────────────────────────────────────────────────
     if sort == "newest":
         skins = skins.order_by("-created_at")
     elif sort == "favorites":
-        skins = skins.annotate(fav_count=Count("favorited_by")).order_by("-fav_count")
+        skins = skins.with_favorite_count().order_by("-fav_count")
     elif sort == "upvotes":
-        skins = skins.annotate(score=F("upvotes") - F("downvotes")).order_by("-score")
+        skins = skins.with_score().order_by("-score")
     elif query and mode == "relevance":
         skins = skins.order_by("-rank", "-similarity", "name")
     elif query:

@@ -72,24 +72,21 @@ def _no_bonk_rate_limit_cooldown():
 
 
 @pytest.fixture(autouse=True)
-def _tasks_run_inline():
+def _tasks_run_inline(settings):
     """Anything queued with core.background.enqueue runs inside the test, errors included.
 
-    Tests never need Redis or a worker. The app reads settings once at startup,
-    so this sets the Celery app's own config rather than Django settings.
+    Tests never need Redis or a worker. Set through Django settings: the Celery
+    app reads CELERY_* settings live, and they win over `app.conf.x = ...`
+    (setting app.conf here silently did nothing; test_background checks this).
     """
-    from bonk_skin_search.celery_app import app
-
-    previous = (app.conf.task_always_eager, app.conf.task_eager_propagates)
-    app.conf.task_always_eager = True
-    app.conf.task_eager_propagates = True
-    yield
-    app.conf.task_always_eager, app.conf.task_eager_propagates = previous
+    settings.CELERY_TASK_ALWAYS_EAGER = True
+    settings.CELERY_TASK_EAGER_PROPAGATES = True
 
 
 @pytest.fixture(autouse=True)
 def _no_background_friend_sync(settings):
-    """Login normally starts a background thread for friend sync; keep tests synchronous."""
+    """Login normally queues a friend sync (bonk.io friends.php); tests that
+    want it turn it on (tests/test_friend_sync_task.py)."""
     settings.SYNC_FRIENDS_ON_LOGIN = False
 
 
