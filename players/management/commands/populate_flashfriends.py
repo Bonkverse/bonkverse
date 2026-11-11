@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
-from skins.models import FlashFriend, FlashFriendship, BonkUser
+from skins.models import BonkUser
+from .models import FlashFriend, FlashFriendship
 import random
 
 

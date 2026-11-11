@@ -8,7 +8,7 @@ from django.shortcuts import render
 from django.db.models import Count
 from django.db import connection
 
-from skins.models import BonkPlayer, FlashFriend, Friendship
+from .models import BonkPlayer, FlashFriend, Friendship
 from .dbid_lookup import estimate_registration_date, format_registration
 
 

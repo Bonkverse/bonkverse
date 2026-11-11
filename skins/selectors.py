@@ -13,7 +13,8 @@ player directory (players/ "Players" page).
 
 from django.db.models import Count, F, Q, Sum
 
-from .models import BonkAccountLink, BonkPlayer, FlashFriendship, Skin, SkinVote
+from .models import BonkAccountLink, Skin, SkinVote
+from players.models import BonkPlayer, FlashFriendship
 
 
 def decorate_skins_for_user(skins, user=None):

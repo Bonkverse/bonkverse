@@ -41,7 +41,8 @@ from skins.selectors import (
     skins_created_by,
 )
 
-from skins.models import BonkAccountLink, BonkPlayer, FlashFriend, FlashFriendship, Friendship
+from skins.models import BonkAccountLink
+from .models import BonkPlayer, FlashFriend, FlashFriendship, Friendship
 
 from . import calculator, charts, search
 from .models import ProfileVisibility

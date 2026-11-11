@@ -15,7 +15,7 @@ from responses import matchers
 from players.models import ProfileVisibility
 from public_api.keys import create_key, find_active_key, hash_key
 from public_api.models import ApiKey
-from skins.models import BonkPlayer
+from players.models import BonkPlayer
 from tests.factories import UserFactory
 from tests.test_players import profile_json
 

@@ -11,7 +11,7 @@ from django.utils import timezone
 from core.bonk import dbid, levels
 from players import calculator
 from players.models import ProfileVisibility
-from skins.models import BonkPlayer
+from players.models import BonkPlayer
 from tests.factories import UserFactory
 from tests.test_players import REPLAYS, profile_json
 

@@ -22,7 +22,7 @@ from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.db.models.functions import Lower
 
-from skins.models import BonkPlayer
+from players.models import BonkPlayer
 
 from integrations.replays import LOOKUP_MAX, PlayerError, lookup_players_configured
 from players.calculator import account_age

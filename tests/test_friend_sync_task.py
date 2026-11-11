@@ -17,7 +17,8 @@ from django.urls import reverse
 
 from players import services as players_services
 from players.friends_sync import NO_TOKEN, sync_friends_for_link
-from skins.models import BonkAccountLink, BonkPlayer, Friendship, UserEvent
+from skins.models import BonkAccountLink, UserEvent
+from players.models import BonkPlayer, Friendship
 from players.tasks import sync_friends
 from tests.conftest import load_bonk_fixture
 from tests.factories import UserFactory
