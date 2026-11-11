@@ -5,7 +5,7 @@ from django.db import connection
 from django.test.utils import CaptureQueriesContext
 
 from players.flash_friends_sync import read_legacy_friends, sync_flash_friends_for_user
-from skins.models import FlashFriend, FlashFriendship
+from players.models import FlashFriend, FlashFriendship
 from tests.factories import BonkPlayerFactory, UserFactory
 
 pytestmark = pytest.mark.django_db

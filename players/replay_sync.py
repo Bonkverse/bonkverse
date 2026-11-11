@@ -7,7 +7,7 @@ the replay archive knows every registered name that has played. Each run:
    last run (a batch of replays at a time, after a saved cursor) and adds
    the ones Bonkverse has never seen as BonkPlayers with no DBID, so the
    Players page finds them too. When a friend list or login later shows
-   the DBID, that row gets it (skins.friends_sync.adopt_replay_names).
+   the DBID, that row gets it (players.friends_sync.adopt_replay_names).
 2. push_player_ids: sends every BonkPlayer with a DBID that changed since
    the last run (name, DBID, estimated join day) to the replay site, for
    "A player's DBID" and "A player joined" replay searches.
@@ -35,7 +35,7 @@ from integrations.replay_sync import (
     fetch_replay_names_configured,
     push_player_ids_configured,
 )
-from skins.models import BonkPlayer
+from .models import BonkPlayer
 
 from .models import SyncCursor
 

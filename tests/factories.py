@@ -6,7 +6,8 @@ building model instances by hand inside tests.
 
 import factory
 
-from skins.models import BonkPlayer, BonkUser, Skin
+from skins.models import BonkUser, Skin
+from players.models import BonkPlayer
 
 
 # A real one-layer skin code (shape 13, light gray on a black base). Codes are

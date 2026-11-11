@@ -6,7 +6,8 @@ import requests
 from django.urls import reverse
 
 from integrations.replays import PlayerError, lookup_players, search_players
-from skins.models import BonkAccountLink, BonkPlayer, FlashFriend, FlashFriendship
+from skins.models import BonkAccountLink
+from players.models import BonkPlayer, FlashFriend, FlashFriendship
 from tests.factories import UserFactory
 
 REPLAYS = "http://replays.test"

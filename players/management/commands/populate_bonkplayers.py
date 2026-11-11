@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from skins.models import BonkPlayer, FriendCountHistory
+from .models import BonkPlayer, FriendCountHistory
 import random
 
 

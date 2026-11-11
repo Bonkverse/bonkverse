@@ -24,7 +24,7 @@ from players.friends_sync import (
     upsert_current_player,
     upsert_players,
 )
-from skins.models import BonkPlayer, FriendCountHistory, Friendship
+from players.models import BonkPlayer, FriendCountHistory, Friendship
 from tests.factories import BonkPlayerFactory
 
 pytestmark = pytest.mark.django_db

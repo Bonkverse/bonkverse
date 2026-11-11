@@ -11,7 +11,7 @@ RFC-0001 Phase 5 splits the old do-everything `skins` app into domain apps. This
 | [`site_pages`](site_pages.md) | Home, privacy, terms, staff page, small tools (map decoder) | Exists (5.1); no models of its own |
 | [`communities`](communities.md) | Discord server directory: servers, tags, snapshots, submit, the hourly refresh | Exists (5.2), models moved (5.2b) |
 | [`stats`](stats.md) | Leaderboards (one config entry per board) and archived win/loss rows; future stat tracking | Exists (5.3), models moved (5.3b) |
-| [`players`](players.md) | bonk.io players, friendships, Flash friends, friend sync, player search and profiles, social stats, replay sync, XP calculator, profile privacy | Code complete (5.4); its skins-held models move next |
+| [`players`](players.md) | bonk.io players, friendships, Flash friends, friend sync, player search and profiles, social stats, replay sync, XP calculator, profile privacy | Exists (5.4), models moved (5.4b) |
 | `accounts` | Site accounts (`BonkUser`), bonk.io account links and their tokens, sign in / out, `/api/me/` | Planned (5.5) |
 | `skins` | Skins, votes, favorites, reports, images, search, categories, upload, wear, edit | Today it still holds everything above; it shrinks to this by 5.6 |
 | `public_api` | `/api/v1/`, API keys, the developer portal | Exists ([public-api.md](../architecture/public-api.md)) |

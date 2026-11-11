@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVector, SearchVectorField
-from django.utils import timezone
 import uuid
 from django.urls import reverse
 
@@ -138,75 +137,6 @@ class SkinVote(models.Model):
         return f"{self.user.username} voted {self.vote} on {self.skin.name}"
 
 
-class BonkPlayer(models.Model):
-    """
-    Any Bonk account we discover (friends, map authors, etc.).
-    This is NOT your Bonkverse login user (BonkUser) — it’s the in-game identity.
-    """
-
-    # The bonk.io account ID (DBID). Empty for a name only seen in replays
-    # (players.replay_sync copies those in); filled in when a friend list or
-    # login shows the real ID (skins.friends_sync.adopt_replay_names).
-    bonk_id = models.BigIntegerField(unique=True, db_index=True, null=True, blank=True)
-    username = models.CharField(max_length=255, db_index=True)
-    last_seen = models.DateTimeField(default=timezone.now)
-    last_friend_count = models.IntegerField(default=0)  # snapshot at last sync
-    # Total XP from the player's own bonk.io login (the only place XP is
-    # shown); null until they sign in to Bonkverse. Level: core.bonk.levels.
-    xp = models.BigIntegerField(null=True, blank=True)
-    xp_seen_at = models.DateTimeField(null=True, blank=True)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=["bonk_id"]),
-            models.Index(fields=["username"]),
-        ]
-
-    def __str__(self):
-        return f"{self.username} ({self.bonk_id})"
-
-
-class Friendship(models.Model):
-    """
-    Undirected friendship edge between two BonkPlayers.
-    Store once using ordered endpoints (player_low < player_high) to avoid duplicates.
-    """
-
-    player_low = models.ForeignKey(BonkPlayer, on_delete=models.CASCADE, related_name="edges_low")
-    player_high = models.ForeignKey(BonkPlayer, on_delete=models.CASCADE, related_name="edges_high")
-    created_at = models.DateTimeField(auto_now_add=True)
-    last_confirmed_at = models.DateTimeField(default=timezone.now)  # updated each sync we see it
-
-    class Meta:
-        constraints = [
-            # Enforce undirected uniqueness and no self-edges
-            models.UniqueConstraint(
-                fields=["player_low", "player_high"], name="uniq_undirected_friendship"
-            ),
-            models.CheckConstraint(
-                check=~models.Q(player_low=models.F("player_high")), name="no_self_friendship"
-            ),
-        ]
-        indexes = [
-            models.Index(fields=["player_low", "player_high"]),
-            models.Index(fields=["player_high", "player_low"]),
-        ]
-
-    def __str__(self):
-        return f"{self.player_low.bonk_id} ↔ {self.player_high.bonk_id}"
-
-
-class FriendCountHistory(models.Model):
-    player = models.ForeignKey(
-        BonkPlayer, on_delete=models.CASCADE, related_name="friend_count_history"
-    )
-    count = models.IntegerField()
-    captured_at = models.DateTimeField(auto_now_add=True)
-
-
 class BonkAccountLink(models.Model):
     """
     Links a Bonkverse site user (BonkUser) to an in-game BonkPlayer.
@@ -215,7 +145,7 @@ class BonkAccountLink(models.Model):
 
     user = models.ForeignKey("BonkUser", on_delete=models.CASCADE, related_name="bonk_accounts")
     bonk_player = models.ForeignKey(
-        BonkPlayer, on_delete=models.CASCADE, related_name="linked_site_users"
+        "players.BonkPlayer", on_delete=models.CASCADE, related_name="linked_site_users"
     )
     token_encrypted = models.TextField(
         blank=True, null=True
@@ -246,63 +176,6 @@ class BonkAccountLink(models.Model):
             return signing.loads(self.token_encrypted, salt=self.TOKEN_SALT)["t"]
         except (signing.BadSignature, KeyError, TypeError):
             return None
-
-
-class FlashFriend(models.Model):
-    """
-    Represents a legacy Flash friend (Bonk1/TinyTanks import).
-    Name-only unless we resolve to a BonkPlayer later.
-    """
-
-    name = models.TextField(db_index=True)
-    bonk_player = models.ForeignKey(
-        BonkPlayer, on_delete=models.SET_NULL, null=True, blank=True, related_name="as_flash_friend"
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        constraints = [
-            # Covers the resolved case (bonk_player set): two rows can't
-            # share the same (name, bonk_player) pair.
-            models.UniqueConstraint(
-                fields=["name", "bonk_player"],
-                condition=models.Q(bonk_player__isnull=False),
-                name="uniq_flashfriend_name_player_resolved",
-            ),
-            # Covers the far more common unresolved case. Postgres treats
-            # every NULL as distinct from every other NULL, so a plain
-            # unique_together on (name, bonk_player) silently allows
-            # unlimited duplicate names as long as bonk_player is NULL —
-            # which is true for almost every FlashFriend row. This partial
-            # index enforces one row per name specifically when
-            # bonk_player is unresolved.
-            models.UniqueConstraint(
-                fields=["name"],
-                condition=models.Q(bonk_player__isnull=True),
-                name="uniq_flashfriend_name_unresolved",
-            ),
-        ]
-
-    def __str__(self):
-        return f"{self.name} (linked to {self.bonk_player_id or '—'})"
-
-
-class FlashFriendship(models.Model):
-    """
-    Links a Bonkverse site user to their imported flash friends.
-    """
-
-    user = models.ForeignKey("BonkUser", on_delete=models.CASCADE, related_name="flash_friendships")
-    flash_friend = models.ForeignKey(
-        FlashFriend, on_delete=models.CASCADE, related_name="friend_of"
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ("user", "flash_friend")
-
-    def __str__(self):
-        return f"{self.user.username} ↔ {self.flash_friend.name}"
 
 
 class SkinImage(models.Model):

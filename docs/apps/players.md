@@ -1,6 +1,6 @@
 # players
 
-bonk.io players as Bonkverse knows them: profiles built from the replay archive, the player directory and search, the friend graph (bonk.io friends and Flash-era friends), social stats, the XP calculator and profile privacy. The app existed before Phase 5 (profiles, replay sync, privacy); RFC-0001 step 5.4 moved the friend sync, player search APIs and social stats in from `skins/`.
+bonk.io players as Bonkverse knows them: profiles built from the replay archive, the player directory and search, the friend graph (bonk.io friends and Flash-era friends), social stats, the XP calculator and profile privacy. The app existed before Phase 5 (profiles, replay sync, privacy); RFC-0001 step 5.4 moved the friend sync, player search APIs and social stats in from `skins/`, and 5.4b moved the player models.
 
 **Owns:** what a profile shows and who may see it, storing friend lists, syncing names and DBIDs with the replay archive. **Does not own:** signing in or the bonk.io session (`skins/sign_in.py`, later `accounts`), talking to bonk.io or the replay archive (`integrations/`), the event log the sync writes to (`skins.events`, until 5.6 decides its home).
 
@@ -53,4 +53,14 @@ Shared styles stay in `skins/static/css/`: `player_profile.css` (also used by th
 
 ## Models
 
-`ProfileVisibility` and `SyncCursor` live here. `BonkPlayer`, `Friendship`, `FriendCountHistory`, `FlashFriend` and `FlashFriendship` still live in `skins/models.py` and move here next, without moving data.
+All in `players/models.py`:
+
+| Model | Table | What |
+|---|---|---|
+| `BonkPlayer` | `skins_bonkplayer` | A bonk.io account (DBID, name, XP). Not the Bonkverse login user. |
+| `Friendship` | `skins_friendship` | One undirected friend edge, stored once (low id, high id). |
+| `FriendCountHistory` | `skins_friendcounthistory` | Friend count at each sync. |
+| `FlashFriend`, `FlashFriendship` | `skins_flashfriend`, `skins_flashfriendship` | Flash-era friends and who imported them. |
+| `ProfileVisibility`, `SyncCursor` | `players_*` | Profile section switches; where the replay sync got to. |
+
+The first five moved from `skins/` in step 5.4b without moving data (migrations `players.0005` and `skins.0032`, both state-only): they keep their `skins_*` tables and index names, and `BonkAccountLink.bonk_player` (still in `skins`) points here. Renaming a table or index is a separate, real migration.
