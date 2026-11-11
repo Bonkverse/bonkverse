@@ -1,4 +1,5 @@
-# skins/forms.py
+"""The /login/ form: a bonk.io username and password, never stripped (bonk.io
+names can start or end with spaces)."""
 
 from django import forms
 

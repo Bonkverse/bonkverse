@@ -20,7 +20,7 @@ Setting names and defaults: [configuration.md](../operations/configuration.md).
 
 | Service | Client | Called from | Failures people see |
 |---|---|---|---|
-| bonk.io account scripts (login, friends, avatar) | `bonk_api.py` (`BonkApi`) | `skins/login.py`, `skins/wear_skin.py`, friend sync | Wrong password / unknown name / "bonk.io isn't responding" (502, no login modal). Details: [bonk/api.md](../bonk/api.md) |
+| bonk.io account scripts (login, friends, avatar) | `bonk_api.py` (`BonkApi`) | `accounts/login_attempts.py`, `skins/wear_skin.py`, friend sync | Wrong password / unknown name / "bonk.io isn't responding" (502, no login modal). Details: [bonk/api.md](../bonk/api.md) |
 | Skin editor render service (`/api/render-bundle`) | `editor_render.py` | `skins/rerender.py`, `skins/skin_import.py` | "The render service couldn't render this skin" |
 | BLSkinFetcher (BonkLeagues link → skin) | `bl_skin_fetcher.py` | `skins/skin_import.py` (upload form, BonxBot) | "Couldn't get that skin from BonkLeagues right now" |
 | Cloudflare cache purge | `cloudflare.py` | `skins/rerender.py` (one skin's files), `rerender_skins --purge-cache` (everything) | None; staff get `cache_purged: false`, the command prints the failure, logs say `cloudflare purge failed` |

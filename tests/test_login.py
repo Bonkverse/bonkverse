@@ -1,4 +1,4 @@
-"""Tests for the bonk.io-backed login flow (skins/login.py).
+"""Tests for the bonk.io-backed login flow (accounts/views.py, accounts/sign_in.py).
 
 The bonk.io call goes through integrations/bonk_api.py (tested on its own in
 test_bonk_api.py); these pin what users see. bonk.io is always faked with

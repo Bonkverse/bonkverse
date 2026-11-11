@@ -2,7 +2,7 @@
 
 Owns: reading `legacyFriends` (names separated by "#") and the FlashFriend
 and FlashFriendship rows for them.
-Does not own: the login itself (skins/sign_in.py) or regular bonk.io
+Does not own: the login itself (accounts/sign_in.py) or regular bonk.io
 friends (friends_sync.py).
 
 Runs inside the login request, so it uses a fixed number of queries however

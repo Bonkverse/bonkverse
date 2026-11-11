@@ -56,7 +56,7 @@ What that shows:
 - The login form doesn't strip spaces (`LoginForm.username` has `strip=False`).
 - Compare names with `BonkUsername.key` (case-insensitive, spaces kept).
 - Login finds the site account with a case-insensitive match
-  (`skins.sign_in.site_account_for`), preferring an exact spelling if older
+  (`accounts.sign_in.site_account_for`), preferring an exact spelling if older
   data has more than one. An existing account keeps its stored spelling,
   because skins name their creator by it. A login without a bonk.io id
   matches its `BonkPlayer` the same way.

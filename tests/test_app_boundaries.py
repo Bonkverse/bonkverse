@@ -32,6 +32,7 @@ ALLOWED: dict[tuple[str, str], str] = {
     ("public_api/selectors.py", "players.calculator"): "players exposes account_age via selectors",
     ("public_api/selectors.py", "players.charts"): "players exposes profile_path via selectors",
     ("players/friends_sync.py", "skins.events"): "log_event's home (UserEvent) is decided in 5.6",
+    ("accounts/sign_in.py", "skins.events"): "log_event's home (UserEvent) is decided in 5.6",
 }
 
 
@@ -102,7 +103,7 @@ def test_allowed_list_has_no_stale_entries():
 
 
 def test_finds_every_local_app():
-    assert {"skins", "players", "public_api"} <= _apps()
+    assert {"skins", "players", "public_api", "accounts"} <= _apps()
     assert not SHARED_PACKAGES & _apps()
 
 

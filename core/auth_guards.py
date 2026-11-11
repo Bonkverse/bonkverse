@@ -1,4 +1,4 @@
-# skins/auth_guards.py
+# core/auth_guards.py
 # One auth contract for all JSON API endpoints. Returns machine-readable 401s
 # the editor branches on: auth="bonkverse" → site sign-in, auth="bonk" → bonk token.
 from functools import wraps

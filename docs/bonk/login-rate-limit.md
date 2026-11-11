@@ -99,12 +99,12 @@ What production logs showed before the tests, and how they fit:
 
 | Rule | What the code does | Where |
 |---|---|---|
-| Per IP, and our IP is everyone's | Every login goes through one place that limits wrong passwords before bonk.io sees them | `skins/login_attempts.py` |
+| Per IP, and our IP is everyone's | Every login goes through one place that limits wrong passwords before bonk.io sees them | `accounts/login_attempts.py` |
 | 4 wrong passwords per IP | 2 wrong per account per visitor in 15 min, 3 per visitor across accounts, then a 15-minute hold. Keyed on name **and** visitor, so a stranger's wrong passwords for your name hold only the stranger | `ACCOUNT_FAILURES_ALLOWED`, `CLIENT_FAILURES_ALLOWED` |
 | Unknown usernames don't count | They count per visitor only, not per account | `ACCOUNT_COUNTED_FAILURES` |
 | Any request restarts the block | After `ratelimited`, no login reaches bonk.io for 17 minutes, with no checks inside the pause | `LOGIN_RATE_LIMIT_PAUSE` in `integrations/bonk_api.py` |
 | — | Whoever had wrong passwords when bonk.io limited the site is held 30 minutes, so their retry isn't the first login after the pause | `TRIGGER_HOLD_SECONDS` |
-| — | One login per click on `/login/` and in the wear login popup | `static/js/login.js`, `core/js/bv-wear.js` |
+| — | One login per click on `/login/` and in the wear login popup | `accounts/static/accounts/js/login.js`, `core/js/bv-wear.js` |
 
 None of this can stop four different players' wrong passwords from adding up.
 The lasting fix is for logins to leave from **each player's own IP**, so a

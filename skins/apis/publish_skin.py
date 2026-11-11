@@ -17,7 +17,7 @@ from core.ratelimits import limit
 from skins.events import log_event
 from skins.models import Skin
 from skins.skin_media import bundle_from_svg, save_render
-from skins.auth_guards import api_login_required
+from core.auth_guards import api_login_required
 from skins.svg_sanitizer import (
     TOO_LARGE_MESSAGE,
     SVGTooLargeError,

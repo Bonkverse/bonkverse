@@ -56,10 +56,10 @@ from integrations.bonk_api import (
     rate_limit_cooldowns,
 )
 
-from .auth_guards import api_login_required, bonk_token_required
+from accounts.services import attempt_login, login_failure_message
+from core.auth_guards import api_login_required, bonk_token_required
+
 from .events import log_event
-from .login import login_failure_message
-from .login_attempts import attempt_login
 from .models import Skin
 
 

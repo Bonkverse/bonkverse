@@ -15,7 +15,6 @@ from skins.search import search_skins
 from skins.upload import upload_skin
 from django.conf import settings
 from django.conf.urls.static import static
-from skins.login import login_view, logout_view
 from skins.my_profile import my_profile, edit_skin, delete_skin, bulk_delete_skins, my_skins_partial
 from skins.bonkbot import matchmaking_page, join_matchmaking
 from skins.skin_detail import skin_detail
@@ -25,7 +24,6 @@ from skins.apis.index import index
 from skins.apis.publish_skin import publish_skin
 from skins.apis import bot_skins
 from skins.share_skin import share_skin
-from skins.apis.auth.who_am_i import me
 from skins.report_skin import report_skin
 from skins import categories
 
@@ -38,9 +36,8 @@ urlpatterns = [
     path("api/publish-skin/", publish_skin, name="publish_skin"),
     path("api/bot/skins/", bot_skins.submit_skin, name="api_bot_submit_skin"),
     path("skins/share/<int:skin_id>/<uuid:uuid>/", share_skin, name="share_skin"),
-    path("login/", login_view, name="login"),
-    path("api/me/", me, name="api_me"),
-    path("logout/", logout_view, name="logout"),
+    # Log in and out with bonk.io, /api/me/ (accounts/, docs/apps/accounts.md).
+    path("", include("accounts.urls")),
     path("my-profile/", my_profile, name="my_profile"),
     path("upload/", upload_skin, name="upload_skin"),
     path("skin/<int:skin_id>/delete/", delete_skin, name="delete_skin"),

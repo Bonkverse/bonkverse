@@ -6,7 +6,7 @@ failed logins per bonk.io account and per visitor, and the log line for every
 attempt.
 Does not own: the bonk.io call (integrations/bonk_api.py) or bonk.io's own
 pause after a "ratelimited" (the cooldown there), the sentences players see
-(skins/login.py), or the per-IP request tier on the login views
+(login_messages.py), or the per-IP request tier on the login views
 (core/ratelimits.py, "login").
 
 Why (measured 2026-11-10, docs/bonk/login-rate-limit.md): bonk.io limits
@@ -41,8 +41,9 @@ from integrations.bonk_api import (
     rate_limit_cooldowns,
 )
 
-# The attempt lines keep the logger name they had in skins/login.py, so Railway
-# searches like @logger:skins.login still find them.
+# The attempt lines keep the logger name they had before this module moved to
+# accounts/ (RFC-0001 5.5), so Railway searches like @logger:skins.login still
+# find old and new lines alike.
 logger = logging.getLogger("skins.login")
 
 # Bonkverse's own refusal: this account or visitor has used up its wrong
