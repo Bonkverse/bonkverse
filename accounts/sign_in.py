@@ -4,7 +4,7 @@ Owns: finding or creating the site account for a bonk.io name, linking it to
 its BonkPlayer (with the signed token), storing the bonk.io session, syncing
 Flash friends from the login reply, and queueing the regular friend sync on
 the worker.
-Does not own: the /login/ page and its messages (login.py), trying the
+Does not own: the /login/ page (views.py) and its messages (login_messages.py), trying the
 bonk.io login and the limit on wrong passwords (login_attempts.py), the
 bonk.io session rules (core/bonk/session.py) or friend storage
 (players/friends_sync.py, players/flash_friends_sync.py).
@@ -25,9 +25,9 @@ from players.services import (
     sync_flash_friends_for_user,
 )
 
-from .events import log_event
-from .models import BonkAccountLink, BonkUser
 from players.models import BonkPlayer
+from skins.events import log_event
+from skins.models import BonkAccountLink, BonkUser
 
 logger = logging.getLogger(__name__)
 

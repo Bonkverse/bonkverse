@@ -190,8 +190,9 @@ Project Structure
 ```
 bonkverse/
 ├── bonk_skin_search/       # Django project: settings, root urls, celery app
-├── core/                   # shared helpers; core/bonk/ = bonk.io types (slots, usernames, skin codes, session)
+├── core/                   # shared helpers (auth_guards.py: JSON 401s with auth="bonkverse" / "bonk"); core/bonk/ = bonk.io types
 ├── integrations/           # one client per outside service; the only code that makes outside HTTP calls
+├── accounts/               # log in/out with bonk.io, wrong-password limit, what a login does, /api/me/, grant_admin
 ├── players/                # player profiles, directory and search, friend sync, social stats, XP calculator
 ├── public_api/             # /api/v1/, API keys, developer portal
 ├── site_pages/             # home, privacy, terms, staff, map decoder
@@ -200,14 +201,10 @@ bonkverse/
 ├── skins/                  # the original app, being split into domain apps (docs/apps/README.md)
 │   ├── models.py
 │   ├── querysets.py        # Skin.objects: with_favorite_count, with_score, created_in, search
-│   ├── auth_guards.py      # JSON auth decorators (auth="bonkverse" / auth="bonk")
 │   ├── selectors.py        # read-only page queries (decorate_skins_for_user for skin cards)
 │   ├── votes.py            # cast_vote: the one way vote counters change (ADR 0014)
 │   ├── skin_media.py       # the one writer of skin image files (docs/architecture/skin-images.md)
 │   ├── rerender.py         # re-render a skin from its code (button + rerender_skins)
-│   ├── sign_in.py          # what a successful bonk.io login does; login.py has the pages
-│   ├── friends_sync.py     # friends.php → Friendship edges, in named steps
-│   ├── tasks.py            # Celery entry points (friend sync, Discord refresh)
 │   ├── templates/skins/    # pages; partials/ holds the skin cards and shared modals
 │   ├── static/core/js/     # shared page helpers: BVApi, BVWear, BVCards, BVReport, bv-boot
 │   ├── static/js/, css/    # one script / stylesheet per page (docs/architecture/frontend.md)

@@ -5,7 +5,7 @@ sync_friends worker task in players/tasks.py after login), upserting BonkPlayer 
 for friends and requests, adding and pruning Friendship edges, and
 friend-count history.
 Does not own: talking to bonk.io (integrations/bonk_api.py), queueing the
-sync (players.services.queue_friend_sync, called by skins/sign_in.py) or Flash-era friends (flash_friends_sync.py).
+sync (players.services.queue_friend_sync, called by accounts/sign_in.py) or Flash-era friends (flash_friends_sync.py).
 
 A sync is a fixed list of steps, each its own function with its own tests
 (tests/test_friends_sync.py), run in this order by sync_friends_for_player:

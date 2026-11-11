@@ -85,8 +85,9 @@ def test_detects_every_import_form(tmp_path):
 
 def test_login_and_wear_go_through_the_bonk_client():
     for rel in (
-        "skins/login.py",
-        "skins/sign_in.py",
+        "accounts/views.py",
+        "accounts/login_attempts.py",
+        "accounts/sign_in.py",
         "skins/wear_skin.py",
         "players/friends_sync.py",
         "players/flash_friends_sync.py",

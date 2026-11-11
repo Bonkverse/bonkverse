@@ -1,4 +1,4 @@
-"""Tests for Bonkverse's own limit on wrong bonk.io passwords (skins/login_attempts.py).
+"""Tests for Bonkverse's own limit on wrong bonk.io passwords (accounts/login_attempts.py).
 
 Regression for 2026-11-09 and 11-10: one player's wrong passwords set off
 bonk.io's "ratelimited", which paused logins for every Bonkverse user, twice
@@ -12,8 +12,8 @@ import pytest
 import requests
 
 from integrations.bonk_api import rate_limit_cooldowns
-from skins import login_attempts
-from skins.login_attempts import (
+from accounts import login_attempts
+from accounts.login_attempts import (
     ACCOUNT_FAILURES_ALLOWED,
     CLIENT_FAILURES_ALLOWED,
     HOLD_SECONDS,

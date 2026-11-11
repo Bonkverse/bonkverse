@@ -111,7 +111,7 @@ at a time, and the `wear_burst` / `wear` tiers in `RATE_LIMITS`. On
 ### Wrong passwords
 
 With about 4 wrong passwords allowed for the whole site, Bonkverse limits
-failed logins itself before bonk.io sees them (`skins/login_attempts.py`,
+failed logins itself before bonk.io sees them (`accounts/login_attempts.py`,
 used by both the /login/ page and the in-page login on wear). The numbers and
 why are in [login-rate-limit.md](login-rate-limit.md#what-bonkverse-does-about-it).
 
@@ -133,7 +133,7 @@ why are in [login-rate-limit.md](login-rate-limit.md#what-bonkverse-does-about-i
 - Counts live in the cache (`login:failures:<kind>:<key>`,
   `login:hold:<kind>:<key>`). If the cache fails, logins go ahead unlimited.
 
-Every attempt is logged on `skins.login` with a pseudonym for the account and
+Every attempt is logged on `skins.login` (the logger keeps its old name after the move to `accounts/`) with a pseudonym for the account and
 the visitor (`core/pseudonym.py`: an HMAC with `SECRET_KEY`, never the name or
 IP) and where it came from:
 

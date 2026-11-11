@@ -262,6 +262,7 @@ INSTALLED_APPS = [
     "site_pages",
     "communities",
     "stats",
+    "accounts",
 ]
 
 # =========================================================
