@@ -7,7 +7,7 @@ pytest-cov==7.1.0
 factory_boy==3.3.3
 responses==0.26.3
 
-ruff==0.17.3
+ruff==0.17.4
 pre-commit
 pip-audit
 bandit
