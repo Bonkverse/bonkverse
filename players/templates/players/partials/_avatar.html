@@ -1,0 +1,8 @@
+{% comment %}
+A player's avatar in a list or card: their worn skin over their initials.
+Takes `initials`, `skin` (an avatar URL or None, from
+players.selectors.with_skin_avatars) and optional `extra` classes. The skin
+is a background image layered over the initials, so one that can't load
+draws nothing and the initials show through (no script, no broken-image icon).
+{% endcomment %}
+<span class="pv-initials{% if skin %} pv-initials--skin{% endif %}{% if extra %} {{ extra }}{% endif %}"{% if skin %} style="--skin: url('{{ skin }}')"{% endif %} aria-hidden="true">{{ initials }}</span>

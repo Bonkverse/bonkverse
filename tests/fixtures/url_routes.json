@@ -176,6 +176,14 @@
     "name": "player_people"
   },
   {
+    "route": "player/<username:username>/skin-thumb.png",
+    "name": "player_skin_avatar_thumb"
+  },
+  {
+    "route": "player/<username:username>/skin.png",
+    "name": "player_skin_avatar"
+  },
+  {
     "route": "player/<username:username>/skins/",
     "name": "player_skins"
   },

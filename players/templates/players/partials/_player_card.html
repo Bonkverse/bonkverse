@@ -7,7 +7,7 @@ card without one is dashed and quiet, so the two are easy to tell apart.
 {% endcomment %}
 {% if card.profile_url %}<a class="pv-pcard" href="{{ card.profile_url }}">{% else %}<div class="pv-pcard pv-pcard--none">{% endif %}
   <span class="pv-pcard__top">
-    <span class="pv-initials pv-pcard__avatar" aria-hidden="true">{{ card.initials }}</span>
+    {% include 'players/partials/_avatar.html' with initials=card.initials skin=card.skin extra="pv-pcard__avatar" %}
     <span class="pv-pcard__who">
       <span class="pv-pcard__name"{% if card.shown_name != card.username %} title="{{ card.username }}" aria-label="{{ card.username }}"{% endif %}>{{ card.shown_name }}</span>
       {% if card.bonk_id %}<span class="pv-pcard__id">DBID {{ card.bonk_id }}</span>{% endif %}

@@ -22,7 +22,7 @@ header, the owner's privacy note and the tab bar. Each tab fills
 <main class="pv" id="main">
 
   <header class="pv-hero{% if active_tab %} pv-hero--compact{% endif %}">
-    <a class="pv-avatar" href="{% url 'player_profile' username %}" aria-label="{{ username }}'s overview">{{ username|slice:":2"|upper }}</a>
+    <a class="pv-avatar{% if skin_avatar %} pv-avatar--skin{% endif %}" href="{% url 'player_profile' username %}"{% if skin_avatar %} style="--skin: url('{{ skin_avatar }}')"{% endif %} aria-label="{{ username }}'s overview">{{ username|slice:":2"|upper }}</a>
     <div class="pv-hero__text">
       {% if active_tab %}
         <p class="pv-hero__name">{{ username }}</p>

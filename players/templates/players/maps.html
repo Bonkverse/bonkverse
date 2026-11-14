@@ -114,7 +114,7 @@
               {% for p in detail.people %}
                 <li>
                   <a class="pv-person" href="{{ p.profile_path }}">
-                    <span class="pv-initials" aria-hidden="true">{{ p.initials }}</span>
+                    {% include 'players/partials/_avatar.html' with initials=p.initials skin=p.skin %}
                     <span class="pv-person__name">{{ p.username }}</span>
                     <span class="pv-muted pv-small">{{ p.games }} replay{{ p.games|pluralize }}</span>
                   </a>

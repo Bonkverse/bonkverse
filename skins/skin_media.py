@@ -2,7 +2,9 @@
 
 Owns: where a skin's files live (skins/<id>.svg, <id>.png, <id>_thumb.png),
 writing them, the Skin.image_url and SkinImage rows that point at them, and
-making PNGs from an SVG when nothing else rendered them.
+making PNGs from an SVG when nothing else rendered them. Also the images of
+skin codes that aren't gallery skins (a player's worn skin), kept by code:
+skin_codes/<digest>.png and <digest>_thumb.png.
 Does not own: rendering skin codes (integrations/editor_render.py), fetching
 from BonkLeagues (integrations/bl_skin_fetcher.py), SVG safety checks
 (svg_sanitizer.py; callers validate first), creating or deleting the Skin
@@ -20,6 +22,7 @@ temporary files. On success the files, image_url and image rows all match.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import os
 from dataclasses import dataclass
@@ -27,6 +30,7 @@ from dataclasses import dataclass
 import cairosvg
 from django.conf import settings
 
+from core.bonk import SkinCode
 from skins.models import Skin, SkinImage
 
 logger = logging.getLogger(__name__)
@@ -64,6 +68,54 @@ def bundle_from_svg(svg: bytes) -> RenderBundle:
             bytestring=svg, output_width=THUMBNAIL_SIZE, output_height=THUMBNAIL_SIZE
         ),
     )
+
+
+# Images of a skin code, by kind -> file name pattern under MEDIA_ROOT. Named
+# by the code's digest, so a code is rendered once whoever wears it.
+_CODE_FILE_NAMES = {
+    "png": "skin_codes/{digest}.png",
+    "thumbnail": "skin_codes/{digest}_thumb.png",
+}
+CODE_IMAGE_KINDS = tuple(_CODE_FILE_NAMES)
+
+
+def code_digest(skin_code: str) -> str:
+    """A short, stable name for a skin code: the same skin URL-encoded or not
+    gets the same digest."""
+    return hashlib.sha256(SkinCode(skin_code).decoded.encode("ascii", "replace")).hexdigest()[:32]
+
+
+def code_media_path(skin_code: str, kind: str) -> str:
+    """Path under MEDIA_ROOT of a skin code's `kind` image ("png" or "thumbnail")."""
+    return _CODE_FILE_NAMES[kind].format(digest=code_digest(skin_code))
+
+
+def code_images_exist(skin_code: str) -> bool:
+    """Whether every image of this skin code is on disk."""
+    return all(
+        os.path.isfile(os.path.join(settings.MEDIA_ROOT, code_media_path(skin_code, kind)))
+        for kind in CODE_IMAGE_KINDS
+    )
+
+
+def save_code_render(skin_code: str, png: bytes, thumbnail: bytes) -> dict[str, str]:
+    """Write a skin code's PNG and thumbnail (see save_render for the cleanup rule).
+
+    Callers check the bytes are PNGs first.
+
+    Returns:
+        {kind: path relative to MEDIA_ROOT} of the files written.
+
+    Raises:
+        OSError: a file couldn't be written; files there before are unchanged.
+    """
+    paths = {kind: code_media_path(skin_code, kind) for kind in CODE_IMAGE_KINDS}
+    _write_all({paths["png"]: png, paths["thumbnail"]: thumbnail})
+    return paths
+
+
+def is_png(content: bytes) -> bool:
+    return content.startswith(_PNG_SIGNATURE)
 
 
 def media_paths(skin_id: int) -> dict[str, str]:
@@ -126,7 +178,8 @@ def save_render(skin: Skin, bundle: RenderBundle) -> dict[str, str]:
 
 def _write_all(files: dict[str, bytes]) -> None:
     """Write every file to a temporary name, then move each into place."""
-    os.makedirs(os.path.join(settings.MEDIA_ROOT, "skins"), exist_ok=True)
+    for rel_path in files:
+        os.makedirs(os.path.dirname(os.path.join(settings.MEDIA_ROOT, rel_path)), exist_ok=True)
     staged = []  # (temporary path, final path)
     try:
         for rel_path, content in files.items():

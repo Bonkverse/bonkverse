@@ -11,7 +11,7 @@
         {% for p in list.rows %}
           <li class="pv-ranked__row">
             <a class="pv-person" href="{{ p.profile_path }}">
-              <span class="pv-initials" aria-hidden="true">{{ p.initials }}</span>
+              {% include 'players/partials/_avatar.html' with initials=p.initials skin=p.skin %}
               <span class="pv-person__name">{{ p.username }}</span>
             </a>
             <span class="pv-ranked__bar" style="--bar: {{ p.bar }}%" aria-hidden="true"></span>
