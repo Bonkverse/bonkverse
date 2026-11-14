@@ -81,7 +81,7 @@ its tasks' integrations use, set as references to `bonkverse`'s values
 | Variable | Default | Notes |
 |---|---|---|
 | `BONKVERSE_SYNC_TOKEN` | unset → replay sync off | Shared secret for the replay site's internal sync endpoints (`integrations/replay_sync.py`). Worker and web. |
-| `REPLAY_SYNC_INTERVAL_SECONDS` | `3600` | How often the worker runs `players.tasks.sync_replays`. Its time limit (28 min) must stay under this. |
+| `REPLAY_SYNC_INTERVAL_SECONDS` | `300` | How often the worker runs `players.tasks.sync_replays` (at least 60). A run takes about a second; its time limit (80% of this) and lock (all of it) scale with it. The archive checks bonk.io every 2 minutes. |
 
 ## Railway build and deploy
 

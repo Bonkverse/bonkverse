@@ -28,7 +28,7 @@ bonk.io players as Bonkverse knows them: profiles built from the replay archive,
 
 `tasks.py`:
 - `sync_friends`, queued at login, registered as **`skins.tasks.sync_friends`** (its name before the move, so runs queued during a deploy keep working; pinned by `tests/test_friend_sync_task.py`).
-- `sync_replays`, hourly.
+- `sync_replays`, every 5 minutes (`REPLAY_SYNC_INTERVAL_SECONDS`): new players appear a few minutes after their replay reaches the archive.
 
 Details: [background-work.md](../architecture/background-work.md).
 
