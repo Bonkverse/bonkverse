@@ -5,5 +5,10 @@
   "token": "SCRUBBED-TEST-TOKEN-abc123",
   "xp": 4200,
   "activeAvatarNumber": 2,
-  "legacyFriends": ""
+  "legacyFriends": "",
+  "avatar1": "CgcDYQACCQkBCgcFYWwAAQBNPlt5PUI19d8/GMUDPsJvGgAAAAAAAAoFAAEATT5beT1CNfXfvvn8kL80i70BAAAAAAAKBQABAEs+gkonQjVq/L2vivk9L4r5AAAAzxsPCgUAAQANP1yl2D9VbKUAAAAAAAAAAAAAAM8bDwAAAAA=",
+  "avatar2": "CgcDYQACCQMBCgcFYWwAAQANPhmZmgAAAAAAAAAAAAAAAAAAAPr6+gAAAAA=",
+  "avatar3": "",
+  "avatar4": null,
+  "avatar5": ""
 }

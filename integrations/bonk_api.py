@@ -274,6 +274,9 @@ class BonkLoginResult:
     legacy_friends: str = field(default="", repr=False)
     # BONK: the account's total XP ("xp"); its level is core.bonk.levels.
     xp: int | None = None
+    # The skin code in the account's active slot: what the player wears in
+    # game. Unchecked here; callers check it with core.bonk.SkinCode.
+    skin_code: str | None = field(default=None, repr=False)
 
 
 @dataclass(frozen=True)
@@ -384,18 +387,20 @@ class BonkApi:
             logger.warning("bonk.io login succeeded but returned an unusable username")
             return BonkLoginResult(ok=False, error=BonkError.UNAVAILABLE)
 
+        # BONK: the key is activeAvatarNumber; the lowercase spelling is
+        # accepted too because older Bonkverse code expected it.
+        active_slot = AvatarSlot.parse(
+            data.get("activeAvatarNumber") or data.get("activeavatarnumber")
+        )
         return BonkLoginResult(
             ok=True,
             token=data["token"],
-            # BONK: the key is activeAvatarNumber; the lowercase spelling is
-            # accepted too because older Bonkverse code expected it.
-            active_slot=AvatarSlot.parse(
-                data.get("activeAvatarNumber") or data.get("activeavatarnumber")
-            ),
+            active_slot=active_slot,
             username=canonical,
             bonk_id=_int_or_none(data.get("id")),
             legacy_friends=data.get("legacyFriends") or "",
             xp=_int_or_none(data.get("xp")),
+            skin_code=_slot_skin_code(data, active_slot),
         )
 
     def get_friends(self, token: str) -> BonkFriendsResult:
@@ -538,6 +543,16 @@ def _bonk_code(data: dict) -> str | None:
 def _refusal(code: str | None) -> str:
     """Bonkverse's error code for bonk.io's refusal code."""
     return _REFUSALS.get(code, BonkError.REJECTED)
+
+
+def _slot_skin_code(data: dict, slot: AvatarSlot | None) -> str | None:
+    """The skin code bonk.io sent for `slot`, or None if it sent none."""
+    if slot is None:
+        return None
+    # BONK: each slot's skin code is its own key, "avatar1" to "avatar5"
+    # (DemystifyBonk's login notes). An empty slot may come back empty or null.
+    value = data.get(f"avatar{slot.number}")
+    return value if isinstance(value, str) and value else None
 
 
 def _int_or_none(value) -> int | None:

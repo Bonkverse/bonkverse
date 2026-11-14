@@ -162,6 +162,16 @@ class TestBonkSession:
         }
         assert store.modified
 
+    @pytest.mark.parametrize("stored, expected", [(123, 123), ("123", 123), (None, None)])
+    def test_bonk_id_reads_the_stored_identity(self, now, stored, expected):
+        bonk = BonkSession(FakeSession(), clock=lambda: now[0])
+        bonk.store_identity("Saucy", stored)
+
+        assert bonk.bonk_id == expected
+
+    def test_bonk_id_is_none_without_identity(self, now):
+        assert BonkSession(FakeSession(), clock=lambda: now[0]).bonk_id is None
+
     def test_clear_removes_everything_bonk(self, now):
         store = FakeSession(other="kept")
         bonk = BonkSession(store, clock=lambda: now[0])

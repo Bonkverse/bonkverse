@@ -87,6 +87,29 @@ class TestLogin:
 
         assert api.login("Typed Name", "pw").username.value == "Typed Name"
 
+    def test_skin_code_is_the_active_slots(self, api, mocked_http):
+        body = load_bonk_fixture("login_success")
+        mocked_http.post(LOGIN, json=body)
+
+        result = api.login("testplayer", "hunter2")
+
+        assert result.skin_code == body["avatar2"]
+        assert body["avatar2"] not in repr(result)
+
+    @pytest.mark.parametrize(
+        "changes",
+        [
+            {"activeAvatarNumber": 3},  # slot holds ""
+            {"activeAvatarNumber": 4},  # slot holds null
+            {"activeAvatarNumber": None},  # no active slot
+            {"avatar2": {"layers": []}},  # not a string
+        ],
+    )
+    def test_no_skin_code_when_the_active_slot_has_none(self, api, mocked_http, changes):
+        mocked_http.post(LOGIN, json={**load_bonk_fixture("login_success"), **changes})
+
+        assert api.login("testplayer", "hunter2").skin_code is None
+
     def test_lowercase_active_slot_key_is_accepted(self, api, mocked_http):
         body = load_bonk_fixture("login_success")
         body["activeavatarnumber"] = body.pop("activeAvatarNumber")

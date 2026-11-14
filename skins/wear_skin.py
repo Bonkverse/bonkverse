@@ -2,6 +2,8 @@
 
 Owns: the wear endpoints (gallery skin by id, unsaved editor skin by code) and
 the in-page bonk.io login used when the player's bonk.io token is missing.
+A wear into the player's active slot is recorded as the skin they wear
+(players.services.record_worn_skin).
 Does not own: the bonk.io session rules (core/bonk/session.py) or the HTTP
 calls to bonk.io (integrations/bonk_api.py).
 
@@ -37,6 +39,7 @@ every gunicorn worker sees them:
    a row, and `retry_after` tells the page how long it has left.
 """
 
+import logging
 import math
 from contextlib import contextmanager
 
@@ -58,9 +61,12 @@ from integrations.bonk_api import (
 
 from accounts.services import attempt_login, login_failure_message
 from core.auth_guards import api_login_required, bonk_token_required
+from players.services import WornSkinSource, record_worn_skin
 
 from .events import log_event
 from .models import Skin
+
+logger = logging.getLogger(__name__)
 
 
 def _resolve_slot(request) -> AvatarSlot:
@@ -171,6 +177,13 @@ def _wear(request, skin_code: str) -> tuple[AvatarSlot, JsonResponse | None]:
         # integrations/bonk_api.py logs bonk.io's refusal code.
         return slot, _update_failed_response(request, result)
     bonk.store_token(token)  # sliding TTL
+    if slot == bonk.active_slot:
+        # Only the active slot is what the player wears in game. A failure
+        # here must not turn a skin bonk.io applied into an error reply.
+        try:
+            record_worn_skin(bonk.bonk_id, skin_code, WornSkinSource.WEAR)
+        except Exception:
+            logger.exception("could not record the worn skin after a wear")
     return slot, None
 
 
@@ -203,7 +216,13 @@ def bonk_login_for_wear(request):
 
     bonk = BonkSession(request.session)
     bonk.store_token(result.token)
+    # The account this token belongs to, which wears record their skin on.
+    bonk.store_identity(result.username.value, result.bonk_id)
     bonk.store_active_slot(result.active_slot)
+    try:
+        record_worn_skin(result.bonk_id, result.skin_code, WornSkinSource.LOGIN)
+    except Exception:
+        logger.exception("could not record the worn skin after a wear login")
     active_slot = result.active_slot.number if result.active_slot else None
     return JsonResponse({"ok": True, "active_slot": active_slot})
 
