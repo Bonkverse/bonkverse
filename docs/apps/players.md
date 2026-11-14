@@ -2,7 +2,7 @@
 
 bonk.io players as Bonkverse knows them: profiles built from the replay archive, the player directory and search, the friend graph (bonk.io friends and Flash-era friends), social stats, the XP calculator and profile privacy. The app existed before Phase 5 (profiles, replay sync, privacy); RFC-0001 step 5.4 moved the friend sync, player search APIs and social stats in from `skins/`, and 5.4b moved the player models.
 
-**Owns:** what a profile shows and who may see it, storing friend lists, syncing names and DBIDs with the replay archive. **Does not own:** signing in or the bonk.io session (`accounts`), talking to bonk.io or the replay archive (`integrations/`), the event log the sync writes to (`skins.events`, until 5.6 decides its home).
+**Owns:** what a profile shows and who may see it, storing friend lists, the skin each player last wore (`worn_skins.py`), syncing names and DBIDs with the replay archive. **Does not own:** signing in or the bonk.io session (`accounts`), talking to bonk.io or the replay archive (`integrations/`), the event log the sync writes to (`skins.events`, until 5.6 decides its home).
 
 ## Routes
 
@@ -21,7 +21,7 @@ bonk.io players as Bonkverse knows them: profiles built from the replay archive,
 
 ## Public entry points for other apps
 
-`players/services.py`: `queue_friend_sync(account_link_id)`, `sync_flash_friends_for_user(...)`, `adopt_replay_names(...)` (all used by `accounts/sign_in.py`), `update_visibility(...)`. `players/selectors.py` for reads (profiles, directory, calculator).
+`players/services.py`: `queue_friend_sync(account_link_id)`, `sync_flash_friends_for_user(...)`, `adopt_replay_names(...)` (all used by `accounts/sign_in.py`), `record_worn_skin(bonk_id, skin_code, source)` (used by `accounts/sign_in.py` and `skins/wear_skin.py`), `update_visibility(...)`. `players/selectors.py` for reads (profiles, directory, calculator).
 
 ## Background work
 
@@ -41,6 +41,7 @@ players/
   friends_sync.py                      # friends.php -> Friendship edges, in named steps
   flash_friends_sync.py                # Flash-era friends from the login reply
   replay_sync.py                       # names in, DBIDs out with the replay archive
+  worn_skins.py                        # the skin each player last wore (newest sighting wins)
   calculator.py, charts.py, converters.py, dbid_lookup.py
   templates/players/                   # every profile tab, directory, settings, XP calculator, social stats
   static/players/js/, static/players/css/   # page scripts and page-only styles
@@ -57,10 +58,21 @@ All in `players/models.py`:
 
 | Model | Table | What |
 |---|---|---|
-| `BonkPlayer` | `skins_bonkplayer` | A bonk.io account (DBID, name, XP). Not the Bonkverse login user. |
+| `BonkPlayer` | `skins_bonkplayer` | A bonk.io account (DBID, name, XP, last worn skin). Not the Bonkverse login user. |
 | `Friendship` | `skins_friendship` | One undirected friend edge, stored once (low id, high id). |
 | `FriendCountHistory` | `skins_friendcounthistory` | Friend count at each sync. |
 | `FlashFriend`, `FlashFriendship` | `skins_flashfriend`, `skins_flashfriendship` | Flash-era friends and who imported them. |
 | `ProfileVisibility`, `SyncCursor` | `players_*` | Profile section switches; where the replay sync got to. |
 
 The first five moved from `skins/` in step 5.4b without moving data (migrations `players.0005` and `skins.0032`, both state-only): they keep their `skins_*` tables and index names, and `BonkAccountLink.bonk_player` (still in `skins`) points here. Renaming a table or index is a separate, real migration.
+
+## Worn skins
+
+`BonkPlayer.worn_skin_code`, `worn_skin_seen_at` and `worn_skin_source` hold the skin the player last wore in game. `record_worn_skin` stores a sighting only if it parses as a skin (`core.bonk.SkinCode`) and is at least as new as the stored one, in one `UPDATE` so racing sightings can't leave the older one. The code is stored URL-decoded (plain base64).
+
+| Source | When |
+|---|---|
+| `login` | A bonk.io login (the site's or the wear popup's): the skin in the reply's active slot |
+| `wear` | A wear from Bonkverse that bonk.io accepted, into the session's active slot. Wears into another slot don't change what the player wears in game |
+
+Nothing shows it yet. Planned: replay sightings for players who never sign in (the replay archive storing the avatar per participant, ADR 0011), the skin as the profile avatar in place of initials, and a `skin` field in `/api/v1/`.

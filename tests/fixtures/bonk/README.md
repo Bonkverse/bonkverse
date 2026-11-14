@@ -16,7 +16,7 @@ Rules:
 
 | File | Endpoint | Source |
 |------|----------|--------|
-| `login_success.json` | `login_legacy.php` | synthetic |
+| `login_success.json` | `login_legacy.php` | synthetic; `avatar1`–`avatar5` synthetic (community): DemystifyBonk's field names, real skin codes in slots 1–2, slot 3 empty, slot 4 null |
 | `login_wrong_password.json` | `login_legacy.php` (HTTP 200 with failure body) | synthetic (community) |
 | `login_unknown_username.json` | `login_legacy.php` (HTTP 200 with failure body) | synthetic (community) |
 | `friends_success.json` | `friends.php` (includes a blank name and a bad id on purpose) | synthetic |

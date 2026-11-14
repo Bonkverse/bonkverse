@@ -69,6 +69,14 @@ class BonkSession:
             self._store[ACTIVE_SLOT] = parsed.number
             self._touch()
 
+    @property
+    def bonk_id(self) -> int | None:
+        """The bonk_id of the account whose token this session holds, if known."""
+        try:
+            return int(self._store[BONK_ID])
+        except (KeyError, TypeError, ValueError):
+            return None
+
     def store_identity(self, bonk_username: str, bonk_id) -> None:
         self._store[USERNAME] = bonk_username
         self._store[BONK_ID] = bonk_id

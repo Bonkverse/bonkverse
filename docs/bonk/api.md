@@ -173,7 +173,9 @@ Success (`login_success.json`, synthetic):
 | `id` | Numeric account id; the real identity (`BonkPlayer.bonk_id`). |
 | `activeAvatarNumber` | The account's active avatar slot, 1–5. A lowercase `activeavatarnumber` is also accepted. |
 | `legacyFriends` | Flash-era friends: one string of names separated by `#`. Empty segments are parsing artifacts; whitespace-only names are real. |
-| `xp` and others | Not used. |
+| `xp` | Total XP, stored as `BonkPlayer.xp`. |
+| `avatar1` … `avatar5` | Each avatar slot's skin code (plain base64), per the [DemystifyBonk notes](https://github.com/WolfRichie/Demystify-Bonk). The active slot's code is the skin the player wears in game; it is stored as `BonkPlayer.worn_skin_code` once it parses as a skin. An empty slot is taken to come back empty or null. **Not yet recorded**: the notes also list an `avatar` key and describe the numbering loosely, so check a real reply that `avatar<activeAvatarNumber>` is the active skin. |
+| Others | Not used. |
 
 Refusals: `e: "password"` (`login_wrong_password.json`), `e: "username_fail"`
 (`login_unknown_username.json`). Both codes are the ones other open-source

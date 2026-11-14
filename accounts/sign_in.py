@@ -1,7 +1,8 @@
 """What a successful bonk.io login does on our side.
 
 Owns: finding or creating the site account for a bonk.io name, linking it to
-its BonkPlayer (with the signed token), storing the bonk.io session, syncing
+its BonkPlayer (with the signed token and the skin the player is wearing),
+storing the bonk.io session, syncing
 Flash friends from the login reply, and queueing the regular friend sync on
 the worker.
 Does not own: the /login/ page (views.py) and its messages (login_messages.py), trying the
@@ -20,8 +21,10 @@ from core.bonk import BonkSession, BonkUsername
 from integrations.bonk_api import BonkLoginResult
 
 from players.services import (
+    WornSkinSource,
     adopt_replay_names,
     queue_friend_sync as queue_players_friend_sync,
+    record_worn_skin,
     sync_flash_friends_for_user,
 )
 
@@ -104,8 +107,9 @@ def link_bonk_player(user: BonkUser, result: BonkLoginResult) -> BonkAccountLink
     """Create or refresh the BonkPlayer and its link to the site account.
 
     The player's stored name is corrected to bonk.io's spelling (bonk_id is
-    the real identity), its XP is recorded when the reply has it, and the
-    link stores the token signed (BonkAccountLink.sign_token).
+    the real identity), its XP and worn skin (the active slot's) are recorded
+    when the reply has them, and the link stores the token signed
+    (BonkAccountLink.sign_token).
     """
     adopt_replay_names({result.bonk_id: result.username.value})
     player, created = BonkPlayer.objects.get_or_create(
@@ -134,6 +138,7 @@ def link_bonk_player(user: BonkUser, result: BonkLoginResult) -> BonkAccountLink
             "active": True,
         },
     )
+    record_worn_skin(result.bonk_id, result.skin_code, WornSkinSource.LOGIN)
     return link
 
 

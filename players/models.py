@@ -74,6 +74,13 @@ class SyncCursor(models.Model):
         return f"{self.name} = {self.value}"
 
 
+class WornSkinSource(models.TextChoices):
+    """Where a player's worn skin was seen."""
+
+    LOGIN = "login", "bonk.io login"
+    WEAR = "wear", "Worn from Bonkverse"
+
+
 class BonkPlayer(models.Model):
     """Any bonk.io account we know of (friends, replay players, map authors).
 
@@ -91,6 +98,14 @@ class BonkPlayer(models.Model):
     # shown); null until they sign in to Bonkverse. Level: core.bonk.levels.
     xp = models.BigIntegerField(null=True, blank=True)
     xp_seen_at = models.DateTimeField(null=True, blank=True)
+    # The skin the player last wore in game, from the newest place we saw it
+    # (players.services.record_worn_skin). Plain base64, checked with
+    # core.bonk.SkinCode; null until first seen.
+    worn_skin_code = models.TextField(null=True, blank=True)
+    worn_skin_seen_at = models.DateTimeField(null=True, blank=True)
+    worn_skin_source = models.CharField(
+        max_length=16, blank=True, default="", choices=WornSkinSource.choices
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

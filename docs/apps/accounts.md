@@ -17,7 +17,7 @@ Signing in to Bonkverse with a bonk.io account. Bonkverse has no passwords of it
 `accounts/services.py`:
 - `attempt_login(request, username, password, via=...)`: tries the bonk.io login, holding a try first when this account or visitor has used up its wrong passwords. Every attempt is logged with pseudonyms, never names or IPs.
 - `login_failure_message(error, retry_after)`: the sentence for a turned-down login.
-- `sign_in(request, result)`: stores the bonk.io session, logs in the site account, links it to the BonkPlayer, stores Flash friends and queues the friend sync on the worker (`players.services`).
+- `sign_in(request, result)`: stores the bonk.io session, logs in the site account, links it to the BonkPlayer (recording the skin the player wears, `players.services.record_worn_skin`), stores Flash friends and queues the friend sync on the worker (`players.services`).
 
 The wear popup (`/api/bonk/login/`, in `skins`) uses the first two to refresh the bonk.io token of a player who is already signed in.
 
