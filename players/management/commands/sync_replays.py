@@ -18,6 +18,12 @@ class Command(BaseCommand):
         parser.add_argument("--names-only", action="store_true", help="Only pull replay names.")
         parser.add_argument("--ids-only", action="store_true", help="Only push DBIDs.")
         parser.add_argument(
+            "--from-start",
+            action="store_true",
+            help="Read replay names from the beginning of the archive again "
+            "(fills in skins for names synced before skins were sent).",
+        )
+        parser.add_argument(
             "--batches",
             type=int,
             default=200,
@@ -25,6 +31,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **opts):
+        if opts["from_start"]:
+            replay_sync.restart_names()
+            self.stdout.write("Replay names: starting again from the beginning.")
         result = replay_sync.run(
             names=not opts["ids_only"],
             ids=not opts["names_only"],
@@ -41,6 +50,8 @@ class Command(BaseCommand):
             verb = "added" if part == "names" else "sent"
             state = "up to date" if r["done"] else "more to do (run again)"
             line = f"{label}: {count} {verb} in {r['batches']} batches, {state}"
+            if part == "names":
+                line += f"; {r.get('skins', 0)} worn skins updated"
             if r["error"]:
                 self.stderr.write(self.style.ERROR(f"{line}; stopped: {r['error']}"))
             else:

@@ -65,7 +65,12 @@ def _call(method, url, token, what, **kwargs):
 
 
 def fetch_replay_names(base_url: str, token: str, after: str = "", limit: int = 5000) -> SyncResult:
-    """data: {"names": [{username, level, games}], "next": "cycle:id", "done": bool}."""
+    """data: {"names": [{username, level, games, skin, skin_seen_at}],
+    "avatars": {hash: {layers, bc}}, "next": "cycle:id", "done": bool}.
+
+    `skin` and `avatars` come from ReplayRenderer since it began sending
+    skins; older answers lack them, which callers treat as "no skins".
+    """
     params = {"limit": limit}
     if after:
         params["after"] = after

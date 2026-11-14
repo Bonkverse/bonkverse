@@ -79,6 +79,7 @@ class WornSkinSource(models.TextChoices):
 
     LOGIN = "login", "bonk.io login"
     WEAR = "wear", "Worn from Bonkverse"
+    REPLAY = "replay", "Seen in a replay"
 
 
 class BonkPlayer(models.Model):

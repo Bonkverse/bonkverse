@@ -75,6 +75,11 @@ The first five moved from `skins/` in step 5.4b without moving data (migrations 
 |---|---|
 | `login` | A bonk.io login (the site's or the wear popup's): the skin in the reply's active slot |
 | `wear` | A wear from Bonkverse that bonk.io accepted, into the session's active slot. Wears into another slot don't change what the player wears in game |
+| `replay` | The replay sync (`replay_sync.py`): each name's newest skin in a batch of replays, dated by when the replay was collected (or its estimated day for cycle 5 and the backlog). Stored by name with `record_replay_skins`, one `UPDATE` per batch, on every BonkPlayer with that name (DBID-less copies too), and without touching `updated_at` (the DBID push's cursor) |
+
+Login and wear are stored by `bonk_id`; replays by name, because replays only carry names. Replays send skins as `{layers, bc}`; `core.bonk.SkinCode.from_avatar` writes the skin code the way the editor does (dense layers, empty slots dropped, since only order changes the drawing).
+
+To fill in skins for names synced before skins were sent, read the archive once more: `python manage.py sync_replays --names-only --from-start` (about 210 batches of 5,000 replays; run it again until it says "up to date"). Names already known are skipped; only skins are written.
 
 It is published as `skin` in `/api/v1/` ([public-api.md](../architecture/public-api.md)) and is the player's avatar everywhere a placeholder used to show:
 
@@ -89,4 +94,4 @@ It is published as `skin` in `/api/v1/` ([public-api.md](../architecture/public-
 
 The image comes from `skins.services.code_image(skin_code, kind)` ([skin-images.md](../architecture/skin-images.md#images-of-a-skin-code)), rendered on the first request for that code.
 
-Not yet: replay sightings for players who never sign in (the replay archive storing the avatar per participant, ADR 0011), and whether the avatar should have a privacy switch (today it's public, like the skin other players see in game).
+Not yet: whether the avatar should have a privacy switch (today it's public, like the skin other players see in game).

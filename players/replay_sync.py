@@ -8,6 +8,10 @@ the replay archive knows every registered name that has played. Each run:
    the ones Bonkverse has never seen as BonkPlayers with no DBID, so the
    Players page finds them too. When a friend list or login later shows
    the DBID, that row gets it (players.friends_sync.adopt_replay_names).
+   Each name's newest skin in the batch is stored as their worn skin
+   (source "replay"; newest sighting wins against logins and wears).
+   `restart_names()` sends the cursor back to the start, for a one-time
+   pass that fills in skins for names synced before skins were sent.
 2. push_player_ids: sends every BonkPlayer with a DBID that changed since
    the last run (name, DBID, estimated join day) to the replay site, for
    "A player's DBID" and "A player joined" replay searches.
@@ -29,7 +33,7 @@ from django.db.models import Q
 from django.db.models.functions import Lower
 from django.utils import timezone
 
-from core.bonk import dbid
+from core.bonk import InvalidSkinCode, SkinCode, dbid
 from integrations.replay_sync import (
     MAX_PLAYERS_PER_POST,
     fetch_replay_names_configured,
@@ -38,6 +42,7 @@ from integrations.replay_sync import (
 from .models import BonkPlayer
 
 from .models import SyncCursor
+from .worn_skins import record_replay_skins
 
 logger = logging.getLogger(__name__)
 
@@ -86,10 +91,44 @@ def add_names(names):
     return len(new)
 
 
+def replay_skin_sightings(names, avatars):
+    """{name: (skin_code, seen_at)} from one replay-names batch.
+
+    `names` rows carry `skin` (a hash into `avatars`) and `skin_seen_at`;
+    `avatars` maps hash -> {layers, bc}. Each avatar is turned into a code
+    once. Rows without a usable skin or time are left out.
+    """
+    codes = {}
+    for key, avatar in (avatars or {}).items():
+        try:
+            codes[key] = SkinCode.from_avatar(avatar).raw
+        except InvalidSkinCode:
+            continue
+    out = {}
+    for row in names:
+        if not isinstance(row, dict):
+            continue
+        name, code = row.get("username"), codes.get(row.get("skin"))
+        try:
+            seen_at = datetime.fromisoformat(row.get("skin_seen_at") or "")
+        except (TypeError, ValueError):
+            continue
+        if isinstance(name, str) and name and code and timezone.is_aware(seen_at):
+            out[name] = (code, seen_at)
+    return out
+
+
+def restart_names():
+    """Send the replay-names cursor back to the beginning: the next runs
+    read the whole archive again (names already known are skipped; skins
+    are filled in)."""
+    _save_cursor(NAMES_CURSOR, "")
+
+
 def pull_replay_names(max_batches=20):
     """Up to `max_batches` batches of replays after the saved cursor.
-    Returns {"added", "batches", "done", "error"}."""
-    added, batches, done, error = 0, 0, False, None
+    Returns {"added", "skins", "batches", "done", "error"}."""
+    added, skins, batches, done, error = 0, 0, 0, False, None
     after = _cursor(NAMES_CURSOR)
     while batches < max_batches:
         result = fetch_replay_names_configured(after, NAMES_BATCH)
@@ -98,13 +137,14 @@ def pull_replay_names(max_batches=20):
             break
         data = result.data
         added += add_names(n.get("username") for n in data["names"] if isinstance(n, dict))
+        skins += record_replay_skins(replay_skin_sightings(data["names"], data.get("avatars")))
         after = data["next"]
         _save_cursor(NAMES_CURSOR, after)
         batches += 1
         if data.get("done"):
             done = True
             break
-    return {"added": added, "batches": batches, "done": done, "error": error}
+    return {"added": added, "skins": skins, "batches": batches, "done": done, "error": error}
 
 
 # ── DBIDs out ────────────────────────────────────────────────────────

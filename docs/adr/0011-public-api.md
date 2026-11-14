@@ -41,11 +41,11 @@ levels that a player hid on bonkverse.io.
 - ReplayRenderer's player API is still open. Bonkverse's privacy switches
   only hold for callers that use this API; closing the replay API to
   Bonkverse alone is a follow-up.
-- Each player's `skin` (added 2026-11-14) is the worn skin Bonkverse saw
-  at their bonk.io login or a wear from Bonkverse (`BonkPlayer.worn_skin_*`),
-  so it's null for players who never signed in. Replays could fill that
-  in, but ReplayFetcher's `players.avatars` is an unordered set and can't
-  say which skin is latest; it needs the avatar stored per participant row.
+- Each player's `skin` (added 2026-11-14) is their newest worn skin
+  Bonkverse has seen (`BonkPlayer.worn_skin_*`): at their bonk.io login, a
+  wear from Bonkverse, or in a replay. ReplayFetcher stores the skin per
+  participant row (`avatars`, `replay_participants.avatar_hash`) and the
+  replay sync brings each name's newest one in.
 - Every PR that changes `/api/v1/` links a matching `Bonkverse/docs` PR,
   merged together (the PR template asks).
 - Reference: [architecture/public-api.md](../architecture/public-api.md).

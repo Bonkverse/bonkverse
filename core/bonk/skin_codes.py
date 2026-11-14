@@ -4,7 +4,8 @@ A skin code is base64 of an AMF3 object of class "a": a version, the layer
 list (an AMF3 array) and the base color. `SkinCode.parse()` reads it the way
 the skin editor's decoder does (skin-editor src/bonk/decode/decodeSkinCore.js)
 and refuses anything that isn't a real skin, so text or other data can't be
-stored as a code.
+stored as a code. `SkinCode.from_avatar()` goes the other way: it writes a
+code from the `{layers, bc}` form a replay stores, as the editor writes codes.
 """
 
 from __future__ import annotations
@@ -42,6 +43,7 @@ _LAYER_CLASS = bytes([0x07, 0x05, 0x61, 0x6C])  # first layer: class "al" inline
 _LAYER_CLASS_REF = 0x05  # later layers refer back to it
 _EMPTY_SLOT = (0x00, 0x01)  # AMF3 undefined, null
 _LAYER_FIELDS = struct.Struct(">HHffffBBI")  # 1, shape, scale, angle, x, y, flipX, flipY, color
+_FORMAT_VERSION = bytes([0x00, 0x02])  # what bonk.io and the editor write
 
 
 class InvalidSkinCode(ValueError):
@@ -123,6 +125,77 @@ class SkinCode:
                 raise error from None
 
     @classmethod
+    def from_layers(cls, layers, base_color: int) -> SkinCode:
+        """A code for these layers (top first) and base color.
+
+        Written the way the skin editor writes codes: every layer in one
+        dense list, no empty slots. Raises InvalidSkinCode for a value the
+        format can't hold (shape, color or layer count out of range).
+        """
+        layers = list(layers)
+        if len(layers) > MAX_LAYERS:
+            raise InvalidSkinCode(f"{len(layers)} layers (at most {MAX_LAYERS})")
+        if not 0 <= base_color <= 0xFFFFFF:
+            raise InvalidSkinCode("base color out of range")
+        out = bytearray(_HEADER + _FORMAT_VERSION + bytes([_ARRAY]))
+        out += _u29_bytes(2 * len(layers) + 1)  # dense count, AMF3 style
+        out.append(0x01)  # no "index" -> layer pairs
+        for n, layer in enumerate(layers):
+            if not 1 <= layer.shape_id <= MAX_SHAPE_ID:
+                raise InvalidSkinCode(f"shape {layer.shape_id} doesn't exist")
+            if not 0 <= layer.color <= 0xFFFFFF:
+                raise InvalidSkinCode("layer color out of range")
+            out.append(_LAYER)
+            out += _LAYER_CLASS if n == 0 else bytes([_LAYER_CLASS_REF])
+            try:
+                out += _LAYER_FIELDS.pack(
+                    1,
+                    layer.shape_id,
+                    layer.scale,
+                    layer.angle,
+                    layer.x,
+                    layer.y,
+                    int(layer.flip_x),
+                    int(layer.flip_y),
+                    layer.color,
+                )
+            except (struct.error, OverflowError) as e:
+                raise InvalidSkinCode("layer value out of range") from e
+        out += base_color.to_bytes(4, "big")
+        return cls(base64.b64encode(bytes(out)).decode("ascii"))
+
+    @classmethod
+    def from_avatar(cls, avatar) -> SkinCode:
+        """A code from a replay's avatar: `{"layers": [...], "bc": int}`, each
+        layer `{"id", "scale", "angle", "x", "y", "flipX", "flipY", "color"}`,
+        top layer first, empty slots as null (dropped: only order matters).
+
+        Raises:
+            InvalidSkinCode: not that shape, or a value out of range.
+        """
+        if not isinstance(avatar, dict) or not isinstance(avatar.get("layers"), list):
+            raise InvalidSkinCode("not an avatar")
+        try:
+            layers = [
+                SkinLayer(
+                    shape_id=_whole(layer["id"]),
+                    scale=_number(layer.get("scale", 0)),
+                    angle=_number(layer.get("angle", 0)),
+                    x=_number(layer.get("x", 0)),
+                    y=_number(layer.get("y", 0)),
+                    flip_x=layer.get("flipX") is True,
+                    flip_y=layer.get("flipY") is True,
+                    color=_whole(layer.get("color", 0)),
+                )
+                for layer in avatar["layers"]
+                if layer is not None
+            ]
+            base_color = _whole(avatar.get("bc", 0))
+        except (KeyError, TypeError, AttributeError) as e:
+            raise InvalidSkinCode("not an avatar") from e
+        return cls.from_layers(layers, base_color)
+
+    @classmethod
     def from_image_url(cls, image_url: str) -> SkinCode | None:
         """The code from a BonkLeagues image URL's `skinCode` query parameter, if any."""
         try:
@@ -162,6 +235,27 @@ class SkinCode:
 
     def __str__(self) -> str:
         return self.raw
+
+
+def _number(value) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise TypeError("not a number")
+    return float(value)
+
+
+def _whole(value) -> int:
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or value != int(value):
+        raise TypeError("not a whole number")
+    return int(value)
+
+
+def _u29_bytes(n: int) -> bytes:
+    """AMF3 variable-length integer, for n < 2**21 (the reader takes more)."""
+    if n < 0x80:
+        return bytes([n])
+    if n < 0x4000:
+        return bytes([0x80 | n >> 7, n & 0x7F])
+    return bytes([0x80 | n >> 14, 0x80 | (n >> 7) & 0x7F, n & 0x7F])
 
 
 class _Reader:

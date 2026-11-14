@@ -16,13 +16,14 @@ from .flash_friends_sync import sync_flash_friends_for_user
 from .friends_sync import adopt_replay_names
 from .models import ProfileVisibility, WornSkinSource
 from .tasks import sync_friends
-from .worn_skins import record_worn_skin
+from .worn_skins import record_replay_skins, record_worn_skin
 
 __all__ = [
     "adopt_replay_names",
     "WornSkinSource",
     "forget_user_skin",
     "queue_friend_sync",
+    "record_replay_skins",
     "record_worn_skin",
     "sync_flash_friends_for_user",
     "update_visibility",
