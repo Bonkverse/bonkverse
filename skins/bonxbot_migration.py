@@ -23,7 +23,7 @@ from typing import Callable
 
 from core.bonk import SkinCode
 from integrations.bonxbot_db import BonxBotDB, BotSkin
-from skins.events import log_event
+from accounts.services import log_event
 from skins.skin_import import (
     ImportFailure,
     existing_skin,

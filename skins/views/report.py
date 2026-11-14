@@ -4,7 +4,7 @@ from core.ratelimits import limit
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
 from skins.models import Skin, SkinReport
-from skins.events import log_event
+from accounts.services import log_event
 
 
 @require_POST

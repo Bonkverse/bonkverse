@@ -13,7 +13,7 @@ from django.views.decorators.http import require_POST
 
 from core.ratelimits import limit
 
-from skins.events import log_event
+from accounts.services import log_event
 from skins.models import Skin
 from skins.votes import DIRECTIONS, cast_vote
 

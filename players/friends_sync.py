@@ -34,7 +34,7 @@ from django.utils import timezone
 
 from integrations.bonk_api import BonkFriend, get_client
 
-from skins.events import log_event
+from accounts.services import log_event
 from accounts.models import BonkAccountLink
 from .models import BonkPlayer, FriendCountHistory, Friendship
 

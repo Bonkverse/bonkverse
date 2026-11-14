@@ -17,7 +17,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 
 from core.ratelimits import limit
-from skins.events import log_event
+from accounts.services import log_event
 from skins.skin_import import NAME_MAX_LENGTH, ImportFailure, import_bonkleagues_skin
 from skins.svg_sanitizer import TOO_LARGE_MESSAGE
 
