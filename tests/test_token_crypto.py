@@ -136,16 +136,11 @@ class TestSessionToken:
         assert TOKEN not in str(store)
         assert self._session(store).token == TOKEN
 
-    def test_a_token_stored_before_encryption_still_works_and_gets_encrypted(self, keys):
-        store = {"bonk_token": TOKEN, "bonk_token_expires": 5000}
-
-        assert self._session(store).token == TOKEN
-        assert store["bonk_token"] != TOKEN
-        assert token_crypto.decrypt(store["bonk_token"]) == TOKEN
-
     def test_unreadable_values_mean_no_token(self, keys):
+        """Including a plain token: every session was encrypted on 2026-11-14,
+        so a plain value can only have been written by something else."""
         other = _encrypt_with(Fernet.generate_key().decode(), TOKEN)
-        for stored in (other, "not-a-token"):
+        for stored in (other, TOKEN, "not-a-token"):
             store = {"bonk_token": stored, "bonk_token_expires": 5000}
             assert self._session(store).token is None
 
@@ -166,8 +161,9 @@ def _link(token_value):
     )
 
 
-def _legacy_signed(token: str) -> str:
-    return signing.dumps({"t": token}, salt=BonkAccountLink.LEGACY_SALT)
+def _signed_the_old_way(token: str) -> str:
+    """How links stored tokens before ADR 0016: signed, not encrypted."""
+    return signing.dumps({"t": token}, salt="bonk_token")
 
 
 @pytest.mark.django_db
@@ -178,8 +174,8 @@ class TestAccountLinkToken:
         assert TOKEN not in link.token_encrypted
         assert BonkAccountLink.objects.get(pk=link.pk).bonk_token() == TOKEN
 
-    def test_values_signed_before_encryption_are_still_read(self, keys):
-        assert _link(_legacy_signed(TOKEN)).bonk_token() == TOKEN
+    def test_values_signed_the_old_way_are_not_read(self, keys):
+        assert _link(_signed_the_old_way(TOKEN)).bonk_token() is None
 
     def test_a_key_not_listed_means_no_token(self, keys):
         link = _link(_encrypt_with(Fernet.generate_key().decode(), TOKEN))
@@ -205,9 +201,11 @@ class TestReencryptCommand:
         return SessionStore(session_key=key).load().get("bonk_token")
 
     def test_dry_run_counts_and_writes_nothing(self, keys):
-        link = _link(_legacy_signed(TOKEN))
+        new, old = keys
+        link = _link(_encrypt_with(old, TOKEN))
         before = link.token_encrypted
-        key = self._session_with(TOKEN)
+        key = self._session_with(_encrypt_with(old, TOKEN))
+        session_before = self._session_token(key)
 
         output = self._run()
 
@@ -215,43 +213,47 @@ class TestReencryptCommand:
         assert "1 re-encrypted" in output
         link.refresh_from_db()
         assert link.token_encrypted == before
-        assert self._session_token(key) == TOKEN
+        assert self._session_token(key) == session_before
 
     def test_run_brings_every_copy_to_the_newest_key(self, keys):
         new, old = keys
-        signed = _link(_legacy_signed(TOKEN))
-        rotated = BonkAccountLink.objects.create(
-            user=UserFactory(),
-            bonk_player=BonkPlayer.objects.create(bonk_id=8, username="beta"),
-            token_encrypted=_encrypt_with(old, TOKEN),
-        )
-        plain_session = self._session_with(TOKEN)
+        rotated = _link(_encrypt_with(old, TOKEN))
+        rotated_session = self._session_with(_encrypt_with(old, TOKEN))
 
         output = self._run("--run")
 
-        for link in (signed, rotated):
-            link.refresh_from_db()
-            assert token_crypto.is_current(link.token_encrypted)
-            assert link.bonk_token() == TOKEN
-        stored = self._session_token(plain_session)
+        rotated.refresh_from_db()
+        assert token_crypto.is_current(rotated.token_encrypted)
+        assert rotated.bonk_token() == TOKEN
+        stored = self._session_token(rotated_session)
         assert token_crypto.is_current(stored)
         assert token_crypto.decrypt(stored) == TOKEN
         assert TOKEN not in output
 
     def test_run_removes_tokens_no_key_opens(self, keys):
+        """A lost key, or a value in the old signed or plain form."""
         lost_key = Fernet.generate_key().decode()
         link = _link(_encrypt_with(lost_key, TOKEN))
-        key = self._session_with(_encrypt_with(lost_key, TOKEN))
+        signed = BonkAccountLink.objects.create(
+            user=UserFactory(),
+            bonk_player=BonkPlayer.objects.create(bonk_id=8, username="beta"),
+            token_encrypted=_signed_the_old_way(TOKEN),
+        )
+        lost = self._session_with(_encrypt_with(lost_key, TOKEN))
+        plain = self._session_with(TOKEN)
 
         output = self._run("--run")
 
-        link.refresh_from_db()
-        assert link.token_encrypted is None
-        assert self._session_token(key) is None
-        assert "1 unreadable" in output
+        for row in (link, signed):
+            row.refresh_from_db()
+            assert row.token_encrypted is None
+        assert self._session_token(lost) is None
+        assert self._session_token(plain) is None
+        assert "2 unreadable" in output
 
     def test_a_second_run_finds_everything_current(self, keys):
-        _link(_legacy_signed(TOKEN))
+        new, old = keys
+        _link(_encrypt_with(old, TOKEN))
         self._run("--run")
 
         assert "1 already current, 0 re-encrypted" in self._run()

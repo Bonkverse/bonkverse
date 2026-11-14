@@ -7,7 +7,6 @@ model (BonkUser, `AUTH_USER_MODEL`) still lives in skins/ until step 5.5c.
 """
 
 from django.conf import settings
-from django.core import signing
 from django.db import models
 
 from core import token_crypto
@@ -47,26 +46,5 @@ class BonkAccountLink(models.Model):
         return token_crypto.encrypt(bonk_token)
 
     def bonk_token(self) -> str | None:
-        """The stored bonk.io token, or None if there is none or no key opens it.
-
-        Also reads values stored before encryption (signed with SECRET_KEY)
-        until `manage.py reencrypt_bonk_tokens --run` has replaced them.
-        """
-        if not self.token_encrypted:
-            return None
-        token = token_crypto.decrypt(self.token_encrypted)
-        if token is not None:
-            return token
-        return self.legacy_signed_token(self.token_encrypted)
-
-    # Before ADR 0016 the token was only signed: readable by anyone with the
-    # database. Kept for reading old rows; remove with the follow-up PR once
-    # reencrypt_bonk_tokens has run in production.
-    LEGACY_SALT = "bonk_token"
-
-    @classmethod
-    def legacy_signed_token(cls, value: str) -> str | None:
-        try:
-            return signing.loads(value, salt=cls.LEGACY_SALT)["t"]
-        except (signing.BadSignature, KeyError, TypeError):
-            return None
+        """The stored bonk.io token, or None if there is none or no key opens it."""
+        return token_crypto.decrypt(self.token_encrypted)

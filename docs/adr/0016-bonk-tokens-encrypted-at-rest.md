@@ -36,10 +36,11 @@ bonk.io revokes it, so storage had to be fixed first.
   session with the newest key, after which the old key can go.
 - **A token no key can open is no token.** The player is asked to log in again
   when they next need one, as with an expired token.
-- **Moving over:** values stored before this change are still read (signed
-  link values; plain JWTs in sessions, re-encrypted on first use), until
-  `reencrypt_bonk_tokens --run` has replaced them. A follow-up PR removes
-  that fallback.
+- **Moving over:** on 2026-11-14 `reencrypt_bonk_tokens --run` encrypted
+  every stored copy in production (4,951 account links and 653 live
+  sessions; 1 link whose old signature no longer verified was removed). The
+  readers for the old signed and plain forms were then removed: a value in
+  either form now counts as no token.
 
 **Alternatives considered.**
 - *Derive the key from `SECRET_KEY`*: no new variable, but one leaked secret
