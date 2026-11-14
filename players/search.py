@@ -27,7 +27,9 @@ from core.bonk import dbid
 MAX_RULES = 12
 MAX_TEXT = 100
 MAX_WILDCARDS = 10
-FIRST_YEAR = 2014  # bonk.io's release
+# The oldest accounts: bonk.io accounts began as Tiny Tanks accounts (Chaz's
+# earlier game), and account 1 dates from 2011-11-07 (core/bonk/dbid.py).
+FIRST_YEAR = 2011
 
 # Character kinds: (key, label, one-character POSIX class). Symbols are
 # anything that isn't a letter, digit, underscore or space.

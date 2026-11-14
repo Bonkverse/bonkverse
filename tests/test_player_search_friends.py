@@ -178,6 +178,22 @@ def test_joined_years_use_account_ids(client, mocked_http):
 
 
 @pytest.mark.django_db
+def test_joined_years_reach_back_to_tiny_tanks(client, mocked_http):
+    """Accounts go back to Tiny Tanks (account 1: 2011-11-07), before bonk.io's release."""
+    BonkPlayer.objects.create(bonk_id=dbid.id_for_day(date(2012, 6, 1)), username="tiny")
+    BonkPlayer.objects.create(bonk_id=dbid.id_for_day(date(2015, 6, 1)), username="bonk")
+    mock_lookup(mocked_http)
+
+    assert names_found(client, rules(("joined", "in", "2012"))) == ["tiny"]
+    assert names_found(client, rules(("joined", "between", "2011", "2013"))) == ["tiny"]
+    assert names_found(client, rules(("joined", "before", "2014"))) == ["tiny"]
+
+    joined = next(f for f in search.schema("all", today=date(2026, 11, 14)) if f["key"] == "joined")
+    years = [choice["key"] for choice in joined["choices"]]
+    assert years[0] == "2026" and years[-1] == "2011"
+
+
+@pytest.mark.django_db
 def test_members(client, mocked_http, roster):
     BonkAccountLink.objects.create(user=UserFactory(username="zz"), bonk_player=roster["zz"])
     mock_lookup(mocked_http)
