@@ -1,9 +1,9 @@
 # skins/views.py
 from django.shortcuts import render, get_object_or_404
 from core.ratelimits import limit
-from .models import Skin
+from skins.models import Skin
 
-# skins/skin_detail.py
+# skins/views/skin_detail.py
 from django.conf import settings
 
 

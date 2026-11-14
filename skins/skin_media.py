@@ -10,7 +10,7 @@ from BonkLeagues (integrations/bl_skin_fetcher.py), SVG safety checks
 (svg_sanitizer.py; callers validate first), creating or deleting the Skin
 row, purging Cloudflare (rerender.py), or serving files (media.py).
 
-Used by: re-render (rerender.py), editor publish (apis/publish_skin.py) and
+Used by: re-render (rerender.py), editor publish (views/publish.py) and
 BonkLeagues/BonxBot import (skin_import.py). The upload form goes through
 skin_import too.
 

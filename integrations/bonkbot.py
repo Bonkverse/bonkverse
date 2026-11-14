@@ -3,7 +3,7 @@
 Owns: the join-matchmaking request, its timeout, and telling a usable
 BonkBot answer (any status, JSON body) from no usable answer.
 Does not own: matchmaking itself (the BonkBot service) or the Bonkverse
-endpoint that relays it (skins/bonkbot.py).
+endpoint that relays it (skins/views/matchmaking.py).
 
 Free of Django at import time; `join_matchmaking_configured()` reads the URL
 from settings.

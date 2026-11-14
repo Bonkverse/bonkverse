@@ -1,5 +1,5 @@
 """Tests for the skin each player last wore (players/worn_skins.py), and that
-login and wearing record it (accounts/sign_in.py, skins/wear_skin.py)."""
+login and wearing record it (accounts/sign_in.py, skins/views/wear.py)."""
 
 import logging
 from datetime import timedelta
@@ -193,7 +193,7 @@ class TestWearRecordsWornSkin:
         def broken(*args, **kwargs):
             raise RuntimeError("database hiccup")
 
-        monkeypatch.setattr("skins.wear_skin.record_worn_skin", broken)
+        monkeypatch.setattr("skins.views.wear.record_worn_skin", broken)
         skin = SkinFactory()
 
         response = wearing_client.post(f"/api/skins/{skin.id}/wear/")

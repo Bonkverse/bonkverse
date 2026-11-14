@@ -3,7 +3,7 @@
 Owns: the SQL for reading BonxBot's `skins` table and recording, on each row,
 which Bonkverse skin it became. Only the one-time migration uses this
 (management command import_bonxbot_skins); live submissions arrive over HTTP
-(skins/apis/bot_skins.py) and the bot records those itself.
+(skins/views/bot_skins.py) and the bot records those itself.
 Does not own: Bonkverse models or anything about importing a skin.
 
 The sync columns are the same ones BonxBot adds on start

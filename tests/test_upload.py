@@ -1,4 +1,4 @@
-"""Tests for the upload form (skins/upload.py).
+"""Tests for the upload form (skins/views/upload.py).
 
 The import itself (fetch, SVG check, storage, duplicates) is
 skins/skin_import.py, tested in test_bot_skins.py; these pin what the form

@@ -3,7 +3,7 @@
 Owns: turning a BonkLeagues link plus a name, creator and (usually) its skin
 code into a Skin with its SVG, PNG and thumbnail files; deciding when a
 submission is a duplicate; and cleaning names the upload form would have refused.
-Used by: the BonxBot submission API (skins/apis/bot_skins.py) and the one-time
+Used by: the BonxBot submission API (skins/views/bot_skins.py) and the one-time
 migration (skins/bonxbot_migration.py).
 Does not own: HTTP to the editor or the fetcher (integrations/), authentication,
 or event logging (the caller knows who submitted).

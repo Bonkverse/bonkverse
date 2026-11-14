@@ -2,7 +2,7 @@
 
 Signing in to Bonkverse with a bonk.io account. Bonkverse has no passwords of its own: `/login/` sends the bonk.io username and password to bonk.io once, and a successful reply signs the visitor in to their site account (created on first login). RFC-0001 step 5.5 moved this out of `skins/`.
 
-**Owns:** the login and logout pages, the one way any page tries a bonk.io login (`attempt_login`), Bonkverse's limit on wrong passwords, the sentences a player sees when a login is turned down, what a successful login does on our side, `/api/me/`, and `grant_admin`. **Does not own:** the bonk.io calls (`integrations/bonk_api.py`) or bonk.io's own pause after `ratelimited` (the cooldown there), the bonk.io session stored in the Django session (`core/bonk/session.py`), the JSON auth guards every app uses (`core/auth_guards.py`), friend storage and syncing (`players`), or wearing a skin (`skins/wear_skin.py`, which uses this app's services for its in-page login).
+**Owns:** the login and logout pages, the one way any page tries a bonk.io login (`attempt_login`), Bonkverse's limit on wrong passwords, the sentences a player sees when a login is turned down, what a successful login does on our side, `/api/me/`, and `grant_admin`. **Does not own:** the bonk.io calls (`integrations/bonk_api.py`) or bonk.io's own pause after `ratelimited` (the cooldown there), the bonk.io session stored in the Django session (`core/bonk/session.py`), the JSON auth guards every app uses (`core/auth_guards.py`), friend storage and syncing (`players`), or wearing a skin (`skins/views/wear.py`, which uses this app's services for its in-page login).
 
 ## Routes
 

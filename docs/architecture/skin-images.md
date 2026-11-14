@@ -20,7 +20,7 @@ flowchart LR
 ## Where images live
 
 Every skin has three files on the `bonkverse` service's volume, served from
-`/media/` (`skins/media.py`: rate limit, browser cache 1 hour, Cloudflare
+`/media/` (`skins/views/media.py`: rate limit, browser cache 1 hour, Cloudflare
 edge 1 week):
 
 | File | Size | Notes |
@@ -38,7 +38,7 @@ as they were. The worker can't write them (no volume there).
 
 | Path | Code | Images |
 |---|---|---|
-| Editor publish (`skins/apis/publish_skin.py`) | Checked with `SkinCode.parse()` (422 if not a skin) | The SVG the editor sends, checked by `svg_sanitizer.py`; PNGs drawn locally with cairosvg |
+| Editor publish (`skins/views/publish.py`) | Checked with `SkinCode.parse()` (422 if not a skin) | The SVG the editor sends, checked by `svg_sanitizer.py`; PNGs drawn locally with cairosvg |
 | BonxBot (`/api/bot-skins`) or upload form, with a code (`skins/skin_import.py`) | Checked (`invalid_skin_code`, not retried) | Rendered by the editor's render service |
 | BonxBot or upload form, BonkLeagues link only | Taken from BonkLeagues | Fetched from BonkLeagues (its renderer) |
 | Re-render (`skins/rerender.py`) | The stored code | Rendered by the editor's render service, then Cloudflare's copies purged |

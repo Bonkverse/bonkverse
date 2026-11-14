@@ -1,4 +1,4 @@
-"""JSON contract for voting and favoriting (skins/skin_votes.py).
+"""JSON contract for voting and favoriting (skins/views/votes.py).
 
 Phase 3 moves the browser code that calls these endpoints into one shared
 module (bv-api.js); these tests pin exactly what the pages rely on, so that

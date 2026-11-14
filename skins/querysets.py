@@ -47,7 +47,7 @@ class SkinQuerySet(models.QuerySet):
         """Full-text + fuzzy-name matches, annotated with `rank` and `similarity`.
 
         Index-backed (search_vector GIN, name trigram GIN). Run it with
-        pg_trgm.similarity_threshold = MIN_NAME_SIMILARITY (skins/search.py
+        pg_trgm.similarity_threshold = MIN_NAME_SIMILARITY (skins/views/search.py
         does), so the trigram prefilter keeps every row the rule accepts.
         """
         search_query = SearchQuery(query, config=SKIN_SEARCH_CONFIG)

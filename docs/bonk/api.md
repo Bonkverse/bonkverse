@@ -103,7 +103,7 @@ Players are told how long is left ("Try again in about 17 minutes."), and the
 wear reply and the login page carry the seconds (`retry_after`) so the page
 waits instead of retrying into the pause.
 
-Wearing is also limited per account (skins/wear_skin.py): one wear in flight
+Wearing is also limited per account (skins/views/wear.py): one wear in flight
 at a time, and the `wear_burst` / `wear` tiers in `RATE_LIMITS`. On
 2026-11-09 one player's 11 Wear clicks in about 1.5 s preceded a
 `ratelimited`, which then paused wearing for every user.

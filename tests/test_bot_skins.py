@@ -1,4 +1,4 @@
-"""Tests for BonxBot skin submissions (skins/apis/bot_skins.py, skins/skin_import.py)."""
+"""Tests for BonxBot skin submissions (skins/views/bot_skins.py, skins/skin_import.py)."""
 
 import base64
 import json
