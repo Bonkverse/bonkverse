@@ -10,7 +10,7 @@ with bonk.io at least once. Admins then open /admin/ while signed in.
 
 from django.core.management.base import BaseCommand, CommandError
 
-from skins.models import BonkUser
+from accounts.models import BonkUser
 
 
 class Command(BaseCommand):

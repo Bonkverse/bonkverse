@@ -11,7 +11,7 @@ from io import StringIO
 import pytest
 from django.core.management import CommandError, call_command
 
-from skins.models import BonkUser
+from accounts.models import BonkUser
 from tests.factories import SkinFactory, UserFactory
 
 pytestmark = pytest.mark.django_db

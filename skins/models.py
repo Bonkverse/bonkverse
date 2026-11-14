@@ -1,5 +1,5 @@
+from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVector, SearchVectorField
 import uuid
@@ -36,7 +36,9 @@ class Skin(models.Model):
     labeled_at = models.DateTimeField(blank=True, null=True)
     upvotes = models.PositiveIntegerField(default=0)
     downvotes = models.PositiveIntegerField(default=0)
-    favorited_by = models.ManyToManyField("BonkUser", related_name="favorite_skins", blank=True)
+    favorited_by = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, related_name="favorite_skins", blank=True
+    )
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
 
     # Full-text search data, kept up to date by Postgres on every insert/update.
@@ -77,55 +79,12 @@ class Skin(models.Model):
         return reverse("skin_detail", kwargs={"skin_id": self.id})
 
 
-class BonkUserManager(BaseUserManager):
-    def create_user(self, username, **extra_fields):
-        """Create a site account for a bonk.io username.
-
-        Accounts never have a usable password: people sign in through bonk.io,
-        and we never store bonk.io passwords.
-        """
-        if not username:
-            raise ValueError("Bonk.io username is required")
-        user = self.model(username=username, **extra_fields)
-        user.set_unusable_password()
-        user.save(using=self._db)
-        return user
-
-    def create_superuser(self, username, password=None, **extra_fields):
-        """Used by `manage.py createsuperuser --noinput --username X`.
-
-        The password is ignored: admins sign in through bonk.io like everyone
-        else. To promote an existing account, use `manage.py grant_admin`.
-        """
-        extra_fields.update(is_staff=True, is_superuser=True)
-        return self.create_user(username, **extra_fields)
-
-
-class BonkUser(AbstractBaseUser, PermissionsMixin):
-    """A Bonkverse site account, identified by its bonk.io username.
-
-    PermissionsMixin adds is_superuser, groups and user_permissions, which the
-    Django admin needs (has_perm / has_module_perms).
-    """
-
-    username = models.CharField(max_length=100, unique=True)
-    date_joined = models.DateTimeField(auto_now_add=True)
-    is_staff = models.BooleanField(default=False)
-
-    objects = BonkUserManager()
-
-    USERNAME_FIELD = "username"
-
-    def __str__(self):
-        return self.username
-
-
 class SkinVote(models.Model):
     VOTE_CHOICES = [
         ("up", "Upvote"),
         ("down", "Downvote"),
     ]
-    user = models.ForeignKey("BonkUser", on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     skin = models.ForeignKey(Skin, on_delete=models.CASCADE)
     vote = models.CharField(max_length=4, choices=VOTE_CHOICES)
 
@@ -161,7 +120,7 @@ class SkinReport(models.Model):
 
     skin = models.ForeignKey(Skin, on_delete=models.CASCADE, related_name="reports")
     reporter = models.ForeignKey(
-        "BonkUser", on_delete=models.SET_NULL, null=True, blank=True, related_name="skin_reports"
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="skin_reports"
     )  # null = anonymous report
     reason = models.CharField(max_length=32, choices=REASON_CHOICES)
     details = models.TextField(blank=True, default="")
@@ -184,7 +143,7 @@ class SkinReport(models.Model):
 
 class UserEvent(models.Model):
     user = models.ForeignKey(
-        "BonkUser", on_delete=models.SET_NULL, null=True, blank=True, related_name="events"
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="events"
     )
     event_type = models.CharField(max_length=50, db_index=True)
     skin = models.ForeignKey("Skin", on_delete=models.SET_NULL, null=True, blank=True)

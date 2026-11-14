@@ -13,7 +13,7 @@ import logging
 
 from django.db import transaction
 
-from skins.models import BonkUser
+from accounts.models import BonkUser
 from .models import FlashFriend, FlashFriendship
 
 logger = logging.getLogger(__name__)

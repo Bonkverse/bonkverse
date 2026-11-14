@@ -12,7 +12,9 @@ from django.contrib import admin
 from django.shortcuts import redirect, render
 from django.urls import reverse
 
-from .models import BonkUser, Skin
+from accounts.models import BonkUser
+
+from .models import Skin
 
 
 def _login_through_bonk(request, extra_context=None):

@@ -48,7 +48,7 @@ if not SECRET_KEY:
 # from SECRET_KEY. Never print or log them.
 BONK_TOKEN_KEYS = token_crypto.parse_keys(os.getenv("BONK_TOKEN_KEYS"), required=IS_PROD)
 
-AUTH_USER_MODEL = "skins.BonkUser"
+AUTH_USER_MODEL = "accounts.BonkUser"
 
 # =========================================================
 # Base Directory
