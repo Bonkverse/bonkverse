@@ -4,7 +4,8 @@ BonkAccountLink moved here from skins/ in RFC-0001 Phase 5.5 without moving
 any data: it keeps its table (`skins_bonkaccountlink`), and its constraint and
 index names come from that table, so they're unchanged too. BonkUser, the
 site account (`AUTH_USER_MODEL`), followed in 5.5c the same way, keeping
-`skins_bonkuser` (ADR 0017).
+`skins_bonkuser` (ADR 0017), and UserEvent (the event log) in 5.6c, keeping
+`skins_userevent` and its index names.
 """
 
 from django.conf import settings
@@ -99,3 +100,32 @@ class BonkAccountLink(models.Model):
     def bonk_token(self) -> str | None:
         """The stored bonk.io token, or None if there is none or no key opens it."""
         return token_crypto.decrypt(self.token_encrypted)
+
+
+class UserEvent(models.Model):
+    """One entry in the event log: something a person (or the site for them) did.
+
+    Written only through accounts.services.log_event (events.py).
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="events",
+    )
+    event_type = models.CharField(max_length=50, db_index=True)
+    skin = models.ForeignKey("skins.Skin", on_delete=models.SET_NULL, null=True, blank=True)
+    metadata = models.JSONField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        # Its table and index from when it lived in skins/ (RFC-0001 5.6c).
+        db_table = "skins_userevent"
+        indexes = [
+            models.Index(fields=["event_type", "created_at"], name="skins_usere_event_t_2396a8_idx")
+        ]
+
+    def __str__(self):
+        return f"{self.event_type} by {self.user_id} at {self.created_at}"

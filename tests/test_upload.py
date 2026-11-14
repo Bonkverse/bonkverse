@@ -10,7 +10,8 @@ import base64
 import pytest
 import requests
 
-from skins.models import Skin, SkinImage, UserEvent
+from skins.models import Skin, SkinImage
+from accounts.models import UserEvent
 from tests.factories import SkinFactory, UserFactory
 
 pytestmark = pytest.mark.django_db

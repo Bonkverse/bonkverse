@@ -14,7 +14,8 @@ import requests
 from django.urls import reverse
 
 from accounts.models import BonkUser
-from skins.models import Skin, UserEvent
+from skins.models import Skin
+from accounts.models import UserEvent
 from accounts.models import BonkAccountLink
 from players.models import BonkPlayer
 from tests.conftest import load_bonk_fixture

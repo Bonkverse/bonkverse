@@ -10,7 +10,8 @@ import json
 
 import pytest
 
-from skins.models import SkinVote, UserEvent
+from skins.models import SkinVote
+from accounts.models import UserEvent
 from tests.factories import SkinFactory, UserFactory
 
 pytestmark = pytest.mark.django_db

@@ -16,7 +16,8 @@ from core.bonk import SkinCode
 from integrations.bonxbot_db import BotSkin
 from integrations.editor_render import RenderedSkin, RenderResult
 from skins.bonxbot_migration import migrate
-from skins.models import Skin, SkinImage, UserEvent
+from skins.models import Skin, SkinImage
+from accounts.models import UserEvent
 from skins.skin_import import (
     canonical_link,
     clean_creator,
