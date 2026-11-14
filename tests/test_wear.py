@@ -13,6 +13,8 @@ import time
 from urllib.parse import parse_qs
 
 import pytest
+
+from core import token_crypto
 import requests
 
 from skins.models import UserEvent
@@ -49,7 +51,7 @@ class TestWearAuthContract:
 
     def test_expired_bonk_token_gets_bonk_401(self, logged_in_client, skin):
         session = logged_in_client.session
-        session["bonk_token"] = "old-token"
+        session["bonk_token"] = token_crypto.encrypt("old-token")
         session["bonk_token_expires"] = time.time() - 1
         session.save()
 
@@ -162,7 +164,7 @@ class TestWearSkin:
             "message": "bonk.io isn't responding. Try again in a minute.",
         }
         # The token is kept: nothing says it went bad.
-        assert bonk_session_client.session["bonk_token"] == "test-bonk-token"
+        assert token_crypto.decrypt(bonk_session_client.session["bonk_token"]) == "test-bonk-token"
 
     @pytest.mark.parametrize(
         "code,status,message_start",
@@ -187,7 +189,7 @@ class TestWearSkin:
         assert response.status_code == status
         assert "auth" not in body
         assert body["message"].startswith(message_start)
-        assert bonk_session_client.session["bonk_token"] == "test-bonk-token"
+        assert token_crypto.decrypt(bonk_session_client.session["bonk_token"]) == "test-bonk-token"
 
     def test_cloudflare_page_from_bonk_does_not_ask_for_bonk_login(
         self, bonk_session_client, skin, mocked_http
@@ -275,7 +277,10 @@ class TestBonkLoginForWear:
         )
 
         assert response.json() == {"ok": True, "active_slot": 2}
-        assert logged_in_client.session["bonk_token"] == "SCRUBBED-TEST-TOKEN-abc123"
+        assert (
+            token_crypto.decrypt(logged_in_client.session["bonk_token"])
+            == "SCRUBBED-TEST-TOKEN-abc123"
+        )
         assert logged_in_client.session["bonk_active_slot"] == 2
         # One request shape for every bonk.io login (integrations/bonk_api.py).
         assert _sent_form(call.calls[0]) == {
@@ -333,7 +338,7 @@ class TestWearSpamProtection:
         other_client = Client()
         other_client.force_login(other)
         session = other_client.session
-        session["bonk_token"] = "other-token"
+        session["bonk_token"] = token_crypto.encrypt("other-token")
         session["bonk_token_expires"] = time.time() + 3600
         session.save()
 

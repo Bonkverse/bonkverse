@@ -37,7 +37,7 @@ def _link(*, token=TOKEN, active=True, bonk_id=1234567, username="TestPlayer"):
     return BonkAccountLink.objects.create(
         user=user,
         bonk_player=player,
-        token_encrypted=BonkAccountLink.sign_token(token) if token else None,
+        token_encrypted=BonkAccountLink.encrypt_token(token) if token else None,
         active=active,
     )
 

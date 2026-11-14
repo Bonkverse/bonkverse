@@ -168,7 +168,7 @@ Success (`login_success.json`, synthetic):
 
 | Field | Meaning |
 |---|---|
-| `token` | Session token for the other scripts. Stored in the site session (`BonkSession`), and signed in `accounts.BonkAccountLink`. |
+| `token` | Session token for the other scripts. Stored in the site session (`BonkSession`), and in `accounts.BonkAccountLink`, both encrypted ([ADR 0016](../adr/0016-bonk-tokens-encrypted-at-rest.md)). |
 | `username` | The account's name **as bonk.io spells it**. Can differ in capitalization from what was typed: login accepts any capitalization (verified 2026-11-03). If missing, the typed name is used. |
 | `id` | Numeric account id; the real identity (`BonkPlayer.bonk_id`). |
 | `activeAvatarNumber` | The account's active avatar slot, 1–5. A lowercase `activeavatarnumber` is also accepted. |

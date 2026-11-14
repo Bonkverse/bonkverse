@@ -48,7 +48,8 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
 
-from core.bonk import AvatarSlot, BonkSession
+from core.bonk import AvatarSlot
+from core.token_crypto import bonk_session
 from core.logs import mark_expected_error
 from core.ratelimits import describe_wait, limit
 from integrations.bonk_api import (
@@ -71,7 +72,7 @@ logger = logging.getLogger(__name__)
 
 def _resolve_slot(request) -> AvatarSlot:
     """The slot from the form if valid, else the player's active slot, else 3."""
-    return AvatarSlot.choose(request.POST.get("slot"), BonkSession(request.session).active_slot)
+    return AvatarSlot.choose(request.POST.get("slot"), bonk_session(request).active_slot)
 
 
 # Failures a new bonk.io login can't fix: (HTTP status, sentence for the player).
@@ -163,7 +164,7 @@ def _wear(request, skin_code: str) -> tuple[AvatarSlot, JsonResponse | None]:
 
     Returns the slot used, and an error response if bonk.io didn't apply it.
     """
-    bonk = BonkSession(request.session)
+    bonk = bonk_session(request)
     token = bonk.token  # guaranteed present by bonk_token_required
     slot = _resolve_slot(request)
     with _wear_lock(request.user.pk) as acquired:
@@ -215,7 +216,7 @@ def bonk_login_for_wear(request):
 
     result = attempt.result
 
-    bonk = BonkSession(request.session)
+    bonk = bonk_session(request)
     bonk.store_token(result.token)
     # The account this token belongs to, which wears record their skin on.
     bonk.store_identity(result.username.value, result.bonk_id)

@@ -8,6 +8,8 @@ test_bonk_api.py); these pin what users see. bonk.io is always faked with
 import logging
 
 import pytest
+
+from core import token_crypto
 import requests
 from django.urls import reverse
 
@@ -49,7 +51,7 @@ class TestSuccessfulLogin:
         _post_login(client)
 
         session = client.session
-        assert session["bonk_token"] == "SCRUBBED-TEST-TOKEN-abc123"
+        assert token_crypto.decrypt(session["bonk_token"]) == "SCRUBBED-TEST-TOKEN-abc123"
         assert session["bonk_username"] == "TestPlayer"
         assert session["bonk_user_id"] == 1234567
         assert session["bonk_active_slot"] == 2

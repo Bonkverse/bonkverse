@@ -11,6 +11,8 @@ import time
 from pathlib import Path
 
 import pytest
+
+from core import token_crypto
 import responses
 from django.core.cache import cache
 
@@ -126,7 +128,7 @@ def staff_client(client, staff_user):
 def bonk_session_client(logged_in_client):
     """A logged-in client whose session also holds a live bonk.io token."""
     session = logged_in_client.session
-    session["bonk_token"] = "test-bonk-token"
+    session["bonk_token"] = token_crypto.encrypt("test-bonk-token")
     session["bonk_token_expires"] = time.time() + 3600
     session["bonk_active_slot"] = 2
     session.save()

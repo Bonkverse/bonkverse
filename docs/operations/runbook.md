@@ -47,6 +47,37 @@ then gunicorn booting 4 workers.
 Destructive migrations (dropping a table or column) say so in the PR
 description and are their own PR.
 
+## bonk.io token keys: set, rotate or recover
+
+Stored bonk.io tokens (account links and site sessions) are encrypted with
+`BONK_TOKEN_KEYS` ([ADR 0016](../adr/0016-bonk-tokens-encrypted-at-rest.md)).
+Never paste a key into a chat, an issue, a commit or a log.
+
+**Make a key** (on your own machine):
+`python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`
+
+**First setup**
+1. Railway → `bonkverse` → Variables: `BONK_TOKEN_KEYS` = the new key.
+2. Railway → `worker` → Variables: `BONK_TOKEN_KEYS` = `${{bonkverse.BONK_TOKEN_KEYS}}`.
+3. Deploy. Startup fails with `BONK_TOKEN_KEYS is not set` or `key N is not a
+   Fernet key` until both are right.
+4. Re-encrypt what was stored before: `railway ssh` into `bonkverse`, then
+   `python manage.py reencrypt_bonk_tokens` (dry run: counts only), then the
+   same with `--run`. Run it once more: everything should be "already current".
+
+**Rotate** (yearly, or when someone with access leaves)
+1. Put a new key **first**: `BONK_TOKEN_KEYS` = `new,old`. Deploy.
+2. `reencrypt_bonk_tokens --run` on `bonkverse`.
+3. Remove the old key: `BONK_TOKEN_KEYS` = `new`. Deploy.
+
+**A key may have leaked.** Rotate as above, and do step 3 right after step 2.
+A leaked key only matters together with a copy of the database; tokens
+themselves expire within about a day.
+
+**Every key is lost.** Set a new key and deploy, then run
+`reencrypt_bonk_tokens --run`: it removes the tokens no key opens. Players log
+in again the next time they wear a skin; nothing else is lost.
+
 ## Rotating the Redis password
 
 Railway's **Regenerate** button (Redis → Database → Config) is the supported way.
