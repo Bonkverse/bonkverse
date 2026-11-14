@@ -1,4 +1,4 @@
-{% extends 'skins/base.html' %}
+{% extends 'base.html' %}
 {% load static %}
 
 {# Discord colors the link embed with this; the browser toolbar follows the theme (ui/theme.js). #}
@@ -110,7 +110,7 @@ js/skin_detail.js; Copy link is ui/ui.js; Report is core/js/bv-report.js.
 {% include 'skins/partials/_report_skin_modal.html' %}
 
 {% if user.is_authenticated %}
-  {% include 'skins/partials/_bonk_login_modal.html' %}
+  {% include 'partials/_bonk_login_modal.html' %}
 {% endif %}
 
 {% endblock %}

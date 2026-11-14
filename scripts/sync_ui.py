@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Copy a release of Bonkverse/ui into skins/static/ui/.
+"""Copy a release of Bonkverse/ui into static/ui/.
 
     python scripts/sync_ui.py v0.1.0
 
 Downloads the tagged release from GitHub, copies the files the site uses
 (the CSS, theme.js, ui.js, nav.json, fonts and the planet logo) into
-skins/static/ui/, and writes MANIFEST.json with the version and a SHA-256 of
+static/ui/, and writes MANIFEST.json with the version and a SHA-256 of
 every file. tests/test_ui_package.py fails if a file there no longer matches
 the manifest, so nobody edits them by hand: change Bonkverse/ui, release, and
 run this again. Upgrading is its own PR with before/after screenshots
@@ -28,7 +28,7 @@ import urllib.request
 from pathlib import Path
 
 REPO = "Bonkverse/ui"
-DEST = Path(__file__).resolve().parent.parent / "skins" / "static" / "ui"
+DEST = Path(__file__).resolve().parent.parent / "static" / "ui"
 # What the site needs from the package; the gallery, scripts and samples stay behind.
 FILES = [
     "tokens.css",

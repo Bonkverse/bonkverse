@@ -1,4 +1,9 @@
-# skins/context_processors.py
+"""Template context every page gets: links to the other Bonkverse sites, and
+the site header/footer navigation (from the Bonkverse/ui package's nav.json).
+
+Shared by every app; imports no app (core/).
+"""
+
 import json
 from functools import lru_cache
 from pathlib import Path
@@ -22,7 +27,7 @@ def editor_urls(request):
 # Links to our other sites use this deployment's settings, so local and
 # staging point at their own replay site and editor.
 
-_UI_NAV = Path(settings.BASE_DIR) / "skins" / "static" / "ui" / "nav.json"
+_UI_NAV = Path(settings.BASE_DIR) / "static" / "ui" / "nav.json"
 
 # Which header item is highlighted for a path on this site.
 _SECTIONS = {
@@ -73,7 +78,7 @@ def _link(item):
 
 
 def site_nav(request):
-    """`site_nav` for skins/partials/_site_header.html and _site_footer.html."""
+    """`site_nav` for partials/_site_header.html and _site_footer.html."""
     nav = _nav_file()
     path = request.path
     current = next((sid for sid, prefixes in _SECTIONS.items() if path.startswith(prefixes)), None)

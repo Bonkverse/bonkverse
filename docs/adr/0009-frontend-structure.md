@@ -22,14 +22,15 @@ server-list filters that broke as soon as a tag was selected. All three were
 in copies nobody was looking at.
 
 **Decision.**
-- Behavior shared by pages lives once, in `skins/static/core/js/`, loaded by
+- Behavior shared by pages lives once, in `static/core/js/` (the page frame; under `skins/static/` until RFC-0001 5.6d), loaded by
   `base.html` and exposed as a small global: `BVApi` (requests), `BVWear`
   (wearing + the bonk.io login modal), `BVCards` (skin cards, image zoom),
   `BVReport` (reporting), plus `bv-boot.js` for what every page does on load.
   Shared markup lives once, in a partial (`_bonk_login_modal.html`,
   `_report_skin_modal.html`, `_skin_card.html`, `_skin_card_compact.html`).
-- A page's own behavior is a file in `skins/static/js/`, its own styles a
-  file in `skins/static/css/`. Templates hold markup and pass data through
+- A page's own behavior is a file in its app's `static/<app>/js/`, its own
+  styles a file in `static/<app>/css/` (`skins/static/js/` and `css/` for
+  skins' pages). Templates hold markup and pass data through
   `data-` attributes or `json_script`. No inline scripts, handlers or styles,
   except a computed value as a CSS custom property.
 - Card data comes from one selector, `decorate_skins_for_user`, in a fixed

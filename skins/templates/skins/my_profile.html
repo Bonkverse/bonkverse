@@ -1,4 +1,4 @@
-{% extends 'skins/base.html' %}
+{% extends 'base.html' %}
 {% load static %}
 
 {% block title %}My Profile - {{ user.username }}{% endblock %}
@@ -41,7 +41,7 @@
 
   {% include 'skins/partials/_delete_skin_modal.html' %}
   {% include 'skins/partials/_edit_skin_modal.html' %}
-  {% include 'skins/partials/_bonk_login_modal.html' %}
+  {% include 'partials/_bonk_login_modal.html' %}
 
 {% endblock %}
 

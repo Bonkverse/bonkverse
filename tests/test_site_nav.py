@@ -1,5 +1,5 @@
 """The shared header and footer come from Bonkverse/ui's nav.json
-(skins.context_processors.site_nav)."""
+(core.context_processors.site_nav)."""
 
 import json
 from pathlib import Path
@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from django.urls import Resolver404, resolve
 
-NAV = json.loads((Path(__file__).resolve().parent.parent / "skins/static/ui/nav.json").read_text())
+NAV = json.loads((Path(__file__).resolve().parent.parent / "static/ui/nav.json").read_text())
 
 
 def _links():

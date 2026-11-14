@@ -7,7 +7,7 @@ this way: [ADR 0009](../adr/0009-frontend-structure.md).
 
 ## What every page gets
 
-Every page extends `skins/templates/skins/base.html`, which loads, in order:
+Every page extends the frame, `templates/base.html`, which loads, in order:
 
 | Where | What | Gives the page |
 |---|---|---|
@@ -20,7 +20,7 @@ Every page extends `skins/templates/skins/base.html`, which loads, in order:
 | `<head>` | `core/js/bv-wear.js` | `BVWear.wear(url)`: wearing a skin and the bonk.io login modal |
 | `<head>` | `core/js/bv-cards.js` | what skin cards do; image zoom and fallback |
 | `<head>` | `core/js/bv-report.js` | the report modal, opened by any `[data-report-skin]` |
-| `<body>` | `skins/partials/_site_header.html`, `_skin_tabs.html` (skin pages), `_site_footer.html` | the shared header, skin tabs and footer, from `nav.json` |
+| `<body>` | `partials/_site_header.html`, `_skin_tabs.html` (skin pages), `_site_footer.html` | the shared header, skin tabs and footer, from `nav.json` |
 | end of `<body>` | `core/js/bv-boot.js` | Django messages as toasts, icons drawn |
 | end of `<body>` | `{% block extra_scripts %}` | the page's own script |
 
@@ -29,7 +29,7 @@ handles and what markup it expects.
 
 ## The Bonkverse/ui package
 
-`skins/static/ui/` is a copy of a [Bonkverse/ui](https://github.com/Bonkverse/ui)
+`static/ui/` is a copy of a [Bonkverse/ui](https://github.com/Bonkverse/ui)
 release: the colors for the three themes, Jost, the `bv-` components and
 `nav.json`. The same release styles the replay site and the docs. Why:
 [ADR 0013](../adr/0013-shared-ui-package.md).
@@ -39,7 +39,7 @@ release: the colors for the three themes, Jost, the `bv-` components and
   screenshots). `tests/test_ui_package.py` fails if a file differs from the
   release's `MANIFEST.json`.
 - **The header and footer** are built from `nav.json` by
-  `skins.context_processors.site_nav`. Paths starting with `/` are this site.
+  `core.context_processors.site_nav`. Paths starting with `/` are this site.
   Links to the replay site, editor, docs and Discord use this deployment's
   settings.
 - **Every page follows the theme.** The site's own CSS uses the `--bv-*`
@@ -67,7 +67,7 @@ release: the colors for the three themes, Jost, the `bv-` components and
 returns the JSON or `null`. It reads the CSRF cookie itself; no page does.
 
 **Wearing: `BVWear`** (`core/js/bv-wear.js`) with
-`skins/partials/_bonk_login_modal.html`. Opens the bonk.io login modal only
+`partials/_bonk_login_modal.html`. Opens the bonk.io login modal only
 when the server says the bonk.io token was refused, retries the wear once
 after a login, and never reopens the modal (see
 [ADR 0008](../adr/0008-bonk-refusals.md)). A page with a Wear button includes
@@ -118,8 +118,10 @@ Pages in apps created in RFC-0001 Phase 5 keep the same three files inside
 their app, namespaced by the app's name:
 `site_pages/templates/site_pages/privacy.html`,
 `site_pages/static/site_pages/css/privacy.css` (`{% static 'site_pages/css/privacy.css' %}`).
-The shared page frame (`skins/base.html`) and the skin partials stay in
-`skins/` until the frame moves in step 5.6.
+The shared page frame is the project's `templates/` (`base.html`, error
+pages, `partials/`: header, footer, skin tabs, pagination, bonk.io login
+modal) and `static/` (`ui/`, `core/js/`, `images/`, site-wide `css/` and
+`js/`), since RFC-0001 step 5.6d. The skin partials stay in `skins/`.
 
 - **Data from the template** goes in `data-` attributes or `json_script`,
   never as template tags inside JavaScript:

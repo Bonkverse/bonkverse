@@ -49,7 +49,7 @@ players/
   management/commands/                 # sync_replays, populate_* (local seed data)
 ```
 
-Shared styles stay in `skins/static/css/`: `player_profile.css` (also used by the developer portal), `charts.css`, `controls.css`.
+`charts.css` and `controls.css` are in `players/static/players/css/`. `player_profile.css` is shared with the developer portal, so it is in the frame's `static/css/`.
 
 `dbid_lookup.py` (social stats' account-age estimates) is an older table than `core/bonk/dbid.py` (profiles, public API). Merging them would change the estimates on the social stats page, so it's a separate decision.
 
