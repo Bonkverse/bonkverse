@@ -13,7 +13,8 @@ from core import token_crypto
 import requests
 from django.urls import reverse
 
-from skins.models import BonkUser, Skin, UserEvent
+from accounts.models import BonkUser
+from skins.models import Skin, UserEvent
 from accounts.models import BonkAccountLink
 from players.models import BonkPlayer
 from tests.conftest import load_bonk_fixture

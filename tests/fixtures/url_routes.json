@@ -8,6 +8,10 @@
     "name": "detail"
   },
   {
+    "route": "^admin/skins/bonkuser/(?P<rest>.*)$",
+    "name": null
+  },
+  {
     "route": "api/",
     "name": "api_index"
   },

@@ -85,7 +85,7 @@ class WornSkinSource(models.TextChoices):
 class BonkPlayer(models.Model):
     """Any bonk.io account we know of (friends, replay players, map authors).
 
-    Not the Bonkverse login user (`skins.BonkUser`): this is the in-game identity.
+    Not the Bonkverse login user (`accounts.BonkUser`): this is the in-game identity.
     """
 
     # The bonk.io account ID (DBID). Empty for a name only seen in replays

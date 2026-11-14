@@ -39,7 +39,8 @@ accounts/
   login_messages.py     # what a turned-down login says
   sign_in.py            # what a successful login does
   forms.py              # LoginForm (username and password never stripped)
-  models.py             # BonkAccountLink
+  models.py             # BonkUser (AUTH_USER_MODEL), BonkAccountLink
+  admin.py              # site accounts in /admin/
   templates/accounts/login.html
   static/accounts/js/login.js   # keeps Login off until a wait ends; one submit per click
   management/commands/grant_admin.py, reencrypt_bonk_tokens.py
@@ -49,8 +50,9 @@ accounts/
 
 | Model | Table | What |
 |---|---|---|
+| `BonkUser` | `skins_bonkuser` (+ `skins_bonkuser_groups`, `skins_bonkuser_user_permissions`) | The site account: `AUTH_USER_MODEL`, a bonk.io username, no usable password (sign-in is through bonk.io). Admin: `/admin/accounts/bonkuser/` |
 | `BonkAccountLink` | `skins_bonkaccountlink` | A site account ↔ a `players.BonkPlayer`, with the bonk.io session token from the latest login, encrypted (`encrypt_token()` / `bonk_token()`, [ADR 0016](../adr/0016-bonk-tokens-encrypted-at-rest.md)) |
 
 It moved here from `skins/` in step 5.5 without moving data (migrations `accounts.0001` and `skins.0033`, both state-only). It keeps its table, and its constraint and index names (they come from the table name). Since 5.5b the token is encrypted with `BONK_TOKEN_KEYS` (`core/token_crypto.py`); `manage.py reencrypt_bonk_tokens` re-encrypts every stored copy after a key change.
 
-`BonkUser` (the site account, `AUTH_USER_MODEL`) still lives in `skins/models.py`. It is the riskiest move, because Django doesn't support changing `AUTH_USER_MODEL` after the first migration, so it gets a spike first (5.5c).
+`BonkUser` moved here in step 5.5c, also without moving data, and `AUTH_USER_MODEL` is now `accounts.BonkUser`. Django doesn't support switching that setting, so the move pins the old migrations to `skins.bonkuser` and creates the model in `accounts.0001`'s state; [ADR 0017](../adr/0017-user-model-moved-by-pinning-history.md) explains how, and the runbook has the rollback.

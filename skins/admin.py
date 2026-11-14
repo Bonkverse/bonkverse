@@ -1,4 +1,4 @@
-"""Django admin: skins and site accounts.
+"""Django admin: skins, and the admin site's login.
 
 Admins sign in through the normal bonk.io login, not the admin's own password
 form (site accounts have no usable password). /admin/login/ therefore
@@ -12,7 +12,7 @@ from django.contrib import admin
 from django.shortcuts import redirect, render
 from django.urls import reverse
 
-from .models import BonkUser, Skin
+from .models import Skin
 
 
 def _login_through_bonk(request, extra_context=None):
@@ -62,20 +62,3 @@ def bulk_update_creator(modeladmin, request, queryset):
 @admin.register(Skin)
 class SkinAdmin(admin.ModelAdmin):
     actions = [bulk_update_creator]
-
-
-@admin.register(BonkUser)
-class BonkUserAdmin(admin.ModelAdmin):
-    """Site accounts. Passwords are not shown or editable: there are none."""
-
-    list_display = ("username", "is_staff", "is_superuser", "date_joined", "last_login")
-    list_filter = ("is_staff", "is_superuser")
-    search_fields = ("username",)
-    ordering = ("username",)
-    fields = ("username", "is_staff", "is_superuser", "groups", "date_joined", "last_login")
-    readonly_fields = ("username", "date_joined", "last_login")
-    filter_horizontal = ("groups",)
-
-    def has_add_permission(self, request):
-        # Accounts are created by signing in with bonk.io.
-        return False
