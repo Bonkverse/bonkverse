@@ -29,10 +29,14 @@ from django.db.models.functions import Lower
 from players.models import BonkPlayer
 
 from integrations.replays import LOOKUP_MAX, PlayerError, lookup_players_configured
-from players.calculator import account_age
-from players.charts import profile_path
 from players.models import ProfileVisibility
-from players.selectors import replay_profile, skin_avatar_url, worn_skins
+from players.selectors import (
+    account_age,
+    profile_path,
+    replay_profile,
+    skin_avatar_url,
+    worn_skins,
+)
 
 from .models import ApiKey
 

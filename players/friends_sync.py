@@ -34,7 +34,6 @@ from django.utils import timezone
 
 from integrations.bonk_api import BonkFriend, get_client
 
-from accounts.services import log_event
 from accounts.models import BonkAccountLink
 from .models import BonkPlayer, FriendCountHistory, Friendship
 
@@ -89,6 +88,10 @@ def sync_friends_for_link(link: BonkAccountLink) -> LinkSyncResult:
         friends=result.friends,
         requests=result.requests,
     )
+    # Imported here: accounts.services loads accounts' login code, which uses
+    # players.services, which loads this module.
+    from accounts.services import log_event
+
     log_event(link.user, "friends_synced", **stats)
     return LinkSyncResult(stats=stats)
 
