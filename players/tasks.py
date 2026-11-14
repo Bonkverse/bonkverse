@@ -2,7 +2,7 @@
 
 sync_friends: a player's bonk.io friend list, queued at login through
 players.services.queue_friend_sync.
-sync_replays: hourly (CELERY_BEAT_SCHEDULE, REPLAY_SYNC_INTERVAL_SECONDS)
+sync_replays: every 5 minutes (CELERY_BEAT_SCHEDULE, REPLAY_SYNC_INTERVAL_SECONDS):
 names in and DBIDs out between Bonkverse and the replay archive
 (players/replay_sync.py).
 """
@@ -11,6 +11,7 @@ import logging
 import time
 
 from celery import shared_task
+from django.conf import settings
 from celery.exceptions import SoftTimeLimitExceeded
 
 from integrations.bonk_api import BonkError
@@ -25,9 +26,13 @@ SYNC_FRIENDS_TASK = "skins.tasks.sync_friends"
 
 
 # At least once (the default): each batch saves its cursor, so a repeated or
-# cut-off run carries on where the last one stopped. The hard limit is shorter
-# than replay_sync's 30-minute lock, so a run never outlives its lock.
-@shared_task(soft_time_limit=25 * 60, time_limit=28 * 60)
+# cut-off run carries on where the last one stopped. The hard limit (80% of the
+# interval) is shorter than the run's lock (one interval), so a run never
+# outlives its lock and never overlaps the next one.
+@shared_task(
+    soft_time_limit=settings.REPLAY_SYNC_TIME_LIMIT_SECONDS - 15,
+    time_limit=settings.REPLAY_SYNC_TIME_LIMIT_SECONDS,
+)
 def sync_replays() -> dict:
     """One replay sync (run() logs what it did); skipped when another is running or it's off."""
     try:

@@ -31,7 +31,6 @@ IDS_URL = f"{REPLAYS}/api/internal/player-ids"
 def _sync_settings(settings):
     settings.BONKVERSE_REPLAYS_URL = REPLAYS
     settings.BONKVERSE_SYNC_TOKEN = TOKEN
-    settings.REPLAY_SYNC_INTERVAL_SECONDS = 3600
 
 
 def names_page(names, next_, done):
@@ -212,7 +211,7 @@ def test_task_stops_cleanly_at_its_time_limit(monkeypatch):
     assert sync_replays() == {"stopped_time_limit": True}
 
 
-def test_runs_hourly_on_the_worker(settings):
+def test_runs_on_the_worker_schedule(settings):
     schedule = settings.CELERY_BEAT_SCHEDULE["sync-replays"]
     assert schedule["task"] == "players.tasks.sync_replays"
     assert schedule["schedule"] == settings.REPLAY_SYNC_INTERVAL_SECONDS
@@ -247,3 +246,36 @@ def test_replay_only_players_show_on_the_players_page(client, mocked_http):
     html = client.get(reverse("players_directory") + "?q=%25").content.decode()
     assert "(%)" in html and "Seen in replays" in html and "DBID" not in html.split("pv-pcards")[1]
     assert charts.profile_path("(%)") in html
+
+
+def test_runs_every_few_minutes_and_ends_before_the_next_is_due(settings):
+    """New players should appear within minutes of their replay reaching the
+    archive (it checks bonk.io every 2 minutes), and a run must never overlap
+    the next one or outlive its lock."""
+    from players.tasks import sync_replays as task
+
+    interval = settings.REPLAY_SYNC_INTERVAL_SECONDS
+    assert interval <= 5 * 60
+    assert task.soft_time_limit < task.time_limit < interval
+
+
+@pytest.mark.django_db
+def test_lock_lasts_one_interval(monkeypatch, settings):
+    settings.REPLAY_SYNC_INTERVAL_SECONDS = 300
+    seen = {}
+
+    class SpyCache:
+        def add(self, key, value, timeout):
+            seen[key] = timeout
+            return True
+
+        def delete(self, key):
+            pass
+
+    monkeypatch.setattr(replay_sync, "cache", SpyCache())
+    monkeypatch.setattr(replay_sync, "pull_replay_names", lambda n: {})
+    monkeypatch.setattr(replay_sync, "push_player_ids", lambda n: {})
+
+    replay_sync.run()
+
+    assert seen[replay_sync.LOCK_KEY] == 300

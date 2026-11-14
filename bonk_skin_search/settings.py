@@ -115,8 +115,14 @@ PLAYER_PROFILE_CACHE_SECONDS = int(os.getenv("PLAYER_PROFILE_CACHE_SECONDS", "30
 # ReplayRenderer server/sync-routes.mjs). Set the same value on both services;
 # empty turns the sync off.
 BONKVERSE_SYNC_TOKEN = os.getenv("BONKVERSE_SYNC_TOKEN", "")
-# How often a page view may start a background sync (seconds).
-REPLAY_SYNC_INTERVAL_SECONDS = int(os.getenv("REPLAY_SYNC_INTERVAL_SECONDS", "3600"))
+# How often the worker syncs with the replay archive (players.tasks.sync_replays):
+# new names in, DBIDs out. The archive checks bonk.io every 2 minutes and a run
+# takes about a second, so every 5 minutes keeps new players a few minutes
+# behind. At least 60 s.
+REPLAY_SYNC_INTERVAL_SECONDS = max(60, int(os.getenv("REPLAY_SYNC_INTERVAL_SECONDS", "300")))
+# A run must end before the next is due: its hard time limit is 80% of the
+# interval, and its lock lasts one interval (players/replay_sync.py).
+REPLAY_SYNC_TIME_LIMIT_SECONDS = int(REPLAY_SYNC_INTERVAL_SECONDS * 0.8)
 
 # Server-side skin renderer (POST {BONKVERSE_RENDER_URL}/api/render-bundle), used by
 # staff re-render. Separate from the editor link: it is a stateless service, so

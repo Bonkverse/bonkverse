@@ -49,7 +49,6 @@ logger = logging.getLogger(__name__)
 NAMES_CURSOR = "replay-names"
 IDS_CURSOR = "player-ids"
 LOCK_KEY = "players:replay-sync:lock"
-LOCK_SECONDS = 30 * 60
 NAMES_BATCH = 5000  # replays per request
 MAX_NAME_LENGTH = 100
 
@@ -203,7 +202,10 @@ def run(*, names=True, ids=True, max_batches=20):
     or {"skipped": reason}."""
     if not enabled():
         return {"skipped": "BONKVERSE_SYNC_TOKEN or BONKVERSE_REPLAYS_URL isn't set"}
-    if not cache.add(LOCK_KEY, timezone.now().isoformat(), LOCK_SECONDS):
+    # The lock lasts one interval: longer than a scheduled run may (80% of it),
+    # short enough that a run killed at its limit doesn't block the next one.
+    lock_seconds = settings.REPLAY_SYNC_INTERVAL_SECONDS
+    if not cache.add(LOCK_KEY, timezone.now().isoformat(), lock_seconds):
         return {"skipped": "another sync is running"}
     try:
         out = {}
