@@ -92,7 +92,8 @@ jobs:
       - name: Dependency vulnerabilities
         run: pip-audit -r requirements.txt
       - name: bandit (new medium+ findings only)
-        # .bandit-baseline.json holds findings that existed when CI was added.
+        # .bandit-baseline.json holds two accepted findings (refreshed 2026-11-14): "0.0.0.0" in the
+        # local ALLOWED_HOSTS, and ElementTree in skins/svg_sanitizer.py, which refuses DOCTYPE/ENTITY first.
         # Every app (any top-level folder with an apps.py) plus the shared packages.
         run: bandit -q -r bonk_skin_search core integrations $(dirname */apps.py) -x $(ls -d */migrations | paste -sd, -) -ll -ii -b .bandit-baseline.json
       - name: Django deploy checks

@@ -194,9 +194,9 @@ bonkverse/
 ├── integrations/           # one client per outside service; the only code that makes outside HTTP calls
 ├── templates/              # the page frame: base.html, error pages, partials/ (header, footer, pagination, login modal)
 ├── static/                 # the frame's files: ui/ (Bonkverse/ui copy), core/js/ (BVApi, BVWear, BVCards, ...), images/, site-wide css/ and js/
-├── accounts/               # log in/out with bonk.io, wrong-password limit, what a login does, /api/me/, grant_admin
+├── accounts/               # site accounts (AUTH_USER_MODEL), bonk.io links and tokens, log in/out, event log, /api/me/, grant_admin
 ├── players/                # player profiles, directory and search, friend sync, social stats, XP calculator
-├── public_api/             # /api/v1/, API keys, developer portal
+├── public_api/             # /api/v1/, API keys, developer portal (docs/apps/public_api.md)
 ├── site_pages/             # home, privacy, terms, staff, map decoder
 ├── communities/            # Discord server directory
 ├── stats/                  # leaderboards: one LEADERBOARDS entry per board
@@ -224,7 +224,7 @@ bonkverse/
 
 `staticfiles/` is build output and is not committed; the Dockerfile rebuilds it with `collectstatic`.
 
-The plan for reorganizing this repo, and the conventions new code should follow, are in **RFC-0001: Code Organization & Conventions**. [CONTRIBUTING.md](CONTRIBUTING.md) has the short version.
+The conventions new code follows are in **RFC-0001: Code Organization & Conventions** (accepted; all five phases done as of 2026-11-14). [CONTRIBUTING.md](CONTRIBUTING.md) has the short version, and [docs/apps/](docs/apps/README.md) says which app owns what.
 
 
 Production vs Local

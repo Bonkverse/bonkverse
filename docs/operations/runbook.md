@@ -282,6 +282,22 @@ without permissions. Superusers see everything.
 3. To cut one client off entirely: Cloudflare → Security → WAF → Custom rules →
    block `ip.src eq <ip>`. Remove it later.
 
+## Where things live
+
+Since RFC-0001 Phase 5 each area is its own app. Admin pages are under the
+app's name; most tables still start with `skins_` (ADR 0019).
+
+| Area | App | Admin | Commands |
+|---|---|---|---|
+| Site accounts, bonk.io links and tokens, login, event log | `accounts` | `/admin/accounts/bonkuser/` (old `/admin/skins/bonkuser/` links redirect) | `grant_admin`, `reencrypt_bonk_tokens`, `analyze_events` |
+| Skins, votes, images, search | `skins` | `/admin/skins/skin/` | `rerender_skins`, `audit_skin_codes`, `audit_vote_counts`, `audit_rate_limits`, `import_bonxbot_skins`, `init_pg_extensions`, `populate_skins`, `populate_all` |
+| Players, friends, replay sync, profile privacy | `players` | `/admin/players/profilevisibility/` | `sync_replays`, `populate_bonkplayers`, `populate_friendships`, `populate_flashfriends` |
+| API keys | `public_api` | `/admin/public_api/` | `create_api_key`, `revoke_api_key` |
+| Discord directory | `communities` | none | `populate_discord` |
+| Leaderboards | `stats` | none | none |
+
+`populate_*` commands are local seed data; never run them in production.
+
 ## Local development against production data
 
 Don't point a local server at the production database (`.env` should have a

@@ -52,3 +52,5 @@ development are in the [README](../README.md); code conventions in
 - [0015 Skin images are rendered by Bonkverse from the stored skin code, and a code must be a real skin](adr/0015-skin-images-from-skin-codes.md)
 - [0016 bonk.io tokens are stored encrypted, under their own keys](adr/0016-bonk-tokens-encrypted-at-rest.md)
 - [0017 The site account model moved to `accounts` by pinning migration history](adr/0017-user-model-moved-by-pinning-history.md)
+- [0018 Domain apps that use each other only through services, selectors and models](adr/0018-domain-apps-and-their-boundaries.md)
+- [0019 A model changes app without its table moving](adr/0019-models-move-without-moving-tables.md)

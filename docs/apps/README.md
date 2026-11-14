@@ -1,22 +1,22 @@
 # Apps: what each one owns
 
-RFC-0001 Phase 5 splits the old do-everything `skins` app into domain apps. This page is the map: which app owns what, the rules between apps, and how a move is done. Each app gets its own page here (`docs/apps/<app>.md`) in the PR that creates it.
+RFC-0001 Phase 5 (finished 2026-11-14) split the old do-everything `skins` app into domain apps. This page is the map: which app owns what, the rules between apps, and how an app is created or a model moved. Each app has its own page here (`docs/apps/<app>.md`); why it's built this way: [ADR 0018](../adr/0018-domain-apps-and-their-boundaries.md) and [ADR 0019](../adr/0019-models-move-without-moving-tables.md).
 
 **Decide where new code goes by asking two questions:** which domain does it belong to (the table below), and which layer (the file table in [CONTRIBUTING](../../CONTRIBUTING.md#where-code-goes)).
 
 ## The apps
 
-| App | Owns | State |
+| App | Owns | Notes |
 |---|---|---|
-| [`site_pages`](site_pages.md) | Home, privacy, terms, staff page, small tools (map decoder) | Exists (5.1); no models of its own |
-| [`communities`](communities.md) | Discord server directory: servers, tags, snapshots, submit, the hourly refresh | Exists (5.2), models moved (5.2b) |
-| [`stats`](stats.md) | Leaderboards (one config entry per board) and archived win/loss rows; future stat tracking | Exists (5.3), models moved (5.3b) |
-| [`players`](players.md) | bonk.io players, friendships, Flash friends, friend sync, player search and profiles, social stats, replay sync, XP calculator, profile privacy | Exists (5.4), models moved (5.4b) |
-| [`accounts`](accounts.md) | Site accounts (`BonkUser`), bonk.io account links and their tokens, sign in / out, `/api/me/` | Done (5.5): `BonkUser` and `BonkAccountLink` live here |
-| [`skins`](skins.md) | Skins, votes, favorites, reports, images, search, categories, upload, wear, edit | RFC layout (5.6b); event log and page frame moved out (5.6c/d) |
-| `public_api` | `/api/v1/`, API keys, the developer portal | Exists ([public-api.md](../architecture/public-api.md)) |
+| [`site_pages`](site_pages.md) | Home, privacy, terms, staff page, small tools (map decoder) | No models of its own |
+| [`communities`](communities.md) | Discord server directory: servers, tags, snapshots, submit, the hourly refresh | Hourly refresh task keeps its old name `skins.tasks.refresh_discord_servers` |
+| [`stats`](stats.md) | Leaderboards (one config entry per board) and archived win/loss rows; future stat tracking | New board = one `LEADERBOARDS` entry ([recipe](stats.md#adding-a-board)) |
+| [`players`](players.md) | bonk.io players, friendships, Flash friends, friend sync, player search and profiles, social stats, replay sync, XP calculator, profile privacy | Friend sync task keeps its old name `skins.tasks.sync_friends` |
+| [`accounts`](accounts.md) | Site accounts (`BonkUser`), bonk.io account links and their tokens, sign in / out, `/api/me/` | `AUTH_USER_MODEL` is `accounts.BonkUser` ([ADR 0017](../adr/0017-user-model-moved-by-pinning-history.md)); also the event log (`log_event`, `UserEvent`) |
+| [`skins`](skins.md) | Skins, votes, favorites, reports, images, search, categories, upload, wear, edit | The original app, now only the gallery |
+| [`public_api`](public_api.md) | `/api/v1/`, API keys, the developer portal | Behavior and key handling: [public-api.md](../architecture/public-api.md) |
 
-Shared packages (not apps): `core/` (cross-cutting helpers: auth guards, events, pagination, periods, logging, background work) and `integrations/` (one client per outside system; [integrations.md](../architecture/integrations.md)).
+Shared packages (not apps): `core/` (cross-cutting helpers: auth guards, bonk.io types, token encryption, pagination, periods, logging, rate limits, background work) and `integrations/` (one client per outside system; [integrations.md](../architecture/integrations.md)).
 
 ## Rules between apps
 
@@ -28,7 +28,9 @@ Enforced by `tests/test_app_boundaries.py`:
 - Need something another app has in a helper module? Add a function to its `selectors` or `services` and use that.
 - **Templates:** every page extends the shared frame `base.html` (in the project's `templates/`, with the header, footer, error pages and generic partials: pagination, the bonk.io login modal) and may include the skin partials in `skins/templates/skins/partials/` (cards, carousels, search bar, report modal): those are the skins app's public UI, the template equivalent of its selectors. Other apps' page templates are off-limits. The frame's files (the `ui/` package, `core/js`, images, site-wide CSS and JS) are in the project's `static/`.
 
-Exceptions are listed in the test's `ALLOWED` with a reason; the list only shrinks.
+- Two apps may need each other (accounts' login updates players; players writes to accounts' event log). If that makes an import cycle, the side that needs the other only occasionally imports inside the function, with a comment saying why (`players/friends_sync.py`). The same test imports each app's `services` and `selectors` first in a fresh interpreter, so a cycle fails CI.
+
+Exceptions would be listed in the test's `ALLOWED` with a reason. It has been empty since 5.7, and stays that way unless a review agrees to one.
 
 ## URL names are namespaced
 
@@ -42,7 +44,7 @@ Every URLconf sets `app_name`, one namespace per file: `skins`, `site_pages`, `a
 python -m tests.test_url_snapshot > tests/fixtures/url_routes.json
 ```
 
-## How a move is done (Phase 5)
+## How a move is done
 
 One app per PR, in two kinds of PR:
 

@@ -70,6 +70,11 @@ TABS = [
     ("skins", "Skins", None, False),
 ]
 
+# For other apps (public_api): a bonk.io account's age from its ID, and the
+# path of a player's profile page.
+account_age = calculator.account_age
+profile_path = charts.profile_path
+
 
 def _cache_key(*parts):
     # Hashed only to keep any username (spaces, symbols) a safe cache key.

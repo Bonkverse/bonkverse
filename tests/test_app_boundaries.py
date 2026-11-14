@@ -20,7 +20,12 @@ folder with an `apps.py`).
 """
 
 import ast
+import os
+import subprocess
+import sys
 from pathlib import Path
+
+import pytest
 
 REPO = Path(__file__).resolve().parent.parent
 SHARED_PACKAGES = {"core", "integrations"}
@@ -28,10 +33,7 @@ PUBLIC_MODULES = {"services", "selectors", "models"}
 
 # (file, imported module) pairs allowed for now, each with the step that
 # removes it. Remove an entry when its import is gone.
-ALLOWED: dict[tuple[str, str], str] = {
-    ("public_api/selectors.py", "players.calculator"): "players exposes account_age via selectors",
-    ("public_api/selectors.py", "players.charts"): "players exposes profile_path via selectors",
-}
+ALLOWED: dict[tuple[str, str], str] = {}
 
 
 def _apps() -> set[str]:
@@ -137,3 +139,26 @@ def test_detects_each_kind_of_crossing(tmp_path, monkeypatch):
         ("alpha/bad.py", "beta.helpers"),
         ("core/shared.py", "alpha.models"),
     }
+
+
+PUBLIC_ENTRY_POINTS = sorted(
+    f"{path.parent.name}.{path.stem}"
+    for module in ("services", "selectors")
+    for path in REPO.glob(f"*/{module}.py")
+    if (path.parent / "apps.py").exists()
+)
+
+
+@pytest.mark.parametrize("module", PUBLIC_ENTRY_POINTS)
+def test_public_modules_import_first(module):
+    """Apps call each other both ways (players logs to accounts' event log;
+    accounts' login updates players), so each public module must import
+    cleanly whichever is loaded first. A fresh interpreter per module; a
+    shared one would hide a cycle behind whatever loaded earlier."""
+    env = {**os.environ, "DJANGO_SETTINGS_MODULE": "bonk_skin_search.settings"}
+    code = f"import django; django.setup(); import {module}"
+    result = subprocess.run(  # nosec B603: fixed interpreter and module names
+        [sys.executable, "-c", code], cwd=REPO, env=env, capture_output=True, text=True
+    )
+
+    assert result.returncode == 0, result.stderr[-2000:]
