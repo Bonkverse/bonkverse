@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from .models import BonkPlayer, Friendship
+from players.models import BonkPlayer, Friendship
 import random
 
 
