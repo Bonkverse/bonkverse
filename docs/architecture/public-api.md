@@ -11,7 +11,7 @@ this page is for running it.
 | Method and path | Tier | Returns |
 |---|---|---|
 | `GET /api/v1/me/` | `api` | The key you're using (name, prefix, tier) |
-| `GET /api/v1/players/<username>/` | `api` | One player: level, peak, when seen, games, bonk.io account (DBID, join day), profile URL |
+| `GET /api/v1/players/<username>/` | `api` | One player: level, peak, when seen, games, bonk.io account (DBID, join day), worn skin, profile URL |
 | `GET /api/v1/players/<username>/level-history/` | `api` | Level-ups and the highest level per day |
 | `POST /api/v1/lookup/players/` | `api_bulk` | Up to 250 players at once, each with a `status` |
 
@@ -37,6 +37,15 @@ the request. The single-player endpoint turns `not_found` into 404 and
   `BonkPlayer` rows (from friend lists and logins), `null` when Bonkverse
   hasn't met that account. `joined` is estimated from the ID
   (`core/bonk/dbid.py`), as on player cards. The DBID is public there too.
+- `skin` (`skin_code`, `image_url`, `thumbnail_url`, `seen_at`): the skin
+  the player last wore in game, from `BonkPlayer.worn_skin_*` (their own
+  bonk.io login or a wear from Bonkverse, [players.md](../apps/players.md#worn-skins)).
+  `null` until Bonkverse has seen one, which today means they signed in.
+  Published because anyone sees it in game and on the profile; there's no
+  switch for it. The image URLs are the profile avatar routes (512 and
+  128 px PNG), rendered on first request; they answer 404 if the render
+  service can't draw the skin. Where we saw it (login or wear) isn't
+  published. Not cached with the replay rows: one query per request.
 - Level history reuses the profile pages' cached replay profile.
 - Not published: login XP (`BonkPlayer.xp`), friends, Flash friends.
 

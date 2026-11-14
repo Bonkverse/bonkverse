@@ -8,14 +8,16 @@ Does not own: the replay numbers (the replay service computes them from
 its own database), who may call the API (auth.py), or the profile pages
 (players/), whose cached profile this reuses for level history.
 
-Only replay data is published here. XP from a player's own bonk.io login
-(BonkPlayer.xp) is what they gave Bonkverse, not other sites, so it stays
-out of the public API.
+Only replay data is published here, plus the player's worn skin, which
+anyone sees in game and on their profile. XP from a player's own bonk.io
+login (BonkPlayer.xp) is what they gave Bonkverse, not other sites, so it
+stays out of the public API.
 """
 
 from __future__ import annotations
 
 import hashlib
+from datetime import UTC
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -28,7 +30,7 @@ from integrations.replays import LOOKUP_MAX, PlayerError, lookup_players_configu
 from players.calculator import account_age
 from players.charts import profile_path
 from players.models import ProfileVisibility
-from players.selectors import replay_profile
+from players.selectors import replay_profile, skin_avatar_url, worn_skins
 
 from .models import ApiKey
 
@@ -109,6 +111,23 @@ def _account(bonk_player) -> dict | None:
     }
 
 
+def _skin(username, worn, build_url) -> dict | None:
+    """The skin the player last wore in game, with image URLs (rendered on
+    first request; 404 if the render service can't draw it)."""
+    if worn is None:
+        return None
+    return {
+        "skin_code": worn["skin_code"],
+        "image_url": build_url(skin_avatar_url(username, worn["skin_code"], "png")),
+        "thumbnail_url": build_url(skin_avatar_url(username, worn["skin_code"], "thumbnail")),
+        # Same form as level.seen_at: UTC, milliseconds, "Z".
+        "seen_at": worn["seen_at"]
+        .astimezone(UTC)
+        .isoformat(timespec="milliseconds")
+        .replace("+00:00", "Z"),
+    }
+
+
 def _replay_rows(names) -> dict:
     """{lower name: replay lookup row | _MISSING | None (unavailable)}, from
     cache where possible; misses are fetched in chunks the replay site takes."""
@@ -157,6 +176,7 @@ def player_entries(names, build_url) -> list[dict]:
     accounts = accounts_named(unique)
     hidden = hidden_level_names(accounts)
     bonk_players = bonk_accounts_named(unique)
+    skins = worn_skins(unique)
     rows = _replay_rows(unique)
 
     entries = []
@@ -190,6 +210,7 @@ def player_entries(names, build_url) -> list[dict]:
                 entry["status"] = PRIVATE
             else:
                 entry["level"] = _level(row)
+        entry["skin"] = _skin(entry["username"], skins.get(key), build_url)
         entries.append(entry)
     return entries
 

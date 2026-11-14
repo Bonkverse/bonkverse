@@ -105,8 +105,9 @@ def site_account(username):
     return get_user_model().objects.filter(username__iexact=username).order_by("id").first()
 
 
-def worn_skin_codes(names):
-    """{lower name: worn skin code} for the names whose player has one.
+def worn_skins(names):
+    """{lower name: {"skin_code", "seen_at"}} for the names whose player has
+    a worn skin.
 
     Several BonkPlayers can share a name (copies from replays); the newest
     sighting wins.
@@ -121,11 +122,16 @@ def worn_skin_codes(names):
     rows = (
         BonkPlayer.objects.filter(query, worn_skin_code__isnull=False)
         .order_by("-worn_skin_seen_at")
-        .values_list("username", "worn_skin_code")
+        .values_list("username", "worn_skin_code", "worn_skin_seen_at")
     )
-    for username, skin_code in rows:
-        found.setdefault(username.lower(), skin_code)
+    for username, skin_code, seen_at in rows:
+        found.setdefault(username.lower(), {"skin_code": skin_code, "seen_at": seen_at})
     return found
+
+
+def worn_skin_codes(names):
+    """{lower name: worn skin code} for the names whose player has one."""
+    return {name: skin["skin_code"] for name, skin in worn_skins(names).items()}
 
 
 def skin_avatar_url(username, skin_code, kind="thumbnail"):
