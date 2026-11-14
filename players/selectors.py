@@ -8,7 +8,9 @@ switches (ProfileVisibility): a hidden section's tab and Overview card
 disappear for visitors; the owner always sees everything.
 
 A player's worn skin (players/worn_skins.py) is their avatar wherever their
-initials would show: the profile header, player cards and people lists.
+initials would show: the profile header, player cards, people lists, the
+Friends tab and the XP calculator; and, for the signed-in visitor, the site
+header and My Profile (user_skin_avatars, through context_processors.py).
 """
 
 from __future__ import annotations
@@ -134,11 +136,58 @@ def worn_skin_codes(names):
     return {name: skin["skin_code"] for name, skin in worn_skins(names).items()}
 
 
+def skin_version(skin_code):
+    """The `v` in a skin avatar URL: changes when the skin does."""
+    return code_digest(skin_code)[:12]
+
+
 def skin_avatar_url(username, skin_code, kind="thumbnail"):
     """URL of a player's skin avatar. The code's digest is in the query, so
     the URL (and every cached copy) changes when they change skin."""
     path = charts.profile_path(username) + SKIN_AVATAR_FILES[kind]
-    return f"{path}?v={code_digest(skin_code)[:12]}"
+    return f"{path}?v={skin_version(skin_code)}"
+
+
+USER_SKIN_CACHE_SECONDS = 300
+
+
+def _user_skin_cache_key(user_id):
+    return f"players:user_skin:{user_id}"
+
+
+def user_skin_avatars(user):
+    """{"png": url, "thumbnail": url} for a signed-in user's worn skin, or {}.
+
+    Found through their linked bonk.io account: one indexed query, since it
+    runs for the site header on every page. (Worn skins are only recorded on
+    players with a bonk_id, which signing in links.) Cached per user
+    for USER_SKIN_CACHE_SECONDS; players.services.forget_user_skin clears it
+    when they sign in or wear a skin.
+    """
+    if not getattr(user, "is_authenticated", False):
+        return {}
+    key = _user_skin_cache_key(user.pk)
+    found = cache.get(key)
+    if found is None:
+        found = _user_skin(user) or ()
+        cache.set(key, found, USER_SKIN_CACHE_SECONDS)
+    if not found:
+        return {}
+    username, skin_code = found
+    return {kind: skin_avatar_url(username, skin_code, kind) for kind in SKIN_AVATAR_FILES}
+
+
+def _user_skin(user):
+    """(player username, worn skin code) for a user, or None."""
+    link = (
+        BonkAccountLink.objects.filter(
+            user=user, active=True, bonk_player__worn_skin_code__isnull=False
+        )
+        .order_by("-bonk_player__worn_skin_seen_at")
+        .values_list("bonk_player__username", "bonk_player__worn_skin_code")
+        .first()
+    )
+    return tuple(link) if link else None
 
 
 def with_skin_avatars(rows, key="username"):
@@ -459,6 +508,8 @@ def friends(base, viewer):
                 "m": bool(p.linked),
                 "mu": p.id in mine_ids,
                 "you": mine is not None and p.id == mine.id,
+                # The page script builds the avatar URL from the name and this.
+                "s": skin_version(p.worn_skin_code) if p.worn_skin_code else None,
             }
         )
 
@@ -470,6 +521,7 @@ def friends(base, viewer):
             "now": bp.username if bp and bp.username.lower() != name.lower() else None,
             "p": bool(bp),
             "mu": key in mine_flash,
+            "s": skin_version(bp.worn_skin_code) if bp and bp.worn_skin_code else None,
         }
         for key, (name, bp) in sorted(theirs.items())[:FRIENDS_CAP]
     ]
@@ -486,16 +538,42 @@ def friends(base, viewer):
         "mutual_total": sum(r["mu"] for r in bonk_rows),
         "flash_mutual_total": sum(r["mu"] for r in flash_rows),
         "bonk_preview": [
-            dict(r, url=charts.profile_path(r["n"]), shown=shown_name(r["n"]))
+            dict(
+                r,
+                url=charts.profile_path(r["n"]),
+                shown=shown_name(r["n"]),
+                initials=initials(r["n"]),
+                skin=_versioned_thumb(r["n"], r["s"]),
+            )
             for r in bonk_rows[:60]
         ],
-        "flash_preview": [dict(r, shown=shown_name(r["n"])) for r in flash_rows[:60]],
+        "flash_preview": [
+            dict(
+                r,
+                shown=shown_name(r["n"]),
+                initials=initials(r["n"]),
+                skin=_versioned_thumb(r["now"] or r["n"], r["s"]),
+            )
+            for r in flash_rows[:60]
+        ],
         "has_flash": account is not None,
         "can_compare": mine is not None and not is_self,
         "you_are_friends": you_are_friends,
         "is_self": is_self,
         "synced": player is not None and (player.last_friend_count or bool(ids)),
     }
+
+
+def initials(name):
+    return name.strip()[:2].upper() or "?"
+
+
+def _versioned_thumb(username, version):
+    """A thumbnail avatar URL from a name and a skin_version, or None."""
+    if not version:
+        return None
+    path = charts.profile_path(username) + SKIN_AVATAR_FILES["thumbnail"]
+    return f"{path}?v={version}"
 
 
 def skins(base, viewer, view, sort, page):
@@ -561,7 +639,7 @@ def _card(name, *, stats, member, bonk_player=None, flash_friends=None, listed_b
     return {
         "username": name,
         "shown_name": shown_name(name),
-        "initials": name.strip()[:2].upper() or "?",
+        "initials": initials(name),
         "profile_url": charts.profile_path(name) if has_profile else None,
         "member": member,
         "level": calculator.sane_level((stats or {}).get("level")),
@@ -815,11 +893,11 @@ def calculator_player(username, viewer):
     if not base["shown"]["level_history"]:
         return None, "private"
     player = base["bonk_player"]
-    return (
-        calculator.player_summary(
-            base["profile"],
-            bonk_id=player.bonk_id if player else None,
-            xp=player.xp if player else None,
-        ),
-        None,
+    summary = calculator.player_summary(
+        base["profile"],
+        bonk_id=player.bonk_id if player else None,
+        xp=player.xp if player else None,
     )
+    skin_code = worn_skin_codes([base["username"]]).get(base["username"].lower())
+    summary["skin"] = skin_avatar_url(base["username"], skin_code) if skin_code else None
+    return summary, None

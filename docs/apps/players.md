@@ -76,8 +76,17 @@ The first five moved from `skins/` in step 5.4b without moving data (migrations 
 | `login` | A bonk.io login (the site's or the wear popup's): the skin in the reply's active slot |
 | `wear` | A wear from Bonkverse that bonk.io accepted, into the session's active slot. Wears into another slot don't change what the player wears in game |
 
-It is published as `skin` in `/api/v1/` ([public-api.md](../architecture/public-api.md)) and is the player's avatar wherever their initials would show: the profile header (512 px), and the 128 px thumbnail on player cards and the people lists (Overview's "Plays with most", the People tab, a map's "Plays it with"). `selectors.with_skin_avatars(rows)` adds the URL to any list of rows in one query; the partial `players/partials/_avatar.html` (and the header in `_layout.html`) passes it as the `--skin` CSS property, drawn as a background over the initials, so an image that can't load shows the initials (an `<img>` would show a broken-image icon). The URL carries `?v=<digest>` of the code, so it changes when the skin does and the week-long edge cache can't serve an old skin.
+It is published as `skin` in `/api/v1/` ([public-api.md](../architecture/public-api.md)) and is the player's avatar everywhere a placeholder used to show:
+
+| Where | How |
+|---|---|
+| Profile header (512 px) | `profile_base` → `skin_avatar` |
+| Player cards, people lists (Overview's "Plays with most", People tab, a map's "Plays it with") | `with_skin_avatars(rows)`, one query per list |
+| Friends tab | each row's `s` (the skin's version); the page and `player_friends.js` build the URL from the name |
+| XP calculator | `skin` in `/tools/xp/player.json`; `xp_calculator.js` |
+| Site header (signed in) and My Profile | `viewer_avatar` from `players/context_processors.py` (lazy): `user_skin_avatars(user)` through their `BonkAccountLink`, one indexed query, cached 5 minutes per user and cleared by `services.forget_user_skin` on sign-in and wear |
+ `selectors.with_skin_avatars(rows)` adds the URL to any list of rows in one query; the partial `players/partials/_avatar.html` (and the header in `_layout.html`) passes it as the `--skin` CSS property, drawn as a background over the initials, so an image that can't load shows the initials (an `<img>` would show a broken-image icon). The URL carries `?v=<digest>` of the code, so it changes when the skin does and the week-long edge cache can't serve an old skin.
 
 The image comes from `skins.services.code_image(skin_code, kind)` ([skin-images.md](../architecture/skin-images.md#images-of-a-skin-code)), rendered on the first request for that code.
 
-Not yet: the Friends tab (its rows are also built by its script), replay sightings for players who never sign in (the replay archive storing the avatar per participant, ADR 0011), and whether the avatar should have a privacy switch (today it's public, like the skin other players see in game).
+Not yet: replay sightings for players who never sign in (the replay archive storing the avatar per participant, ADR 0011), and whether the avatar should have a privacy switch (today it's public, like the skin other players see in game).
