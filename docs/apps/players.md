@@ -2,7 +2,7 @@
 
 bonk.io players as Bonkverse knows them: profiles built from the replay archive, the player directory and search, the friend graph (bonk.io friends and Flash-era friends), social stats, the XP calculator and profile privacy. The app existed before Phase 5 (profiles, replay sync, privacy); RFC-0001 step 5.4 moved the friend sync, player search APIs and social stats in from `skins/`, and 5.4b moved the player models.
 
-**Owns:** what a profile shows and who may see it, storing friend lists, the skin each player last wore (`worn_skins.py`), syncing names and DBIDs with the replay archive. **Does not own:** signing in or the bonk.io session (`accounts`), talking to bonk.io or the replay archive (`integrations/`), the event log the sync writes to (`skins.events`, until 5.6 decides its home).
+**Owns:** what a profile shows and who may see it, storing friend lists, the skin each player last wore (`worn_skins.py`), syncing names and DBIDs with the replay archive. **Does not own:** signing in or the bonk.io session (`accounts`), talking to bonk.io or the replay archive (`integrations/`), the event log the sync writes to (`accounts.services.log_event`).
 
 ## Routes
 

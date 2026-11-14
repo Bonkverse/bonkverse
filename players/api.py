@@ -3,7 +3,7 @@
 Owns: the player and Flash-friend search APIs used by the player search
 pages, and the friend-sync status poll My Profile runs after login.
 Does not own: the friend sync itself (players/friends_sync.py) or the
-event log it writes to (skins.events).
+event log it writes to (accounts.services.log_event).
 """
 
 from datetime import timedelta

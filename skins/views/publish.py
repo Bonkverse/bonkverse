@@ -14,7 +14,7 @@ from django.urls import reverse
 
 from core.bonk import InvalidSkinCode, SkinCode
 from core.ratelimits import limit
-from skins.events import log_event
+from accounts.services import log_event
 from skins.models import Skin
 from skins.skin_media import bundle_from_svg, save_render
 from core.auth_guards import api_login_required

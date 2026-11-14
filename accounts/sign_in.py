@@ -31,7 +31,7 @@ from players.services import (
 )
 
 from players.models import BonkPlayer
-from skins.events import log_event
+from .events import log_event
 from .models import BonkUser
 from .models import BonkAccountLink
 

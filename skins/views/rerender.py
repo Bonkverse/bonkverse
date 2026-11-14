@@ -13,7 +13,7 @@ from django.views.decorators.http import require_POST
 
 from core.ratelimits import limit
 from integrations.cloudflare import purge_media_paths
-from skins.events import log_event
+from accounts.services import log_event
 from skins.models import Skin
 from skins.rerender import RerenderError, rerender
 from skins.svg_sanitizer import TOO_LARGE_MESSAGE

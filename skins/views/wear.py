@@ -64,7 +64,7 @@ from accounts.services import attempt_login, login_failure_message
 from core.auth_guards import api_login_required, bonk_token_required
 from players.services import WornSkinSource, forget_user_skin, record_worn_skin
 
-from skins.events import log_event
+from accounts.services import log_event
 from skins.models import Skin
 
 logger = logging.getLogger(__name__)

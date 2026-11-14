@@ -38,8 +38,8 @@ All in `skins/urls.py`; views in `skins/views/`, one module per area.
 
 ## Management commands
 
-`audit_skin_codes`, `audit_vote_counts`, `audit_rate_limits`, `rerender_skins`, `import_bonxbot_skins`, `analyze_events`, `init_pg_extensions`, and the local seed commands `populate_all` / `populate_skins` (never in production). Step 5.6a removed six finished one-off commands.
+`audit_skin_codes`, `audit_vote_counts`, `audit_rate_limits`, `rerender_skins`, `import_bonxbot_skins`, `init_pg_extensions`, and the local seed commands `populate_all` / `populate_skins` (never in production). Step 5.6a removed six finished one-off commands.
 
 ## Models
 
-`Skin`, `SkinVote`, `SkinImage`, `SkinReport` (tables `skins_*`). `UserEvent` and `log_event` (`events.py`) move to `accounts` in step 5.6c. The page frame (`base.html`, header, footer, shared partials, error pages, shared scripts and styles) still lives in `skins/templates/` and `skins/static/` and moves out in step 5.6d.
+`Skin`, `SkinVote`, `SkinImage`, `SkinReport` (tables `skins_*`). `UserEvent` (the event log) is written through `accounts.services.log_event`; the model itself moves to `accounts` next. The page frame (`base.html`, header, footer, shared partials, error pages, shared scripts and styles) still lives in `skins/templates/` and `skins/static/` and moves out in step 5.6d.

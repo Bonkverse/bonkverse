@@ -23,7 +23,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from core.ratelimits import limit
-from skins.events import log_event
+from accounts.services import log_event
 from skins.skin_import import ImportFailure, import_bonkleagues_skin
 
 ERROR_STATUS = {

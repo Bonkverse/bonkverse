@@ -1,4 +1,5 @@
-# skins/management/commands/analyze_events.py
+"""Run a batch of event-log (UserEvent) queries and write the results to a text file."""
+
 from django.core.management.base import BaseCommand
 from django.db import connection
 from django.utils import timezone

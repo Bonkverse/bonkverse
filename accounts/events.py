@@ -1,0 +1,29 @@
+"""The event log: what signed-in people (and the site on their behalf) did.
+
+`log_event(user, event_type, skin=None, **metadata)` writes one UserEvent row:
+logins, wears, votes, favorites, uploads, publishes, reports, re-renders,
+friend syncs. Other apps call it through accounts.services. It never raises:
+a failed write is logged and the action it describes goes ahead.
+`manage.py analyze_events` reports on the log.
+
+UserEvent itself still lives in skins/models.py until its model move
+(RFC-0001 5.6c).
+"""
+
+import logging
+
+from skins.models import UserEvent
+
+logger = logging.getLogger(__name__)
+
+
+def log_event(user, event_type, skin=None, **metadata):
+    try:
+        UserEvent.objects.create(
+            user=user if getattr(user, "is_authenticated", False) else None,
+            event_type=event_type,
+            skin=skin,
+            metadata=metadata or None,
+        )
+    except Exception:
+        logger.exception("Failed to log event: %s", event_type)

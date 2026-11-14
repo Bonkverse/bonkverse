@@ -8,7 +8,7 @@ PlayerLoss rows are kept; PlayerSession (its login tokens) was dropped.
 import pytest
 from django.apps import apps
 
-from skins.events import log_event
+from accounts.services import log_event
 
 pytestmark = pytest.mark.django_db
 
