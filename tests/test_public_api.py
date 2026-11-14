@@ -5,6 +5,7 @@ ones ReplayRenderer's /api/players/lookup returns.
 """
 
 import json
+from datetime import UTC, datetime
 from io import StringIO
 from urllib.parse import quote
 
@@ -15,8 +16,10 @@ from responses import matchers
 from players.models import ProfileVisibility
 from public_api.keys import create_key, find_active_key, hash_key
 from public_api.models import ApiKey
-from players.models import BonkPlayer
-from tests.factories import UserFactory
+from players.models import BonkPlayer, WornSkinSource
+from players.services import record_worn_skin
+from skins.services import code_digest
+from tests.factories import SKIN_CODE, UserFactory
 from tests.test_players import profile_json
 
 pytestmark = pytest.mark.django_db
@@ -230,6 +233,44 @@ def test_known_account_without_replays_still_links_profile(api, mocked_http):
     assert entry["username"] == "Quiet One"
     assert entry["account"]["dbid"] == 42
     assert entry["profile_url"].endswith("/player/Quiet%20One/")
+
+
+def test_player_without_a_known_skin_has_skin_null(api, mocked_http):
+    mock_lookup(mocked_http, [lookup_row("Ender")])
+
+    assert api.get("/api/v1/players/ender/").json()["data"]["skin"] is None
+
+
+def test_worn_skin_with_image_urls(api, mocked_http):
+    player = BonkPlayer.objects.create(bonk_id=13159907, username="Ender")
+    seen_at = datetime(2026, 11, 14, 8, 30, 15, 123456, tzinfo=UTC)
+    record_worn_skin(player.bonk_id, SKIN_CODE, WornSkinSource.LOGIN, seen_at=seen_at)
+    mock_lookup(mocked_http, [lookup_row("Ender")])
+
+    skin = api.get("/api/v1/players/ender/").json()["data"]["skin"]
+
+    version = code_digest(SKIN_CODE)[:12]
+    assert skin == {
+        "skin_code": SKIN_CODE,
+        "image_url": f"http://testserver/player/Ender/skin.png?v={version}",
+        "thumbnail_url": f"http://testserver/player/Ender/skin-thumb.png?v={version}",
+        "seen_at": "2026-11-14T08:30:15.123Z",
+    }
+    assert "login" not in json.dumps(skin)  # where we saw it stays internal
+
+
+def test_bulk_lookup_includes_skins_even_without_replays(api, mocked_http):
+    player = BonkPlayer.objects.create(bonk_id=42, username="Quiet One")
+    record_worn_skin(player.bonk_id, SKIN_CODE, WornSkinSource.WEAR)
+    mock_lookup(mocked_http, [])
+
+    entry = api.post("/api/v1/lookup/players/", {"usernames": ["quiet one"]}).json()["data"][
+        "players"
+    ][0]
+
+    assert entry["status"] == "not_found"
+    assert entry["skin"]["skin_code"] == SKIN_CODE
+    assert entry["skin"]["image_url"].startswith("http://testserver/player/Quiet%20One/skin.png")
 
 
 def test_unknown_player_is_404(api, mocked_http):
