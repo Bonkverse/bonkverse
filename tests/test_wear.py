@@ -17,7 +17,7 @@ import pytest
 from core import token_crypto
 import requests
 
-from skins.models import UserEvent
+from accounts.models import UserEvent
 from tests.conftest import load_bonk_fixture
 from tests.factories import SkinFactory
 

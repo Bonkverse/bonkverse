@@ -17,7 +17,7 @@ from django.urls import reverse
 
 from players import services as players_services
 from players.friends_sync import NO_TOKEN, sync_friends_for_link
-from skins.models import UserEvent
+from accounts.models import UserEvent
 from accounts.models import BonkAccountLink
 from players.models import BonkPlayer, Friendship
 from players.tasks import sync_friends

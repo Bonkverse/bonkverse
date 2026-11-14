@@ -42,4 +42,4 @@ All in `skins/urls.py`; views in `skins/views/`, one module per area.
 
 ## Models
 
-`Skin`, `SkinVote`, `SkinImage`, `SkinReport` (tables `skins_*`). `UserEvent` (the event log) is written through `accounts.services.log_event`; the model itself moves to `accounts` next. The page frame (`base.html`, header, footer, shared partials, error pages, shared scripts and styles) still lives in `skins/templates/` and `skins/static/` and moves out in step 5.6d.
+`Skin`, `SkinVote`, `SkinImage`, `SkinReport` (tables `skins_*`). The event log (`UserEvent`) belongs to `accounts` since 5.6c; skins writes to it through `accounts.services.log_event`. The page frame (`base.html`, header, footer, shared partials, error pages, shared scripts and styles) still lives in `skins/templates/` and `skins/static/` and moves out in step 5.6d.

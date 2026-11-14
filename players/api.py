@@ -13,7 +13,7 @@ from django.http import JsonResponse
 from django.utils import timezone
 
 from core.ratelimits import limit
-from skins.models import UserEvent
+from accounts.models import UserEvent
 from accounts.models import BonkAccountLink
 from .models import BonkPlayer, FlashFriend, FlashFriendship
 

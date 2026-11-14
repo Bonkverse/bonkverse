@@ -72,3 +72,27 @@ def test_link_reads_through_its_new_home():
     assert link.bonk_player == player
     assert link.bonk_token() == "t0k"
     assert player.linked_site_users.get() == link
+
+
+EVENT_MOVE = importlib.import_module("accounts.migrations.0003_move_userevent_from_skins")
+
+
+def test_event_log_keeps_its_table_and_index():
+    """RFC-0001 5.6c: renaming either would make Django rename the real one."""
+    from accounts.models import UserEvent
+
+    assert UserEvent._meta.db_table == "skins_userevent"
+    assert {index.name for index in UserEvent._meta.indexes} == {"skins_usere_event_t_2396a8_idx"}
+
+
+@pytest.mark.django_db
+def test_event_log_content_type_is_relabelled_both_ways():
+    ContentType.objects.filter(model="userevent").delete()
+    old = ContentType.objects.create(app_label="skins", model="userevent")
+
+    EVENT_MOVE.relabel_content_type(apps, None)
+    assert ContentType.objects.get(model="userevent").pk == old.pk
+    assert ContentType.objects.get(model="userevent").app_label == "accounts"
+
+    EVENT_MOVE.unlabel_content_type(apps, None)
+    assert ContentType.objects.get(model="userevent").app_label == "skins"

@@ -5,14 +5,11 @@ logins, wears, votes, favorites, uploads, publishes, reports, re-renders,
 friend syncs. Other apps call it through accounts.services. It never raises:
 a failed write is logged and the action it describes goes ahead.
 `manage.py analyze_events` reports on the log.
-
-UserEvent itself still lives in skins/models.py until its model move
-(RFC-0001 5.6c).
 """
 
 import logging
 
-from skins.models import UserEvent
+from .models import UserEvent
 
 logger = logging.getLogger(__name__)
 
