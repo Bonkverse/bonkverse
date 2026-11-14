@@ -23,6 +23,8 @@ from skins.views import (
     wear,
 )
 
+app_name = "skins"
+
 urlpatterns = [
     path("search/", search.search_skins, name="search_skins"),
     path("skins/detail/<int:skin_id>", skin_detail.skin_detail, name="skin_detail"),

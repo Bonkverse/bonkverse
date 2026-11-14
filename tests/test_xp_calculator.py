@@ -118,7 +118,7 @@ def _replays_url(settings):
 
 @pytest.mark.django_db
 def test_calculator_page_is_public(client):
-    response = client.get(reverse("xp_calculator") + "?player=Saucy%20Tulip&goal=250")
+    response = client.get(reverse("players:xp_calculator") + "?player=Saucy%20Tulip&goal=250")
     html = response.content.decode()
     assert response.status_code == 200
     assert 'id="xc-constants"' in html and "js/xp_calculator.js" in html
@@ -131,7 +131,7 @@ def test_player_json(client, mocked_http):
         bonk_id=13_159_907, username="Saucy Tulip", xp=285_000, xp_seen_at=timezone.now()
     )
     mock_profile(mocked_http, "Saucy Tulip")
-    data = client.get(reverse("xp_calculator_player") + "?name=Saucy%20Tulip").json()
+    data = client.get(reverse("players:xp_calculator_player") + "?name=Saucy%20Tulip").json()
     assert data["ok"]
     p = data["data"]
     assert p["level"] == 54 and p["created"] == "2023-04-28"
@@ -144,14 +144,14 @@ def test_player_json_respects_privacy(client, mocked_http):
     owner = UserFactory(username="Saucy Tulip")
     ProfileVisibility.objects.create(user=owner, level_history=False)
     mock_profile(mocked_http, "Saucy Tulip")
-    response = client.get(reverse("xp_calculator_player") + "?name=Saucy%20Tulip")
+    response = client.get(reverse("players:xp_calculator_player") + "?name=Saucy%20Tulip")
     assert response.status_code == 403 and response.json()["error"] == "private"
 
 
 @pytest.mark.django_db
 def test_player_json_not_found(client, mocked_http):
     mocked_http.get(f"{REPLAYS}/api/player/nobody", json={"error": "x"}, status=404)
-    response = client.get(reverse("xp_calculator_player") + "?name=nobody")
+    response = client.get(reverse("players:xp_calculator_player") + "?name=nobody")
     assert response.status_code == 404
 
 
@@ -161,7 +161,7 @@ def test_levels_json_is_cached(client, mocked_http):
         f"{REPLAYS}/api/levels/distribution", json={"levels": [[1, 5], [206, 1]], "players": 6}
     )
     for _ in range(2):
-        data = client.get(reverse("xp_calculator_levels")).json()
+        data = client.get(reverse("players:xp_calculator_levels")).json()
     assert data == {"ok": True, "data": {"levels": [[1, 5], [206, 1]], "players": 6}}
     assert len(mocked_http.calls) == 1
 
@@ -169,7 +169,7 @@ def test_levels_json_is_cached(client, mocked_http):
 @pytest.mark.django_db
 def test_levels_json_outage(client, mocked_http):
     mocked_http.get(f"{REPLAYS}/api/levels/distribution", status=503, json={"error": "x"})
-    assert client.get(reverse("xp_calculator_levels")).json() == {
+    assert client.get(reverse("players:xp_calculator_levels")).json() == {
         "ok": False,
         "error": "unavailable",
     }
@@ -181,7 +181,7 @@ def test_profile_shows_account_age_and_xp(client, mocked_http):
         bonk_id=13_159_907, username="Saucy Tulip", xp=285_000, xp_seen_at=timezone.now()
     )
     mock_profile(mocked_http, "Saucy Tulip")
-    html = client.get(reverse("player_profile", args=["Saucy Tulip"])).content.decode()
+    html = client.get(reverse("players:player_profile", args=["Saucy Tulip"])).content.decode()
     assert "Joined bonk.io ≈ Apr 2023" in html
     assert "285,000 XP" in html
 
@@ -193,15 +193,15 @@ def test_player_cards_show_join_date_and_hide_impossible_levels(client, mocked_h
         f"{REPLAYS}/api/players/lookup",
         json={"results": [{"username": "Saucy Tulip", "games": 3, "level": -285}]},
     )
-    html = client.get(reverse("players_directory")).content.decode()
+    html = client.get(reverse("players:players_directory")).content.decode()
     assert "Joined ≈ Apr 2023" in html
     assert "-285" not in html
 
 
 @pytest.mark.django_db
 def test_navbar_has_tools(client, mocked_http):
-    html = client.get(reverse("players_directory")).content.decode()
-    assert reverse("xp_calculator") in html
+    html = client.get(reverse("players:players_directory")).content.decode()
+    assert reverse("players:xp_calculator") in html
 
 
 def test_calculator_script_builds_profile_links_like_the_url_conf():
@@ -210,5 +210,5 @@ def test_calculator_script_builds_profile_links_like_the_url_conf():
     from pathlib import Path
 
     script = Path("players/static/players/js/xp_calculator.js").read_text(encoding="utf-8")
-    assert reverse("player_profile", args=["x"]) == "/player/x/"
+    assert reverse("players:player_profile", args=["x"]) == "/player/x/"
     assert "`/player/${encodeURIComponent(urlName(String(name)))}/`" in script

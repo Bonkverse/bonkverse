@@ -6,6 +6,8 @@ from django.urls import path
 
 from . import leaderboards, views
 
+app_name = "stats"
+
 urlpatterns = [
     path(
         f"leaderboards/{board}/",

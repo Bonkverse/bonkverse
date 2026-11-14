@@ -221,7 +221,7 @@ def test_runs_on_the_worker_schedule(settings):
 def test_players_page_no_longer_starts_a_sync(client, mocked_http):
     mocked_http.get(f"{REPLAYS}/api/players/lookup", json={"results": []})
 
-    client.get(reverse("players_directory"))
+    client.get(reverse("players:players_directory"))
 
     assert not any("sync" in call.request.url for call in mocked_http.calls)
 
@@ -243,7 +243,7 @@ def test_replay_only_players_show_on_the_players_page(client, mocked_http):
         f"{REPLAYS}/api/players/lookup",
         json={"results": [{"username": "(%)", "games": 3, "level": 7}]},
     )
-    html = client.get(reverse("players_directory") + "?q=%25").content.decode()
+    html = client.get(reverse("players:players_directory") + "?q=%25").content.decode()
     assert "(%)" in html and "Seen in replays" in html and "DBID" not in html.split("pv-pcards")[1]
     assert charts.profile_path("(%)") in html
 

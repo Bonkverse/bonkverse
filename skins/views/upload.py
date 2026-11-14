@@ -85,8 +85,8 @@ def upload_skin(request):
 
     if not result.created:
         messages.error(request, "This Bonkleagues link has already been submitted!")
-        return redirect("upload_skin")
+        return redirect("skins:upload_skin")
 
     messages.success(request, "Skin uploaded successfully!")
     log_event(request.user, "skin_uploaded", skin=result.skin, source="bonkleagues")
-    return redirect(reverse("search_skins") + "?" + urlencode({"q": result.skin.name}))
+    return redirect(reverse("skins:search_skins") + "?" + urlencode({"q": result.skin.name}))

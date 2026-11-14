@@ -36,13 +36,13 @@ def submit_server(request):
 
     if result.outcome == SubmitOutcome.LOOKUP_FAILED:
         messages.error(request, LOOKUP_FAILURE_MESSAGES[result.lookup_error])
-        return redirect("submit_server")
+        return redirect("communities:submit_server")
     if result.outcome in REFUSAL_MESSAGES:
         messages.error(request, REFUSAL_MESSAGES[result.outcome])
-        return redirect("submit_server")
+        return redirect("communities:submit_server")
 
     if result.outcome == SubmitOutcome.ALREADY_LISTED:
         messages.warning(request, "⚠️ This Discord server has already been submitted.")
     else:
         messages.success(request, "✅ Discord server submitted successfully!")
-    return redirect(reverse("detail", kwargs={"server_id": result.server.id}))
+    return redirect(reverse("communities:detail", kwargs={"server_id": result.server.id}))

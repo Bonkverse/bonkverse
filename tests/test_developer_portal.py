@@ -35,7 +35,7 @@ def test_landing_and_terms_are_public(client, settings):
     settings.BONKVERSE_DOCS_URL = "https://docs.example"
     landing = client.get("/developers/").content.decode()
     assert "https://docs.example/api" in landing
-    assert reverse("developer_keys") in landing
+    assert reverse("developers:developer_keys") in landing
     assert client.get("/developers/terms/").status_code == 200
 
 
@@ -46,7 +46,7 @@ def test_keys_page_sends_signed_out_visitors_to_login(client):
 
 
 def test_navbar_links_to_the_portal(client):
-    assert f'href="{reverse("developers")}"' in client.get("/").content.decode()
+    assert f'href="{reverse("developers:developers")}"' in client.get("/").content.decode()
 
 
 # ── Creating keys ────────────────────────────────────────────────────────────
@@ -121,7 +121,7 @@ def test_at_most_three_active_keys(logged_in_client, user, settings):
 
     # Revoking one frees a slot.
     first = ApiKey.objects.filter(owner=user).first()
-    logged_in_client.post(reverse("developer_revoke_key", args=[first.prefix]))
+    logged_in_client.post(reverse("developers:developer_revoke_key", args=[first.prefix]))
     assert create(logged_in_client, name="replacement").status_code == 200
 
 
@@ -138,7 +138,9 @@ def test_revoking_your_key_stops_it(logged_in_client, user, client):
     raw = raw_key_in(create(logged_in_client, agree="on"))
     api_key = ApiKey.objects.get()
 
-    response = logged_in_client.post(reverse("developer_revoke_key", args=[api_key.prefix]))
+    response = logged_in_client.post(
+        reverse("developers:developer_revoke_key", args=[api_key.prefix])
+    )
 
     assert response.status_code == 302
     api_key.refresh_from_db()
@@ -149,7 +151,7 @@ def test_revoking_your_key_stops_it(logged_in_client, user, client):
 def test_you_cant_revoke_someone_elses_key(logged_in_client):
     other, _raw = create_key(name="Theirs", owner=UserFactory(username="someone else"))
 
-    logged_in_client.post(reverse("developer_revoke_key", args=[other.prefix]))
+    logged_in_client.post(reverse("developers:developer_revoke_key", args=[other.prefix]))
 
     other.refresh_from_db()
     assert other.is_active
@@ -158,7 +160,7 @@ def test_you_cant_revoke_someone_elses_key(logged_in_client):
 def test_revoke_is_post_only(logged_in_client, user):
     create(logged_in_client, agree="on")
     prefix = ApiKey.objects.get().prefix
-    response = logged_in_client.get(reverse("developer_revoke_key", args=[prefix]))
+    response = logged_in_client.get(reverse("developers:developer_revoke_key", args=[prefix]))
     assert response.status_code == 405
     assert ApiKey.objects.get().is_active
 

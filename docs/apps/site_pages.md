@@ -6,6 +6,8 @@ The site's own pages: the home page, privacy, terms, the staff page, and small t
 
 ## Routes
 
+Names are in the `site_pages` namespace (`app_name` in `site_pages/urls.py`): `{% url 'site_pages:<name>' %}`, `reverse("site_pages:<name>")`.
+
 | Path | Name | View |
 |---|---|---|
 | `/` | `home` | `views/pages.py: home`: four skin strips (newest, random, most favorited, trending) |

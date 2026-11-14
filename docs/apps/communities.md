@@ -6,6 +6,8 @@ The Discord server directory: the list of bonk.io community servers, filtering b
 
 ## Routes
 
+Names are in the `communities` namespace (`app_name` in `communities/urls.py`): `{% url 'communities:<name>' %}`, `reverse("communities:<name>")`.
+
 | Path | Name | View |
 |---|---|---|
 | `/serverlist/` | `list` | `views/pages.py: server_list` (`?q=` text, `?tag=` repeatable) |

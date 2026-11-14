@@ -1,11 +1,11 @@
 [
   {
     "route": "",
-    "name": "home"
+    "name": "site_pages:home"
   },
   {
     "route": "<uuid:server_id>/",
-    "name": "detail"
+    "name": "communities:detail"
   },
   {
     "route": "^admin/skins/bonkuser/(?P<rest>.*)$",
@@ -13,27 +13,27 @@
   },
   {
     "route": "api/",
-    "name": "api_index"
+    "name": "skins:api_index"
   },
   {
     "route": "api/bonk/login/",
-    "name": "bonk_login_for_wear"
+    "name": "skins:bonk_login_for_wear"
   },
   {
     "route": "api/bot/skins/",
-    "name": "api_bot_submit_skin"
+    "name": "skins:api_bot_submit_skin"
   },
   {
     "route": "api/discords/submit/",
-    "name": "api_submit_server"
+    "name": "communities:api_submit_server"
   },
   {
     "route": "api/flash-friends/search/",
-    "name": "flash_friends_search"
+    "name": "players:flash_friends_search"
   },
   {
     "route": "api/friends-sync-status/",
-    "name": "friends_sync_status"
+    "name": "players:friends_sync_status"
   },
   {
     "route": "api/join-matchmaking/",
@@ -41,103 +41,103 @@
   },
   {
     "route": "api/me/",
-    "name": "api_me"
+    "name": "accounts:api_me"
   },
   {
     "route": "api/players/search/",
-    "name": "players_search"
+    "name": "players:players_search"
   },
   {
     "route": "api/publish-skin/",
-    "name": "publish_skin"
+    "name": "skins:publish_skin"
   },
   {
     "route": "api/skins/<int:skin_id>/favorite/",
-    "name": "api_toggle_favorite"
+    "name": "skins:api_toggle_favorite"
   },
   {
     "route": "api/skins/<int:skin_id>/report/",
-    "name": "report_skin"
+    "name": "skins:report_skin"
   },
   {
     "route": "api/skins/<int:skin_id>/vote/",
-    "name": "api_vote_skin"
+    "name": "skins:api_vote_skin"
   },
   {
     "route": "api/skins/<int:skin_id>/wear/",
-    "name": "wear_skin"
+    "name": "skins:wear_skin"
   },
   {
     "route": "api/skins/wear-code/",
-    "name": "wear_skin_code"
+    "name": "skins:wear_skin_code"
   },
   {
     "route": "api/tools/map-decode/",
-    "name": "api_map_decode"
+    "name": "site_pages:api_map_decode"
   },
   {
     "route": "api/v1/lookup/players/",
-    "name": "api_v1_lookup_players"
+    "name": "public_api:api_v1_lookup_players"
   },
   {
     "route": "api/v1/me/",
-    "name": "api_v1_me"
+    "name": "public_api:api_v1_me"
   },
   {
     "route": "api/v1/players/<username:username>/",
-    "name": "api_v1_player"
+    "name": "public_api:api_v1_player"
   },
   {
     "route": "api/v1/players/<username:username>/level-history/",
-    "name": "api_v1_player_level_history"
+    "name": "public_api:api_v1_player_level_history"
   },
   {
     "route": "categories/",
-    "name": "category_index"
+    "name": "skins:category_index"
   },
   {
     "route": "category/<slug:slug>/",
-    "name": "category_detail"
+    "name": "skins:category_detail"
   },
   {
     "route": "developers/",
-    "name": "developers"
+    "name": "developers:developers"
   },
   {
     "route": "developers/keys/",
-    "name": "developer_keys"
+    "name": "developers:developer_keys"
   },
   {
     "route": "developers/keys/<str:prefix>/revoke/",
-    "name": "developer_revoke_key"
+    "name": "developers:developer_revoke_key"
   },
   {
     "route": "developers/terms/",
-    "name": "developer_terms"
+    "name": "developers:developer_terms"
   },
   {
     "route": "leaderboards/downvoted/",
-    "name": "leaderboards_downvoted"
+    "name": "stats:leaderboards_downvoted"
   },
   {
     "route": "leaderboards/favorited/",
-    "name": "leaderboards_favorited"
+    "name": "stats:leaderboards_favorited"
   },
   {
     "route": "leaderboards/upvoted/",
-    "name": "leaderboards_upvoted"
+    "name": "stats:leaderboards_upvoted"
   },
   {
     "route": "login/",
-    "name": "login"
+    "name": "accounts:login"
   },
   {
     "route": "logout/",
-    "name": "logout"
+    "name": "accounts:logout"
   },
   {
     "route": "matchmaking/",
-    "name": "matchmaking"
+    "name": "skins:matchmaking"
   },
   {
     "route": "media/<path:path>",
@@ -145,138 +145,138 @@
   },
   {
     "route": "my-profile/",
-    "name": "my_profile"
+    "name": "skins:my_profile"
   },
   {
     "route": "my-profile/skins-partial/",
-    "name": "my_skins_partial"
+    "name": "skins:my_skins_partial"
   },
   {
     "route": "new/",
-    "name": "new_releases"
+    "name": "skins:new_releases"
   },
   {
     "route": "player/<username:username>/",
-    "name": "player_profile"
+    "name": "players:player_profile"
   },
   {
     "route": "player/<username:username>/activity/",
-    "name": "player_activity"
+    "name": "players:player_activity"
   },
   {
     "route": "player/<username:username>/friends/",
-    "name": "player_friends"
+    "name": "players:player_friends"
   },
   {
     "route": "player/<username:username>/level/",
-    "name": "player_level"
+    "name": "players:player_level"
   },
   {
     "route": "player/<username:username>/maps/",
-    "name": "player_maps"
+    "name": "players:player_maps"
   },
   {
     "route": "player/<username:username>/people/",
-    "name": "player_people"
+    "name": "players:player_people"
   },
   {
     "route": "player/<username:username>/skin-thumb.png",
-    "name": "player_skin_avatar_thumb"
+    "name": "players:player_skin_avatar_thumb"
   },
   {
     "route": "player/<username:username>/skin.png",
-    "name": "player_skin_avatar"
+    "name": "players:player_skin_avatar"
   },
   {
     "route": "player/<username:username>/skins/",
-    "name": "player_skins"
+    "name": "players:player_skins"
   },
   {
     "route": "players/",
-    "name": "players_directory"
+    "name": "players:players_directory"
   },
   {
     "route": "players_search/flash-friends/",
-    "name": "flash_friends_page"
+    "name": "players:flash_friends_page"
   },
   {
     "route": "players_search/players/",
-    "name": "players_page"
+    "name": "players:players_page"
   },
   {
     "route": "privacy/",
-    "name": "privacy"
+    "name": "site_pages:privacy"
   },
   {
     "route": "search/",
-    "name": "search_skins"
+    "name": "skins:search_skins"
   },
   {
     "route": "serverlist/",
-    "name": "list"
+    "name": "communities:list"
   },
   {
     "route": "settings/profile/",
-    "name": "profile_settings"
+    "name": "players:profile_settings"
   },
   {
     "route": "skin/<int:skin_id>/delete/",
-    "name": "delete_skin"
+    "name": "skins:delete_skin"
   },
   {
     "route": "skin/<int:skin_id>/edit/",
-    "name": "edit_skin"
+    "name": "skins:edit_skin"
   },
   {
     "route": "skins/<int:skin_id>/rerender/",
-    "name": "rerender_skin"
+    "name": "skins:rerender_skin"
   },
   {
     "route": "skins/bulk-delete/",
-    "name": "bulk_delete_skins"
+    "name": "skins:bulk_delete_skins"
   },
   {
     "route": "skins/detail/<int:skin_id>",
-    "name": "skin_detail"
+    "name": "skins:skin_detail"
   },
   {
     "route": "skins/share/<int:skin_id>/<uuid:uuid>/",
-    "name": "share_skin"
+    "name": "skins:share_skin"
   },
   {
     "route": "social-stats/",
-    "name": "social_stats"
+    "name": "players:social_stats"
   },
   {
     "route": "staff/",
-    "name": "staff"
+    "name": "site_pages:staff"
   },
   {
     "route": "submit/",
-    "name": "submit_server"
+    "name": "communities:submit_server"
   },
   {
     "route": "terms/",
-    "name": "terms"
+    "name": "site_pages:terms"
   },
   {
     "route": "tools/map-decode/",
-    "name": "map_decode_page"
+    "name": "site_pages:map_decode_page"
   },
   {
     "route": "tools/xp/",
-    "name": "xp_calculator"
+    "name": "players:xp_calculator"
   },
   {
     "route": "tools/xp/levels.json",
-    "name": "xp_calculator_levels"
+    "name": "players:xp_calculator_levels"
   },
   {
     "route": "tools/xp/player.json",
-    "name": "xp_calculator_player"
+    "name": "players:xp_calculator_player"
   },
   {
     "route": "upload/",
-    "name": "upload_skin"
+    "name": "skins:upload_skin"
   }
 ]

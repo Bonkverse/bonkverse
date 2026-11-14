@@ -22,7 +22,7 @@ with static/ui/ui.js; the page's own script handles Edit and Delete.
 {% with mode=mode|default:'search' image=skin.image_url|default:'/static/images/default_skin.png' creator_url=skin.creator|profile_url %}
 <article class="bv-skin-card" data-skin-card
          data-id="{{ skin.id }}"
-         data-wear-url="{% url 'wear_skin' skin.id %}">
+         data-wear-url="{% url 'skins:wear_skin' skin.id %}">
 
   {% if mode == 'mine' %}
     <div class="select-check" aria-hidden="true"><i data-lucide="check"></i></div>
@@ -68,15 +68,15 @@ with static/ui/ui.js; the page's own script handles Edit and Delete.
                   data-style="{{ skin.labels.style|default:'' }}"
                   data-labels="{{ skin.labels_json }}"
                   data-image="{{ image }}"
-                  data-action="{% url 'edit_skin' skin.id %}">
+                  data-action="{% url 'skins:edit_skin' skin.id %}">
             <i data-lucide="pencil" aria-hidden="true"></i> Edit
           </button>
-          <a class="bv-menu__item" href="{% url 'share_skin' skin.id skin.uuid %}">
+          <a class="bv-menu__item" href="{% url 'skins:share_skin' skin.id skin.uuid %}">
             <i data-lucide="share-2" aria-hidden="true"></i> Share link
           </a>
           <div class="bv-menu__divider"></div>
           <button type="button" class="bv-menu__item bv-menu__item--danger card-delete-btn"
-                  data-action="{% url 'delete_skin' skin.id %}"
+                  data-action="{% url 'skins:delete_skin' skin.id %}"
                   data-name="{{ skin.name }}">
             <i data-lucide="trash-2" aria-hidden="true"></i> Delete
           </button>
@@ -91,11 +91,11 @@ with static/ui/ui.js; the page's own script handles Edit and Delete.
       <p class="bv-creator">by {% if creator_url %}<a href="{{ creator_url }}">{{ skin.creator }}</a>{% else %}{{ skin.creator }}{% endif %}</p>
     {% endif %}
     <div class="bv-skin-card__footer">
-      <a class="bv-details-link" href="{% url 'skin_detail' skin.id %}">Skin details <span aria-hidden="true">›</span></a>
+      <a class="bv-details-link" href="{% url 'skins:skin_detail' skin.id %}">Skin details <span aria-hidden="true">›</span></a>
       {% if user.is_authenticated %}
         <button class="bv-btn bv-btn--primary bv-wear wear-card-action" type="button">Wear</button>
       {% else %}
-        <a class="bv-btn bv-btn--primary bv-wear" href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}">Log in to wear</a>
+        <a class="bv-btn bv-btn--primary bv-wear" href="{% url 'accounts:login' %}?next={{ request.get_full_path|urlencode }}">Log in to wear</a>
       {% endif %}
     </div>
     <p class="bv-status" role="status" aria-live="polite"></p>

@@ -126,7 +126,7 @@ modal) and `static/` (`ui/`, `core/js/`, `images/`, site-wide `css/` and
 - **Data from the template** goes in `data-` attributes or `json_script`,
   never as template tags inside JavaScript:
   ```html
-  <div id="skin-detail" data-wear-url="{% url 'wear_skin' skin.id %}">
+  <div id="skin-detail" data-wear-url="{% url 'skins:wear_skin' skin.id %}">
   {{ active_tags|json_script:"active-tags" }}
   ```
 - **Listeners** are added in the script. No `onclick=""`.

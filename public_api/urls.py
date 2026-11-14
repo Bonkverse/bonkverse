@@ -4,6 +4,8 @@ from .views import api as views
 
 # Mounted at /api/v1/. Usernames use the same <username:…> converter as
 # profile pages: "." and ".." are written "~." and "~.." in the path.
+app_name = "public_api"
+
 urlpatterns = [
     path("me/", views.me, name="api_v1_me"),
     path("lookup/players/", views.lookup_players, name="api_v1_lookup_players"),

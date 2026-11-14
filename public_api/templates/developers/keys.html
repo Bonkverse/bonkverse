@@ -12,7 +12,7 @@
 <main class="pv pv--narrow dev" id="main">
   <header class="pv-hero">
     <div class="pv-hero__text">
-      <a class="pv-link pv-small" href="{% url 'developers' %}">← Developers</a>
+      <a class="pv-link pv-small" href="{% url 'developers:developers' %}">← Developers</a>
       <h1 class="dev-hero__title">Your API keys</h1>
       <p class="pv-muted">{{ active_count }} of {{ max_keys }} active keys. Each key gets its own rate limit.</p>
     </div>
@@ -44,7 +44,7 @@
     {% if at_limit %}
       <p class="pv-muted">You have {{ max_keys }} active keys, the most one account can have. Revoke one you don't use to make a new one.</p>
     {% else %}
-      <form method="post" action="{% url 'developer_keys' %}" class="dev-form">
+      <form method="post" action="{% url 'developers:developer_keys' %}" class="dev-form">
         {% csrf_token %}
         <label class="dev-field">
           <span class="dev-field__label">Name</span>
@@ -54,7 +54,7 @@
         {% if not terms_accepted %}
           <label class="dev-agree">
             <input type="checkbox" name="agree" required>
-            <span>I agree to the <a href="{% url 'developer_terms' %}" target="_blank" rel="noopener">API terms</a>.</span>
+            <span>I agree to the <a href="{% url 'developers:developer_terms' %}" target="_blank" rel="noopener">API terms</a>.</span>
           </label>
         {% endif %}
         <button type="submit" class="pv-btn"><i data-lucide="plus"></i>Create key</button>
@@ -90,7 +90,7 @@
               <td><code>bvk_{{ key.prefix }}_…</code></td>
               <td class="pv-num">
                 {% if key.is_active %}
-                <form method="post" action="{% url 'developer_revoke_key' key.prefix %}"
+                <form method="post" action="{% url 'developers:developer_revoke_key' key.prefix %}"
                       data-confirm="Revoke “{{ key.name }}”? Anything using it stops working right away.">
                   {% csrf_token %}
                   <button type="submit" class="bv-btn bv-btn--danger dev-keys__revoke">Revoke</button>

@@ -77,7 +77,7 @@
     <h2 id="next-title" class="pv-section__title">What's next</h2>
     <p class="pv-next__text" data-next-text>Pick a stretch of the chart to see the pace.</p>
     <p class="pv-muted pv-small">An estimate from the pace in the stretch you're looking at, not a promise.</p>
-    <a class="pv-btn" href="{% url 'xp_calculator' %}?player={{ username|urlencode }}#plan">Plan it in the XP calculator</a>
+    <a class="pv-btn" href="{% url 'players:xp_calculator' %}?player={{ username|urlencode }}#plan">Plan it in the XP calculator</a>
   </section>
 </div>
 {% endblock %}

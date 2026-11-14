@@ -15,7 +15,7 @@
 
 <div class="category-grid">
   {% for c in categories %}
-  <a class="category-tile" href="{% url 'category_detail' c.slug %}" title="{{ c.label }}">
+  <a class="category-tile" href="{% url 'skins:category_detail' c.slug %}" title="{{ c.label }}">
     {% if c.cover %}
       <img class="category-tile-img" loading="lazy" src="{{ c.cover }}" alt="{{ c.label }}">
     {% else %}

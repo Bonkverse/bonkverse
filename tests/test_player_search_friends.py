@@ -29,7 +29,7 @@ def mock_lookup(mocked_http, results=()):
 
 def names_found(client, qs):
     """Player names on the cards of the Players page for `qs`, in order."""
-    response = client.get(reverse("players_directory") + "?" + qs)
+    response = client.get(reverse("players:players_directory") + "?" + qs)
     return [c["username"] for c in response.context["cards"]]
 
 
@@ -161,7 +161,9 @@ def test_rules(client, mocked_http, roster, qs, expected):
 @pytest.mark.django_db
 def test_name_of_only_spaces_is_found_and_drawn(client, mocked_http, roster):
     mock_lookup(mocked_http)
-    response = client.get(reverse("players_directory") + "?" + rules(("name", "is", "      ")))
+    response = client.get(
+        reverse("players:players_directory") + "?" + rules(("name", "is", "      "))
+    )
     assert [c["username"] for c in response.context["cards"]] == ["      "]
     assert "␣␣␣␣␣␣" in response.content.decode()
 
@@ -207,7 +209,7 @@ def test_paging_keeps_the_rules(client, mocked_http):
         BonkPlayer.objects.create(bonk_id=5000 + i, username=f"n{i:02d}")
     mock_lookup(mocked_http)
     response = client.get(
-        reverse("players_directory") + "?" + rules(("name", "starts", "n"), sort="za")
+        reverse("players:players_directory") + "?" + rules(("name", "starts", "n"), sort="za")
     )
     assert "o0=starts" in response.context["base_qs"] and "sort=za" in response.context["base_qs"]
     html = response.content.decode()
@@ -239,7 +241,7 @@ def test_exact_replay_player_is_pinned_first(client, mocked_http):
         f"{REPLAYS}/api/players/lookup",
         json={"results": [{"username": ".", "games": 4, "level": 9}]},
     )
-    response = client.get(reverse("players_directory") + "?q=.")
+    response = client.get(reverse("players:players_directory") + "?q=.")
     cards = response.context["cards"]
     assert [c["username"] for c in cards] == [".", "-.-"]
     assert cards[0]["profile_url"] == "/player/~./"
@@ -276,7 +278,7 @@ def friend_data(response):
 @pytest.mark.django_db
 def test_friends_tab_lists_both_directions(client, mocked_http, circle):
     mock_player(mocked_http, "tulip", status=404, body={"error": "x"})
-    response = client.get(reverse("player_friends", args=["tulip"]))
+    response = client.get(reverse("players:player_friends", args=["tulip"]))
     assert response.status_code == 200
     data = friend_data(response)
     assert sorted(r["n"] for r in data["bonk"]) == ["ann", "claus"]
@@ -289,7 +291,7 @@ def test_mutual_friends_for_a_signed_in_viewer(client, mocked_http, circle):
     _, claus = circle
     client.force_login(claus)
     mock_player(mocked_http, "tulip", status=404, body={"error": "x"})
-    response = client.get(reverse("player_friends", args=["tulip"]))
+    response = client.get(reverse("players:player_friends", args=["tulip"]))
     data = friend_data(response)
     assert {r["n"]: r["mu"] for r in data["bonk"]} == {"ann": True, "claus": False}
     assert next(r for r in data["bonk"] if r["n"] == "claus")["you"] is True
@@ -302,7 +304,7 @@ def test_own_friends_tab_has_no_mutuals(client, mocked_http, circle):
     _, claus = circle
     client.force_login(claus)
     mock_player(mocked_http, "claus", status=404, body={"error": "x"})
-    response = client.get(reverse("player_friends", args=["claus"]))
+    response = client.get(reverse("players:player_friends", args=["claus"]))
     assert response.context["is_self"] and not response.context["can_compare"]
     assert sorted(r["n"] for r in friend_data(response)["bonk"]) == ["ann", "bob", "tulip"]
 
@@ -314,16 +316,16 @@ def test_hidden_lists_stay_hidden(client, mocked_http, circle):
     mock_player(mocked_http, "claus", status=404, body={"error": "x"})
     mock_player(mocked_http, "tulip", status=404, body={"error": "x"})
     # Their own tab is gone for visitors…
-    overview = client.get(reverse("player_profile", args=["claus"])).content.decode()
-    assert reverse("player_friends", args=["claus"]) not in overview
-    tab = client.get(reverse("player_friends", args=["claus"]))
+    overview = client.get(reverse("players:player_profile", args=["claus"])).content.decode()
+    assert reverse("players:player_friends", args=["claus"]) not in overview
+    tab = client.get(reverse("players:player_friends", args=["claus"]))
     assert "players/tab_unavailable.html" in [t.name for t in tab.templates]
     # …and they're left out of other players' lists.
-    data = friend_data(client.get(reverse("player_friends", args=["tulip"])))
+    data = friend_data(client.get(reverse("players:player_friends", args=["tulip"])))
     assert [r["n"] for r in data["bonk"]] == ["ann"]
     # The owner still sees their own list.
     client.force_login(claus)
-    data = friend_data(client.get(reverse("player_friends", args=["claus"])))
+    data = friend_data(client.get(reverse("players:player_friends", args=["claus"])))
     assert len(data["bonk"]) == 3
 
 
@@ -339,7 +341,7 @@ def test_flash_friends_and_mutual_flash(client, mocked_http, circle):
     FlashFriendship.objects.create(user=viewer, flash_friend=FlashFriend.objects.get(name="lost"))
     client.force_login(viewer)
     mock_player(mocked_http, "claus", status=404, body={"error": "x"})
-    response = client.get(reverse("player_friends", args=["claus"]))
+    response = client.get(reverse("players:player_friends", args=["claus"]))
     flash = {r["n"]: r for r in friend_data(response)["flash"]}
     assert flash["oldpal"]["now"] == "NewName" and flash["oldpal"]["p"]
     assert flash["lost"]["mu"] and not flash["lost"]["p"]
@@ -349,10 +351,10 @@ def test_flash_friends_and_mutual_flash(client, mocked_http, circle):
 @pytest.mark.django_db
 def test_player_known_only_from_friend_lists_has_a_profile(client, mocked_http, circle):
     mock_player(mocked_http, "bob", status=404, body={"error": "x"})
-    html = client.get(reverse("player_profile", args=["bob"])).content.decode()
+    html = client.get(reverse("players:player_profile", args=["bob"])).content.decode()
     assert "Seen in friend lists" in html
-    assert reverse("player_friends", args=["bob"]) in html
-    assert reverse("player_activity", args=["bob"]) not in html
+    assert reverse("players:player_friends", args=["bob"]) in html
+    assert reverse("players:player_activity", args=["bob"]) not in html
     assert ">1</strong>" in html  # the Friends card: claus
 
 
@@ -361,11 +363,11 @@ def test_overview_counts_mutual_friends(client, mocked_http, circle):
     _, claus = circle
     client.force_login(claus)
     mock_player(mocked_http, "tulip", status=404, body={"error": "x"})
-    response = client.get(reverse("player_profile", args=["tulip"]))
+    response = client.get(reverse("players:player_profile", args=["tulip"]))
     assert response.context["friend_counts"] == {"friends": 2, "flash": 0, "mutual": 1}
 
 
 @pytest.mark.django_db
 def test_settings_have_a_friends_switch(logged_in_client):
-    html = logged_in_client.get(reverse("profile_settings")).content.decode()
+    html = logged_in_client.get(reverse("players:profile_settings")).content.decode()
     assert 'name="friends"' in html

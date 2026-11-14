@@ -6,6 +6,8 @@ The skin gallery: skins and their images, search, browsing by category, a skin's
 
 ## Routes
 
+Names are in the `skins` namespace (`app_name` in `skins/urls.py`): `{% url 'skins:<name>' %}`, `reverse("skins:<name>")`.
+
 All in `skins/urls.py`; views in `skins/views/`, one module per area.
 
 | Path | Name | View |

@@ -128,7 +128,7 @@ def legacy_flash_friends_page(request):
 
 def _redirect_to_directory(request, view):
     query = request.GET.get("q", "")
-    return redirect(f"{reverse('players_directory')}?{selectors.urlencode_qs(query, view)}")
+    return redirect(f"{reverse('players:players_directory')}?{selectors.urlencode_qs(query, view)}")
 
 
 @limit("browse")
@@ -138,8 +138,8 @@ def xp_calculator(request):
         "xp_per_win": levels.XP_PER_WIN,
         "daily_cap": levels.DAILY_XP_CAP,
         "dbid_points": dbid.timeline(),
-        "player_url": reverse("xp_calculator_player"),
-        "levels_url": reverse("xp_calculator_levels"),
+        "player_url": reverse("players:xp_calculator_player"),
+        "levels_url": reverse("players:xp_calculator_levels"),
     }
     return render(
         request,
@@ -185,7 +185,7 @@ def profile_settings(request):
     if request.method == "POST":
         services.update_visibility(request.user, {k: True for k in request.POST})
         messages.success(request, "Profile settings saved.")
-        return redirect("profile_settings")
+        return redirect("players:profile_settings")
 
     visibility = selectors.visibility_for(request.user)
     sections = [

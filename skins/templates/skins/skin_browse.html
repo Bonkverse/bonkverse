@@ -42,7 +42,7 @@
       <i data-lucide="image-off" aria-hidden="true"></i>
       <h2 class="bv-empty__title">No skins here yet</h2>
       <p>{% if period and period != 'all' %}Nothing was uploaded in that time. Try a longer one.{% else %}Check back soon, or search for something else.{% endif %}</p>
-      <a class="bv-btn" href="{% url 'search_skins' %}">Search skins</a>
+      <a class="bv-btn" href="{% url 'skins:search_skins' %}">Search skins</a>
     </div>
   {% endif %}
 

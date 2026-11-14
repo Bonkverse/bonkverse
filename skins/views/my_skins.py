@@ -106,13 +106,13 @@ def delete_skin(request, skin_id):
     if skin.creator != request.user.username:
         if is_ajax:
             return JsonResponse({"ok": False, "error": "You don't own this skin."}, status=403)
-        return redirect("my_profile")
+        return redirect("skins:my_profile")
 
     skin.delete()
 
     if is_ajax:
         return JsonResponse({"ok": True, "deleted_ids": [skin_id]})
-    return redirect("my_profile")
+    return redirect("skins:my_profile")
 
 
 @login_required
@@ -154,7 +154,7 @@ def edit_skin(request, skin_id):
     if skin.creator != request.user.username:
         if is_ajax:
             return JsonResponse({"ok": False, "error": "You don't own this skin."}, status=403)
-        return redirect("my_profile")
+        return redirect("skins:my_profile")
 
     if request.method == "POST":
         new_name = request.POST.get("name", "").strip()
@@ -174,7 +174,7 @@ def edit_skin(request, skin_id):
             referer = (
                 request.POST.get("referer")
                 or request.META.get("HTTP_REFERER")
-                or reverse("my_profile")
+                or reverse("skins:my_profile")
             )
             return render(request, "skins/edit_skin.html", {"skin": skin, "referer": referer})
 
@@ -194,10 +194,10 @@ def edit_skin(request, skin_id):
             )
 
         messages.success(request, "✅ Skin updated successfully!")
-        return redirect("skin_detail", skin_id=skin.id)
+        return redirect("skins:skin_detail", skin_id=skin.id)
 
     if is_ajax:
         return JsonResponse({"ok": False, "error": "GET not supported here."}, status=400)
 
-    referer = request.META.get("HTTP_REFERER", reverse("my_profile"))
+    referer = request.META.get("HTTP_REFERER", reverse("skins:my_profile"))
     return render(request, "skins/edit_skin.html", {"skin": skin, "referer": referer})

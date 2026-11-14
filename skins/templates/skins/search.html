@@ -14,7 +14,7 @@
     </div>
   </div>
 
-  <form id="searchForm" method="GET" action="{% url 'search_skins' %}" class="site-search-form" role="search">
+  <form id="searchForm" method="GET" action="{% url 'skins:search_skins' %}" class="site-search-form" role="search">
     <div class="bv-search">
       <input type="search" name="q" value="{{ query }}" placeholder="Skin name or creator" aria-label="Search skins" autocomplete="off">
       <button type="submit">Search</button>
@@ -63,7 +63,7 @@
       <i data-lucide="search-x" aria-hidden="true"></i>
       <h2 class="bv-empty__title">{% if query %}No skins match “{{ query }}”{% else %}No skins yet{% endif %}</h2>
       <p>Check the spelling, or search by creator instead.</p>
-      <a class="bv-btn" href="{% url 'new_releases' %}">Browse new skins</a>
+      <a class="bv-btn" href="{% url 'skins:new_releases' %}">Browse new skins</a>
     </div>
   {% endif %}
 

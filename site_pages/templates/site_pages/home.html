@@ -19,13 +19,13 @@
 </section>
 
 <!-- Animated carousels -->
-{% url 'new_releases' as recent_url %}
+{% url 'skins:new_releases' as recent_url %}
 {% include 'skins/partials/carousel.html' with title="Recently Uploaded" skins=recent seeall_url=recent_url %}
 
 {% include 'skins/partials/carousel.html' with title="Random Picks" skins=random_strip %}
 {# no seeall_url → falls back to search, which is the right behavior for a random strip #}
 
-{% url 'leaderboards_favorited' as favs_url %}
+{% url 'stats:leaderboards_favorited' as favs_url %}
 {% include 'skins/partials/carousel.html' with title="Most Favorited" skins=top_favs seeall_url=favs_url %}
 
 

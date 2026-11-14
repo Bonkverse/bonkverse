@@ -76,7 +76,7 @@ class Skin(models.Model):
         return f"{self.name} ({self.link})"
 
     def get_absolute_url(self):
-        return reverse("skin_detail", kwargs={"skin_id": self.id})
+        return reverse("skins:skin_detail", kwargs={"skin_id": self.id})
 
 
 class SkinVote(models.Model):

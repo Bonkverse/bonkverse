@@ -34,12 +34,12 @@ js/skin_detail.js; Copy link is ui/ui.js; Report is core/js/bv-report.js.
 <div class="bv-main">
   <section class="bv-skin-detail" id="skin-detail" data-skin-card
            data-id="{{ skin.id }}"
-           data-wear-url="{% url 'wear_skin' skin.id %}"
-           data-vote-url="{% url 'api_vote_skin' skin.id %}"
-           data-rerender-url="{% url 'rerender_skin' skin.id %}"
+           data-wear-url="{% url 'skins:wear_skin' skin.id %}"
+           data-vote-url="{% url 'skins:api_vote_skin' skin.id %}"
+           data-rerender-url="{% url 'skins:rerender_skin' skin.id %}"
            aria-labelledby="skin-title">
 
-    <a class="bv-back" href="{% url 'search_skins' %}" data-back-to-search>
+    <a class="bv-back" href="{% url 'skins:search_skins' %}" data-back-to-search>
       <span aria-hidden="true">←</span> Search results
     </a>
 
@@ -76,7 +76,7 @@ js/skin_detail.js; Copy link is ui/ui.js; Report is core/js/bv-report.js.
         {% if user.is_authenticated %}
           <button class="bv-btn bv-btn--primary bv-wear" type="button">Wear</button>
         {% else %}
-          <a class="bv-btn bv-btn--primary bv-wear" href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in to wear</a>
+          <a class="bv-btn bv-btn--primary bv-wear" href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">Log in to wear</a>
         {% endif %}
       </div>
       <p class="bv-status" role="status" aria-live="polite"></p>

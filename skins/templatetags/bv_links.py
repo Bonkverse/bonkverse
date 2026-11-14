@@ -18,6 +18,6 @@ def profile_url(username):
     if not name:
         return ""
     try:
-        return reverse("player_profile", args=[name])
+        return reverse("players:player_profile", args=[name])
     except NoReverseMatch:
         return ""

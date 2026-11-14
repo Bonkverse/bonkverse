@@ -5,6 +5,8 @@ from django.urls import path
 
 from .views import pages, submit
 
+app_name = "communities"
+
 urlpatterns = [
     path("serverlist/", pages.server_list, name="list"),
     path("<uuid:server_id>/", pages.server_detail, name="detail"),

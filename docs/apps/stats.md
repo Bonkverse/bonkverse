@@ -6,6 +6,8 @@ Leaderboards, and later larger stat tracking. Created in RFC-0001 Phase 5.3.
 
 ## Routes
 
+Names are in the `stats` namespace (`app_name` in `stats/urls.py`): `{% url 'stats:<name>' %}`, `reverse("stats:<name>")`.
+
 One page per `LEADERBOARDS` entry, made by `stats/urls.py`:
 
 | Path | Name | Tab |

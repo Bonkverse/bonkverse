@@ -15,7 +15,7 @@
     <p class="pv-muted">Find anyone on bonk.io and open their profile: replays, level, maps, people, friends and skins.</p>
   </header>
 
-  <form class="pv-dir__form" method="get" action="{% url 'players_directory' %}" role="search" data-dir-form>
+  <form class="pv-dir__form" method="get" action="{% url 'players:players_directory' %}" role="search" data-dir-form>
     <input type="hidden" name="view" value="{{ view }}">
     <div class="pv-dir__search">
       <label class="pv-dir__field">

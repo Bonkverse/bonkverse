@@ -6,6 +6,8 @@ from . import api, social_stats, views
 # Names like "." and ".." get a "~" in front (players/converters.py).
 # <username:…> is registered in PlayersConfig.ready().
 
+app_name = "players"
+
 urlpatterns = [
     path("players/", views.directory, name="players_directory"),
     # The two old search pages, kept so old links and bookmarks still work.

@@ -5,6 +5,8 @@ from django.urls import path
 
 from .views import portal
 
+app_name = "developers"
+
 urlpatterns = [
     path("", portal.index, name="developers"),
     path("terms/", portal.terms, name="developer_terms"),

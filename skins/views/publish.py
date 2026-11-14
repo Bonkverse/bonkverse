@@ -116,7 +116,7 @@ def publish_skin(request):
         return JsonResponse({"error": IMAGES_FAILED}, status=500)
 
     share_url = request.build_absolute_uri(
-        reverse("share_skin", kwargs={"skin_id": skin.id, "uuid": skin.uuid})
+        reverse("skins:share_skin", kwargs={"skin_id": skin.id, "uuid": skin.uuid})
     )
 
     log_event(request.user, "skin_uploaded", skin=skin, source="editor")

@@ -12,7 +12,7 @@
 <main class="pv pv--narrow dev" id="main">
   <header class="pv-hero">
     <div class="pv-hero__text">
-      <a class="pv-link pv-small" href="{% url 'developers' %}">← Developers</a>
+      <a class="pv-link pv-small" href="{% url 'developers:developers' %}">← Developers</a>
       <h1 class="dev-hero__title">Bonkverse API terms</h1>
       <p class="pv-muted">Version {{ terms_version }}. You agree to these when you create an API key.</p>
     </div>
@@ -42,11 +42,11 @@
     </ol>
 
     <p class="pv-fine">
-      Bonkverse's <a href="{% url 'terms' %}">Terms of Service</a> and
-      <a href="{% url 'privacy' %}">Privacy Policy</a> also apply. Bonkverse is not affiliated with bonk.io.
+      Bonkverse's <a href="{% url 'site_pages:terms' %}">Terms of Service</a> and
+      <a href="{% url 'site_pages:privacy' %}">Privacy Policy</a> also apply. Bonkverse is not affiliated with bonk.io.
     </p>
   </article>
 
-  <a class="pv-btn" href="{% url 'developer_keys' %}"><i data-lucide="key-round"></i>Get an API key</a>
+  <a class="pv-btn" href="{% url 'developers:developer_keys' %}"><i data-lucide="key-round"></i>Get an API key</a>
 </main>
 {% endblock %}
