@@ -53,14 +53,7 @@ class BonkSession:
             return None
         if self._decrypt is None:
             return stored
-        token = self._decrypt(stored)
-        if token is None and is_plain_token(stored):
-            # Stored before tokens were encrypted (ADR 0016): still good, and
-            # encrypted from now on. Remove once old sessions have expired.
-            token = stored
-            self._store[TOKEN] = self._encrypt(stored)
-            self._touch()
-        return token
+        return self._decrypt(stored)
 
     @property
     def is_expired(self) -> bool:
@@ -110,9 +103,3 @@ class BonkSession:
     def _touch(self) -> None:
         if hasattr(self._store, "modified"):
             self._store.modified = True
-
-
-def is_plain_token(value) -> bool:
-    """A bonk.io token as bonk.io sends it: a JWT, three dot-separated parts
-    starting with an encoded "{". Encrypted values never contain a dot."""
-    return isinstance(value, str) and value.startswith("eyJ") and value.count(".") == 2

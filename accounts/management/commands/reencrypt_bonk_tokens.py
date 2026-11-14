@@ -1,12 +1,12 @@
 """Re-encrypt every stored bonk.io token with the newest BONK_TOKEN_KEYS key.
 
-Run it once after encryption ships (old links hold signed tokens, old site
-sessions hold plain ones) and after every key rotation (docs/operations/
-runbook.md, "bonk.io token keys"). Dry run by default; `--run` writes.
+Run it after every key rotation (docs/operations/runbook.md, "bonk.io token
+keys"). Dry run by default; `--run` writes. (It first ran on 2026-11-14 to
+encrypt the tokens stored before ADR 0016.)
 
 What it does, for account links and for unexpired site sessions:
 - already encrypted with the newest key: left alone;
-- readable (older key, signed or plain): encrypted with the newest key;
+- readable with an older key: encrypted with the newest key;
 - unreadable (no listed key opens it): with `--run`, removed. A token no key
   can open is useless; the player logs in again when they next need it.
 
@@ -82,8 +82,6 @@ class Command(BaseCommand):
                 counts["current"] += 1
                 continue
             token = token_crypto.decrypt(stored)
-            if token is None and bonk_session_keys.is_plain_token(stored):
-                token = stored
             if token is not None:
                 counts["redone"] += 1
                 data[bonk_session_keys.TOKEN] = token_crypto.encrypt(token)
