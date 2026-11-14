@@ -4,7 +4,7 @@ Owns: images for a skin code that isn't a gallery skin (a player's worn
 skin), rendered once per code by the editor's render service and kept on
 the media volume (skin_media.py writes them).
 Does not own: gallery skins' own images (skin_media.save_render via
-rerender.py, skin_import.py, apis/publish_skin.py) or serving /media/.
+rerender.py, skin_import.py, views/publish.py) or serving /media/ (views/media.py).
 """
 
 from __future__ import annotations

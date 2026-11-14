@@ -88,7 +88,7 @@ def test_login_and_wear_go_through_the_bonk_client():
         "accounts/views.py",
         "accounts/login_attempts.py",
         "accounts/sign_in.py",
-        "skins/wear_skin.py",
+        "skins/views/wear.py",
         "players/friends_sync.py",
         "players/flash_friends_sync.py",
     ):

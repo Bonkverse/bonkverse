@@ -3,13 +3,13 @@ from core.ratelimits import limit
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.urls import reverse
-from .models import Skin
+from skins.models import Skin
 from django.db.models import Sum
 from django.core.paginator import Paginator
 import json
 from django.contrib import messages
 from core.pagination import elided_page_range
-from .selectors import decorate_skins_for_user
+from skins.selectors import decorate_skins_for_user
 
 
 def _add_edit_labels(skins):

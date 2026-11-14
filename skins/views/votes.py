@@ -13,9 +13,9 @@ from django.views.decorators.http import require_POST
 
 from core.ratelimits import limit
 
-from .events import log_event
-from .models import Skin
-from .votes import DIRECTIONS, cast_vote
+from skins.events import log_event
+from skins.models import Skin
+from skins.votes import DIRECTIONS, cast_vote
 
 
 def _get_vote_from_request(request):

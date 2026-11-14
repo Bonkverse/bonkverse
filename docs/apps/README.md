@@ -13,7 +13,7 @@ RFC-0001 Phase 5 splits the old do-everything `skins` app into domain apps. This
 | [`stats`](stats.md) | Leaderboards (one config entry per board) and archived win/loss rows; future stat tracking | Exists (5.3), models moved (5.3b) |
 | [`players`](players.md) | bonk.io players, friendships, Flash friends, friend sync, player search and profiles, social stats, replay sync, XP calculator, profile privacy | Exists (5.4), models moved (5.4b) |
 | [`accounts`](accounts.md) | Site accounts (`BonkUser`), bonk.io account links and their tokens, sign in / out, `/api/me/` | Done (5.5): `BonkUser` and `BonkAccountLink` live here |
-| `skins` | Skins, votes, favorites, reports, images, search, categories, upload, wear, edit | Today it still holds everything above; it shrinks to this by 5.6 |
+| [`skins`](skins.md) | Skins, votes, favorites, reports, images, search, categories, upload, wear, edit | RFC layout (5.6b); the event log and the page frame move out in 5.6c/d |
 | `public_api` | `/api/v1/`, API keys, the developer portal | Exists ([public-api.md](../architecture/public-api.md)) |
 
 Shared packages (not apps): `core/` (cross-cutting helpers: auth guards, events, pagination, periods, logging, background work) and `integrations/` (one client per outside system; [integrations.md](../architecture/integrations.md)).

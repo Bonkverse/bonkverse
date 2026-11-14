@@ -49,5 +49,5 @@ flowchart LR
 ## Files
 
 `/media/` (skin PNG/SVG/thumbnails) is served by Django from the Railway volume
-mounted at `/app/media`, through `skins/media.py` (rate-limited, cache headers).
+mounted at `/app/media`, through `skins/views/media.py` (rate-limited, cache headers).
 `/static/` is collected at build time and served by WhiteNoise.

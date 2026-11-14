@@ -4,7 +4,7 @@ Owns: which period names exist ("today", "week") and how far back each
 reaches. Pages that filter "uploaded today / this week" go through here
 (Skin.objects.created_in, skins/querysets.py).
 Does not own: the visitor's calendar day (the search header's "uploaded
-today" counts the visitor's own day in their time zone, skins/search.py) or
+today" counts the visitor's own day in their time zone, skins/views/search.py) or
 chart bucketing (players/charts.py).
 """
 

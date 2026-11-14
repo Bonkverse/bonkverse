@@ -22,7 +22,7 @@ bonk.io players as Bonkverse knows them: profiles built from the replay archive,
 
 ## Public entry points for other apps
 
-`players/services.py`: `queue_friend_sync(account_link_id)`, `sync_flash_friends_for_user(...)`, `adopt_replay_names(...)` (all used by `accounts/sign_in.py`), `record_worn_skin(bonk_id, skin_code, source)` (used by `accounts/sign_in.py` and `skins/wear_skin.py`), `update_visibility(...)`. `players/selectors.py` for reads (profiles, directory, calculator).
+`players/services.py`: `queue_friend_sync(account_link_id)`, `sync_flash_friends_for_user(...)`, `adopt_replay_names(...)` (all used by `accounts/sign_in.py`), `record_worn_skin(bonk_id, skin_code, source)` (used by `accounts/sign_in.py` and `skins/views/wear.py`), `update_visibility(...)`. `players/selectors.py` for reads (profiles, directory, calculator).
 
 ## Background work
 

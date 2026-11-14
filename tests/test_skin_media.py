@@ -114,7 +114,7 @@ def test_publish_with_an_undrawable_svg_creates_no_skin(client, monkeypatch):
     def cannot_draw(svg):
         raise ValueError("bad svg")
 
-    monkeypatch.setattr("skins.apis.publish_skin.bundle_from_svg", cannot_draw)
+    monkeypatch.setattr("skins.views.publish.bundle_from_svg", cannot_draw)
     count = Skin.objects.count()
 
     response = client.post(

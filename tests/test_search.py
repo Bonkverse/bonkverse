@@ -1,4 +1,4 @@
-"""Skin search (skins/search.py): results, index use, and the query time limit.
+"""Skin search (skins/views/search.py): results, index use, and the query time limit.
 
 Search must stay index-backed. On 2026-11-03 a burst of searches stalled the site
 because every search read the whole skins table; these tests pin the behavior
@@ -138,7 +138,7 @@ class TestTimeLimit:
         def always_times_out(*args, **kwargs):
             raise OperationalError("canceling statement due to statement timeout")
 
-        monkeypatch.setattr("skins.search.time_limited_queries", always_times_out)
+        monkeypatch.setattr("skins.views.search.time_limited_queries", always_times_out)
 
         response = client.get("/search/?q=dragon")
 

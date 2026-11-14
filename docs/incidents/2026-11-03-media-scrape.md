@@ -23,7 +23,7 @@ has a tier" was true only for the routes we checked.
 
 ## What changed
 
-- `skins/media.py`: `/media/` has its own `media` tier (600/min per IP) and
+- `skins/views/media.py`: `/media/` has its own `media` tier (600/min per IP) and
   sends `Cache-Control: public, max-age=3600, s-maxage=604800` on hits.
 - The audit no longer skips `/media/`.
 - [Runbook](../operations/runbook.md#someone-is-scraping-or-flooding): what to

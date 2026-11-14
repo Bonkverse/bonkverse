@@ -1,6 +1,6 @@
 # Search
 
-`/search/` is `skins/search.py`. It must stay **index-backed** and
+`/search/` is `skins/views/search.py`. It must stay **index-backed** and
 **time-limited** ([ADR 0002](adr/0002-index-backed-search.md)): before
 2026-11-03 every search read the whole skins table, and a burst of them stalled
 the site ([incident](incidents/2026-11-03-search-stall.md)).

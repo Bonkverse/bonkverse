@@ -1,4 +1,4 @@
-"""Join-matchmaking pass-through (skins/bonkbot.py) and the removed leaderboards.
+"""Join-matchmaking pass-through (skins/views/matchmaking.py) and the removed leaderboards.
 
 join-matchmaking used to answer GET with a crash (the view returned None),
 had no timeout on the BonkBot call and no rate limit, and echoed exception

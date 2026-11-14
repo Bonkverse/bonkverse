@@ -1,4 +1,4 @@
-"""Characterization tests for wearing skins on bonk.io (skins/wear_skin.py).
+"""Characterization tests for wearing skins on bonk.io (skins/views/wear.py).
 
 They pin the JSON contract the frontend wear/login-modal flow depends on:
 - 401 with auth="bonkverse" -> sign in to the site

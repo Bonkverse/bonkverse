@@ -7,7 +7,7 @@
 - `sign_in(request, result)`: everything a successful login does on our side
   (sign_in.py).
 
-The in-page login on wear (skins/wear_skin.py) uses the first two; it only
+The in-page login on wear (skins/views/wear.py) uses the first two; it only
 refreshes the bonk.io token for a player who is already signed in.
 """
 
