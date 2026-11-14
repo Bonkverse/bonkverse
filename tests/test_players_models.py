@@ -14,7 +14,7 @@ from players.models import (
     FriendCountHistory,
     Friendship,
 )
-from skins.models import BonkAccountLink
+from accounts.models import BonkAccountLink
 
 MOVE = importlib.import_module("players.migrations.0005_move_player_models_from_skins")
 

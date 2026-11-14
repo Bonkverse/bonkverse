@@ -65,7 +65,7 @@ All in `players/models.py`:
 | `FlashFriend`, `FlashFriendship` | `skins_flashfriend`, `skins_flashfriendship` | Flash-era friends and who imported them. |
 | `ProfileVisibility`, `SyncCursor` | `players_*` | Profile section switches; where the replay sync got to. |
 
-The first five moved from `skins/` in step 5.4b without moving data (migrations `players.0005` and `skins.0032`, both state-only): they keep their `skins_*` tables and index names, and `BonkAccountLink.bonk_player` (still in `skins`) points here. Renaming a table or index is a separate, real migration.
+The first five moved from `skins/` in step 5.4b without moving data (migrations `players.0005` and `skins.0032`, both state-only): they keep their `skins_*` tables and index names, and `accounts.BonkAccountLink.bonk_player` points here. Renaming a table or index is a separate, real migration.
 
 ## Worn skins
 

@@ -7,7 +7,6 @@ from django.urls import reverse
 
 from core.validators import validate_bonk_username
 
-from django.core import signing
 
 # SKIN_SEARCH_CONFIG: the text-search language Skin.search_vector is built
 # with; every SearchQuery against it must use the same one.
@@ -135,47 +134,6 @@ class SkinVote(models.Model):
 
     def __str__(self):
         return f"{self.user.username} voted {self.vote} on {self.skin.name}"
-
-
-class BonkAccountLink(models.Model):
-    """
-    Links a Bonkverse site user (BonkUser) to an in-game BonkPlayer.
-    Optionally stores an encrypted token for server-side Bonk API calls.
-    """
-
-    user = models.ForeignKey("BonkUser", on_delete=models.CASCADE, related_name="bonk_accounts")
-    bonk_player = models.ForeignKey(
-        "players.BonkPlayer", on_delete=models.CASCADE, related_name="linked_site_users"
-    )
-    token_encrypted = models.TextField(
-        blank=True, null=True
-    )  # store your encrypted session token, not password
-    token_expires_at = models.DateTimeField(blank=True, null=True)
-    scopes = models.JSONField(blank=True, null=True)  # e.g., {"friends": true}
-    active = models.BooleanField(default=True)
-    connected_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        unique_together = ("user", "bonk_player")
-
-    # Signed with SECRET_KEY, not encrypted: anyone who has both the database
-    # and the key can read the token (an open item in the RFC-0001 progress doc).
-    TOKEN_SALT = "bonk_token"
-
-    @classmethod
-    def sign_token(cls, bonk_token: str) -> str:
-        """The value stored in `token_encrypted` for a bonk.io token."""
-        return signing.dumps({"t": bonk_token}, salt=cls.TOKEN_SALT)
-
-    def bonk_token(self) -> str | None:
-        """The stored bonk.io token, or None if there is none or it doesn't verify."""
-        if not self.token_encrypted:
-            return None
-        try:
-            return signing.loads(self.token_encrypted, salt=self.TOKEN_SALT)["t"]
-        except (signing.BadSignature, KeyError, TypeError):
-            return None
 
 
 class SkinImage(models.Model):

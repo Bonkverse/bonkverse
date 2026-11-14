@@ -14,7 +14,7 @@ from players.models import BonkPlayer, Friendship, WornSkinSource
 from players.selectors import worn_skin_codes
 from players.services import record_worn_skin
 from skins import skin_media
-from skins.models import BonkAccountLink
+from accounts.models import BonkAccountLink
 from skins.services import code_digest, code_image
 from tests.factories import SKIN_CODE, BonkPlayerFactory, UserFactory
 from tests.test_player_search_friends import friend_data

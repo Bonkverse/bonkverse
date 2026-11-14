@@ -39,6 +39,7 @@ accounts/
   login_messages.py     # what a turned-down login says
   sign_in.py            # what a successful login does
   forms.py              # LoginForm (username and password never stripped)
+  models.py             # BonkAccountLink
   templates/accounts/login.html
   static/accounts/js/login.js   # keeps Login off until a wait ends; one submit per click
   management/commands/grant_admin.py
@@ -46,4 +47,10 @@ accounts/
 
 ## Models
 
-None yet. `BonkUser` (the site account, `AUTH_USER_MODEL`) and `BonkAccountLink` (site account ↔ BonkPlayer, with the stored bonk.io token) still live in `skins/models.py`. `BonkAccountLink` moves here next, then its token storage is fixed (5.5b); `BonkUser` is the riskiest move (it is `AUTH_USER_MODEL`) and gets a spike first (5.5c).
+| Model | Table | What |
+|---|---|---|
+| `BonkAccountLink` | `skins_bonkaccountlink` | A site account ↔ a `players.BonkPlayer`, with the bonk.io session token from the latest login (signed, not yet encrypted: `sign_token()` / `bonk_token()`) |
+
+It moved here from `skins/` in step 5.5 without moving data (migrations `accounts.0001` and `skins.0033`, both state-only). It keeps its table, and its constraint and index names (they come from the table name). Next: real encryption of the token (5.5b), shaped by RFC-0003's token design.
+
+`BonkUser` (the site account, `AUTH_USER_MODEL`) still lives in `skins/models.py`. It is the riskiest move, because Django doesn't support changing `AUTH_USER_MODEL` after the first migration, so it gets a spike first (5.5c).
