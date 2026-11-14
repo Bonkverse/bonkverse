@@ -81,6 +81,14 @@
 }
 .pv a.pv-avatar { color: var(--pv-action); }
 .pv a.pv-avatar:hover { border-color: var(--pv-text); }
+/* Worn skin as the avatar (players/partials/_avatar.html, _layout.html):
+   the template passes the image URL as --skin, layered over the initials.
+   A skin that can't load draws nothing, so the initials show through. */
+.pv-avatar--skin, .pv-initials--skin { position: relative; }
+.pv-avatar--skin::after, .pv-initials--skin::after {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: var(--skin) center / cover no-repeat;
+}
 .pv-hero--compact .pv-avatar { width: 52px; height: 52px; font-size: 1.15rem; border-width: 2px; }
 .pv-hero--compact .pv-hero__name { font-size: 1.45rem; }
 .pv-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }

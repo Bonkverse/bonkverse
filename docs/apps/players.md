@@ -11,6 +11,7 @@ bonk.io players as Bonkverse knows them: profiles built from the replay archive,
 | `/players/` | `players_directory` | Directory and search (`views.directory`, rules in `search.py`) |
 | `/players_search/players/`, `/players_search/flash-friends/` | `players_page`, `flash_friends_page` | Old search pages, kept for old links |
 | `/player/<username>/` and `…/activity/`, `level/`, `maps/`, `people/`, `friends/`, `skins/` | `player_profile`, `player_activity`, … | Profile tabs (`views.py`, data from `selectors.py`) |
+| `/player/<username>/skin.png`, `…/skin-thumb.png` | `player_skin_avatar`, `player_skin_avatar_thumb` | The player's worn skin as a 512 / 128 px PNG (`views.skin_avatar`, `media` rate tier); 404 when there's none |
 | `/settings/profile/` | `profile_settings` | Who sees which profile section |
 | `/tools/xp/` (+ `player.json`, `levels.json`) | `xp_calculator`, … | XP calculator |
 | `/social-stats/` | `social_stats` | Friend-graph totals and most-connected players (`social_stats.py`) |
@@ -75,4 +76,8 @@ The first five moved from `skins/` in step 5.4b without moving data (migrations 
 | `login` | A bonk.io login (the site's or the wear popup's): the skin in the reply's active slot |
 | `wear` | A wear from Bonkverse that bonk.io accepted, into the session's active slot. Wears into another slot don't change what the player wears in game |
 
-Nothing shows it yet. Planned: replay sightings for players who never sign in (the replay archive storing the avatar per participant, ADR 0011), the skin as the profile avatar in place of initials, and a `skin` field in `/api/v1/`.
+It is the player's avatar wherever their initials would show: the profile header (512 px), and the 128 px thumbnail on player cards and the people lists (Overview's "Plays with most", the People tab, a map's "Plays it with"). `selectors.with_skin_avatars(rows)` adds the URL to any list of rows in one query; the partial `players/partials/_avatar.html` (and the header in `_layout.html`) passes it as the `--skin` CSS property, drawn as a background over the initials, so an image that can't load shows the initials (an `<img>` would show a broken-image icon). The URL carries `?v=<digest>` of the code, so it changes when the skin does and the week-long edge cache can't serve an old skin.
+
+The image comes from `skins.services.code_image(skin_code, kind)` ([skin-images.md](../architecture/skin-images.md#images-of-a-skin-code)), rendered on the first request for that code.
+
+Not yet: the Friends tab (its rows are also built by its script), replay sightings for players who never sign in (the replay archive storing the avatar per participant, ADR 0011), a `skin` field in `/api/v1/`, and whether the avatar should have a privacy switch (today it's public, like the skin other players see in game).

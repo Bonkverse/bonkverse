@@ -6,6 +6,9 @@ tabs (Overview, Activity, Level, Maps & modes, People, Friends, Skins). A
 Bonkverse account adds the Skins tab, Flash friends and the visibility
 switches (ProfileVisibility): a hidden section's tab and Overview card
 disappear for visitors; the owner always sees everything.
+
+A player's worn skin (players/worn_skins.py) is their avatar wherever their
+initials would show: the profile header, player cards and people lists.
 """
 
 from __future__ import annotations
@@ -42,10 +45,14 @@ from skins.selectors import (
 )
 
 from skins.models import BonkAccountLink
+from skins.services import code_digest
 from .models import BonkPlayer, FlashFriend, FlashFriendship, Friendship
 
 from . import calculator, charts, search
 from .models import ProfileVisibility
+
+# Avatar image routes (players/urls.py), by image kind.
+SKIN_AVATAR_FILES = {"png": "skin.png", "thumbnail": "skin-thumb.png"}
 
 FEATURED_SKINS = 4
 SKINS_PER_PAGE = 24
@@ -96,6 +103,45 @@ def site_account(username):
     """The Bonkverse account for a bonk.io username, if there is one.
     Site accounts are named after their bonk.io username."""
     return get_user_model().objects.filter(username__iexact=username).order_by("id").first()
+
+
+def worn_skin_codes(names):
+    """{lower name: worn skin code} for the names whose player has one.
+
+    Several BonkPlayers can share a name (copies from replays); the newest
+    sighting wins.
+    """
+    lowered = {n.lower() for n in names if n}
+    if not lowered:
+        return {}
+    query = Q()
+    for name in lowered:
+        query |= Q(username__iexact=name)
+    found = {}
+    rows = (
+        BonkPlayer.objects.filter(query, worn_skin_code__isnull=False)
+        .order_by("-worn_skin_seen_at")
+        .values_list("username", "worn_skin_code")
+    )
+    for username, skin_code in rows:
+        found.setdefault(username.lower(), skin_code)
+    return found
+
+
+def skin_avatar_url(username, skin_code, kind="thumbnail"):
+    """URL of a player's skin avatar. The code's digest is in the query, so
+    the URL (and every cached copy) changes when they change skin."""
+    path = charts.profile_path(username) + SKIN_AVATAR_FILES[kind]
+    return f"{path}?v={code_digest(skin_code)[:12]}"
+
+
+def with_skin_avatars(rows, key="username"):
+    """`rows` (dicts) with "skin" set to each player's avatar URL, or None."""
+    codes = worn_skin_codes([row[key] for row in rows])
+    for row in rows:
+        skin_code = codes.get(row[key].lower())
+        row["skin"] = skin_avatar_url(row[key], skin_code) if skin_code else None
+    return rows
 
 
 def visibility_for(user):
@@ -151,7 +197,9 @@ def profile_base(username, viewer, active=""):
         )
 
     links = charts.ReplayLinks(settings.BONKVERSE_REPLAYS_URL)
+    skin_code = worn_skin_codes([name]).get(name.lower())
     return {
+        "skin_avatar": skin_avatar_url(name, skin_code, "png") if skin_code else None,
         "bonk_player": bonk_player,
         "account_age": calculator.account_age(bonk_player.bonk_id) if bonk_player else None,
         "username": name,
@@ -194,8 +242,8 @@ def overview(base, viewer):
             if shown["level_history"]
             else None,
             streaks=charts.streaks(profile.get("days", []), today) if shown["activity"] else None,
-            partners=charts.people_rows(
-                (profile.get("played_with") or [])[:4], links, base["username"]
+            partners=with_skin_avatars(
+                charts.people_rows((profile.get("played_with") or [])[:4], links, base["username"])
             )
             if shown["play_partners"]
             else None,
@@ -249,6 +297,7 @@ def maps(base, mapid=None):
             detail = charts.map_detail(
                 data, links, base["username"], int(profile["summary"]["games"])
             )
+            with_skin_avatars(detail["people"])
     return {
         "ring": charts.mode_ring(profile.get("modes") or []),
         "rooms": charts.room_split(profile.get("rooms")),
@@ -267,21 +316,27 @@ def people(base):
                 "key": "with",
                 "title": "Plays with",
                 "unit": "replays",
-                "rows": charts.people_rows(profile.get("played_with") or [], links, name),
+                "rows": with_skin_avatars(
+                    charts.people_rows(profile.get("played_with") or [], links, name)
+                ),
                 "empty": "No registered players seen together yet.",
             },
             {
                 "key": "team",
                 "title": "Teams with",
                 "unit": "team games",
-                "rows": charts.people_rows(profile.get("teammates") or [], links, name),
+                "rows": with_skin_avatars(
+                    charts.people_rows(profile.get("teammates") or [], links, name)
+                ),
                 "empty": "No team games with registered players yet.",
             },
             {
                 "key": "rivals",
                 "title": "Plays against",
                 "unit": "games against",
-                "rows": charts.people_rows(profile.get("rivals") or [], links, name),
+                "rows": with_skin_avatars(
+                    charts.people_rows(profile.get("rivals") or [], links, name)
+                ),
                 "empty": "No team games or 1v1s against registered players yet.",
             },
         ]
@@ -562,6 +617,14 @@ def _exact_replay_card(query, cards):
 
 
 def directory(get):
+    """Context for players/directory.html (see _directory), with each card's
+    skin avatar."""
+    ctx = _directory(get)
+    with_skin_avatars(ctx["cards"])
+    return ctx
+
+
+def _directory(get):
     """Context for players/directory.html: one search over Bonk players
     (synced from bonk.io friend lists), replay players and legacy flash
     friends, as cards that open player profiles. The advanced-search rule

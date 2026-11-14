@@ -53,6 +53,28 @@ answers `ok`.** A shape missing from the editor means images saved without
 that layer. The shapes it has are `1 … TOTAL_BONK_SHAPES` (115, including the
 whisp); `core.bonk.skin_codes.MAX_SHAPE_ID` must match.
 
+## Images of a skin code
+
+A skin code that isn't a gallery skin (today: a player's worn skin, the
+avatar on profiles) gets two files, named by a digest of the plain code so
+any number of players wearing it share them:
+
+| File | Size |
+|---|---|
+| `skin_codes/<digest>.png` | 512 × 512 |
+| `skin_codes/<digest>_thumb.png` | 128 × 128 |
+
+`skins.services.code_image(skin_code, kind)` returns the path, rendering on
+first use: the code must parse (`SkinCode.parse()`), the render service's
+PNGs are checked to be PNGs, and `skin_media.save_code_render` writes both
+files the same temporary-then-move way. One render per code at a time (a
+cache lock), and after a failure the code isn't retried for 10 minutes.
+It runs in the web request that first asks (`/player/<name>/skin.png`),
+because only the `bonkverse` service has the media volume. No SVG is kept,
+so no SVG check is needed. Codes don't change, so these files never need
+re-rendering except after a shape fix: delete `skin_codes/` and they come
+back on demand.
+
 ## Redoing images
 
 - **One skin:** the staff Re-render button on the search page.

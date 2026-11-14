@@ -1,11 +1,15 @@
+import os
+
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 
 from core.bonk import dbid, levels
 from core.ratelimits import limit
+from skins.services import code_image
 
 from . import selectors, services
 from .models import ProfileVisibility
@@ -31,6 +35,32 @@ def overview(request, username):
         "players/overview.html",
         lambda b: selectors.overview(b, request.user),
     )
+
+
+# Like /media/: browsers keep it an hour, Cloudflare a week. The avatar URL
+# carries the skin's digest (selectors.skin_avatar_url), so a new skin is a
+# new URL and nothing stale is served for it.
+SKIN_AVATAR_CACHE_CONTROL = "public, max-age=3600, s-maxage=604800"
+
+
+@limit("media")
+def skin_avatar(request, username, kind):
+    """A player's worn skin as a PNG (`kind` "png" or "thumbnail").
+
+    404 when we know no skin for them or its image isn't ready (pages then
+    show initials). The image is rendered on first request.
+    """
+    skin_code = selectors.worn_skin_codes([username]).get(username.lower())
+    rel_path = code_image(skin_code, kind) if skin_code else None
+    if rel_path is None:
+        raise Http404("no skin image")
+    try:
+        image = open(os.path.join(settings.MEDIA_ROOT, rel_path), "rb")  # noqa: SIM115
+    except FileNotFoundError:
+        raise Http404("no skin image") from None
+    response = FileResponse(image, content_type="image/png")
+    response["Cache-Control"] = SKIN_AVATAR_CACHE_CONTROL
+    return response
 
 
 @limit("browse")

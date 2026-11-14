@@ -22,6 +22,19 @@ urlpatterns = [
     path("player/<username:username>/people/", views.people, name="player_people"),
     path("player/<username:username>/friends/", views.friends, name="player_friends"),
     path("player/<username:username>/skins/", views.skins, name="player_skins"),
+    # The player's worn skin as their avatar (see selectors.SKIN_AVATAR_FILES).
+    path(
+        "player/<username:username>/skin.png",
+        views.skin_avatar,
+        {"kind": "png"},
+        name="player_skin_avatar",
+    ),
+    path(
+        "player/<username:username>/skin-thumb.png",
+        views.skin_avatar,
+        {"kind": "thumbnail"},
+        name="player_skin_avatar_thumb",
+    ),
     path("settings/profile/", views.profile_settings, name="profile_settings"),
     path("tools/xp/", views.xp_calculator, name="xp_calculator"),
     path("tools/xp/player.json", views.xp_calculator_player, name="xp_calculator_player"),
