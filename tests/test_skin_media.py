@@ -128,11 +128,8 @@ def test_publish_with_an_undrawable_svg_creates_no_skin(client, monkeypatch):
 
 
 def test_only_skin_media_writes_skin_images():
-    """One home for writing image rows: skin_media.py (plus the old backfill command)."""
-    allowed = {
-        REPO / "skins" / "skin_media.py",
-        REPO / "skins" / "management" / "commands" / "populate_skin_images.py",
-    }
+    """One home for writing image rows: skin_media.py."""
+    allowed = {REPO / "skins" / "skin_media.py"}
     skip = {"tests", "migrations", "staticfiles", "media", "backups", "node_modules", ".git"}
     pattern = re.compile(
         r"(?<!class )SkinImage\(|SkinImage\.objects\.(create|bulk_create|update_or_create)"
