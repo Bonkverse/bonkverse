@@ -37,7 +37,7 @@ the request. The single-player endpoint turns `not_found` into 404 and
   `BonkPlayer` rows (from friend lists and logins), `null` when Bonkverse
   hasn't met that account. `joined` is estimated from the ID
   (`core/bonk/dbid.py`), as on player cards. The DBID is public there too.
-- `skin` (`skin_code`, `image_url`, `thumbnail_url`, `seen_at`): the skin
+- `skin` (`image_url`, `thumbnail_url`, `seen_at`): images of the skin
   the player last wore in game, from `BonkPlayer.worn_skin_*` (their newest
   replay, their own bonk.io login or a wear from Bonkverse, whichever is
   newest; [players.md](../apps/players.md#worn-skins)). `null` until
@@ -47,6 +47,11 @@ the request. The single-player endpoint turns `not_found` into 404 and
   128 px PNG), rendered on first request; they answer 404 if the render
   service can't draw the skin. Where we saw it (replay, login or wear) isn't
   published. Not cached with the replay rows: one query per request.
+- **The skin code is never published** (removed 2026-11-14, a few hours
+  after `skin` launched). It is the skin itself: anyone holding it can wear
+  or edit an exact copy, and the bulk lookup would hand out every player's
+  in an afternoon, against creators' control over copies (skin
+  permissions). The image URLs' `v` is a one-way digest of the code.
 - Level history reuses the profile pages' cached replay profile.
 - Not published: login XP (`BonkPlayer.xp`), friends, Flash friends.
 

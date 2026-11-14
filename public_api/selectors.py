@@ -8,10 +8,12 @@ Does not own: the replay numbers (the replay service computes them from
 its own database), who may call the API (auth.py), or the profile pages
 (players/), whose cached profile this reuses for level history.
 
-Only replay data is published here, plus the player's worn skin, which
-anyone sees in game and on their profile. XP from a player's own bonk.io
-login (BonkPlayer.xp) is what they gave Bonkverse, not other sites, so it
-stays out of the public API.
+Only replay data is published here, plus images of the player's worn skin,
+which anyone sees in game and on their profile. XP from a player's own
+bonk.io login (BonkPlayer.xp) is what they gave Bonkverse, not other sites,
+so it stays out of the public API. So does the skin code itself: it is the
+skin (anyone holding it can wear or edit an exact copy), and the bulk lookup
+would make copying every player's skin easy.
 """
 
 from __future__ import annotations
@@ -112,12 +114,12 @@ def _account(bonk_player) -> dict | None:
 
 
 def _skin(username, worn, build_url) -> dict | None:
-    """The skin the player last wore in game, with image URLs (rendered on
-    first request; 404 if the render service can't draw it)."""
+    """Images of the skin the player last wore in game (rendered on first
+    request; 404 if the render service can't draw it). Never the skin code:
+    see the module docstring. The URLs' `v` is a one-way digest of it."""
     if worn is None:
         return None
     return {
-        "skin_code": worn["skin_code"],
         "image_url": build_url(skin_avatar_url(username, worn["skin_code"], "png")),
         "thumbnail_url": build_url(skin_avatar_url(username, worn["skin_code"], "thumbnail")),
         # Same form as level.seen_at: UTC, milliseconds, "Z".
