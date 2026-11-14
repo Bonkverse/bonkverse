@@ -6,7 +6,8 @@ building model instances by hand inside tests.
 
 import factory
 
-from skins.models import BonkUser, Skin
+from accounts.models import BonkUser
+from skins.models import Skin
 from players.models import BonkPlayer
 
 

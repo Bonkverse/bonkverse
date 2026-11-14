@@ -12,7 +12,7 @@ RFC-0001 Phase 5 splits the old do-everything `skins` app into domain apps. This
 | [`communities`](communities.md) | Discord server directory: servers, tags, snapshots, submit, the hourly refresh | Exists (5.2), models moved (5.2b) |
 | [`stats`](stats.md) | Leaderboards (one config entry per board) and archived win/loss rows; future stat tracking | Exists (5.3), models moved (5.3b) |
 | [`players`](players.md) | bonk.io players, friendships, Flash friends, friend sync, player search and profiles, social stats, replay sync, XP calculator, profile privacy | Exists (5.4), models moved (5.4b) |
-| [`accounts`](accounts.md) | Site accounts (`BonkUser`), bonk.io account links and their tokens, sign in / out, `/api/me/` | Exists (5.5), `BonkAccountLink` moved; `BonkUser` still in `skins` (5.5c) |
+| [`accounts`](accounts.md) | Site accounts (`BonkUser`), bonk.io account links and their tokens, sign in / out, `/api/me/` | Done (5.5): `BonkUser` and `BonkAccountLink` live here |
 | `skins` | Skins, votes, favorites, reports, images, search, categories, upload, wear, edit | Today it still holds everything above; it shrinks to this by 5.6 |
 | `public_api` | `/api/v1/`, API keys, the developer portal | Exists ([public-api.md](../architecture/public-api.md)) |
 
@@ -58,6 +58,8 @@ The first model move was `communities` (5.2b); its `communities/migrations/0001_
 4. Order them: the new app's migration depends on the old app's latest; the old app's migration depends on the new app's. Add a reversible `RunPython` in the new app's migration that relabels `django_content_type` rows in place (skip a model whose row already has the new label, as on a fresh database).
 5. Check on a database at `main`'s schema with a few rows: `migrate --plan`, `sqlmigrate` for both (no-op plus the `RunPython`), `pg_dump --schema-only -t '<tables>'` identical before and after, rows still there, content types relabelled, `migrate <new> zero` then `migrate` again, a fresh database, `makemigrations --check` clean.
 6. Add a test pinning `_meta.db_table` for each model, the join table and index names, and the relabel both ways (see `tests/test_communities.py`).
+
+The user model (`AUTH_USER_MODEL`) needed more: old migrations that said `settings.AUTH_USER_MODEL` are pinned to the model they meant, and the model exists in the new app's first migration because Django's admin depends on it. See [ADR 0017](../adr/0017-user-model-moved-by-pinning-history.md).
 
 A task that moves keeps working for already-queued messages and saved schedules: either keep its registered name (`@shared_task(name="skins.tasks.x")`) or migrate the `PeriodicTask.task` rows in the same PR.
 

@@ -47,6 +47,15 @@ then gunicorn booting 4 workers.
 Destructive migrations (dropping a table or column) say so in the PR
 description and are their own PR.
 
+**Rolling back the user model move** (RFC-0001 5.5c, [ADR 0017](../adr/0017-user-model-moved-by-pinning-history.md)).
+Redeploying the code from before it isn't enough, because the content type
+label has moved. In order:
+1. `railway ssh` into `bonkverse` (still on the new code):
+   `python manage.py migrate accounts 0001`. It moves the label back to `skins`.
+2. Redeploy the code from before the move.
+3. `python manage.py remove_stale_contenttypes` and confirm. It removes the
+   empty `accounts.bonkuser` content type that step 1 left behind.
+
 ## bonk.io token keys: set, rotate or recover
 
 Stored bonk.io tokens (account links and site sessions) are encrypted with

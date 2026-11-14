@@ -115,7 +115,7 @@ python manage.py runserver
 Log in with your real bonk.io account; it creates a user in your **local** database only. To give that user staff access (the `/staff/` page, re-render buttons):
 
 ```bash
-python manage.py shell -c "from skins.models import BonkUser; BonkUser.objects.filter(username='YourBonkName').update(is_staff=True)"
+python manage.py shell -c "from accounts.models import BonkUser; BonkUser.objects.filter(username='YourBonkName').update(is_staff=True)"
 ```
 
 There is no `createsuperuser`: site accounts have no passwords because login goes through bonk.io. To make yourself a superuser for `/admin/`, run `python manage.py grant_admin "YourBonkName"` ([ADR 0005](docs/adr/0005-admin-login-through-bonk.md)).

@@ -11,7 +11,7 @@ from io import StringIO
 import pytest
 from django.core.management import CommandError, call_command
 
-from skins.models import BonkUser
+from accounts.models import BonkUser
 from tests.factories import SkinFactory, UserFactory
 
 pytestmark = pytest.mark.django_db
@@ -31,7 +31,7 @@ def test_staff_can_open_admin_index(client, staff_user):
 
 
 @pytest.mark.parametrize(
-    "url", ["/admin/", "/admin/skins/skin/", "/admin/skins/bonkuser/", "/admin/auth/group/"]
+    "url", ["/admin/", "/admin/skins/skin/", "/admin/accounts/bonkuser/", "/admin/auth/group/"]
 )
 def test_superuser_can_open_admin_pages(admin_client, url):
     SkinFactory()
@@ -40,7 +40,7 @@ def test_superuser_can_open_admin_pages(admin_client, url):
 
 
 def test_superuser_can_open_a_user(admin_client, user):
-    assert admin_client.get(f"/admin/skins/bonkuser/{user.pk}/change/").status_code == 200
+    assert admin_client.get(f"/admin/accounts/bonkuser/{user.pk}/change/").status_code == 200
 
 
 def test_staff_without_permissions_sees_no_models(client, staff_user):
@@ -95,3 +95,11 @@ class TestGrantAdmin:
     def test_unknown_username_is_an_error(self):
         with pytest.raises(CommandError, match="sign in to Bonkverse once"):
             call_command("grant_admin", "nobody-here")
+
+
+def test_old_site_account_admin_links_redirect(admin_client):
+    """Site accounts moved from skins to accounts (RFC-0001 5.5c)."""
+    response = admin_client.get("/admin/skins/bonkuser/12/change/?_changelist_filters=x")
+
+    assert response.status_code == 302
+    assert response["Location"] == "/admin/accounts/bonkuser/12/change/?_changelist_filters=x"

@@ -8,7 +8,10 @@ Order matters: Django answers with the first pattern that matches.
 """
 
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
+from django.views.generic import RedirectView
+
+from core.ratelimits import limit
 from skins.rerender import rerender_skin
 from skins.media import serve_media
 from skins.search import search_skins
@@ -29,6 +32,14 @@ from skins import categories
 
 
 urlpatterns = [
+    # Site accounts moved from skins to accounts (RFC-0001 5.5c); old admin
+    # bookmarks land on the same page under its new address.
+    re_path(
+        r"^admin/skins/bonkuser/(?P<rest>.*)$",
+        limit("browse")(
+            RedirectView.as_view(url="/admin/accounts/bonkuser/%(rest)s", query_string=True)
+        ),
+    ),
     path("admin/", admin.site.urls),
     path("search/", search_skins, name="search_skins"),
     # Home, privacy, terms, staff, map decoder (site_pages/, docs/apps/site_pages.md).
