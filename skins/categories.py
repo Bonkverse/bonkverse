@@ -1,6 +1,5 @@
-# skins/categories.py
-#
-# Browse-by-category + New Releases views.
+# Skin categories: what each one matches, and the skins a browse page lists.
+# The pages themselves are skins/views/browse.py.
 #
 # The taxonomy below was derived from the actual label distribution
 # (see analyze_labels). Each category is a set of KEYWORDS matched
@@ -13,18 +12,11 @@
 # colors is intentionally NOT searched (it's a filter axis, not a category,
 # and matching it would make "dark" hit "dark blue", etc).
 
-from core.periods import PERIODS
-from core.ratelimits import limit
 
 from django.core.cache import cache
-from django.core.paginator import Paginator
 from django.db.models import Q
-from django.http import Http404
-from django.shortcuts import render
 
 from skins.models import Skin
-from skins.selectors import decorate_skins_for_user
-from core.pagination import elided_page_range
 
 # slug -> display metadata + keyword set
 CATEGORIES = {
@@ -149,7 +141,7 @@ CATEGORIES = {
 _CATEGORY_FIELDS = ["style", "themes", "objects", "references"]
 
 
-def _kw_q(keywords, include_description=False):
+def keyword_q(keywords, include_description=False):
     """OR a list of keywords across the label fields (substring, case-insensitive)."""
     q = Q()
     for kw in keywords:
@@ -161,7 +153,7 @@ def _kw_q(keywords, include_description=False):
 
 
 # Hide flagged content from browse surfaces by default.
-NSFW_Q = _kw_q(["nsfw", "explicit", "nude"], include_description=True)
+NSFW_Q = keyword_q(["nsfw", "explicit", "nude"], include_description=True)
 
 
 # Hide flagged content in a NULL-safe way: positively match nsfw skins,
@@ -169,12 +161,12 @@ NSFW_Q = _kw_q(["nsfw", "explicit", "nude"], include_description=True)
 # skins whose labels/description are NULL (NOT NULL = NULL in SQL) — i.e.
 # every brand-new, not-yet-labeled upload. We also no longer require labels
 # at all here, so New Releases shows fresh uploads immediately.
-def _base_queryset():
+def browsable_skins():
     nsfw_ids = Skin.objects.filter(NSFW_Q).values("id")
     return Skin.objects.exclude(id__in=nsfw_ids)
 
 
-def _apply_sort(qs, sort):
+def sorted_skins(qs, sort):
     if sort == "newest":
         return qs.order_by("-created_at"), "newest"
     if sort == "upvotes":
@@ -182,14 +174,13 @@ def _apply_sort(qs, sort):
     return qs.with_favorite_count().order_by("-fav_count", "-upvotes"), "favorites"
 
 
-@limit("browse")
-def category_index(request):
-    """Tiles for every category, with a cover image and count. Cached in Redis."""
+def category_tiles() -> list[dict]:
+    """A tile per category (cover image and count), biggest first. Cached an hour."""
     items = cache.get("category_index_v1")
     if items is None:
         items = []
         for slug, meta in CATEGORIES.items():
-            qs = _base_queryset().filter(_kw_q(meta["keywords"]))
+            qs = browsable_skins().filter(keyword_q(meta["keywords"]))
             cover = qs.order_by("-upvotes").values_list("image_url", flat=True).first()
             items.append(
                 {
@@ -202,53 +193,4 @@ def category_index(request):
             )
         items.sort(key=lambda x: -x["count"])
         cache.set("category_index_v1", items, 60 * 60)  # 1 hour
-    return render(request, "skins/category_index.html", {"categories": items})
-
-
-@limit("browse")
-def category_detail(request, slug):
-    meta = CATEGORIES.get(slug)
-    if not meta:
-        raise Http404("Unknown category")
-
-    qs = _base_queryset().filter(_kw_q(meta["keywords"]))
-    qs, sort = _apply_sort(qs, request.GET.get("sort", "favorites"))
-
-    page_obj = Paginator(qs, 60).get_page(request.GET.get("page", 1))
-    return render(
-        request,
-        "skins/skin_browse.html",
-        {
-            "page_obj": page_obj,
-            "skins": decorate_skins_for_user(page_obj.object_list, request.user),
-            "heading": meta["label"],
-            "blurb": meta["blurb"],
-            "sort": sort,
-            "slug": slug,
-            "base_qs": f"sort={sort}",
-            "elided_range": elided_page_range(page_obj),
-        },
-    )
-
-
-@limit("browse")
-def new_releases(request):
-    period = request.GET.get("period", "all")
-    if period not in PERIODS:
-        period = "all"
-    qs = _base_queryset().created_in(period).order_by("-created_at")
-
-    page_obj = Paginator(qs, 60).get_page(request.GET.get("page", 1))
-    return render(
-        request,
-        "skins/skin_browse.html",
-        {
-            "page_obj": page_obj,
-            "skins": decorate_skins_for_user(page_obj.object_list, request.user),
-            "heading": "New Releases",
-            "blurb": "Fresh uploads, newest first.",
-            "period": period,
-            "base_qs": f"period={period}",
-            "elided_range": elided_page_range(page_obj),
-        },
-    )
+    return items

@@ -1,4 +1,4 @@
-"""Tests for publishing a skin from the editor (skins/apis/publish_skin.py)."""
+"""Tests for publishing a skin from the editor (skins/views/publish.py)."""
 
 import pytest
 

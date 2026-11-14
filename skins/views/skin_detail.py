@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from core.ratelimits import limit
-from .models import Skin, SkinVote
+from skins.models import Skin, SkinVote
 from django.conf import settings
 from django.urls import reverse
 

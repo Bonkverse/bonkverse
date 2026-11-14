@@ -6,7 +6,7 @@ login (the active slot's skin), a successful wear from Bonkverse into the
 active slot (both by bonk_id), and replays (by name, in bulk, from the
 replay sync: record_replay_skins).
 Does not own: reading the login reply (integrations/bonk_api.py), wearing
-skins (skins/wear_skin.py) or showing the skin anywhere.
+skins (skins/views/wear.py) or showing the skin anywhere.
 """
 
 from __future__ import annotations

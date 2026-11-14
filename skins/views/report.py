@@ -1,10 +1,10 @@
-# skins/report_skin.py
+# skins/views/report.py
 from django.http import JsonResponse
 from core.ratelimits import limit
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
-from .models import Skin, SkinReport
-from .events import log_event
+from skins.models import Skin, SkinReport
+from skins.events import log_event
 
 
 @require_POST

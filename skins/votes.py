@@ -2,7 +2,7 @@
 
 Owns: casting, switching and removing a vote, and the rule that a skin's
 `upvotes`/`downvotes` always equal its SkinVote rows.
-Does not own: the HTTP endpoint (skin_votes.py), favorites, or repairing
+Does not own: the HTTP endpoints (views/votes.py), favorites, or repairing
 counters that drifted before this module existed (the audit_vote_counts
 command).
 

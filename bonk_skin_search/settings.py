@@ -138,7 +138,7 @@ BLSKIN_FETCHER_URL = os.getenv(
     "BLSKIN_FETCHER_URL", "https://blskinfetcher-production.up.railway.app/api/getSkin"
 )
 
-# Shared secret BonxBot sends to POST /api/bot/skins/ (skins/apis/bot_skins.py).
+# Shared secret BonxBot sends to POST /api/bot/skins/ (skins/views/bot_skins.py).
 # Unset = the endpoint refuses every request. Set the same value on the bot.
 BONXBOT_API_TOKEN = os.getenv("BONXBOT_API_TOKEN", "")
 
@@ -446,7 +446,7 @@ RATE_LIMITS = {
         # Wearing a skin calls bonk.io's avatar_update.php from the server's
         # one outbound IP, which bonk.io rate-limits for everyone at once.
         # Counted per signed-in account, shared by both wear endpoints
-        # (skins/wear_skin.py). wear_burst stops click-spam; wear caps a minute.
+        # (skins/views/wear.py). wear_burst stops click-spam; wear caps a minute.
         "wear_burst": "2/10s",
         "wear": "6/m",
         "vote": "500/h",  # upvotes, downvotes, favorites
@@ -546,7 +546,7 @@ CELERY_BEAT_SCHEDULE = {
 }
 
 # =========================================================
-# Search: query time limit for skins/search.py
+# Search: query time limit for skins/views/search.py
 # =========================================================
 
 # Longest any single search query may run before Postgres cancels it and the page

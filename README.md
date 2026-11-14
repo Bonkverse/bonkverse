@@ -198,8 +198,9 @@ bonkverse/
 ├── site_pages/             # home, privacy, terms, staff, map decoder
 ├── communities/            # Discord server directory
 ├── stats/                  # leaderboards: one LEADERBOARDS entry per board
-├── skins/                  # the original app, being split into domain apps (docs/apps/README.md)
+├── skins/                  # the skin gallery (docs/apps/skins.md)
 │   ├── models.py
+│   ├── urls.py, views/     # routes; one view module per area (search, browse, wear, publish, ...)
 │   ├── querysets.py        # Skin.objects: with_favorite_count, with_score, created_in, search
 │   ├── selectors.py        # read-only page queries (decorate_skins_for_user for skin cards)
 │   ├── votes.py            # cast_vote: the one way vote counters change (ADR 0014)

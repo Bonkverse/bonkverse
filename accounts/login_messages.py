@@ -1,7 +1,7 @@
 """What a player reads when a bonk.io login is turned down.
 
 Used by the /login/ page (views.py) and the in-page login on wear
-(skins/wear_skin.py, through accounts.services).
+(skins/views/wear.py, through accounts.services).
 """
 
 from core.ratelimits import describe_wait
@@ -10,7 +10,7 @@ from integrations.bonk_api import BonkError
 from .login_attempts import COUNTED_FAILURES, TOO_MANY_ATTEMPTS
 
 # What a player sees when bonk.io turns a login down, by BonkError code.
-# Also used by the in-page bonk.io login on wear (wear_skin.py).
+# Also used by the in-page bonk.io login on wear (skins/views/wear.py).
 LOGIN_FAILURE_MESSAGES = {
     BonkError.WRONG_PASSWORD: "Wrong password.",
     BonkError.UNKNOWN_USERNAME: "No bonk.io account has that username.",

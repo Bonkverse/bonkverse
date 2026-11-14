@@ -61,7 +61,7 @@ What that shows:
   because skins name their creator by it. A login without a bonk.io id
   matches its `BonkPlayer` the same way.
 - Published skins record the signed-in account's name exactly
-  (`apis/publish_skin.py`); it used to be trimmed (fixed in Phase 2.2).
+  (`skins/views/publish.py`); it used to be trimmed (fixed in Phase 2.2).
 - Display a name with the capitalization bonk.io returned; never re-case it.
 
 ## Case
