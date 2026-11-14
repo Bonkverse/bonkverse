@@ -14,6 +14,7 @@ decoration service; these keep that rewrite honest.
 """
 
 import pytest
+from django.core.cache import cache
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 
@@ -58,6 +59,9 @@ def _make_skins(count):
 
 def _queries(client, page, skins) -> int:
     url = f"/skins/detail/{skins[0].id}" if page == "DETAIL" else page
+    # Cold cache every time, so a value cached by the first request (like the
+    # header's skin avatar) can't make the second look cheaper.
+    cache.clear()
     with CaptureQueriesContext(connection) as ctx:
         response = client.get(url)
     assert response.status_code == 200, url

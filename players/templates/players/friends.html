@@ -61,7 +61,7 @@
     {% for f in bonk_preview %}
       <li>
         <a class="pv-friend{% if f.mu %} is-mutual{% endif %}" href="{{ f.url }}">
-          <span class="pv-initials" aria-hidden="true">{{ f.n|slice:":2"|upper }}</span>
+          {% include 'players/partials/_avatar.html' with initials=f.initials skin=f.skin %}
           <span class="pv-friend__text">
             <span class="pv-friend__name">{{ f.shown }}</span>
             <span class="pv-friend__meta">{% if f.j %}Joined ≈ {{ f.j }}{% endif %}{% if f.f %} · {{ f.f|floatformat:"0g" }} friends{% endif %}</span>

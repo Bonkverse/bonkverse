@@ -40,6 +40,10 @@
   // spaces) are drawn as "␣", like the player cards.
   const shown = (name) => (name !== name.trim() || name.includes("  ") || !name.trim() ? name.replace(/ /g, "␣") : name);
   const initials = (name) => name.trim().slice(0, 2).toUpperCase() || "?";
+  // A friend's worn skin, drawn over their initials (players/partials/_avatar.html).
+  // `s` is the skin's version, a hex digest; the URL is built here from the name.
+  const skinUrl = (name, version) =>
+    /^[0-9a-f]{12}$/.test(version || "") ? `${profileUrl(name)}skin-thumb.png?v=${version}` : null;
 
   let which = "bonk";
   let shownCount = PAGE;
@@ -79,6 +83,11 @@
     if (r.mu) box.classList.add("is-mutual");
     const av = el("span", "pv-initials", initials(r.n));
     av.setAttribute("aria-hidden", "true");
+    const skin = skinUrl(link || r.n, r.s);
+    if (skin) {
+      av.classList.add("pv-initials--skin");
+      av.style.setProperty("--skin", `url("${skin}")`);
+    }
     const text = el("span", "pv-friend__text");
     const name = el("span", "pv-friend__name", shown(r.n));
     if (shown(r.n) !== r.n) name.setAttribute("aria-label", r.n);

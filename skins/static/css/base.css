@@ -263,3 +263,17 @@ body {
    feedback in every theme. */
 a.skin-link { color: var(--bv-link); }
 a.skin-link:hover { color: var(--bv-text); text-decoration: underline; }
+
+/* A player's worn skin drawn over whatever placeholder the element holds
+   (initials or an icon). The template passes the image URL as --skin; one
+   that can't load draws nothing, so the placeholder shows through. Profile
+   pages use the same idea with their own classes (player_profile.css). */
+.bv-skin-avatar { position: relative; }
+.bv-skin-avatar::after {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: var(--skin) center / cover no-repeat;
+}
+.bv-nav-avatar {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+}

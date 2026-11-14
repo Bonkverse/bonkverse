@@ -8,6 +8,8 @@ to record the skin a player wears (worn_skins.py).
 
 from __future__ import annotations
 
+from django.core.cache import cache
+
 from core.background import enqueue
 
 from .flash_friends_sync import sync_flash_friends_for_user
@@ -19,6 +21,7 @@ from .worn_skins import record_worn_skin
 __all__ = [
     "adopt_replay_names",
     "WornSkinSource",
+    "forget_user_skin",
     "queue_friend_sync",
     "record_worn_skin",
     "sync_flash_friends_for_user",
@@ -38,3 +41,12 @@ def queue_friend_sync(account_link_id: int) -> bool:
     """Queue the regular friend sync (friends.php) for this account link on the
     worker. Returns whether it was queued (enqueue never raises)."""
     return enqueue(sync_friends, account_link_id)
+
+
+def forget_user_skin(user) -> None:
+    """Drop the cached site-header avatar (selectors.user_skin_avatars) for
+    `user`, after their worn skin may have changed. Never raises."""
+    try:
+        cache.delete(f"players:user_skin:{user.pk}")
+    except Exception:
+        pass

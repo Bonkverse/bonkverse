@@ -282,7 +282,13 @@
     }
     status.hidden = true;
     $("[data-player]").hidden = false;
-    $("[data-player-initials]").textContent = player.username.trim().slice(0, 2).toUpperCase();
+    const avatar = $("[data-player-initials]");
+    avatar.textContent = player.username.trim().slice(0, 2).toUpperCase();
+    // Their worn skin over the initials; `skin` is a same-site path from the server.
+    const skin = typeof player.skin === "string" && player.skin.startsWith("/player/") ? player.skin : null;
+    avatar.classList.toggle("pv-initials--skin", Boolean(skin));
+    if (skin) avatar.style.setProperty("--skin", `url("${skin}")`);
+    else avatar.style.removeProperty("--skin");
     const link = $("[data-player-link]");
     link.textContent = player.username;
     link.href = profileUrl(player.username);

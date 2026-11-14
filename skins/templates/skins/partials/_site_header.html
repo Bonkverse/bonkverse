@@ -54,7 +54,11 @@ menus open with static/ui/ui.js.
         {% if user.is_authenticated %}
           <div class="bv-dropdown bv-header__account">
             <a class="bv-header__link" href="{% url 'my_profile' %}"{% if request.resolver_match.url_name == 'my_profile' %} aria-current="page"{% endif %}>
-              <i data-lucide="circle-user" aria-hidden="true"></i>
+              {% if viewer_avatar.thumbnail %}
+                <span class="bv-nav-avatar bv-skin-avatar" style="--skin: url('{{ viewer_avatar.thumbnail }}')" aria-hidden="true"><i data-lucide="circle-user"></i></span>
+              {% else %}
+                <i data-lucide="circle-user" aria-hidden="true"></i>
+              {% endif %}
               <span class="bv-header__account-name">{{ user.username }}</span>
             </a>
             <button class="bv-header__link" type="button" aria-label="Account menu" aria-expanded="false"

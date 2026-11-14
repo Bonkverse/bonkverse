@@ -10,12 +10,14 @@ from django.core.cache import cache
 from django.urls import reverse
 from django.utils import timezone
 
-from players.models import BonkPlayer, WornSkinSource
+from players.models import BonkPlayer, Friendship, WornSkinSource
 from players.selectors import worn_skin_codes
 from players.services import record_worn_skin
 from skins import skin_media
+from skins.models import BonkAccountLink
 from skins.services import code_digest, code_image
-from tests.factories import SKIN_CODE, BonkPlayerFactory
+from tests.factories import SKIN_CODE, BonkPlayerFactory, UserFactory
+from tests.test_player_search_friends import friend_data
 from tests.test_players import REPLAYS, mock_player
 from tests.test_players_directory import mock_lookup
 
@@ -236,3 +238,120 @@ class TestAvatarsOnPages:
 
         assert code_digest(SKIN_CODE)[:12] in before
         assert code_digest(SKIN_CODE)[:12] not in after
+
+
+# ── Everywhere else initials or a placeholder showed (2026-11-14) ────────────
+
+
+def _linked_user(username="claus", skin_code=SKIN_CODE):
+    """A signed-in-able user whose linked bonk.io player wears `skin_code`."""
+    user = UserFactory(username=username)
+    player = BonkPlayerFactory(username=username)
+    BonkAccountLink.objects.create(user=user, bonk_player=player)
+    if skin_code:
+        record_worn_skin(player.bonk_id, skin_code, WornSkinSource.LOGIN)
+    return user, player
+
+
+class TestViewerAvatar:
+    def test_site_header_shows_the_signed_in_players_skin(self, client):
+        user, _ = _linked_user()
+        client.force_login(user)
+
+        html = client.get("/").content.decode()
+
+        assert "bv-nav-avatar bv-skin-avatar" in html
+        assert f"/player/claus/skin-thumb.png?v={code_digest(SKIN_CODE)[:12]}" in html
+
+    def test_site_header_keeps_the_icon_without_a_skin(self, client):
+        user, _ = _linked_user(skin_code=None)
+        client.force_login(user)
+
+        html = client.get("/").content.decode()
+
+        assert "bv-nav-avatar" not in html
+        assert 'data-lucide="circle-user"' in html
+
+    def test_signed_out_header_makes_no_avatar_query(self, client, django_assert_max_num_queries):
+        with django_assert_max_num_queries(10):
+            html = client.get("/").content.decode()
+        assert "bv-nav-avatar" not in html
+
+    def test_my_profile_header_shows_the_skin(self, client):
+        user, _ = _linked_user()
+        client.force_login(user)
+
+        html = client.get("/my-profile/").content.decode()
+
+        assert "profile-avatar bv-skin-avatar" in html
+        assert "/player/claus/skin.png?v=" in html
+
+    def test_my_profile_without_a_skin_shows_initials(self, client):
+        user, _ = _linked_user(skin_code=None)
+        client.force_login(user)
+
+        html = client.get("/my-profile/").content.decode()
+
+        assert '<div class="profile-avatar" aria-hidden="true">CL</div>' in html
+
+    def test_header_is_cached_until_the_skin_changes(self, client, mocked_http):
+        user, player = _linked_user()
+        client.force_login(user)
+        client.get("/")  # caches the current skin
+        mocked_http.post(
+            "https://bonk2.io/scripts/avatar_update.php",
+            json={"r": "success"},
+        )
+        session = client.session
+        session.update(
+            {
+                "bonk_token": "t",
+                "bonk_token_expires": 9e12,
+                "bonk_active_slot": 2,
+                "bonk_user_id": player.bonk_id,
+            }
+        )
+        session.save()
+
+        client.post("/api/skins/wear-code/", {"skin_code": OTHER_SKIN_CODE})
+        html = client.get("/").content.decode()
+
+        assert code_digest(OTHER_SKIN_CODE)[:12] in html
+
+
+class TestFriendsTabAvatars:
+    def test_rows_carry_the_skin_version_and_preview_shows_it(self, client, mocked_http):
+        tulip = BonkPlayerFactory(username="tulip")
+        ann = BonkPlayerFactory(username="ann")
+        bob = BonkPlayerFactory(username="bob")
+        for other in (ann, bob):
+            low, high = sorted([tulip, other], key=lambda p: p.pk)
+            Friendship.objects.create(player_low=low, player_high=high)
+        record_worn_skin(ann.bonk_id, SKIN_CODE, WornSkinSource.LOGIN)
+        mock_player(mocked_http, "tulip", status=404, body={"error": "x"})
+
+        response = client.get(reverse("player_friends", args=["tulip"]))
+
+        rows = {r["n"]: r for r in friend_data(response)["bonk"]}
+        assert rows["ann"]["s"] == code_digest(SKIN_CODE)[:12]
+        assert rows["bob"]["s"] is None
+        html = response.content.decode()
+        assert "--skin: url('/player/ann/skin-thumb.png?v=" in html
+        assert "/player/bob/skin-thumb.png" not in html
+
+
+class TestXpCalculatorAvatar:
+    def test_player_json_has_the_skin(self, client, mocked_http):
+        _wearing()
+        mock_player(mocked_http, "Saucy Tulip")
+
+        data = client.get(reverse("xp_calculator_player") + "?name=Saucy%20Tulip").json()
+
+        assert data["data"]["skin"].startswith("/player/Saucy%20Tulip/skin-thumb.png?v=")
+
+    def test_player_json_without_a_skin(self, client, mocked_http):
+        mock_player(mocked_http, "Saucy Tulip")
+
+        data = client.get(reverse("xp_calculator_player") + "?name=Saucy%20Tulip").json()
+
+        assert data["data"]["skin"] is None

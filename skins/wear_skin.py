@@ -61,7 +61,7 @@ from integrations.bonk_api import (
 
 from accounts.services import attempt_login, login_failure_message
 from core.auth_guards import api_login_required, bonk_token_required
-from players.services import WornSkinSource, record_worn_skin
+from players.services import WornSkinSource, forget_user_skin, record_worn_skin
 
 from .events import log_event
 from .models import Skin
@@ -181,7 +181,8 @@ def _wear(request, skin_code: str) -> tuple[AvatarSlot, JsonResponse | None]:
         # Only the active slot is what the player wears in game. A failure
         # here must not turn a skin bonk.io applied into an error reply.
         try:
-            record_worn_skin(bonk.bonk_id, skin_code, WornSkinSource.WEAR)
+            if record_worn_skin(bonk.bonk_id, skin_code, WornSkinSource.WEAR):
+                forget_user_skin(request.user)
         except Exception:
             logger.exception("could not record the worn skin after a wear")
     return slot, None
@@ -220,7 +221,8 @@ def bonk_login_for_wear(request):
     bonk.store_identity(result.username.value, result.bonk_id)
     bonk.store_active_slot(result.active_slot)
     try:
-        record_worn_skin(result.bonk_id, result.skin_code, WornSkinSource.LOGIN)
+        if record_worn_skin(result.bonk_id, result.skin_code, WornSkinSource.LOGIN):
+            forget_user_skin(request.user)
     except Exception:
         logger.exception("could not record the worn skin after a wear login")
     active_slot = result.active_slot.number if result.active_slot else None

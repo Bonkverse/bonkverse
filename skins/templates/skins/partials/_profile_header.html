@@ -1,6 +1,6 @@
 <div class="profile-page">
   <div class="profile-header">
-    <div class="profile-avatar">{{ user.username|slice:":1"|upper }}</div>
+    <div class="profile-avatar{% if viewer_avatar.png %} bv-skin-avatar{% endif %}"{% if viewer_avatar.png %} style="--skin: url('{{ viewer_avatar.png }}')"{% endif %} aria-hidden="true">{{ user.username|slice:":2"|upper }}</div>
     <div>
       <h1 class="profile-name">{{ user.username }}</h1>
       <div class="profile-joined">Member since {{ user.date_joined|date:"F Y" }}</div>

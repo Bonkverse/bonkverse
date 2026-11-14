@@ -23,6 +23,7 @@ from integrations.bonk_api import BonkLoginResult
 from players.services import (
     WornSkinSource,
     adopt_replay_names,
+    forget_user_skin,
     queue_friend_sync as queue_players_friend_sync,
     record_worn_skin,
     sync_flash_friends_for_user,
@@ -139,6 +140,7 @@ def link_bonk_player(user: BonkUser, result: BonkLoginResult) -> BonkAccountLink
         },
     )
     record_worn_skin(result.bonk_id, result.skin_code, WornSkinSource.LOGIN)
+    forget_user_skin(user)
     return link
 
 
