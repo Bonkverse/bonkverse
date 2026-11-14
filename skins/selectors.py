@@ -13,7 +13,8 @@ player directory (players/ "Players" page).
 
 from django.db.models import Count, F, Q, Sum
 
-from .models import BonkAccountLink, Skin, SkinVote
+from .models import Skin, SkinVote
+from accounts.models import BonkAccountLink
 from players.models import BonkPlayer, FlashFriendship
 
 

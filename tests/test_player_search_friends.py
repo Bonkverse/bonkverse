@@ -12,7 +12,7 @@ from django.urls import reverse
 from core.bonk import dbid
 from players import search
 from players.models import ProfileVisibility
-from skins.models import BonkAccountLink
+from accounts.models import BonkAccountLink
 from players.models import BonkPlayer, FlashFriend, FlashFriendship, Friendship
 from tests.factories import UserFactory
 from tests.test_players import REPLAYS, mock_player

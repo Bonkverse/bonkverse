@@ -31,7 +31,8 @@ from players.services import (
 
 from players.models import BonkPlayer
 from skins.events import log_event
-from skins.models import BonkAccountLink, BonkUser
+from skins.models import BonkUser
+from .models import BonkAccountLink
 
 logger = logging.getLogger(__name__)
 
