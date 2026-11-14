@@ -1,0 +1,115 @@
+"""Re-encrypt every stored bonk.io token with the newest BONK_TOKEN_KEYS key.
+
+Run it once after encryption ships (old links hold signed tokens, old site
+sessions hold plain ones) and after every key rotation (docs/operations/
+runbook.md, "bonk.io token keys"). Dry run by default; `--run` writes.
+
+What it does, for account links and for unexpired site sessions:
+- already encrypted with the newest key: left alone;
+- readable (older key, signed or plain): encrypted with the newest key;
+- unreadable (no listed key opens it): with `--run`, removed. A token no key
+  can open is useless; the player logs in again when they next need it.
+
+Each write is conditional on the stored value not having changed since it
+was read, so a login during the run is never overwritten. Prints counts
+only, never a token or a key.
+"""
+
+from importlib import import_module
+
+from django.conf import settings
+from django.contrib.sessions.models import Session
+from django.core.management.base import BaseCommand
+from django.utils import timezone
+
+from accounts.models import BonkAccountLink
+from core import token_crypto
+from core.bonk import session as bonk_session_keys
+
+
+class Command(BaseCommand):
+    help = (
+        "Re-encrypt stored bonk.io tokens with the newest BONK_TOKEN_KEYS key (dry run by default)."
+    )
+
+    def add_arguments(self, parser):
+        parser.add_argument("--run", action="store_true", help="Write the changes.")
+
+    def handle(self, *args, run=False, **options):
+        mode = "" if run else " (dry run: nothing written; add --run)"
+        links = self._links(run)
+        self.stdout.write(f"account links{mode}: " + _summary(links))
+        sessions = self._sessions(run)
+        if sessions is None:
+            self.stdout.write(
+                f"site sessions: skipped ({settings.SESSION_ENGINE} isn't in the database)"
+            )
+        else:
+            self.stdout.write(f"site sessions{mode}: " + _summary(sessions))
+
+    def _links(self, run: bool) -> dict:
+        counts = _counter()
+        rows = BonkAccountLink.objects.exclude(token_encrypted__isnull=True).exclude(
+            token_encrypted=""
+        )
+        for link in rows.only("pk", "token_encrypted").iterator(chunk_size=500):
+            stored = link.token_encrypted
+            if token_crypto.is_current(stored):
+                counts["current"] += 1
+                continue
+            token = link.bonk_token()
+            new = token_crypto.encrypt(token) if token is not None else None
+            counts["redone" if token is not None else "unreadable"] += 1
+            if run:
+                written = BonkAccountLink.objects.filter(pk=link.pk, token_encrypted=stored).update(
+                    token_encrypted=new
+                )
+                counts["changed meanwhile"] += 1 - written
+        return counts
+
+    def _sessions(self, run: bool) -> dict | None:
+        if not settings.SESSION_ENGINE.endswith(("backends.db", "backends.cached_db")):
+            return None
+        store = import_module(settings.SESSION_ENGINE).SessionStore()
+        counts = _counter()
+        live = Session.objects.filter(expire_date__gt=timezone.now())
+        for row in live.iterator(chunk_size=500):
+            data = store.decode(row.session_data)
+            stored = data.get(bonk_session_keys.TOKEN)
+            if not stored:
+                continue
+            if token_crypto.is_current(stored):
+                counts["current"] += 1
+                continue
+            token = token_crypto.decrypt(stored)
+            if token is None and bonk_session_keys.is_plain_token(stored):
+                token = stored
+            if token is not None:
+                counts["redone"] += 1
+                data[bonk_session_keys.TOKEN] = token_crypto.encrypt(token)
+            else:
+                counts["unreadable"] += 1
+                data.pop(bonk_session_keys.TOKEN, None)
+                data.pop(bonk_session_keys.TOKEN_EXPIRES, None)
+            if run:
+                written = Session.objects.filter(
+                    session_key=row.session_key, session_data=row.session_data
+                ).update(session_data=store.encode(data))
+                counts["changed meanwhile"] += 1 - written
+        return counts
+
+
+def _counter() -> dict:
+    return {"current": 0, "redone": 0, "unreadable": 0, "changed meanwhile": 0}
+
+
+def _summary(counts: dict) -> str:
+    return (
+        f"{counts['current']} already current, {counts['redone']} re-encrypted, "
+        f"{counts['unreadable']} unreadable (removed with --run)"
+        + (
+            f", {counts['changed meanwhile']} skipped (changed during the run)"
+            if counts["changed meanwhile"]
+            else ""
+        )
+    )

@@ -15,7 +15,7 @@ from django.shortcuts import redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
-from core.bonk import BonkSession
+from core.token_crypto import bonk_session
 from core.ratelimits import limit
 
 from .forms import LoginForm
@@ -60,7 +60,7 @@ def login_view(request):
 def logout_view(request):
     """POST only (the header's Log out is a form), so another site can't
     sign people out with a link or an <img>."""
-    BonkSession(request.session).clear()
+    bonk_session(request).clear()
     logout(request)
     messages.success(request, "Logged out!")
     return redirect("home")

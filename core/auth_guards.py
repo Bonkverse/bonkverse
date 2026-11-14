@@ -5,7 +5,7 @@ from functools import wraps
 
 from django.http import JsonResponse
 
-from core.bonk import BonkSession
+from core.token_crypto import bonk_session
 
 
 def api_login_required(view):
@@ -27,7 +27,7 @@ def bonk_token_required(view):
     def wrapped(request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({"ok": False, "auth": "bonkverse"}, status=401)
-        if not BonkSession(request.session).token:
+        if not bonk_session(request).token:
             return JsonResponse({"ok": False, "auth": "bonk"}, status=401)
         return view(request, *args, **kwargs)
 

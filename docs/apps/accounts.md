@@ -42,15 +42,15 @@ accounts/
   models.py             # BonkAccountLink
   templates/accounts/login.html
   static/accounts/js/login.js   # keeps Login off until a wait ends; one submit per click
-  management/commands/grant_admin.py
+  management/commands/grant_admin.py, reencrypt_bonk_tokens.py
 ```
 
 ## Models
 
 | Model | Table | What |
 |---|---|---|
-| `BonkAccountLink` | `skins_bonkaccountlink` | A site account ↔ a `players.BonkPlayer`, with the bonk.io session token from the latest login (signed, not yet encrypted: `sign_token()` / `bonk_token()`) |
+| `BonkAccountLink` | `skins_bonkaccountlink` | A site account ↔ a `players.BonkPlayer`, with the bonk.io session token from the latest login, encrypted (`encrypt_token()` / `bonk_token()`, [ADR 0016](../adr/0016-bonk-tokens-encrypted-at-rest.md)) |
 
-It moved here from `skins/` in step 5.5 without moving data (migrations `accounts.0001` and `skins.0033`, both state-only). It keeps its table, and its constraint and index names (they come from the table name). Next: real encryption of the token (5.5b), shaped by RFC-0003's token design.
+It moved here from `skins/` in step 5.5 without moving data (migrations `accounts.0001` and `skins.0033`, both state-only). It keeps its table, and its constraint and index names (they come from the table name). Since 5.5b the token is encrypted with `BONK_TOKEN_KEYS` (`core/token_crypto.py`); `manage.py reencrypt_bonk_tokens` re-encrypts every stored copy after a key change.
 
 `BonkUser` (the site account, `AUTH_USER_MODEL`) still lives in `skins/models.py`. It is the riskiest move, because Django doesn't support changing `AUTH_USER_MODEL` after the first migration, so it gets a spike first (5.5c).

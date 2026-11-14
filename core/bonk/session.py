@@ -1,4 +1,9 @@
-"""The bonk.io session we keep for a signed-in player, inside the site session."""
+"""The bonk.io session we keep for a signed-in player, inside the site session.
+
+The token is stored encrypted when BonkSession is given `encrypt`/`decrypt`
+(core.token_crypto.bonk_session does that for every request; ADR 0016). This
+module stays free of Django and of the keys.
+"""
 
 from __future__ import annotations
 
@@ -29,19 +34,33 @@ class BonkSession:
         store: The mapping to keep values in. If it has a `modified`
             attribute (Django sessions), it is set on every write.
         clock: Returns the current Unix time; replace it in tests.
+        encrypt, decrypt: Turn a token into its stored form and back
+            (decrypt returns None for a value it can't open). Without them
+            the token is stored as is.
     """
 
-    def __init__(self, store: MutableMapping, *, clock=time.time):
+    def __init__(self, store: MutableMapping, *, clock=time.time, encrypt=None, decrypt=None):
         self._store = store
         self._clock = clock
+        self._encrypt = encrypt
+        self._decrypt = decrypt
 
     @property
     def token(self) -> str | None:
-        """The bonk.io token, or None when missing or expired."""
-        token = self._store.get(TOKEN)
-        if token and not self.is_expired:
-            return token
-        return None
+        """The bonk.io token, or None when missing, expired or unreadable."""
+        stored = self._store.get(TOKEN)
+        if not stored or self.is_expired:
+            return None
+        if self._decrypt is None:
+            return stored
+        token = self._decrypt(stored)
+        if token is None and is_plain_token(stored):
+            # Stored before tokens were encrypted (ADR 0016): still good, and
+            # encrypted from now on. Remove once old sessions have expired.
+            token = stored
+            self._store[TOKEN] = self._encrypt(stored)
+            self._touch()
+        return token
 
     @property
     def is_expired(self) -> bool:
@@ -54,7 +73,7 @@ class BonkSession:
 
     def store_token(self, token: str) -> None:
         """Keep `token` for TOKEN_TTL_SECONDS from now. Also used to slide expiry."""
-        self._store[TOKEN] = token
+        self._store[TOKEN] = self._encrypt(token) if self._encrypt else token
         self._store[TOKEN_EXPIRES] = self._clock() + TOKEN_TTL_SECONDS
         self._touch()
 
@@ -91,3 +110,9 @@ class BonkSession:
     def _touch(self) -> None:
         if hasattr(self._store, "modified"):
             self._store.modified = True
+
+
+def is_plain_token(value) -> bool:
+    """A bonk.io token as bonk.io sends it: a JWT, three dot-separated parts
+    starting with an encoded "{". Encrypted values never contain a dot."""
+    return isinstance(value, str) and value.startswith("eyJ") and value.count(".") == 2

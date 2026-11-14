@@ -51,7 +51,7 @@ def test_account_link_points_at_the_moved_player():
 
 @pytest.mark.django_db
 def test_migration_relabels_content_types_both_ways():
-    ContentType.objects.filter(app_label="players", model__in=MOVE.MODELS).delete()
+    ContentType.objects.filter(model__in=MOVE.MODELS).delete()
     old = {m: ContentType.objects.create(app_label="skins", model=m).id for m in MOVE.MODELS}
 
     MOVE.relabel_content_types(apps, None)

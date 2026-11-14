@@ -10,6 +10,8 @@ from django.conf import settings
 from django.core import signing
 from django.db import models
 
+from core import token_crypto
+
 
 class BonkAccountLink(models.Model):
     """Links a Bonkverse site account to a bonk.io player (BonkPlayer).
@@ -24,8 +26,8 @@ class BonkAccountLink(models.Model):
     bonk_player = models.ForeignKey(
         "players.BonkPlayer", on_delete=models.CASCADE, related_name="linked_site_users"
     )
-    # Signed, not encrypted (see TOKEN_SALT). Read and written only through
-    # sign_token() and bonk_token().
+    # Encrypted with BONK_TOKEN_KEYS (core/token_crypto.py, ADR 0016). Read
+    # and written only through encrypt_token() and bonk_token().
     token_encrypted = models.TextField(blank=True, null=True)
     # Assumed 14 days from login; bonk.io tokens really last about a day
     # (RFC-0003 reads the token's own expiry instead).
@@ -39,20 +41,32 @@ class BonkAccountLink(models.Model):
         db_table = "skins_bonkaccountlink"
         unique_together = ("user", "bonk_player")
 
-    # Signed with SECRET_KEY, not encrypted: anyone who has both the database
-    # and the key can read the token. Real encryption is RFC-0001 step 5.5b.
-    TOKEN_SALT = "bonk_token"
-
     @classmethod
-    def sign_token(cls, bonk_token: str) -> str:
+    def encrypt_token(cls, bonk_token: str) -> str:
         """The value stored in `token_encrypted` for a bonk.io token."""
-        return signing.dumps({"t": bonk_token}, salt=cls.TOKEN_SALT)
+        return token_crypto.encrypt(bonk_token)
 
     def bonk_token(self) -> str | None:
-        """The stored bonk.io token, or None if there is none or it doesn't verify."""
+        """The stored bonk.io token, or None if there is none or no key opens it.
+
+        Also reads values stored before encryption (signed with SECRET_KEY)
+        until `manage.py reencrypt_bonk_tokens --run` has replaced them.
+        """
         if not self.token_encrypted:
             return None
+        token = token_crypto.decrypt(self.token_encrypted)
+        if token is not None:
+            return token
+        return self.legacy_signed_token(self.token_encrypted)
+
+    # Before ADR 0016 the token was only signed: readable by anyone with the
+    # database. Kept for reading old rows; remove with the follow-up PR once
+    # reencrypt_bonk_tokens has run in production.
+    LEGACY_SALT = "bonk_token"
+
+    @classmethod
+    def legacy_signed_token(cls, value: str) -> str | None:
         try:
-            return signing.loads(self.token_encrypted, salt=self.TOKEN_SALT)["t"]
+            return signing.loads(value, salt=cls.LEGACY_SALT)["t"]
         except (signing.BadSignature, KeyError, TypeError):
             return None

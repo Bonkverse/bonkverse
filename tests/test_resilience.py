@@ -12,6 +12,8 @@ from contextlib import redirect_stdout
 from pathlib import Path
 
 import pytest
+
+from core import token_crypto
 from django.core.exceptions import ImproperlyConfigured
 
 from core.config import check_redis_url
@@ -115,7 +117,9 @@ class TestRailwayBuild:
         assert not (ROOT / "Procfile").exists()
 
     def test_healthcheck_host_is_allowed_in_production(self, monkeypatch):
-        module = _load_settings(monkeypatch, ENV="production")
+        module = _load_settings(
+            monkeypatch, ENV="production", BONK_TOKEN_KEYS=token_crypto.dev_key()
+        )
 
         assert "healthcheck.railway.app" in module.ALLOWED_HOSTS
 

@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from datetime import timezone as dt_timezone
 import sentry_sdk
 
+from core import token_crypto
 from core.config import check_redis_url
 
 load_dotenv()
@@ -39,6 +40,13 @@ if not SECRET_KEY:
         SECRET_KEY = "build-time-secret-key"
     else:
         raise RuntimeError("SECRET_KEY is not set")
+
+# Keys that encrypt stored bonk.io tokens (core/token_crypto.py, ADR 0016):
+# comma-separated Fernet keys, newest first. Required in production, even
+# with DJANGO_ALLOW_DUMMY_SECRET (the image sets it for good, not only while
+# building); the build itself runs without ENV=production. Never derived
+# from SECRET_KEY. Never print or log them.
+BONK_TOKEN_KEYS = token_crypto.parse_keys(os.getenv("BONK_TOKEN_KEYS"), required=IS_PROD)
 
 AUTH_USER_MODEL = "skins.BonkUser"
 

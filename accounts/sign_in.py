@@ -1,7 +1,7 @@
 """What a successful bonk.io login does on our side.
 
 Owns: finding or creating the site account for a bonk.io name, linking it to
-its BonkPlayer (with the signed token and the skin the player is wearing),
+its BonkPlayer (with the encrypted token and the skin the player is wearing),
 storing the bonk.io session, syncing
 Flash friends from the login reply, and queueing the regular friend sync on
 the worker.
@@ -17,7 +17,8 @@ from django.conf import settings
 from django.contrib.auth import login
 from django.utils import timezone
 
-from core.bonk import BonkSession, BonkUsername
+from core.bonk import BonkUsername
+from core.token_crypto import bonk_session
 from integrations.bonk_api import BonkLoginResult
 
 from players.services import (
@@ -49,7 +50,7 @@ def sign_in(request, result: BonkLoginResult) -> BonkUser:
     Returns:
         The site account now logged in.
     """
-    bonk = BonkSession(request.session)
+    bonk = bonk_session(request)
     bonk.store_token(result.token)
     bonk.store_identity(result.username.value, result.bonk_id)
     # Remember the active slot so wear works immediately without the modal.
@@ -110,8 +111,8 @@ def link_bonk_player(user: BonkUser, result: BonkLoginResult) -> BonkAccountLink
 
     The player's stored name is corrected to bonk.io's spelling (bonk_id is
     the real identity), its XP and worn skin (the active slot's) are recorded
-    when the reply has them, and the link stores the token signed
-    (BonkAccountLink.sign_token).
+    when the reply has them, and the link stores the token encrypted
+    (BonkAccountLink.encrypt_token).
     """
     adopt_replay_names({result.bonk_id: result.username.value})
     player, created = BonkPlayer.objects.get_or_create(
@@ -135,7 +136,7 @@ def link_bonk_player(user: BonkUser, result: BonkLoginResult) -> BonkAccountLink
         user=user,
         bonk_player=player,
         defaults={
-            "token_encrypted": BonkAccountLink.sign_token(result.token),
+            "token_encrypted": BonkAccountLink.encrypt_token(result.token),
             "scopes": {"friends": True},
             "active": True,
         },

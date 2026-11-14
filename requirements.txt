@@ -1,5 +1,6 @@
 dj-database-url
 Django==5.2.17
+cryptography==50.0.1
 django-cors-headers==4.9.0
 gunicorn
 # playwright==1.46.0

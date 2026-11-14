@@ -97,7 +97,11 @@ jobs:
         run: bandit -q -r bonk_skin_search core integrations $(dirname */apps.py) -x $(ls -d */migrations | paste -sd, -) -ll -ii -b .bandit-baseline.json
       - name: Django deploy checks
         # Fails on errors. The HSTS / SSL-redirect warnings are tracked for Phase 1.
-        run: ENV=production python manage.py check --deploy --fail-level ERROR
+        # Production refuses to start without BONK_TOKEN_KEYS (ADR 0016); a
+        # throwaway key made for this run stands in for the real one.
+        run: >-
+          BONK_TOKEN_KEYS=$(python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
+          ENV=production python manage.py check --deploy --fail-level ERROR
 
   docker:
     # Builds the exact image Railway deploys, so a broken Dockerfile or a vulnerable

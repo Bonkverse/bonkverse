@@ -15,6 +15,7 @@ Defaults are chosen so local development works with only the required ones set.
 | `SECRET_KEY` | Django secret | Startup fails without it (the Docker build uses a dummy). |
 | `DATABASE_URL` | Postgres URL | Production: reference `${{BonkverseDB.DATABASE_URL}}`. |
 | `ENV` | `production` or anything else | `production` turns off DEBUG, sets secure cookies, trusts proxy headers. |
+| `BONK_TOKEN_KEYS` | Fernet keys that encrypt stored bonk.io tokens, comma-separated, newest first ([ADR 0016](../adr/0016-bonk-tokens-encrypted-at-rest.md)) | Production refuses to start without it. Never derived from `SECRET_KEY`. Unset outside production: a public development key. Set and rotate: [runbook](runbook.md#bonkio-token-keys-set-rotate-or-recover). |
 
 ## Redis
 
@@ -72,7 +73,7 @@ How background jobs work: [architecture/background-work.md](../architecture/back
 The `worker` Railway service needs the variables its code reads at startup and
 its tasks' integrations use, set as references to `bonkverse`'s values
 (`${{bonkverse.SECRET_KEY}}` and so on, never copies): `SECRET_KEY`,
-`DATABASE_URL`, `REDIS_URL`, `ENV`, `SENTRY_DSN`; for the replay sync
+`BONK_TOKEN_KEYS`, `DATABASE_URL`, `REDIS_URL`, `ENV`, `SENTRY_DSN`; for the replay sync
 `BONKVERSE_SYNC_TOKEN` and `BONKVERSE_REPLAYS_URL` (and
 `REPLAY_SYNC_INTERVAL_SECONDS` if `bonkverse` sets it); for the friend sync the
 `BONK_*` variables if `bonkverse` sets any. It needs no `PORT` and no volume.

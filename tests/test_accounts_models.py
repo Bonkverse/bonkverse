@@ -38,7 +38,7 @@ def test_constraint_and_index_names_are_unchanged():
 
 @pytest.mark.django_db
 def test_migration_relabels_content_types_both_ways():
-    ContentType.objects.filter(app_label="accounts", model__in=MOVE.MODELS).delete()
+    ContentType.objects.filter(model__in=MOVE.MODELS).delete()
     old = {m: ContentType.objects.create(app_label="skins", model=m).id for m in MOVE.MODELS}
 
     MOVE.relabel_content_types(apps, None)
@@ -64,7 +64,7 @@ def test_link_reads_through_its_new_home():
     user = UserFactory()
     player = BonkPlayer.objects.create(bonk_id=1, username="alpha")
     BonkAccountLink.objects.create(
-        user=user, bonk_player=player, token_encrypted=BonkAccountLink.sign_token("t0k")
+        user=user, bonk_player=player, token_encrypted=BonkAccountLink.encrypt_token("t0k")
     )
 
     link = user.bonk_accounts.get()

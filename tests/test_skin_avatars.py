@@ -6,6 +6,8 @@ import base64
 from datetime import timedelta
 
 import pytest
+
+from core import token_crypto
 from django.core.cache import cache
 from django.urls import reverse
 from django.utils import timezone
@@ -305,7 +307,7 @@ class TestViewerAvatar:
         session = client.session
         session.update(
             {
-                "bonk_token": "t",
+                "bonk_token": token_crypto.encrypt("t"),
                 "bonk_token_expires": 9e12,
                 "bonk_active_slot": 2,
                 "bonk_user_id": player.bonk_id,
