@@ -39,7 +39,7 @@ stats/
     _skin_table.html            # rows = skins with .value
 ```
 
-Styles are the shared `skins/static/css/leaderboard.css`.
+Styles are `skins/static/css/leaderboard.css`, which the page frame loads on every page (RFC-0002 reworks what the frame loads).
 
 ## Models
 

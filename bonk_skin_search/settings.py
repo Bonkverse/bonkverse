@@ -62,8 +62,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 STATIC_URL = "/static/"
 
+# The page frame's shared files (ui/ package, core/js, images, site-wide CSS
+# and JS); each app's own files are found in <app>/static/ (RFC-0001 5.6d).
 STATICFILES_DIRS = [
-    BASE_DIR / "skins/static",
+    BASE_DIR / "static",
 ]
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
@@ -316,8 +318,8 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                "skins.context_processors.editor_urls",
-                "skins.context_processors.site_nav",
+                "core.context_processors.editor_urls",
+                "core.context_processors.site_nav",
                 "players.context_processors.viewer_avatar",
             ],
         },

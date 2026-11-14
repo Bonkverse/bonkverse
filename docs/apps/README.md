@@ -13,7 +13,7 @@ RFC-0001 Phase 5 splits the old do-everything `skins` app into domain apps. This
 | [`stats`](stats.md) | Leaderboards (one config entry per board) and archived win/loss rows; future stat tracking | Exists (5.3), models moved (5.3b) |
 | [`players`](players.md) | bonk.io players, friendships, Flash friends, friend sync, player search and profiles, social stats, replay sync, XP calculator, profile privacy | Exists (5.4), models moved (5.4b) |
 | [`accounts`](accounts.md) | Site accounts (`BonkUser`), bonk.io account links and their tokens, sign in / out, `/api/me/` | Done (5.5): `BonkUser` and `BonkAccountLink` live here |
-| [`skins`](skins.md) | Skins, votes, favorites, reports, images, search, categories, upload, wear, edit | RFC layout (5.6b); the event log and the page frame move out in 5.6c/d |
+| [`skins`](skins.md) | Skins, votes, favorites, reports, images, search, categories, upload, wear, edit | RFC layout (5.6b); event log and page frame moved out (5.6c/d) |
 | `public_api` | `/api/v1/`, API keys, the developer portal | Exists ([public-api.md](../architecture/public-api.md)) |
 
 Shared packages (not apps): `core/` (cross-cutting helpers: auth guards, events, pagination, periods, logging, background work) and `integrations/` (one client per outside system; [integrations.md](../architecture/integrations.md)).
@@ -26,7 +26,7 @@ Enforced by `tests/test_app_boundaries.py`:
 - Writes to another app's data go through that app's `services` (reviews check this; the test can't).
 - `core/` and `integrations/` import no app.
 - Need something another app has in a helper module? Add a function to its `selectors` or `services` and use that.
-- **Templates:** every page extends the shared frame `skins/base.html` and may include the skin partials in `skins/templates/skins/partials/` (cards, carousels, search bar, modals): those are the skins app's public UI, the template equivalent of its selectors. Other apps' page templates are off-limits. The frame moves out of `skins/` in step 5.6.
+- **Templates:** every page extends the shared frame `base.html` (in the project's `templates/`, with the header, footer, error pages and generic partials: pagination, the bonk.io login modal) and may include the skin partials in `skins/templates/skins/partials/` (cards, carousels, search bar, report modal): those are the skins app's public UI, the template equivalent of its selectors. Other apps' page templates are off-limits. The frame's files (the `ui/` package, `core/js`, images, site-wide CSS and JS) are in the project's `static/`.
 
 Exceptions are listed in the test's `ALLOWED` with a reason; the list only shrinks.
 

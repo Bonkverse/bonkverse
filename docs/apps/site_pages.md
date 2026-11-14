@@ -2,7 +2,7 @@
 
 The site's own pages: the home page, privacy, terms, the staff page, and small tools that don't belong to a domain (the map decoder). Created in RFC-0001 Phase 5.1.
 
-**Owns:** what these pages show. **Does not own:** the skins on the home page (`skins.selectors.home_strips`), the page frame and skin partials (`skins/base.html`, `skins/partials/`, until step 5.6), the map decoder service call (`integrations/map_decoder.py`), the XP calculator (`players`).
+**Owns:** what these pages show. **Does not own:** the skins on the home page (`skins.selectors.home_strips`), the page frame (`templates/base.html`, `templates/partials/`) and skin partials (`skins/partials/`), the map decoder service call (`integrations/map_decoder.py`), the XP calculator (`players`).
 
 ## Routes
 
@@ -32,4 +32,4 @@ No models. The changelog was retired in 5.1 (it had no page and no visible banne
 
 ## Changing the staff page
 
-Edit `STAFF_MEMBERS` in `views/pages.py`; images are in `skins/static/images/`.
+Edit `STAFF_MEMBERS` in `views/pages.py`; images are in `static/images/`.

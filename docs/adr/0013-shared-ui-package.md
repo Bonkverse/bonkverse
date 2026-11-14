@@ -14,7 +14,7 @@ guide's skin card, and one header for every site.
   scripts and `nav.json`, no build step, released as git tags. A gallery
   page shows every component in all three themes, and CI checks contrast
   (WCAG AA) and 21 screen sizes on every change.
-- This site copies a release into `skins/static/ui/` with
+- This site copies a release into `static/ui/` (`skins/static/ui/` until RFC-0001 5.6d) with
   `scripts/sync_ui.py` and commits it, keeping the no-build-step rule
   ([ADR 0009](0009-frontend-structure.md)). A test fails if those files are
   edited here. The React sites install the same tag as an npm dependency.
@@ -28,7 +28,7 @@ guide's skin card, and one header for every site.
 **Consequences.**
 - Changing the look is two PRs: one in Bonkverse/ui, then a sync here with
   before and after screenshots.
-- `skins/static/ui/` holds 16 copied files (about 120 KB), fonts included.
+- `static/ui/` holds 16 copied files (about 120 KB), fonts included.
   `.gitattributes` keeps its PNG out of Git LFS so the hashes match and the
   deploy needs no LFS fetch.
 - Three site classes were renamed (`site-toast`, `site-pagination`,

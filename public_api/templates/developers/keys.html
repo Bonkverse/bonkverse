@@ -1,11 +1,11 @@
-{% extends 'skins/base.html' %}
+{% extends 'base.html' %}
 {% load static %}
 
 {% block title %}API keys · Bonkverse{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/player_profile.css' %}">
-<link rel="stylesheet" href="{% static 'css/developers.css' %}">
+<link rel="stylesheet" href="{% static 'public_api/css/developers.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -116,5 +116,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{% static 'js/developers.js' %}"></script>
+<script src="{% static 'public_api/js/developers.js' %}"></script>
 {% endblock %}

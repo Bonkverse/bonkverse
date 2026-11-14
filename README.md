@@ -192,6 +192,8 @@ bonkverse/
 ├── bonk_skin_search/       # Django project: settings, root urls, celery app
 ├── core/                   # shared helpers (auth_guards.py: JSON 401s with auth="bonkverse" / "bonk"); core/bonk/ = bonk.io types
 ├── integrations/           # one client per outside service; the only code that makes outside HTTP calls
+├── templates/              # the page frame: base.html, error pages, partials/ (header, footer, pagination, login modal)
+├── static/                 # the frame's files: ui/ (Bonkverse/ui copy), core/js/ (BVApi, BVWear, BVCards, ...), images/, site-wide css/ and js/
 ├── accounts/               # log in/out with bonk.io, wrong-password limit, what a login does, /api/me/, grant_admin
 ├── players/                # player profiles, directory and search, friend sync, social stats, XP calculator
 ├── public_api/             # /api/v1/, API keys, developer portal
@@ -206,8 +208,7 @@ bonkverse/
 │   ├── votes.py            # cast_vote: the one way vote counters change (ADR 0014)
 │   ├── skin_media.py       # the one writer of skin image files (docs/architecture/skin-images.md)
 │   ├── rerender.py         # re-render a skin from its code (button + rerender_skins)
-│   ├── templates/skins/    # pages; partials/ holds the skin cards and shared modals
-│   ├── static/core/js/     # shared page helpers: BVApi, BVWear, BVCards, BVReport, bv-boot
+│   ├── templates/skins/    # skin pages; partials/ holds the skin cards, carousel, search bar, report modal
 │   ├── static/js/, css/    # one script / stylesheet per page (docs/architecture/frontend.md)
 │   └── management/commands/
 ├── tests/                  # pytest suite, recorded bonk.io fixtures, pinned URL paths (fixtures/url_routes.json)

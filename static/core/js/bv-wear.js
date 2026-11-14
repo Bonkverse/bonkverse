@@ -1,7 +1,7 @@
 // core/js/bv-wear.js
 //
 // Wearing a skin on bonk.io, and the one bonk.io login modal
-// (skins/partials/_bonk_login_modal.html). Every page that has a Wear button
+// (partials/_bonk_login_modal.html). Every page that has a Wear button
 // uses this; none has its own copy. Needs bv-api.js and toast.js.
 //
 //   BVWear.wear(url)                          // toasts the outcome
@@ -63,7 +63,7 @@
     modal = modal || el("bonk-login-modal");
     if (!modal) {
       // A page with a Wear button but no modal partial: say so plainly.
-      console.error("BVWear: page is missing skins/partials/_bonk_login_modal.html");
+      console.error("BVWear: page is missing partials/_bonk_login_modal.html");
       return false;
     }
     pendingSuccess = onSuccess;

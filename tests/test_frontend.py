@@ -25,7 +25,9 @@ from tests.factories import SkinFactory
 
 REPO = Path(__file__).resolve().parent.parent
 TEMPLATES = REPO / "skins" / "templates"
-STATIC_JS = REPO / "skins" / "static"
+# The page frame: base.html, error pages, header/footer and shared partials.
+FRAME = REPO / "templates"
+STATIC_JS = REPO / "static"
 SHARED = {
     STATIC_JS / "core" / "js" / "bv-api.js",
     STATIC_JS / "core" / "js" / "bv-wear.js",
@@ -34,8 +36,9 @@ SHARED = {
 
 # Every app's templates and scripts are checked, not only skins/: pages move
 # into their own apps in RFC-0001 Phase 5 (docs/apps/README.md).
-TEMPLATE_ROOTS = sorted(REPO.glob("*/templates"))
-STATIC_ROOTS = sorted(REPO.glob("*/static"))
+# The page frame (templates/, static/) plus every app's own folders.
+TEMPLATE_ROOTS = [REPO / "templates", *sorted(REPO.glob("*/templates"))]
+STATIC_ROOTS = [REPO / "static", *sorted(REPO.glob("*/static"))]
 
 
 def _templates():
@@ -59,7 +62,7 @@ CARD_MARKUP = re.compile(
 CARD_BEHAVIOR = re.compile(
     r"""['"`][^'"`]*\.(wear-card-action|bv-skin-card__art|bv-fav|bv-wear|skin-card-img)\b"""
 )
-MODAL_PARTIAL = TEMPLATES / "skins" / "partials" / "_bonk_login_modal.html"
+MODAL_PARTIAL = FRAME / "partials" / "_bonk_login_modal.html"
 
 # Helpers only bv-api.js may define, and the cookie only it may read.
 FORBIDDEN = [
@@ -100,7 +103,7 @@ def test_only_the_partial_defines_the_bonk_login_modal():
         for path in _templates()
         if 'id="bonk-login-modal"' in path.read_text(encoding="utf-8")
     ]
-    assert defining == ["skins/templates/skins/partials/_bonk_login_modal.html"]
+    assert defining == ["templates/partials/_bonk_login_modal.html"]
 
 
 @pytest.mark.django_db
@@ -184,7 +187,7 @@ def test_skin_page_shows_the_visitors_vote(logged_in_client, user):
 
 ALL_TEMPLATES = list(_templates())
 # The 500 page renders without the static files on purpose (see its comment).
-STANDALONE = {TEMPLATES / "500.html"}
+STANDALONE = {FRAME / "500.html"}
 STYLE_ATTR = re.compile(r'\sstyle="([^"]*)"')
 # One custom-property declaration ("--bar: 42%"). Checked per declaration,
 # not with one repeating pattern, which can backtrack exponentially.
@@ -215,7 +218,7 @@ def test_no_inline_styles():
 
 
 def test_icon_library_is_pinned():
-    base = (TEMPLATES / "skins" / "base.html").read_text(encoding="utf-8")
+    base = (FRAME / "base.html").read_text(encoding="utf-8")
 
     assert "lucide@latest" not in base
     assert re.search(r"lucide@\d+\.\d+\.\d+/", base)

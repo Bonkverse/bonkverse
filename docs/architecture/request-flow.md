@@ -41,7 +41,7 @@ flowchart LR
 
 ## Errors
 
-- An unhandled exception renders `skins/templates/500.html` (standalone: no
+- An unhandled exception renders `templates/500.html` (standalone: no
   database, static files or base template) and is logged by `django.request`
   with its traceback to stdout, which Railway collects. Sentry also captures it.
 - `404.html` and `429.html` extend the site layout via `error_base.html`.

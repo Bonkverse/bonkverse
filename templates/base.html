@@ -52,7 +52,7 @@
 </head>
 <body class="bv-app">
 
-    {% include 'skins/partials/_site_header.html' %}
+    {% include 'partials/_site_header.html' %}
 
     {% if messages %}
     {# Shown as toasts by core/js/bv-boot.js #}
@@ -64,7 +64,7 @@
     {% endif %}
 
     {% if site_nav.show_skin_tabs %}
-      <div class="site-skin-tabs-wrap">{% include 'skins/partials/_skin_tabs.html' %}</div>
+      <div class="site-skin-tabs-wrap">{% include 'partials/_skin_tabs.html' %}</div>
     {% endif %}
 
     {# Pages built on bv- components set content_class to "site-page". The rest #}
@@ -74,7 +74,7 @@
         {% block content %}{% endblock %}
     </div>
 
-    {% include 'skins/partials/_site_footer.html' %}
+    {% include 'partials/_site_footer.html' %}
 
     {# Messages to toasts, icons #}
     <script src="{% static 'core/js/bv-boot.js' %}"></script>

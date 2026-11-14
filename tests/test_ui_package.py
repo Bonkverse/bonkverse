@@ -1,11 +1,11 @@
-"""skins/static/ui/ is a copy of a Bonkverse/ui release (scripts/sync_ui.py).
+"""static/ui/ is a copy of a Bonkverse/ui release (scripts/sync_ui.py).
 These files are never edited here: change Bonkverse/ui, release, sync."""
 
 import hashlib
 import json
 from pathlib import Path
 
-UI = Path(__file__).resolve().parent.parent / "skins" / "static" / "ui"
+UI = Path(__file__).resolve().parent.parent / "static" / "ui"
 
 
 def _manifest():
