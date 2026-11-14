@@ -67,7 +67,7 @@ The frontend rules below, with the load order and examples, are in [docs/archite
 
 **Page scripts** call the server through `BVApi` (`static/core/js/bv-api.js`: `post`, `postJSON`, `postOrLogin`, `getCSRF`) and wear skins through `BVWear.wear(url)` (`static/core/js/bv-wear.js`), which owns the one bonk.io login modal (`partials/_bonk_login_modal.html`). Both load in `base.html`, as do `bv-report.js` (the one report modal, `skins/partials/_report_skin_modal.html`; any element with `data-report-skin="<id>"` opens it) and `bv-boot.js` (Django messages as toasts, the particle background, icons). Don't write a page-local `getCSRF`/`postForm`, login modal or report modal; `tests/test_frontend.py` fails if you do.
 
-**No inline scripts.** A page's script is a file in its app's static folder (named after the page: `skins/static/js/search.js`; in apps created in Phase 5, `<app>/static/<app>/js/<page>.js`, e.g. `site_pages/static/site_pages/js/map_decoder.js`) loaded from `{% block extra_scripts %}`. Data it needs comes from the template as `data-` attributes (URLs: `data-wear-url="{% url 'wear_skin' skin.id %}"`) or `{{ value|json_script:"id" }}`, never by writing template tags into JavaScript. No `onclick=""`-style attributes; add listeners in the script. Show and hide with the `hidden` attribute.
+**No inline scripts.** A page's script is a file in its app's static folder (named after the page: `skins/static/js/search.js`; in apps created in Phase 5, `<app>/static/<app>/js/<page>.js`, e.g. `site_pages/static/site_pages/js/map_decoder.js`) loaded from `{% block extra_scripts %}`. Data it needs comes from the template as `data-` attributes (URLs: `data-wear-url="{% url 'skins:wear_skin' skin.id %}"`) or `{{ value|json_script:"id" }}`, never by writing template tags into JavaScript. No `onclick=""`-style attributes; add listeners in the script. Show and hide with the `hidden` attribute.
 
 **Styles** go in a stylesheet: a shared file in the frame's `static/css/` when the rule is shared by every page (`modal.css`, `forms.css`, `pages.css`), or the page's own file in its app's static folder, loaded from its `{% block extra_head %}` (`site_pages/static/site_pages/css/privacy.css`, `players/static/players/css/social_stats.css`, ...). No `style=""` attributes and no `<style>` blocks in templates. The one exception is a value the template computes, passed as a CSS custom property (`style="--bar: 42%"`) and used by the stylesheet. `tests/test_frontend.py` checks; `500.html` is exempt because it must render without static files.
 
@@ -88,7 +88,7 @@ The frontend rules below, with the load order and examples, are in [docs/archite
 - Python: PEP 8. JS: camelCase with the same vocabulary.
 - Booleans start with `is_`, `has_`, `can_`. Durations carry units: `token_ttl_seconds`.
 - No single-letter names outside comprehensions and short loops.
-- URL names are namespaced (`skins:detail`). Management commands start with a verb (`backfill_`, `import_`, `audit_`, `populate_`).
+- URL names are namespaced by app (`skins:skin_detail`, `players:player_profile`); every URLconf sets `app_name`, and `{% url %}` / `reverse()` always use the prefix. Management commands start with a verb (`backfill_`, `import_`, `audit_`, `populate_`).
 
 Fixed bonk.io vocabulary:
 

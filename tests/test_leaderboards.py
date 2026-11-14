@@ -42,7 +42,7 @@ def skins():
     ],
 )
 def test_each_board_ranks_by_its_count(client, skins, board, expected):
-    response = client.get(reverse(f"leaderboards_{board}"))
+    response = client.get(reverse(f"stats:leaderboards_{board}"))
 
     assert response.status_code == 200
     assert _rows(response) == expected
@@ -50,23 +50,23 @@ def test_each_board_ranks_by_its_count(client, skins, board, expected):
 
 
 def test_urls_and_names_are_unchanged():
-    assert reverse("leaderboards_upvoted") == "/leaderboards/upvoted/"
-    assert reverse("leaderboards_favorited") == "/leaderboards/favorited/"
-    assert reverse("leaderboards_downvoted") == "/leaderboards/downvoted/"
+    assert reverse("stats:leaderboards_upvoted") == "/leaderboards/upvoted/"
+    assert reverse("stats:leaderboards_favorited") == "/leaderboards/favorited/"
+    assert reverse("stats:leaderboards_downvoted") == "/leaderboards/downvoted/"
 
 
 def test_tabs_list_upvoted_and_favorited_and_mark_the_current_one(client):
-    response = client.get(reverse("leaderboards_favorited"))
+    response = client.get(reverse("stats:leaderboards_favorited"))
 
     assert response.context["tabs"] == [
-        {"url_name": "leaderboards_upvoted", "label": "Most upvoted", "current": False},
-        {"url_name": "leaderboards_favorited", "label": "Most favorited", "current": True},
+        {"url_name": "stats:leaderboards_upvoted", "label": "Most upvoted", "current": False},
+        {"url_name": "stats:leaderboards_favorited", "label": "Most favorited", "current": True},
     ]
     assert 'href="/leaderboards/favorited/" aria-current="page"' in response.text
 
 
 def test_downvoted_board_has_no_tabs(client):
-    response = client.get(reverse("leaderboards_downvoted"))
+    response = client.get(reverse("stats:leaderboards_downvoted"))
 
     assert "site-leaderboard-tabs" not in response.text
 
@@ -74,7 +74,7 @@ def test_downvoted_board_has_no_tabs(client):
 def test_shows_the_top_50(client):
     SkinFactory.create_batch(55)
 
-    assert len(client.get(reverse("leaderboards_upvoted")).context["rows"]) == 50
+    assert len(client.get(reverse("stats:leaderboards_upvoted")).context["rows"]) == 50
 
 
 def test_unknown_board_is_404():
@@ -92,7 +92,7 @@ def test_one_query_for_the_board_however_many_skins(client, django_assert_max_nu
     # An anonymous visitor: only the board. (The page frame's changelog query
     # went away with the changelog.)
     with django_assert_max_num_queries(1):
-        client.get(reverse(f"leaderboards_{board}"))
+        client.get(reverse(f"stats:leaderboards_{board}"))
 
 
 @pytest.mark.parametrize("board", list(leaderboards.LEADERBOARDS))

@@ -4,7 +4,7 @@
 
 <h1>Submit a Bonk.io Discord Server</h1>
 
-<form method="post" action="{% url 'api_submit_server' %}" id="server-submit-form">
+<form method="post" action="{% url 'communities:api_submit_server' %}" id="server-submit-form">
   {% csrf_token %}
 
   <label>Discord Invite Link</label>

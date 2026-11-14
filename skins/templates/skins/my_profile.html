@@ -11,9 +11,9 @@
 
   {# Route data for my_profile.js, which can't use the url tag directly #}
   <div id="profile-routes"
-       data-skins-partial-url="{% url 'my_skins_partial' %}"
-       data-bulk-delete-url="{% url 'bulk_delete_skins' %}"
-       data-friend-sync-url="{% url 'friends_sync_status' %}"
+       data-skins-partial-url="{% url 'skins:my_skins_partial' %}"
+       data-bulk-delete-url="{% url 'skins:bulk_delete_skins' %}"
+       data-friend-sync-url="{% url 'players:friends_sync_status' %}"
        {% if show_friend_sync_toast %}data-friend-sync="1"{% endif %}
        hidden></div>
 

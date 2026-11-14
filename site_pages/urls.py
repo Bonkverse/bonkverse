@@ -5,6 +5,8 @@ from django.urls import path
 
 from .views import pages, tools
 
+app_name = "site_pages"
+
 urlpatterns = [
     path("", pages.home, name="home"),
     path("staff/", pages.staff_page, name="staff"),

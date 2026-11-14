@@ -40,7 +40,7 @@ class TestSuccessfulLogin:
         response = _post_login(client)
 
         assert response.status_code == 302
-        assert response.url == reverse("my_profile")
+        assert response.url == reverse("skins:my_profile")
 
     def test_logs_user_in_and_creates_site_account(self, client):
         _post_login(client)
@@ -125,7 +125,7 @@ class TestSuccessfulLogin:
     def test_ignores_offsite_next_url(self, client):
         response = _post_login(client, next="https://evil.example.com/")
 
-        assert response.url == reverse("my_profile")
+        assert response.url == reverse("skins:my_profile")
 
 
 class TestSiteAccountMatching:
@@ -271,6 +271,6 @@ def test_logout_is_post_only(bonk_session_client):
 def test_login_required_pages_send_visitors_to_the_login_page(client):
     """Regression: LOGIN_URL was Django's default /accounts/login/, a 404 here,
     so signed-out visitors to e.g. profile settings hit a dead page."""
-    response = client.get(reverse("profile_settings"))
+    response = client.get(reverse("players:profile_settings"))
     assert response.status_code == 302
     assert response["Location"] == "/login/?next=/settings/profile/"

@@ -34,7 +34,7 @@
       <div class="wear-inline">
         {# Adds the skin to your favorites: static/js/share_skin.js #}
         <button class="wear-btn" id="collect-btn"
-                data-favorite-url="{% url 'api_toggle_favorite' skin.id %}"
+                data-favorite-url="{% url 'skins:api_toggle_favorite' skin.id %}"
                 title="Add this skin to your collection"
                 {% if is_favorited %}disabled{% endif %}>
           {% if is_favorited %}⭐ In your collection{% else %}⭐ Add to Collection{% endif %}

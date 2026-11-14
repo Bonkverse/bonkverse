@@ -175,13 +175,13 @@
   <div class="cta-strip">
     <h3>Want to appear in the graph?</h3>
     <p>Log in with your Bonk.io account to sync your friends list and see where you fit.</p>
-    <a href="{% url 'login' %}" class="cta-btn">Log in with Bonk.io</a>
+    <a href="{% url 'accounts:login' %}" class="cta-btn">Log in with Bonk.io</a>
   </div>
   {% else %}
   <div class="cta-strip">
     <h3>Your friends are in here somewhere.</h3>
     <p>Search the player database to find people you know, or check if your Flash-era friends are still around.</p>
-    <a href="{% url 'players_directory' %}" class="cta-btn">Search Players</a>
+    <a href="{% url 'players:players_directory' %}" class="cta-btn">Search Players</a>
   </div>
   {% endif %}
 

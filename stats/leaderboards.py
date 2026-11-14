@@ -59,7 +59,7 @@ def url_name(board: str) -> str:
 def tabs(current: str) -> list[dict]:
     """The tab bar: boards with a tab label, in LEADERBOARDS order."""
     return [
-        {"url_name": url_name(slug), "label": board.tab, "current": slug == current}
+        {"url_name": f"stats:{url_name(slug)}", "label": board.tab, "current": slug == current}
         for slug, board in LEADERBOARDS.items()
         if board.tab
     ]

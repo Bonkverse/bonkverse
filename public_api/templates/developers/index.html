@@ -18,7 +18,7 @@
       <p class="bv-lead">bonk.io player data for your site or Discord bot: levels, when players were last seen, and level history, from Bonkverse's archive of public replays.</p>
     </div>
     <div class="bv-page-header__actions">
-      <a class="bv-btn bv-btn--primary" href="{% url 'developer_keys' %}"><i data-lucide="key-round" aria-hidden="true"></i>Get an API key</a>
+      <a class="bv-btn bv-btn--primary" href="{% url 'developers:developer_keys' %}"><i data-lucide="key-round" aria-hidden="true"></i>Get an API key</a>
       <a class="bv-btn" href="{{ docs }}/api"><i data-lucide="book-open" aria-hidden="true"></i>Read the docs</a>
     </div>
   </div>
@@ -68,7 +68,7 @@
         <ol class="dev-steps">
           <li>
             <h3>Get a key</h3>
-            <p><a href="{% url 'developer_keys' %}">Make one</a> with your bonk.io account. It's free and takes a minute.</p>
+            <p><a href="{% url 'developers:developer_keys' %}">Make one</a> with your bonk.io account. It's free and takes a minute.</p>
           </li>
           <li>
             <h3>Keep it out of your code</h3>
@@ -176,7 +176,7 @@ print(body["data"] if body["ok"] else body["error"])</code></pre>
           <li>Players who hide their level on Bonkverse stay hidden in the API too.</li>
           <li>Going over a limit gets a <code>429</code> with <code>retry_after</code>: wait that many seconds.</li>
         </ul>
-        <p><a href="{% url 'developer_terms' %}">Read the API terms</a> · <a href="{{ docs }}/api/rate-limits">How limits work</a></p>
+        <p><a href="{% url 'developers:developer_terms' %}">Read the API terms</a> · <a href="{{ docs }}/api/rate-limits">How limits work</a></p>
         <div class="bv-notice">
           <i data-lucide="message-circle" aria-hidden="true"></i>
           <span>Building something bigger, like a league leaderboard? Ask on <a href="{{ BONKVERSE_DISCORD_URL }}" target="_blank" rel="noopener">Discord</a> about a partner key.</span>

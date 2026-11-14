@@ -52,7 +52,7 @@ def login_view(request):
     next_url = request.POST.get("next") or request.GET.get("next")
     if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
         return redirect(next_url)
-    return redirect("my_profile")
+    return redirect("skins:my_profile")
 
 
 @require_POST
@@ -63,7 +63,7 @@ def logout_view(request):
     bonk_session(request).clear()
     logout(request)
     messages.success(request, "Logged out!")
-    return redirect("home")
+    return redirect("site_pages:home")
 
 
 @limit("browse")

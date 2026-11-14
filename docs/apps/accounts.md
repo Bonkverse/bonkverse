@@ -6,6 +6,8 @@ Signing in to Bonkverse with a bonk.io account. Bonkverse has no passwords of it
 
 ## Routes
 
+Names are in the `accounts` namespace (`app_name` in `accounts/urls.py`): `{% url 'accounts:<name>' %}`, `reverse("accounts:<name>")`.
+
 | Path | Name | What |
 |---|---|---|
 | `/login/` | `login` | Login page (GET) and bonk.io login (POST, `login` rate tier) |

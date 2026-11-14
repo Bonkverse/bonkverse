@@ -84,7 +84,7 @@
 <p class="pv-fine">
   bonk.io friends come from friend lists that players shared by signing in to Bonkverse, so a player who never signed in shows only the members who list them.
   Flash friends are the old Flash bonk and TinyTanks lists a member imported.
-  {% if is_owner %}You can hide your lists in <a class="pv-link" href="{% url 'profile_settings' %}">profile settings</a>.{% elif not account %}Is this you? <a class="pv-link" href="{% url 'login' %}">Sign in</a> to add your whole list.{% endif %}
+  {% if is_owner %}You can hide your lists in <a class="pv-link" href="{% url 'players:profile_settings' %}">profile settings</a>.{% elif not account %}Is this you? <a class="pv-link" href="{% url 'accounts:login' %}">Sign in</a> to add your whole list.{% endif %}
 </p>
 {% endblock %}
 

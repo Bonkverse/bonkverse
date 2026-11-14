@@ -127,7 +127,7 @@ class TestSkinAvatarRoute:
         _renders(mocked_http)
         _wearing()
 
-        response = client.get(reverse("player_skin_avatar", args=["saucy tulip"]))
+        response = client.get(reverse("players:player_skin_avatar", args=["saucy tulip"]))
 
         assert response.status_code == 200
         assert response["Content-Type"] == "image/png"
@@ -138,7 +138,7 @@ class TestSkinAvatarRoute:
         _renders(mocked_http)
         _wearing()
 
-        response = client.get(reverse("player_skin_avatar_thumb", args=["Saucy Tulip"]))
+        response = client.get(reverse("players:player_skin_avatar_thumb", args=["Saucy Tulip"]))
 
         assert b"".join(response.streaming_content) == THUMB
 
@@ -158,19 +158,22 @@ class TestSkinAvatarRoute:
     def test_player_without_a_skin_is_404(self, client, mocked_http):
         BonkPlayerFactory(username="Saucy Tulip")
 
-        response = client.get(reverse("player_skin_avatar", args=["Saucy Tulip"]))
+        response = client.get(reverse("players:player_skin_avatar", args=["Saucy Tulip"]))
 
         assert response.status_code == 404
         assert "s-maxage" not in response.get("Cache-Control", "")
 
     def test_unknown_player_is_404(self, client):
-        assert client.get(reverse("player_skin_avatar", args=["nobody"])).status_code == 404
+        assert client.get(reverse("players:player_skin_avatar", args=["nobody"])).status_code == 404
 
     def test_render_failure_is_404(self, client, mocked_http):
         mocked_http.post(RENDER_URL, json={"ok": False})
         _wearing()
 
-        assert client.get(reverse("player_skin_avatar", args=["Saucy Tulip"])).status_code == 404
+        assert (
+            client.get(reverse("players:player_skin_avatar", args=["Saucy Tulip"])).status_code
+            == 404
+        )
 
 
 class TestAvatarsOnPages:
@@ -178,7 +181,7 @@ class TestAvatarsOnPages:
         mock_player(mocked_http, "Saucy Tulip")
         _wearing()
 
-        html = client.get(reverse("player_profile", args=["Saucy Tulip"])).content.decode()
+        html = client.get(reverse("players:player_profile", args=["Saucy Tulip"])).content.decode()
 
         digest = code_digest(SKIN_CODE)[:12]
         assert f"--skin: url('/player/Saucy%20Tulip/skin.png?v={digest}')" in html
@@ -187,7 +190,7 @@ class TestAvatarsOnPages:
     def test_profile_without_a_skin_keeps_initials(self, client, mocked_http):
         mock_player(mocked_http, "Saucy Tulip")
 
-        html = client.get(reverse("player_profile", args=["Saucy Tulip"])).content.decode()
+        html = client.get(reverse("players:player_profile", args=["Saucy Tulip"])).content.decode()
 
         assert "pv-avatar--skin" not in html
         assert "skin.png" not in html
@@ -196,7 +199,7 @@ class TestAvatarsOnPages:
         mock_player(mocked_http, "it's me")
         _wearing("it's me")
 
-        html = client.get(reverse("player_profile", args=["it's me"])).content.decode()
+        html = client.get(reverse("players:player_profile", args=["it's me"])).content.decode()
 
         assert "url('/player/it%27s%20me/skin.png?v=" in html
 
@@ -204,7 +207,7 @@ class TestAvatarsOnPages:
         mock_player(mocked_http, "Saucy Tulip")
         _wearing("Friend One")
 
-        html = client.get(reverse("player_people", args=["Saucy Tulip"])).content.decode()
+        html = client.get(reverse("players:player_people", args=["Saucy Tulip"])).content.decode()
 
         assert "/player/Friend%20One/skin-thumb.png?v=" in html
         assert "/player/Rival%20Two/skin-thumb.png" not in html
@@ -213,7 +216,7 @@ class TestAvatarsOnPages:
         mock_player(mocked_http, "Saucy Tulip")
         _wearing("Friend One")
 
-        html = client.get(reverse("player_profile", args=["Saucy Tulip"])).content.decode()
+        html = client.get(reverse("players:player_profile", args=["Saucy Tulip"])).content.decode()
 
         assert "/player/Friend%20One/skin-thumb.png?v=" in html
 
@@ -222,7 +225,7 @@ class TestAvatarsOnPages:
         _wearing("Saucy Tulip")
         BonkPlayerFactory(username="saucepan")
 
-        html = client.get(reverse("players_directory") + "?q=sau").content.decode()
+        html = client.get(reverse("players:players_directory") + "?q=sau").content.decode()
 
         assert "/player/Saucy%20Tulip/skin-thumb.png?v=" in html
         assert "/player/saucepan/skin-thumb.png" not in html
@@ -230,13 +233,15 @@ class TestAvatarsOnPages:
     def test_new_skin_changes_the_url(self, client, mocked_http):
         mock_player(mocked_http, "Saucy Tulip")
         player = _wearing()
-        before = client.get(reverse("player_profile", args=["Saucy Tulip"])).content.decode()
+        before = client.get(
+            reverse("players:player_profile", args=["Saucy Tulip"])
+        ).content.decode()
         other = skin_media.code_digest(ENCODED_SKIN_CODE)
         assert other == code_digest(SKIN_CODE)  # same skin, encoded: same URL
 
         record_worn_skin(player.bonk_id, OTHER_SKIN_CODE, WornSkinSource.WEAR)
         cache.clear()
-        after = client.get(reverse("player_profile", args=["Saucy Tulip"])).content.decode()
+        after = client.get(reverse("players:player_profile", args=["Saucy Tulip"])).content.decode()
 
         assert code_digest(SKIN_CODE)[:12] in before
         assert code_digest(SKIN_CODE)[:12] not in after
@@ -332,7 +337,7 @@ class TestFriendsTabAvatars:
         record_worn_skin(ann.bonk_id, SKIN_CODE, WornSkinSource.LOGIN)
         mock_player(mocked_http, "tulip", status=404, body={"error": "x"})
 
-        response = client.get(reverse("player_friends", args=["tulip"]))
+        response = client.get(reverse("players:player_friends", args=["tulip"]))
 
         rows = {r["n"]: r for r in friend_data(response)["bonk"]}
         assert rows["ann"]["s"] == code_digest(SKIN_CODE)[:12]
@@ -347,13 +352,13 @@ class TestXpCalculatorAvatar:
         _wearing()
         mock_player(mocked_http, "Saucy Tulip")
 
-        data = client.get(reverse("xp_calculator_player") + "?name=Saucy%20Tulip").json()
+        data = client.get(reverse("players:xp_calculator_player") + "?name=Saucy%20Tulip").json()
 
         assert data["data"]["skin"].startswith("/player/Saucy%20Tulip/skin-thumb.png?v=")
 
     def test_player_json_without_a_skin(self, client, mocked_http):
         mock_player(mocked_http, "Saucy Tulip")
 
-        data = client.get(reverse("xp_calculator_player") + "?name=Saucy%20Tulip").json()
+        data = client.get(reverse("players:xp_calculator_player") + "?name=Saucy%20Tulip").json()
 
         assert data["data"]["skin"] is None

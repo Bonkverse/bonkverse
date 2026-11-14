@@ -163,7 +163,7 @@ class TestLoginQueuesTheSync:
 
         assert response.status_code == 302
         assert client.session["show_friend_sync_toast"] is True
-        status = client.get(reverse("friends_sync_status")).json()
+        status = client.get(reverse("players:friends_sync_status")).json()
         assert status["status"] == "done"
         assert status["friends_now"] == 3
 

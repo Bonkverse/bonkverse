@@ -11,7 +11,7 @@
 <div class="pv-bento">
 
   {% if sparkline %}
-    <a class="pv-card pv-card--link pv-bento__wide" href="{% url 'player_level' username %}">
+    <a class="pv-card pv-card--link pv-bento__wide" href="{% url 'players:player_level' username %}">
       <div class="pv-card__head">
         <div>
           <span class="pv-eyebrow">Level</span>
@@ -46,7 +46,7 @@
   {% if main_mode or home_map %}
     <div class="pv-bento__stack">
       {% if main_mode %}
-        <a class="pv-card pv-card--link" href="{% url 'player_maps' username %}">
+        <a class="pv-card pv-card--link" href="{% url 'players:player_maps' username %}">
           <span class="pv-eyebrow">Main mode</span>
           <span class="pv-card__title">{{ main_mode.label }}</span>
           <span class="pv-meter" style="--bar: {{ main_mode.share }}%"></span>
@@ -54,7 +54,7 @@
         </a>
       {% endif %}
       {% if home_map %}
-        <a class="pv-card pv-card--link pv-mapcard" href="{% url 'player_maps' username %}?map={{ home_map.mapid }}">
+        <a class="pv-card pv-card--link pv-mapcard" href="{% url 'players:player_maps' username %}?map={{ home_map.mapid }}">
           <img class="pv-thumb" src="{{ home_map.thumbnail }}" alt="" loading="lazy" width="96" height="64">
           <span>
             <span class="pv-eyebrow">Home map</span>
@@ -67,7 +67,7 @@
   {% endif %}
 
   {% if heatmap %}
-    <a class="pv-card pv-card--link pv-bento__full" href="{% url 'player_activity' username %}">
+    <a class="pv-card pv-card--link pv-bento__full" href="{% url 'players:player_activity' username %}">
       <div class="pv-card__head">
         <span class="pv-card__title">Activity</span>
         <span class="pv-muted pv-small">
@@ -83,7 +83,7 @@
     <section class="pv-card" aria-labelledby="ov-people">
       <div class="pv-card__head">
         <h2 id="ov-people" class="pv-card__title">Plays with most</h2>
-        <a class="pv-link pv-small" href="{% url 'player_people' username %}">All ›</a>
+        <a class="pv-link pv-small" href="{% url 'players:player_people' username %}">All ›</a>
       </div>
       <ul class="pv-people">
         {% for p in partners %}
@@ -100,7 +100,7 @@
   {% endif %}
 
   {% if friend_counts and friend_counts.friends or friend_counts.flash %}
-    <a class="pv-card pv-card--link pv-friendcard" href="{% url 'player_friends' username %}">
+    <a class="pv-card pv-card--link pv-friendcard" href="{% url 'players:player_friends' username %}">
       <div class="pv-card__head">
         <span class="pv-card__title">Friends</span>
         <span class="pv-link pv-small">Search ›</span>
@@ -131,7 +131,7 @@
     <section class="pv-card" aria-labelledby="ov-skins">
       <div class="pv-card__head">
         <h2 id="ov-skins" class="pv-card__title">Skins</h2>
-        <a class="pv-link pv-small" href="{% url 'player_skins' username %}">All {{ skins_total }} ›</a>
+        <a class="pv-link pv-small" href="{% url 'players:player_skins' username %}">All {{ skins_total }} ›</a>
       </div>
       <div class="pv-featured">
         {% for s in featured %}
@@ -145,7 +145,7 @@
 
 {% if not account %}
   <p class="pv-note">
-    Is this you? <a class="pv-link" href="{% url 'login' %}">Sign in with your bonk.io account</a>
+    Is this you? <a class="pv-link" href="{% url 'accounts:login' %}">Sign in with your bonk.io account</a>
     to add your skins and choose what's public.
   </p>
 {% endif %}

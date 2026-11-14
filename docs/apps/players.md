@@ -6,6 +6,8 @@ bonk.io players as Bonkverse knows them: profiles built from the replay archive,
 
 ## Routes
 
+Names are in the `players` namespace (`app_name` in `players/urls.py`): `{% url 'players:<name>' %}`, `reverse("players:<name>")`.
+
 | Path | Name | What |
 |---|---|---|
 | `/players/` | `players_directory` | Directory and search (`views.directory`, rules in `search.py`) |

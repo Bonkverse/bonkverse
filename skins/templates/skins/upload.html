@@ -17,7 +17,7 @@
     <span class="bv-loader" role="status"><span class="bv-loader__ring" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>Uploading and drawing your skin. This takes a few seconds.</span>
   </div>
 
-  <form id="upload-form" method="POST" action="{% url 'upload_skin' %}" class="bv-card bv-form site-form-card">
+  <form id="upload-form" method="POST" action="{% url 'skins:upload_skin' %}" class="bv-card bv-form site-form-card">
     {% csrf_token %}
     <div class="bv-field">
       <label class="bv-label" for="skin_name">Skin name</label>

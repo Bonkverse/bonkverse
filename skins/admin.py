@@ -20,7 +20,7 @@ def _login_through_bonk(request, extra_context=None):
     next_url = request.GET.get("next") or reverse("admin:index")
     if request.user.is_authenticated and request.user.is_staff:
         return redirect(next_url)
-    return redirect(f"{reverse('login')}?{urlencode({'next': next_url})}")
+    return redirect(f"{reverse('accounts:login')}?{urlencode({'next': next_url})}")
 
 
 admin.site.login = _login_through_bonk

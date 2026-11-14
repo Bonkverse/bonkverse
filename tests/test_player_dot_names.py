@@ -26,13 +26,13 @@ from tests.test_players import REPLAYS, map_json, profile_json
     ],
 )
 def test_profile_urls_round_trip(name, url):
-    assert reverse("player_profile", args=[name]) == url
+    assert reverse("players:player_profile", args=[name]) == url
     assert charts.profile_path(name) == url
     assert resolve(unquote(url)).kwargs["username"] == name
 
 
 def test_tab_urls_escape_too():
-    assert reverse("player_level", args=[".."]) == "/player/~../level/"
+    assert reverse("players:player_level", args=[".."]) == "/player/~../level/"
     assert charts.profile_path("..", "level") == "/player/~../level/"
 
 

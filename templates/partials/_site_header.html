@@ -8,7 +8,7 @@ menus open with static/ui/ui.js.
 <a class="bv-skip-link" href="#main">Skip to content</a>
 <header class="bv-header">
   <div class="bv-header__inner">
-    <a class="bv-header__brand" href="{% url 'home' %}">
+    <a class="bv-header__brand" href="{% url 'site_pages:home' %}">
       <img src="{% static 'ui/img/logo.png' %}" alt="" width="30" height="30">
       <span>Bonkverse</span>
     </a>
@@ -53,7 +53,7 @@ menus open with static/ui/ui.js.
 
         {% if user.is_authenticated %}
           <div class="bv-dropdown bv-header__account">
-            <a class="bv-header__link" href="{% url 'my_profile' %}"{% if request.resolver_match.url_name == 'my_profile' %} aria-current="page"{% endif %}>
+            <a class="bv-header__link" href="{% url 'skins:my_profile' %}"{% if request.resolver_match.url_name == 'my_profile' %} aria-current="page"{% endif %}>
               {% if viewer_avatar.thumbnail %}
                 <span class="bv-nav-avatar bv-skin-avatar" style="--skin: url('{{ viewer_avatar.thumbnail }}')" aria-hidden="true"><i data-lucide="circle-user"></i></span>
               {% else %}
@@ -80,7 +80,7 @@ menus open with static/ui/ui.js.
             </div>
           </div>
         {% else %}
-          <a class="bv-header__link bv-header__login" href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in</a>
+          <a class="bv-header__link bv-header__login" href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">Log in</a>
         {% endif %}
       </div>
     </nav>

@@ -30,6 +30,10 @@ Enforced by `tests/test_app_boundaries.py`:
 
 Exceptions are listed in the test's `ALLOWED` with a reason; the list only shrinks.
 
+## URL names are namespaced
+
+Every URLconf sets `app_name`, one namespace per file: `skins`, `site_pages`, `accounts`, `stats`, `communities`, `players`, `public_api` (`/api/v1/`) and `developers` (`/developers/`, `public_api/portal_urls.py`). A name is always used with its prefix: `{% url 'players:player_profile' name %}`, `reverse("skins:skin_detail", args=[id])`, `LOGIN_URL = "accounts:login"`. Names inside a file keep their old spelling; `request.resolver_match.url_name` is still the bare name.
+
 ## Every URL path is pinned
 
 `tests/test_url_snapshot.py` compares the URL conf with `tests/fixtures/url_routes.json`. Moving a view to another app must keep its path. Adding a route, or renaming a URL name, means updating that file in the same PR (and every `{% url %}` / `reverse()` for a rename):

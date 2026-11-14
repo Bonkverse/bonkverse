@@ -27,7 +27,7 @@ def skin_detail(request, skin_id):
     }
 
     share_url = request.build_absolute_uri(
-        reverse("share_skin", kwargs={"skin_id": skin_id, "uuid": skin.uuid})
+        reverse("skins:share_skin", kwargs={"skin_id": skin_id, "uuid": skin.uuid})
     )
 
     # ── Pre-compute favorite state + count in the view ────────────

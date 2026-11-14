@@ -78,7 +78,7 @@ def keys(request):
         )
     except services.PortalError as err:
         messages.error(request, _error(err.code))
-        return redirect("developer_keys")
+        return redirect("developers:developer_keys")
     return _keys_page(request, new_key=api_key, new_raw=raw)
 
 
@@ -93,4 +93,4 @@ def revoke_key(request, prefix):
         messages.error(request, _error(err.code))
     else:
         messages.success(request, f"Revoked “{api_key.name}”. Requests with it now get 401.")
-    return redirect("developer_keys")
+    return redirect("developers:developer_keys")

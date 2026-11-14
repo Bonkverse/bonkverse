@@ -126,7 +126,7 @@ def test_modal_points_at_the_wear_login_endpoint(logged_in_client):
 
     html = logged_in_client.get("/search/").content.decode()
 
-    assert f'data-login-url="{reverse("bonk_login_for_wear")}"' in html
+    assert f'data-login-url="{reverse("skins:bonk_login_for_wear")}"' in html
 
 
 def test_only_the_card_partials_write_card_markup():
@@ -179,7 +179,7 @@ def test_skin_page_shows_the_visitors_vote(logged_in_client, user):
     skin = SkinFactory(name="Votedskin")
     SkinVote.objects.create(user=user, skin=skin, vote="down")
 
-    html = logged_in_client.get(reverse("skin_detail", args=[skin.id])).content.decode()
+    html = logged_in_client.get(reverse("skins:skin_detail", args=[skin.id])).content.decode()
 
     assert re.search(r'data-vote="down" aria-label="Downvote"\s+aria-pressed="true"', html)
     assert re.search(r'data-vote="up" aria-label="Upvote"\s+aria-pressed="false"', html)
