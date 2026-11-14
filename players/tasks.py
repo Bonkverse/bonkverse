@@ -14,7 +14,7 @@ from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
 
 from integrations.bonk_api import BonkError
-from skins.models import BonkAccountLink
+from accounts.models import BonkAccountLink
 
 from . import replay_sync
 from .friends_sync import sync_friends_for_link

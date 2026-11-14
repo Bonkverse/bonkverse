@@ -11,7 +11,8 @@ import pytest
 import requests
 from django.urls import reverse
 
-from skins.models import BonkAccountLink, BonkUser, Skin, UserEvent
+from skins.models import BonkUser, Skin, UserEvent
+from accounts.models import BonkAccountLink
 from players.models import BonkPlayer
 from tests.conftest import load_bonk_fixture
 from tests.factories import UserFactory

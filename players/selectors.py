@@ -46,7 +46,7 @@ from skins.selectors import (
     skins_created_by,
 )
 
-from skins.models import BonkAccountLink
+from accounts.models import BonkAccountLink
 from skins.services import code_digest
 from .models import BonkPlayer, FlashFriend, FlashFriendship, Friendship
 
