@@ -251,12 +251,25 @@ def test_worn_skin_with_image_urls(api, mocked_http):
 
     version = code_digest(SKIN_CODE)[:12]
     assert skin == {
-        "skin_code": SKIN_CODE,
         "image_url": f"http://testserver/player/Ender/skin.png?v={version}",
         "thumbnail_url": f"http://testserver/player/Ender/skin-thumb.png?v={version}",
         "seen_at": "2026-11-14T08:30:15.123Z",
     }
     assert "login" not in json.dumps(skin)  # where we saw it stays internal
+
+
+def test_the_skin_code_is_never_published(api, mocked_http):
+    """The code is the skin itself: images only (2026-11-14)."""
+    player = BonkPlayer.objects.create(bonk_id=13159907, username="Ender")
+    record_worn_skin(player.bonk_id, SKIN_CODE, WornSkinSource.LOGIN)
+    mock_lookup(mocked_http, [lookup_row("Ender")])
+
+    single = api.get("/api/v1/players/ender/").content.decode()
+    bulk = api.post("/api/v1/lookup/players/", {"usernames": ["Ender"]}).content.decode()
+
+    for body in (single, bulk):
+        assert "skin_code" not in body
+        assert SKIN_CODE.split("+")[0] not in body  # not even escaped differently
 
 
 def test_bulk_lookup_includes_skins_even_without_replays(api, mocked_http):
@@ -269,7 +282,6 @@ def test_bulk_lookup_includes_skins_even_without_replays(api, mocked_http):
     ][0]
 
     assert entry["status"] == "not_found"
-    assert entry["skin"]["skin_code"] == SKIN_CODE
     assert entry["skin"]["image_url"].startswith("http://testserver/player/Quiet%20One/skin.png")
 
 
