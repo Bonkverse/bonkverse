@@ -24,6 +24,10 @@ from .models import BonkPlayer, WornSkinSource
 
 logger = logging.getLogger(__name__)
 
+# record_replay_skins writes SQL by hand (one UPDATE for a whole batch), so
+# the table name is spelled out there; tests check it is BonkPlayer's.
+REPLAY_SKINS_TABLE = "skins_bonkplayer"
+
 
 def record_worn_skin(
     bonk_id: int | None,
@@ -112,8 +116,8 @@ def record_replay_skins(sightings) -> int:
         return 0
     with connection.cursor() as cursor:
         cursor.execute(
-            f"""
-            UPDATE {BonkPlayer._meta.db_table} AS p
+            """
+            UPDATE skins_bonkplayer AS p
             SET worn_skin_code = v.code, worn_skin_seen_at = v.seen_at,
                 worn_skin_source = %s
             FROM unnest(%s::text[], %s::text[], %s::timestamptz[]) AS v(k, code, seen_at)

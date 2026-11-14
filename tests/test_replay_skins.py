@@ -4,6 +4,7 @@ sighting winning (players/worn_skins.py record_replay_skins), and the replay
 sync reading them (players/replay_sync.py)."""
 
 import base64
+import inspect
 from urllib.parse import parse_qs, urlparse
 from datetime import UTC, datetime, timedelta
 
@@ -12,7 +13,7 @@ from django.core.management import call_command
 from django.utils import timezone
 
 from core.bonk import InvalidSkinCode, SkinCode, SkinLayer
-from players import replay_sync
+from players import replay_sync, worn_skins
 from players.models import BonkPlayer, SyncCursor, WornSkinSource
 from players.services import record_replay_skins, record_worn_skin
 from tests.factories import SKIN_CODE, BonkPlayerFactory
@@ -145,6 +146,12 @@ class TestRecordReplaySkins:
 
         player.refresh_from_db()
         assert player.worn_skin_code is None
+
+    def test_hand_written_sql_names_bonkplayers_table(self):
+        assert worn_skins.REPLAY_SKINS_TABLE == BonkPlayer._meta.db_table
+        assert f"UPDATE {worn_skins.REPLAY_SKINS_TABLE} AS p" in inspect.getsource(
+            worn_skins.record_replay_skins
+        )
 
     def test_leaves_updated_at_alone(self):
         """updated_at is the DBID push cursor; a skin isn't a DBID change."""
