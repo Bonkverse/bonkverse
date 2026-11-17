@@ -13,6 +13,24 @@ from core.validators import validate_bonk_username
 from .querysets import SKIN_SEARCH_CONFIG, SkinQuerySet
 
 
+class SubmissionSource(models.TextChoices):
+    """Where a skin was sent in from."""
+
+    WEBSITE = "website", "Upload form"
+    EDITOR = "editor", "Skin editor"
+    DISCORD = "discord", "BonxBot (Discord)"
+    LEGACY = "legacy", "Before submitters were recorded"
+
+
+class CreatorSource(models.TextChoices):
+    """Where a skin's `creator` name came from."""
+
+    SUBMITTER = "submitter", "The submitter's own account"
+    AS_ENTERED = "as_entered", "Typed or accepted by the submitter, not checked"
+    BONKLEAGUES = "bonkleagues", "The BonkLeagues author; the submitter didn't make it"
+    LEGACY = "legacy", "Before creators' sources were recorded"
+
+
 class Skin(models.Model):
     name = models.CharField(max_length=1000, default="UnnamedSkin")
     link = models.URLField(
@@ -40,6 +58,29 @@ class Skin(models.Model):
         settings.AUTH_USER_MODEL, related_name="favorite_skins", blank=True
     )
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+
+    # Who sent the skin in, separate from who made it (`creator`). Website and
+    # editor submissions have a site account; BonxBot ones have a Discord id.
+    submitted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="submitted_skins",
+    )
+    submitted_by_discord_id = models.BigIntegerField(null=True, blank=True)
+    submission_source = models.CharField(
+        max_length=20,
+        choices=SubmissionSource.choices,
+        default=SubmissionSource.LEGACY,
+        db_default=SubmissionSource.LEGACY,
+    )
+    creator_source = models.CharField(
+        max_length=20,
+        choices=CreatorSource.choices,
+        default=CreatorSource.LEGACY,
+        db_default=CreatorSource.LEGACY,
+    )
 
     # Full-text search data, kept up to date by Postgres on every insert/update.
     # Same fields and weights the search page always used; storing it lets a GIN

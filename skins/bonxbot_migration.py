@@ -24,6 +24,8 @@ from typing import Callable
 from core.bonk import SkinCode
 from integrations.bonxbot_db import BonxBotDB, BotSkin
 from accounts.services import log_event
+from skins.models import CreatorSource, SubmissionSource
+from skins.submitters import Submission, discord_id_or_none
 from skins.skin_import import (
     ImportFailure,
     existing_skin,
@@ -127,7 +129,17 @@ def _migrate_row(db, row, report, importer, pause, skip_bonkleagues) -> str | No
         report.counts[SKIPPED_NEEDS_BONKLEAGUES] += 1
         return None
 
-    result = importer(row.link or "", row.name, row.creator, skin_code=code)
+    result = importer(
+        row.link or "",
+        row.name,
+        row.creator,
+        skin_code=code,
+        submission=Submission(
+            source=SubmissionSource.DISCORD,
+            creator_source=CreatorSource.AS_ENTERED,
+            discord_user_id=discord_id_or_none(row.submitter_id),
+        ),
+    )
 
     if result.error in ImportFailure.PERMANENT:
         db.mark_failed(row.id, result.error)

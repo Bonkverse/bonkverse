@@ -42,6 +42,17 @@ def test_creator_field_in_form_is_ignored(client):
     assert Skin.objects.get().creator == "RealCreator"
 
 
+def test_records_the_editor_user_as_submitter(client):
+    user = UserFactory(username="RealCreator")
+    client.force_login(user)
+
+    _publish(client)
+
+    skin = Skin.objects.get()
+    assert skin.submitted_by == user
+    assert (skin.submission_source, skin.creator_source) == ("editor", "submitter")
+
+
 def test_anonymous_cannot_publish(client):
     response = _publish(client)
 

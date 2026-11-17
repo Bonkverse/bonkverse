@@ -15,8 +15,9 @@ from django.urls import reverse
 from core.bonk import InvalidSkinCode, SkinCode
 from core.ratelimits import limit
 from accounts.services import log_event
-from skins.models import Skin
+from skins.models import CreatorSource, Skin, SubmissionSource
 from skins.skin_media import bundle_from_svg, save_render
+from skins.submitters import Submission
 from core.auth_guards import api_login_required
 from skins.svg_sanitizer import (
     TOO_LARGE_MESSAGE,
@@ -107,6 +108,11 @@ def publish_skin(request):
         skin_code=skin_code,
         image_url="",
         uuid=uuid.uuid4(),
+        **Submission(
+            source=SubmissionSource.EDITOR,
+            creator_source=CreatorSource.SUBMITTER,
+            user=request.user,
+        ).skin_fields(),
     )
     try:
         save_render(skin, bundle)

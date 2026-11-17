@@ -36,6 +36,7 @@ All in `skins/urls.py`; views in `skins/views/`, one module per area.
 - `skin_media.py`: the one writer of skin image files and rows (`save_render`; [skin-images.md](../architecture/skin-images.md)).
 - `rerender.py`: `rerender(skin)`, shared by the staff button and `rerender_skins`.
 - `skin_import.py`: importing a BonkLeagues skin (upload form, BonxBot); `bonxbot_migration.py`: the one-time BonxBot import behind `import_bonxbot_skins`.
+- `submitters.py`: who sent a skin in (`Submission`: upload form, editor, BonxBot), kept apart from who made it (`creator`; `creator_source` says where that name came from), and `backfill_submitters` behind `backfill_skin_submitters` for skins added before submitters were stored.
 - `svg_sanitizer.py`, `querysets.py` (`Skin.objects`: search, scores, periods), `categories.py`, `skin_code.py`.
 
 ## Management commands

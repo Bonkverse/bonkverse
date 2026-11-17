@@ -1,12 +1,13 @@
-"""Importing a BonkLeagues skin that was submitted somewhere other than the upload form.
+"""Importing a skin from a BonkLeagues link.
 
 Owns: turning a BonkLeagues link plus a name, creator and (usually) its skin
 code into a Skin with its SVG, PNG and thumbnail files; deciding when a
 submission is a duplicate; and cleaning names the upload form would have refused.
-Used by: the BonxBot submission API (skins/views/bot_skins.py) and the one-time
-migration (skins/bonxbot_migration.py).
+Used by: the upload form (skins/views/upload.py), the BonxBot submission API
+(skins/views/bot_skins.py) and the one-time migration (skins/bonxbot_migration.py).
 Does not own: HTTP to the editor or the fetcher (integrations/), authentication,
-or event logging (the caller knows who submitted).
+event logging, or knowing who submitted (the caller passes a `Submission`,
+skins/submitters.py).
 
 Where the images come from: when the caller already has the skin code, the
 editor renders it and BonkLeagues is never contacted. Only a submission without
@@ -40,6 +41,7 @@ from integrations.bl_skin_fetcher import FetchResult, fetch_skin
 from integrations.editor_render import RenderResult, render_skin_code
 from skins.models import Skin
 from skins.skin_media import RenderBundle, save_render
+from skins.submitters import Submission
 from skins.svg_sanitizer import SVGTooLargeError, UnsafeSVGError, validate_svg_upload
 
 logger = logging.getLogger(__name__)
@@ -156,13 +158,15 @@ def import_bonkleagues_skin(
     creator: str | None,
     *,
     skin_code: str | None = None,
+    submission: Submission | None = None,
     render: Callable[[str], RenderResult] = render_skin_code,
     fetch: Callable[[str], FetchResult] = fetch_skin,
 ) -> ImportResult:
     """Create a Skin from a BonkLeagues submission, or return the one already imported from it.
 
     A skin uploaded on the site and later submitted on Discord is stored once,
-    and nothing is rendered for the duplicate.
+    and nothing is rendered for the duplicate. `submission` (who sent it in) is
+    stored on a new skin only; an existing skin keeps its first submitter.
     """
     problem = link_problem(link)
     if problem:
@@ -186,7 +190,7 @@ def import_bonkleagues_skin(
             return ImportResult(error=ImportFailure.UNSAFE_SVG, detail=str(exc))
 
         try:
-            skin = _save(link, clean_skin_name(name), clean_creator(creator), media)
+            skin = _save(link, clean_skin_name(name), clean_creator(creator), media, submission)
         except Exception:
             logger.exception("could not store imported skin %s", link)
             return ImportResult(error=ImportFailure.STORAGE_FAILED)
@@ -243,7 +247,7 @@ def _get_media(link, skin_code, render, fetch):
     return _Media(f.skin_code, f.svg, f.png, f.thumbnail), None, ""
 
 
-def _save(link, name, creator, media: _Media) -> Skin:
+def _save(link, name, creator, media: _Media, submission: Submission | None) -> Skin:
     """Write the row and its three files together; on any failure keep neither.
 
     A failed file write rolls the row back (skin_media leaves no files); a
@@ -259,6 +263,7 @@ def _save(link, name, creator, media: _Media) -> Skin:
                 skin_code=media.skin_code,
                 image_url="",
                 uuid=uuid.uuid4(),
+                **(submission.skin_fields() if submission else {}),
             )
             paths = save_render(
                 skin,

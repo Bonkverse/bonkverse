@@ -18,7 +18,9 @@ from django.urls import reverse
 
 from core.ratelimits import limit
 from accounts.services import log_event
+from skins.models import CreatorSource, SubmissionSource
 from skins.skin_import import NAME_MAX_LENGTH, ImportFailure, import_bonkleagues_skin
+from skins.submitters import Submission
 from skins.svg_sanitizer import TOO_LARGE_MESSAGE
 
 logger = logging.getLogger(__name__)
@@ -71,7 +73,16 @@ def upload_skin(request):
         messages.error(request, "Invalid Bonkleagues link format.")
         return render(request, TEMPLATE)
 
-    result = import_bonkleagues_skin(bonkleagues_link, skin_name, request.user.username)
+    result = import_bonkleagues_skin(
+        bonkleagues_link,
+        skin_name,
+        request.user.username,
+        submission=Submission(
+            source=SubmissionSource.WEBSITE,
+            creator_source=CreatorSource.SUBMITTER,
+            user=request.user,
+        ),
+    )
 
     if result.error:
         logger.warning(
