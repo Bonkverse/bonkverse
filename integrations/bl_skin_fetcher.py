@@ -1,8 +1,9 @@
 """BLSkinFetcher: the Railway service that reads a BonkLeagues link and renders the skin.
 
 Owns: the request shape for `/api/getSkin?link=...&media=true`, the timeout,
-decoding the rendered PNGs from base64, and turning every failure into a
-`FetchResult` with an error instead of an exception.
+decoding the rendered PNGs from base64, reading the skin's name and author as
+BonkLeagues lists them, and turning every failure into a `FetchResult` with an
+error instead of an exception.
 Does not own: checking the SVG is safe, files on disk or database rows
 (skins/skin_import.py does those).
 
@@ -29,6 +30,9 @@ class FetchedSkin:
     svg: str
     png: bytes
     thumbnail: bytes
+    # As BonkLeagues lists them ("'Name' by Author"); None when the listing has none.
+    name: str | None = None
+    author: str | None = None
 
 
 @dataclass(frozen=True)
@@ -68,7 +72,23 @@ def fetch(url: str, link: str, *, timeout=DEFAULT_TIMEOUT) -> FetchResult:
     except (binascii.Error, ValueError):
         return FetchResult(error="fetcher_bad_media")
 
-    return FetchResult(skin=FetchedSkin(skin_code=skin_code, svg=svg, png=png, thumbnail=thumbnail))
+    return FetchResult(
+        skin=FetchedSkin(
+            skin_code=skin_code,
+            svg=svg,
+            png=png,
+            thumbnail=thumbnail,
+            name=_text_or_none(data.get("name")),
+            author=_text_or_none(data.get("author")),
+        )
+    )
+
+
+def _text_or_none(value) -> str | None:
+    """A trimmed string, or None for anything blank or not a string."""
+    if not isinstance(value, str):
+        return None
+    return value.strip() or None
 
 
 def fetch_skin(link: str) -> FetchResult:
