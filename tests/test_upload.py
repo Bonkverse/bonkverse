@@ -67,6 +67,8 @@ def test_creates_skin_with_files_and_redirects_to_search(user_client, mocked_htt
     assert (tmp_path / f"skins/{skin.id}.svg").read_text() == SVG
     assert SkinImage.objects.filter(skin=skin).count() == 3
     assert UserEvent.objects.filter(event_type="skin_uploaded").count() == 1
+    assert skin.submitted_by.username == " Spaced  Uploader"
+    assert (skin.submission_source, skin.creator_source) == ("website", "submitter")
 
 
 def test_link_already_on_site_in_another_spelling_is_a_duplicate(user_client, mocked_http):

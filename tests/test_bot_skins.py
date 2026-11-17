@@ -101,6 +101,20 @@ def test_creates_skin_with_images_and_discord_provenance(client, mocked_http, tm
     event = UserEvent.objects.get(event_type="skin_uploaded")
     assert event.user is None
     assert event.metadata == {"source": "discord", "discord_user_id": 42, "bonx_skin_id": 7}
+    assert (skin.submitted_by, skin.submitted_by_discord_id) == (None, 42)
+    assert (skin.submission_source, skin.creator_source) == ("discord", "as_entered")
+
+
+@pytest.mark.parametrize(
+    "sent, stored",
+    [("1009876543210987654", 1009876543210987654), ("not-an-id", None), (None, None)],
+)
+def test_discord_id_is_stored_only_when_it_is_one(client, mocked_http, sent, stored):
+    _fetcher_replies(mocked_http)
+
+    _submit(client, discord_user_id=sent)
+
+    assert Skin.objects.get().submitted_by_discord_id == stored
 
 
 def test_same_link_again_returns_existing_skin_without_fetching(client, mocked_http):
@@ -113,6 +127,15 @@ def test_same_link_again_returns_existing_skin_without_fetching(client, mocked_h
     assert response.json()["skin"]["id"] == existing.id
     assert Skin.objects.count() == 1
     assert len(mocked_http.calls) == 0
+
+
+def test_resubmitting_keeps_the_first_submitter(client, mocked_http):
+    first = SkinFactory(link=LINK, submission_source="website")
+
+    _submit(client, discord_user_id=42)
+
+    first.refresh_from_db()
+    assert (first.submission_source, first.submitted_by_discord_id) == ("website", None)
 
 
 @pytest.mark.parametrize("token", ["", "wrong-token"])
@@ -344,6 +367,8 @@ def test_migration_imports_and_records_every_outcome_on_the_bot(mocked_http):
     events = UserEvent.objects.filter(event_type="skin_uploaded").order_by("id")
     assert [e.metadata["bonx_skin_id"] for e in events] == [1, 4]
     assert all(e.metadata["migrated"] for e in events)
+    assert (created.submission_source, created.submitted_by_discord_id) == ("discord", 111)
+    assert created.creator_source == "as_entered"
 
 
 def test_migration_leaves_render_failures_for_the_bot_to_retry(mocked_http):

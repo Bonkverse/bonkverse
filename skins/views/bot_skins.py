@@ -24,7 +24,9 @@ from django.views.decorators.http import require_POST
 
 from core.ratelimits import limit
 from accounts.services import log_event
+from skins.models import CreatorSource, SubmissionSource
 from skins.skin_import import ImportFailure, import_bonkleagues_skin
+from skins.submitters import Submission, discord_id_or_none
 
 ERROR_STATUS = {
     ImportFailure.INVALID_LINK: 422,
@@ -42,6 +44,15 @@ def _bot_authorized(request) -> bool:
     expected = settings.BONXBOT_API_TOKEN
     given = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
     return bool(expected) and hmac.compare_digest(given.encode(), expected.encode())
+
+
+def _discord_submission(body: dict) -> Submission:
+    """The bot sends the creator its user typed or accepted; nothing checks it yet."""
+    return Submission(
+        source=SubmissionSource.DISCORD,
+        creator_source=CreatorSource.AS_ENTERED,
+        discord_user_id=discord_id_or_none(body.get("discord_user_id")),
+    )
 
 
 def _error(code: str, status: int) -> JsonResponse:
@@ -66,6 +77,7 @@ def submit_skin(request):
         body.get("name"),
         body.get("creator"),
         skin_code=body.get("skin_code"),
+        submission=_discord_submission(body),
     )
     if result.error:
         return _error(result.error, ERROR_STATUS[result.error])
