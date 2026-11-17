@@ -29,6 +29,15 @@ class SkinQuerySet(models.QuerySet):
         """Annotate `fav_count`: how many users favorited each skin."""
         return self.annotate(fav_count=Count("favorited_by"))
 
+    def made_by(self, username: str):
+        """Skins credited to `username`, ignoring case but not spaces.
+
+        bonk.io names are unique case-insensitively (ADR 0007), so "the saucy
+        tulip" and "The Saucy Tulip" are one creator. Also who owns a skin:
+        only its creator may edit or delete it (see Skin.is_owned_by).
+        """
+        return self.filter(creator__iexact=username)
+
     def with_score(self):
         """Annotate `score`: upvotes minus downvotes."""
         return self.annotate(score=F("upvotes") - F("downvotes"))
