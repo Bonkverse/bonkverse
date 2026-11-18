@@ -11,7 +11,13 @@ from django.core.management import call_command
 
 from accounts.services import log_event
 from skins.models import Skin
-from skins.submitters import Submission, backfill_submitters, discord_id_or_none
+from skins.submitters import (
+    CreatorChoice,
+    Submission,
+    backfill_submitters,
+    discord_id_or_none,
+    resolve_creator,
+)
 from tests.factories import SkinFactory, UserFactory
 
 pytestmark = pytest.mark.django_db
@@ -56,6 +62,25 @@ def test_new_skins_default_to_legacy():
 
     assert (skin.submission_source, skin.creator_source) == ("legacy", "legacy")
     assert (skin.submitted_by, skin.submitted_by_discord_id) == (None, None)
+
+
+# --- resolve_creator ----------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "author, made_it, expected",
+    [
+        (None, None, CreatorChoice("The Saucy Tulip", "submitter")),
+        ("  ", None, CreatorChoice("The Saucy Tulip", "submitter")),
+        ("the saucy TULIP", None, CreatorChoice("The Saucy Tulip", "submitter")),
+        ("Somepoop", True, CreatorChoice("The Saucy Tulip", "submitter")),
+        ("Somepoop", False, CreatorChoice("Somepoop", "bonkleagues")),
+        ("Somepoop", None, None),  # ask
+        (" The Saucy Tulip", None, None),  # spaces count: another account
+    ],
+)
+def test_resolve_creator(author, made_it, expected):
+    assert resolve_creator("The Saucy Tulip", author, made_it) == expected
 
 
 # --- backfill ---------------------------------------------------------------

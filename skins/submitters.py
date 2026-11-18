@@ -1,11 +1,11 @@
 """Who sent a skin in, kept apart from who made it.
 
 Owns: the `Submission` record every skin-creating path hands over (upload form,
-editor, BonxBot, the BonxBot migration), turning it into Skin fields, and the
-backfill that fills those fields for skins added before they existed, from the
+editor, BonxBot, the BonxBot migration), turning it into Skin fields, the rule
+for crediting the BonkLeagues author or the submitter (`resolve_creator`), and
+the backfill that fills those fields for skins added before they existed, from the
 `skin_uploaded` events in the event log.
-Does not own: deciding who the creator is (the caller passes `creator` and says
-where it came from), the event log itself (accounts), or storing skins
+Does not own: asking the submitter (the upload page and BonxBot do), the event log itself (accounts), or storing skins
 (skin_import.py, views/publish.py).
 
 `creator` is the person credited with making the skin; the submitter is whoever
@@ -49,6 +49,29 @@ class Submission:
             "submission_source": self.source,
             "creator_source": self.creator_source,
         }
+
+
+@dataclass(frozen=True)
+class CreatorChoice:
+    """Who to credit as a skin's creator, and why."""
+
+    creator: str
+    source: str  # a CreatorSource value
+
+
+def resolve_creator(submitter: str, bonkleagues_author: str | None, made_it: bool | None):
+    """Who made a skin the submitter is sending in: a CreatorChoice, or None to ask them.
+
+    No BonkLeagues author, or the submitter's own name (ignoring case but not
+    spaces, like bonk.io), credits the submitter without asking. Another name needs an
+    answer: made_it True credits the submitter, False the BonkLeagues author.
+    """
+    author = bonkleagues_author or ""
+    if not author.strip() or author.casefold() == submitter.casefold() or made_it is True:
+        return CreatorChoice(submitter, CreatorSource.SUBMITTER)
+    if made_it is False:
+        return CreatorChoice(author, CreatorSource.BONKLEAGUES)
+    return None
 
 
 def discord_id_or_none(value) -> int | None:

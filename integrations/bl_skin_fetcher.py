@@ -31,6 +31,7 @@ class FetchedSkin:
     png: bytes
     thumbnail: bytes
     # As BonkLeagues lists them ("'Name' by Author"); None when the listing has none.
+    # The name is trimmed; the author is a bonk.io name, so its spaces are kept.
     name: str | None = None
     author: str | None = None
 
@@ -79,7 +80,7 @@ def fetch(url: str, link: str, *, timeout=DEFAULT_TIMEOUT) -> FetchResult:
             png=png,
             thumbnail=thumbnail,
             name=_text_or_none(data.get("name")),
-            author=_text_or_none(data.get("author")),
+            author=_username_or_none(data.get("author")),
         )
     )
 
@@ -89,6 +90,13 @@ def _text_or_none(value) -> str | None:
     if not isinstance(value, str):
         return None
     return value.strip() or None
+
+
+def _username_or_none(value) -> str | None:
+    """A bonk.io name exactly as given (spaces can be part of it), or None if blank."""
+    if not isinstance(value, str) or not value.strip():
+        return None
+    return value
 
 
 def fetch_skin(link: str) -> FetchResult:

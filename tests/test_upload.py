@@ -38,10 +38,12 @@ def user_client(client):
     return client
 
 
-def _fetcher_replies(mocked_http, svg=SVG, **kwargs):
+def _fetcher_replies(mocked_http, svg=SVG, author=None, **kwargs):
     body = {
         "skinCode": "CODE123",
         "media": {"svg": svg, "pngBase64": base64.b64encode(PNG).decode()},
+        "name": "Fire Dragon",
+        "author": author,
     }
     return mocked_http.get(FETCHER, **({"json": body} | kwargs))
 
@@ -143,3 +145,101 @@ def test_anonymous_is_sent_to_login(client):
 
     assert response.status_code == 302
     assert response["Location"].startswith("/login/")
+
+
+# --- "Did you make this skin?" --------------------------------------------------
+
+
+def _fetch_count(mocked_http):
+    return sum(1 for call in mocked_http.calls if call.request.url.startswith(FETCHER))
+
+
+def test_bonkleagues_author_matching_uploader_in_any_case_is_not_asked(user_client, mocked_http):
+    _fetcher_replies(mocked_http, author=" spaced  UPLOADER")  # bonk.io keeps the spaces
+
+    response = _upload(user_client)
+
+    assert response.status_code == 302
+    skin = Skin.objects.get()
+    assert (skin.creator, skin.creator_source) == (" Spaced  Uploader", "submitter")
+
+
+def test_other_bonkleagues_author_asks_before_saving(user_client, mocked_http):
+    _fetcher_replies(mocked_http, author="Somepoop")
+
+    response = _upload(user_client)
+
+    assert response.status_code == 200
+    assert not Skin.objects.exists()
+    assert response.context["creator_check"] == {
+        "author": "Somepoop",
+        "skin_name": "Fire Dragon",
+        "link": LINK,
+    }
+    html = response.content.decode()
+    assert 'id="creator-check"' in html
+    assert "BonkLeagues credits this skin to <strong>Somepoop</strong>" in html
+    assert 'name="made_it" value="yes"' in html and 'name="made_it" value="no"' in html
+
+
+def test_i_made_it_credits_the_uploader_without_fetching_again(user_client, mocked_http):
+    _fetcher_replies(mocked_http, author="Somepoop")
+    _upload(user_client)
+
+    response = _upload(user_client, made_it="yes")
+
+    assert response.status_code == 302
+    skin = Skin.objects.get()
+    assert (skin.creator, skin.creator_source) == (" Spaced  Uploader", "submitter")
+    assert _fetch_count(mocked_http) == 1  # the answer was remembered between the two posts
+
+
+def test_not_mine_credits_the_bonkleagues_author_and_records_the_uploader(user_client, mocked_http):
+    _fetcher_replies(mocked_http, author="Somepoop")
+
+    response = _upload(user_client, made_it="no")
+
+    skin = Skin.objects.get()
+    assert (skin.creator, skin.creator_source) == ("Somepoop", "bonkleagues")
+    assert skin.submitted_by.username == " Spaced  Uploader"
+    assert skin.submission_source == "website"
+    follow = user_client.get(response["Location"])
+    assert _messages(follow) == [
+        "Skin uploaded! It's credited to Somepoop, and you're listed as the uploader."
+    ]
+
+
+def test_an_unknown_answer_asks_again(user_client, mocked_http):
+    _fetcher_replies(mocked_http, author="Somepoop")
+
+    response = _upload(user_client, made_it="maybe")
+
+    assert response.status_code == 200
+    assert "creator_check" in response.context
+    assert not Skin.objects.exists()
+
+
+def test_no_bonkleagues_author_credits_the_uploader(user_client, mocked_http):
+    _fetcher_replies(mocked_http, author="   ")
+
+    _upload(user_client)
+
+    skin = Skin.objects.get()
+    assert (skin.creator, skin.creator_source) == (" Spaced  Uploader", "submitter")
+
+
+def test_duplicate_link_is_refused_before_fetching(user_client, mocked_http):
+    SkinFactory(link=LINK)
+
+    response = _upload(user_client)
+
+    assert response["Location"] == URL
+    assert _fetch_count(mocked_http) == 0
+
+
+def test_dialog_values_are_escaped(user_client, mocked_http):
+    _fetcher_replies(mocked_http, author='<b>"x"</b>')
+
+    html = _upload(user_client).content.decode()
+
+    assert "<b>" not in html.split('id="creator-check"', 1)[1]
