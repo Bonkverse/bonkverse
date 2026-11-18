@@ -29,7 +29,9 @@ def get(client, path, **extra):
 # --- access ----------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("path", ["skins/search/?q=x", "skins/random/", "skins/1/", "players/tulip/"])
+@pytest.mark.parametrize(
+    "path", ["skins/search/?q=x", "skins/random/", "skins/1/", "players/tulip/"]
+)
 def test_needs_the_token(client, path):
     response = client.get(f"/api/bot/{path}", HTTP_AUTHORIZATION="Bearer wrong")
     assert response.status_code == 401
@@ -116,27 +118,41 @@ def test_player_with_skin_count(client, monkeypatch):
 
 
 def test_unknown_player(client, monkeypatch):
-    monkeypatch.setattr(api_selectors, "player_entries", lambda names, build: [entry("not_found", "nobody")])
+    monkeypatch.setattr(
+        api_selectors, "player_entries", lambda names, build: [entry("not_found", "nobody")]
+    )
     response = get(client, "players/nobody/")
     assert (response.status_code, response.json()["error"]) == (404, "player_not_found")
 
 
 def test_creator_with_no_replays_still_shows(client, monkeypatch):
     """Skin makers who never showed up in replays (e.g. Somepoop) still get a card."""
-    monkeypatch.setattr(api_selectors, "player_entries", lambda names, build: [entry("not_found", "Somepoop")])
+    monkeypatch.setattr(
+        api_selectors, "player_entries", lambda names, build: [entry("not_found", "Somepoop")]
+    )
     SkinFactory(creator="Somepoop")
     assert get(client, "players/Somepoop/").json()["data"]["skins"] == 1
 
 
 def test_replays_down(client, monkeypatch):
-    monkeypatch.setattr(api_selectors, "player_entries", lambda names, build: [entry("unavailable")])
+    monkeypatch.setattr(
+        api_selectors, "player_entries", lambda names, build: [entry("unavailable")]
+    )
     assert get(client, "players/tulip/").status_code == 503
 
 
 # --- maps ----------------------------------------------------------------------------
 
 DECODED = {
-    "m": {"n": "Simple 1v1", "a": "Chaz", "mo": "b", "date": "2020-01-01", "dbid": 42, "vu": 10, "vd": 2},
+    "m": {
+        "n": "Simple 1v1",
+        "a": "Chaz",
+        "mo": "b",
+        "date": "2020-01-01",
+        "dbid": 42,
+        "vu": 10,
+        "vd": 2,
+    },
     "physics": {"shapes": [1, 2, 3], "bodies": [1], "joints": []},
     "spawns": [1, 2],
     "capZones": [],
@@ -144,22 +160,34 @@ DECODED = {
 
 
 def post_map(client, body):
-    return client.post("/api/bot/maps/decode/", json.dumps(body), content_type="application/json", **AUTH)
+    return client.post(
+        "/api/bot/maps/decode/", json.dumps(body), content_type="application/json", **AUTH
+    )
 
 
 def test_map_summary(client, monkeypatch):
     monkeypatch.setattr(bot, "decode_map_configured", lambda code: DecodeResult(data=DECODED))
     data = post_map(client, {"code": "ILAMJAhBFBjBzA..."}).json()["data"]
     assert data["map"] == {
-        "name": "Simple 1v1", "author": "Chaz", "mode": "b", "date": "2020-01-01", "map_id": 42,
-        "upvotes": 10, "downvotes": 2, "shapes": 3, "bodies": 1, "joints": 0, "spawns": 2,
+        "name": "Simple 1v1",
+        "author": "Chaz",
+        "mode": "b",
+        "date": "2020-01-01",
+        "map_id": 42,
+        "upvotes": 10,
+        "downvotes": 2,
+        "shapes": 3,
+        "bodies": 1,
+        "joints": 0,
+        "spawns": 2,
         "cap_zones": 0,
     }
 
 
 def test_map_rejected_explains(client, monkeypatch):
     monkeypatch.setattr(
-        bot, "decode_map_configured",
+        bot,
+        "decode_map_configured",
         lambda code: DecodeResult(error=DecodeError.REJECTED, detail="not a map string"),
     )
     response = post_map(client, {"code": "hello"})
@@ -169,7 +197,9 @@ def test_map_rejected_explains(client, monkeypatch):
 
 def test_map_needs_a_code(client):
     assert post_map(client, {}).json()["error"] == "missing_code"
-    assert post_map(client, {"code": "x" * (bot.MAX_MAP_CODE + 1)}).json()["error"] == "missing_code"
+    assert (
+        post_map(client, {"code": "x" * (bot.MAX_MAP_CODE + 1)}).json()["error"] == "missing_code"
+    )
 
 
 def test_odd_decoder_output_doesnt_crash():

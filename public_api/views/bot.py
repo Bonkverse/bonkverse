@@ -85,8 +85,10 @@ def search_skins(request):
         skins = best_matches(query, size)
     except OperationalError:
         return fail("search_timeout", 503)
-    return ok({"query": query, "skins": [skin_data(request, s) for s in skins]},
-              cache_seconds=CACHE_SECONDS)
+    return ok(
+        {"query": query, "skins": [skin_data(request, s) for s in skins]},
+        cache_seconds=CACHE_SECONDS,
+    )
 
 
 @bot_endpoint("GET")
