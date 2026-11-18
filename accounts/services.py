@@ -8,6 +8,9 @@
   (sign_in.py).
 - `log_event(user, event_type, skin=None, **metadata)`: write to the event log
   (events.py); every app records what people do through it.
+- `site_account_for(username)`: the site account for a bonk.io name, made if
+  it doesn't exist yet, exactly as first sign-in makes it (sign_in.py). For
+  BonxBot, which verifies players itself (public_api/views/bot.py).
 
 The in-page login on wear (skins/views/wear.py) uses the first two; it only
 refreshes the bonk.io token for a player who is already signed in.
@@ -16,6 +19,6 @@ refreshes the bonk.io token for a player who is already signed in.
 from .events import log_event
 from .login_attempts import attempt_login
 from .login_messages import login_failure_message
-from .sign_in import sign_in
+from .sign_in import sign_in, site_account_for
 
-__all__ = ["attempt_login", "log_event", "login_failure_message", "sign_in"]
+__all__ = ["attempt_login", "log_event", "login_failure_message", "sign_in", "site_account_for"]

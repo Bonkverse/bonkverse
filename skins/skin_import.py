@@ -31,7 +31,7 @@ import os
 import re
 import uuid
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Callable
 from urllib.parse import urlparse
 
@@ -42,7 +42,7 @@ from django.db import connection, transaction
 from core.bonk import InvalidSkinCode, SkinCode
 from integrations.bl_skin_fetcher import FetchResult, fetch_skin
 from integrations.editor_render import RenderResult, render_skin_code
-from skins.models import Skin
+from skins.models import CreatorSource, Skin
 from skins.skin_media import RenderBundle, save_render
 from skins.submitters import Submission
 from skins.svg_sanitizer import SVGTooLargeError, UnsafeSVGError, validate_svg_upload
@@ -217,6 +217,34 @@ def import_bonkleagues_skin(
             logger.exception("could not store imported skin %s", link)
             return ImportResult(error=ImportFailure.STORAGE_FAILED)
         return ImportResult(skin=skin, created=True)
+
+
+def import_as_listed(link: str, submission: Submission, *, fetch=None) -> ImportResult:
+    """A BonkLeagues skin, named and credited the way BonkLeagues lists it.
+
+    For people adding someone else's skin to their collection: nobody is
+    claiming to have made it, so the BonkLeagues author is the creator. A
+    skin already on Bonkverse is returned without contacting BonkLeagues.
+    """
+    problem = link_problem(link)
+    if problem:
+        return ImportResult(error=problem)
+    existing = existing_skin(link)
+    if existing:
+        return ImportResult(skin=existing, created=False)
+    fetch = fetch or fetch_skin_cached
+    fetched = fetch(canonical_link(link))
+    if fetched.error:
+        return ImportResult(error=ImportFailure.FETCH_FAILED, detail=str(fetched.error))
+    author = fetched.skin.author
+    source = CreatorSource.BONKLEAGUES if author else CreatorSource.AS_ENTERED
+    return import_bonkleagues_skin(
+        link,
+        fetched.skin.name,
+        author,
+        submission=replace(submission, creator_source=source),
+        fetch=fetch,
+    )
 
 
 def _stored_spellings(link: str) -> list[str]:

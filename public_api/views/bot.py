@@ -1,7 +1,7 @@
 """Read endpoints for BonxBot, the Bonkverse Discord bot (/api/bot/).
 
-Owns: GET skins/search/, skins/random/, skins/<id>/, players/<username>/ and
-POST maps/decode/ — what each returns to the bot. Same shared secret as skin
+Owns: GET skins/search/, skins/random/, skins/<id>/, players/<username>/,
+POST maps/decode/ and POST collection/ — what each returns to the bot. Same shared secret as skin
 submissions (core/bot_auth.py), the public API's envelope (responses.py), and
 one "bot" rate-limit tier for the bot's IP.
 Does not own: search rules (skins/querysets.py), player data (selectors.py)
@@ -11,7 +11,9 @@ or decoding (integrations/map_decoder.py).
 
 Errors: unauthorized 401, missing_query 400, invalid_username 400,
 skin_not_found 404, player_not_found 404, search_timeout 503,
-missing_code 400, map_rejected 422 (+ "detail"), upstream_unavailable 503.
+missing_code 400, map_rejected 422 (+ "detail"), upstream_unavailable 503;
+collection/: missing_skin 400, invalid_username 400, skin_not_found 404, plus
+the import codes (invalid_link 422, fetch_failed 502, render_failed 502, …).
 """
 
 import functools
@@ -19,13 +21,18 @@ import json
 
 from django.conf import settings
 from django.db import OperationalError
+from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
+from accounts.services import log_event, site_account_for
+from core.bonk import BonkUsername, InvalidUsername
 from core.bot_auth import bot_authorized
 from core.ratelimits import limit
 from integrations.map_decoder import DecodeError, decode_map_configured
 from skins.models import Skin
 from skins.selectors import best_matches, random_skin
+from skins.services import collect as collect_skin
+from skins.services import discord_id_or_none
 
 from .. import selectors
 from ..responses import fail, ok
@@ -167,3 +174,56 @@ def decode_map(request):
     if result.error:
         return fail("upstream_unavailable", 503)
     return ok({"map": map_summary(result.data)})
+
+
+# How an import failure is reported to the bot (permanent ones are 422).
+IMPORT_STATUS = {
+    "invalid_link": 422,
+    "link_too_long": 422,
+    "unsafe_svg": 422,
+    "svg_too_large": 422,
+    "invalid_skin_code": 422,
+    "render_failed": 502,
+    "fetch_failed": 502,
+    "storage_failed": 503,
+}
+
+
+@bot_endpoint("POST")
+def collect(request):
+    """POST collection/ {"bonk_username", "link" | "skin_id", "discord_user_id"}
+    — add a skin to that player's collection (their favorites), uploading it
+    from BonkLeagues first if needed. The player is BonxBot-verified; a site
+    account is made for them if they've never signed in, as sign-in would."""
+    try:
+        body = json.loads(request.body or b"{}")
+        player = BonkUsername(body.get("bonk_username") or "")
+    except (ValueError, UnicodeDecodeError, AttributeError, InvalidUsername):
+        return fail("invalid_username", 400)
+
+    user = site_account_for(player)
+    result = collect_skin(
+        user,
+        link=body.get("link"),
+        skin_id=body.get("skin_id"),
+        discord_user_id=discord_id_or_none(body.get("discord_user_id")),
+    )
+    if result.error:
+        status = 404 if result.error == "skin_not_found" else IMPORT_STATUS.get(result.error, 400)
+        return fail(result.error, status)
+
+    skin = result.skin
+    if not result.already:
+        log_event(user, "skin_favorited", skin=skin, source="discord")
+    if result.uploaded:
+        log_event(None, "skin_uploaded", skin=skin, source="discord_collection")
+    found = Skin.objects.with_favorite_count().get(id=skin.id)
+    return ok(
+        {
+            "skin": skin_data(request, found),
+            "uploaded": result.uploaded,
+            "already_collected": result.already,
+            "collection_size": user.favorite_skins.count(),
+            "collection_url": request.build_absolute_uri(reverse("skins:my_profile")),
+        }
+    )

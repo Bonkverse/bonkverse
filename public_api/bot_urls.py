@@ -13,4 +13,5 @@ urlpatterns = [
     path("skins/<int:skin_id>/", views.skin, name="skin"),
     path("players/<username:username>/", views.player, name="player"),
     path("maps/decode/", views.decode_map, name="decode_map"),
+    path("collection/", views.collect, name="collect"),
 ]
