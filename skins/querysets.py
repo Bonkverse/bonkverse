@@ -1,7 +1,7 @@
 """Reusable Skin queries: Skin.objects.<method>() (RFC-0001: one home per filter).
 
-Owns: the favorite-count and score annotations, period filters, and the
-search modes (relevance, name, creator, tags, description) with their
+Owns: the favorite-count and score annotations, period filters, hiding
+reported skins from featured places, and the search modes (relevance, name, creator, tags, description) with their
 relevance thresholds.
 Does not own: sorting and paging a page's results (the views), the visitor's
 own votes and favorites on cards (skins/selectors.py), or the search indexes
@@ -38,6 +38,15 @@ class SkinQuerySet(models.QuerySet):
         """
         return self.filter(creator__iexact=username)
 
+    def without_open_reports(self):
+        """Skins nobody has an unresolved report on.
+
+        For places Bonkverse puts a skin forward on its own (category covers,
+        home carousels, leaderboards), so a reported skin isn't shown off
+        while staff look at it. Search and the skin's own page still find it.
+        """
+        return self.exclude(id__in=_open_reports().values("skin_id"))
+
     def with_score(self):
         """Annotate `score`: upvotes minus downvotes."""
         return self.annotate(score=F("upvotes") - F("downvotes"))
@@ -72,6 +81,12 @@ class SkinQuerySet(models.QuerySet):
     def search(self, query: str, mode: str):
         """Skins matching `query` in one search mode; unknown modes use relevance."""
         return SEARCH_MODES.get(mode, SEARCH_MODES["relevance"])(self, query)
+
+
+def _open_reports():
+    from .models import SkinReport  # models imports this module
+
+    return SkinReport.objects.filter(resolved=False)
 
 
 # Search mode -> how it filters. Adding a mode is one line here (plus its

@@ -62,12 +62,13 @@ def decorate_skins_for_user(skins, user=None):
 
 def home_strips(size=24):
     """The home page's four skin strips: newest, random, most favorited and
-    trending (upvotes minus downvotes)."""
+    trending (upvotes minus downvotes). Skins with an open report are left out."""
+    skins = Skin.objects.without_open_reports()
     return {
-        "recent": Skin.objects.order_by("-created_at")[:size],
-        "top_favs": Skin.objects.with_favorite_count().order_by("-fav_count", "-upvotes")[:size],
-        "trending": Skin.objects.with_score().order_by("-score", "-created_at")[:size],
-        "random_strip": Skin.objects.order_by("?")[:size],
+        "recent": skins.order_by("-created_at")[:size],
+        "top_favs": skins.with_favorite_count().order_by("-fav_count", "-upvotes")[:size],
+        "trending": skins.with_score().order_by("-score", "-created_at")[:size],
+        "random_strip": skins.order_by("?")[:size],
     }
 
 
@@ -109,14 +110,13 @@ SKIN_RANKINGS = {
     "favorites": lambda skins: (
         skins.with_favorite_count().annotate(value=F("fav_count")).order_by("-fav_count")
     ),
-    "downvotes": lambda skins: skins.annotate(value=F("downvotes")).order_by("-downvotes"),
 }
 
 
 def top_skins(metric: str, limit: int):
     """The `limit` skins ranked highest by `metric` (a SKIN_RANKINGS key), each
-    with its count as `value`."""
-    return SKIN_RANKINGS[metric](Skin.objects.all())[:limit]
+    with its count as `value`. Skins with an open report are left out."""
+    return SKIN_RANKINGS[metric](Skin.objects.without_open_reports())[:limit]
 
 
 # Sort orders for a player's skins (profile Skins tab): key -> order_by fields.

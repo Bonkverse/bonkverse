@@ -12,7 +12,8 @@ from django.contrib import admin
 from django.shortcuts import redirect, render
 from django.urls import reverse
 
-from .models import Skin
+from .categories import CATEGORIES
+from .models import CategoryCover, Skin, SkinReport
 
 
 def _login_through_bonk(request, extra_context=None):
@@ -62,3 +63,40 @@ def bulk_update_creator(modeladmin, request, queryset):
 @admin.register(Skin)
 class SkinAdmin(admin.ModelAdmin):
     actions = [bulk_update_creator]
+
+
+class CategoryCoverForm(forms.ModelForm):
+    category = forms.ChoiceField(
+        choices=[(slug, meta["label"]) for slug, meta in CATEGORIES.items()]
+    )
+
+    class Meta:
+        model = CategoryCover
+        fields = ["category", "skin"]
+
+
+@admin.register(CategoryCover)
+class CategoryCoverAdmin(admin.ModelAdmin):
+    """Pick each category's cover on /categories/ (one skin per category)."""
+
+    form = CategoryCoverForm
+    list_display = ["category", "skin", "updated_at"]
+    raw_id_fields = ["skin"]
+
+
+@admin.action(description="Mark as resolved (the skin shows in featured places again)")
+def resolve_reports(modeladmin, request, queryset):
+    count = queryset.update(resolved=True)
+    modeladmin.message_user(request, f"Resolved {count} reports.")
+
+
+@admin.register(SkinReport)
+class SkinReportAdmin(admin.ModelAdmin):
+    """Open reports hide a skin from category covers, the home carousels and
+    leaderboards (Skin.objects.without_open_reports). Resolving them brings
+    it back; deleting the skin removes it everywhere."""
+
+    actions = [resolve_reports]
+    list_display = ["skin", "reason", "reporter", "created_at", "resolved"]
+    list_filter = ["resolved", "reason"]
+    raw_id_fields = ["skin", "reporter"]

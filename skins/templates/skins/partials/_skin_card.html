@@ -71,7 +71,7 @@ with static/ui/ui.js; the page's own script handles Edit and Delete.
                   data-action="{% url 'skins:edit_skin' skin.id %}">
             <i data-lucide="pencil" aria-hidden="true"></i> Edit
           </button>
-          <a class="bv-menu__item" href="{% url 'skins:share_skin' skin.id skin.uuid %}">
+          <a class="bv-menu__item" href="{{ skin.get_absolute_url }}">
             <i data-lucide="share-2" aria-hidden="true"></i> Share link
           </a>
           <div class="bv-menu__divider"></div>

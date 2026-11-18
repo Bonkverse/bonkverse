@@ -144,10 +144,6 @@
     "name": "developers:developer_terms"
   },
   {
-    "route": "leaderboards/downvoted/",
-    "name": "stats:leaderboards_downvoted"
-  },
-  {
     "route": "leaderboards/favorited/",
     "name": "stats:leaderboards_favorited"
   },

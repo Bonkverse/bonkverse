@@ -16,7 +16,7 @@
 from django.core.cache import cache
 from django.db.models import Q
 
-from skins.models import Skin
+from skins.models import CategoryCover, Skin
 
 # slug -> display metadata + keyword set
 CATEGORIES = {
@@ -174,23 +174,40 @@ def sorted_skins(qs, sort):
     return qs.with_favorite_count().order_by("-fav_count", "-upvotes"), "favorites"
 
 
+def category_covers() -> dict[str, str]:
+    """{category slug: cover image URL} for the hand-picked covers (CategoryCover)
+    whose skin has no open report. One query, not cached, so a new pick or a
+    report shows at once."""
+    picks = CategoryCover.objects.filter(skin__in=Skin.objects.without_open_reports()).values_list(
+        "category", "skin__image_url"
+    )
+    return {slug: image for slug, image in picks if image}
+
+
 def category_tiles() -> list[dict]:
-    """A tile per category (cover image and count), biggest first. Cached an hour."""
-    items = cache.get("category_index_v1")
-    if items is None:
-        items = []
-        for slug, meta in CATEGORIES.items():
-            qs = browsable_skins().filter(keyword_q(meta["keywords"]))
-            cover = qs.order_by("-upvotes").values_list("image_url", flat=True).first()
-            items.append(
-                {
-                    "slug": slug,
-                    "label": meta["label"],
-                    "blurb": meta["blurb"],
-                    "count": qs.count(),
-                    "cover": cover,
-                }
-            )
-        items.sort(key=lambda x: -x["count"])
-        cache.set("category_index_v1", items, 60 * 60)  # 1 hour
+    """A tile per category (hand-picked cover and count), biggest first.
+
+    The counts are cached an hour; covers are looked up on every request.
+    A category without a cover gets an empty tile: covers are never picked
+    automatically (the most upvoted match can be anything).
+    """
+    counts = cache.get("category_counts_v2")
+    if counts is None:
+        counts = {
+            slug: browsable_skins().filter(keyword_q(meta["keywords"])).count()
+            for slug, meta in CATEGORIES.items()
+        }
+        cache.set("category_counts_v2", counts, 60 * 60)  # 1 hour
+    covers = category_covers()
+    items = [
+        {
+            "slug": slug,
+            "label": meta["label"],
+            "blurb": meta["blurb"],
+            "count": counts.get(slug, 0),
+            "cover": covers.get(slug),
+        }
+        for slug, meta in CATEGORIES.items()
+    ]
+    items.sort(key=lambda x: -x["count"])
     return items

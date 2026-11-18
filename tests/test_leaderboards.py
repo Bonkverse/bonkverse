@@ -1,5 +1,5 @@
 """Leaderboards (stats/leaderboards.py, stats/views.py): one view, one template,
-a config entry per board. Same URLs and URL names as the three old views."""
+a config entry per board. Same URLs and URL names as the old views."""
 
 import ast
 from pathlib import Path
@@ -37,7 +37,6 @@ def skins():
     "board, expected",
     [
         ("upvoted", [("A", 9), ("B", 5), ("C", 1)]),
-        ("downvoted", [("B", 7), ("C", 3), ("A", 1)]),
         ("favorited", [("C", 3), ("A", 1), ("B", 0)]),
     ],
 )
@@ -52,7 +51,6 @@ def test_each_board_ranks_by_its_count(client, skins, board, expected):
 def test_urls_and_names_are_unchanged():
     assert reverse("stats:leaderboards_upvoted") == "/leaderboards/upvoted/"
     assert reverse("stats:leaderboards_favorited") == "/leaderboards/favorited/"
-    assert reverse("stats:leaderboards_downvoted") == "/leaderboards/downvoted/"
 
 
 def test_tabs_list_upvoted_and_favorited_and_mark_the_current_one(client):
@@ -65,10 +63,11 @@ def test_tabs_list_upvoted_and_favorited_and_mark_the_current_one(client):
     assert 'href="/leaderboards/favorited/" aria-current="page"' in response.text
 
 
-def test_downvoted_board_has_no_tabs(client):
-    response = client.get(reverse("stats:leaderboards_downvoted"))
-
-    assert "site-leaderboard-tabs" not in response.text
+def test_there_is_no_most_downvoted_board(client):
+    """Design review 2026-11-09: a board ranking creators by dislike invites
+    brigading. Votes stay a sort, not a hall of shame."""
+    assert "downvoted" not in leaderboards.LEADERBOARDS
+    assert client.get("/leaderboards/downvoted/").status_code == 404
 
 
 def test_shows_the_top_50(client):

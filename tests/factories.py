@@ -7,7 +7,7 @@ building model instances by hand inside tests.
 import factory
 
 from accounts.models import BonkUser
-from skins.models import Skin
+from skins.models import CategoryCover, Skin, SkinReport
 from players.models import BonkPlayer
 
 
@@ -43,3 +43,19 @@ class SkinFactory(factory.django.DjangoModelFactory):
     creator = "tester0"
     skin_code = SKIN_CODE
     labels = {"style": "Minimalist", "themes": [], "objects": [], "colors": ["red"]}
+
+
+class SkinReportFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = SkinReport
+
+    skin = factory.SubFactory(SkinFactory)
+    reason = "inappropriate"
+
+
+class CategoryCoverFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = CategoryCover
+
+    category = "animals"
+    skin = factory.SubFactory(SkinFactory)
