@@ -1,6 +1,6 @@
 """Read endpoints for BonxBot, the Bonkverse Discord bot (/api/bot/).
 
-Owns: GET skins/search/, skins/random/, skins/<id>/, players/<username>/,
+Owns: GET skins/search/, skins/random/, skins/latest/, skins/<id>/, players/<username>/,
 POST maps/decode/ and POST collection/ — what each returns to the bot. Same shared secret as skin
 submissions (core/bot_auth.py), the public API's envelope (responses.py), and
 one "bot" rate-limit tier for the bot's IP.
@@ -10,7 +10,7 @@ or decoding (integrations/map_decoder.py).
     {"ok": true, "data": {...}}  /  {"ok": false, "error": "skin_not_found"}
 
 Errors: unauthorized 401, missing_query 400, invalid_username 400,
-skin_not_found 404, player_not_found 404, search_timeout 503,
+skin_not_found 404, player_not_found 404, search_timeout 503, invalid_after 400,
 missing_code 400, map_rejected 422 (+ "detail"), upstream_unavailable 503;
 collection/: missing_skin 400, invalid_username 400, skin_not_found 404, plus
 the import codes (invalid_link 422, fetch_failed 502, render_failed 502, …).
@@ -95,6 +95,32 @@ def search_skins(request):
     return ok(
         {"query": query, "skins": [skin_data(request, s) for s in skins]},
         cache_seconds=CACHE_SECONDS,
+    )
+
+
+LATEST_MAX = 25
+
+
+@bot_endpoint("GET")
+def latest(request):
+    """GET skins/latest/?after=<id>&limit=10 — skins added after skin `after`,
+    oldest first, for the bot's #skin-feed. Without `after`: just the newest
+    skin's id, so a new feed starts from now instead of posting the backlog."""
+    newest = Skin.objects.order_by("-id").values_list("id", flat=True).first() or 0
+    after = request.GET.get("after")
+    if after is None:
+        return ok({"newest_id": newest, "skins": []})
+    try:
+        after = int(after)
+        size = min(LATEST_MAX, max(1, int(request.GET.get("limit", 10))))
+    except ValueError:
+        return fail("invalid_after", 400)
+    skins = Skin.objects.with_favorite_count().filter(id__gt=after).order_by("id")[:size]
+    return ok(
+        {
+            "newest_id": newest,
+            "skins": [skin_data(request, s) | {"source": s.submission_source} for s in skins],
+        }
     )
 
 

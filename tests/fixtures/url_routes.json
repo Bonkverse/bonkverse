@@ -40,6 +40,10 @@
     "name": "bot_api:skin"
   },
   {
+    "route": "api/bot/skins/latest/",
+    "name": "bot_api:latest_skins"
+  },
+  {
     "route": "api/bot/skins/random/",
     "name": "bot_api:random_skin"
   },
