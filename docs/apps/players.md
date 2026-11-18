@@ -75,7 +75,7 @@ The first five moved from `skins/` in step 5.4b without moving data (migrations 
 
 | Source | When |
 |---|---|
-| `login` | A bonk.io login (the site's or the wear popup's): the skin in the reply's active slot |
+| `login` | A bonk.io login (the site's or the wear popup's): the skin in the reply's active slot. An empty slot is bonk.io's default skin (`DEFAULT_SKIN_CODE`), so a new account's avatar is the plain ball, and it replaces an older replay sighting |
 | `wear` | A wear from Bonkverse that bonk.io accepted, into the session's active slot. Wears into another slot don't change what the player wears in game |
 | `replay` | The replay sync (`replay_sync.py`): each name's newest skin in a batch of replays, dated by when the replay was collected (or its estimated day for cycle 5 and the backlog). Stored by name with `record_replay_skins`, one `UPDATE` per batch, on every BonkPlayer with that name (DBID-less copies too), and without touching `updated_at` (the DBID push's cursor) |
 
