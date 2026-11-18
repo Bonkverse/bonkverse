@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import login_required
 from core.ratelimits import limit
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 from django.urls import reverse
 from skins.models import Skin
 from django.db.models import Sum
@@ -96,9 +97,11 @@ def my_skins_partial(request):
     )
 
 
+@require_POST
 @login_required
 @limit("write")
 def delete_skin(request, skin_id):
+    """Delete one skin the user created. POST only: a visit to the URL must never delete."""
     skin = get_object_or_404(Skin, id=skin_id)
     is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
