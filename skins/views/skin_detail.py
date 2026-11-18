@@ -2,33 +2,33 @@ from django.shortcuts import render, get_object_or_404
 from core.ratelimits import limit
 from skins.models import Skin, SkinVote
 from django.conf import settings
-from django.urls import reverse
 
 
 @limit("browse")
 def skin_detail(request, skin_id):
     skin = get_object_or_404(Skin, id=skin_id)
 
-    page_url = request.build_absolute_uri()
+    # The page's own address without any query string: what Copy link copies
+    # and what link previews point at.
+    page_url = request.build_absolute_uri(skin.get_absolute_url())
     editor_url = f"{settings.BONKVERSE_EDITOR_URL}?skin={skin.skin_code}"
     png_path = f"{settings.MEDIA_URL}skins/{skin.id}.png"
     image_url = request.build_absolute_uri(png_path)
 
     # Descriptions and tags stay behind the scenes (search and moderation),
     # so link previews say the same thing the page does.
-    desc = f"{skin.name} by {skin.creator} on Bonkverse."[:200]
+    name_and_creator = f"{skin.name} by {skin.creator}" if skin.creator else skin.name
+    desc = f"{name_and_creator} on Bonkverse."[:200]
 
     og = {
-        "title": f"{skin.name} by {skin.creator} — Bonkverse",
+        "title": f"{name_and_creator} · Bonkverse",
         "description": desc,
         "url": page_url,
         "image": image_url,
         "site_name": "Bonkverse",
     }
 
-    share_url = request.build_absolute_uri(
-        reverse("skins:share_skin", kwargs={"skin_id": skin_id, "uuid": skin.uuid})
-    )
+    share_url = page_url
 
     # ── Pre-compute favorite state + count in the view ────────────
     #

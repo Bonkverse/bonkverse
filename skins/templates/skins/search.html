@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Bonk.io Skin Search{% endblock %}
+{% block title %}{% if query %}“{{ query }}” · {% endif %}Skins · Bonkverse{% endblock %}
 
 {% block content_class %}site-page{% endblock %}
 

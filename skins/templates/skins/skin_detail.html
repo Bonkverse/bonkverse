@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block title %}{{ skin.name }}{% if skin.creator %} by {{ skin.creator }}{% endif %} · Bonkverse{% endblock %}
+
 {# Discord colors the link embed with this; the browser toolbar follows the theme (ui/theme.js). #}
 {% block theme_color %}<meta name="theme-color" content="#009688">{% endblock %}
 

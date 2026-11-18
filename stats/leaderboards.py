@@ -30,29 +30,22 @@ class Leaderboard:
 # Order matters: it is the tab order.
 LEADERBOARDS = {
     "upvoted": Leaderboard(
-        title="Most Upvoted Skins",
+        title="Most upvoted skins",
         column="Upvotes",
         tab="Most upvoted",
         rows=lambda n: top_skins("upvotes", n),
     ),
     "favorited": Leaderboard(
-        title="Most Favorited Skins",
+        title="Most favorited skins",
         column="Favorites",
         tab="Most favorited",
         rows=lambda n: top_skins("favorites", n),
-    ),
-    # Reachable by URL only; not shown in the tabs.
-    "downvoted": Leaderboard(
-        title="Most Downvoted Skins",
-        column="Downvotes",
-        tab=None,
-        rows=lambda n: top_skins("downvotes", n),
     ),
 }
 
 
 def url_name(board: str) -> str:
-    """The URL name of a board's page (kept from the three old views)."""
+    """The URL name of a board's page (kept from the old views)."""
     return f"leaderboards_{board}"
 
 

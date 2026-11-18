@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Bonkverse — Privacy Policy{% endblock %}
+{% block title %}Privacy policy · Bonkverse{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'site_pages/css/privacy.css' %}">
@@ -13,7 +13,7 @@
 
   <div class="privacy-hero">
     <h1>Privacy Policy</h1>
-    <p>Last updated: June 5, 2026</p>
+    <p>Last updated: November 18, 2026</p>
   </div>
 
   <div class="privacy-toc">
@@ -48,7 +48,8 @@
     <p>
       Bonkverse is a community platform for the browser game <strong>bonk.io</strong>.
       It provides a skin library where players can discover, upload, vote on, and apply skins; player profile
-      and stats tracking; win/loss leaderboards; a Discord server directory; social stats; and a replay archive.
+      and stats tracking; skin leaderboards; a Discord server directory; social stats; a replay archive; and a
+      public API that developers can use to show players' levels on their own sites and bots.
       The Bonkverse browser extension enhances the bonk.io game client with in-game overlays, kill tracking,
       and stat submission.
     </p>
@@ -81,7 +82,7 @@
           <span class="data-tag">Website</span>
           <span class="data-card-title">Skin Uploads</span>
         </div>
-        <p>When you upload a skin, we store the skin image data and associate it with your username to give proper credit. Uploaded skins are publicly visible on Bonkverse by default.</p>
+        <p>When you upload a skin, we store the skin image data and associate it with your username to give proper credit. Uploaded skins are publicly visible on Bonkverse by default. For skins submitted through BonxBot on Discord, we also store the Discord user ID of the person who submitted it.</p>
       </div>
 
       <div class="data-card">
@@ -97,7 +98,7 @@
           <span class="data-tag ext">Extension</span>
           <span class="data-card-title">In-Game Activity</span>
         </div>
-        <p>The Bonkverse browser extension tracks in-game events including kills, deaths, wins, losses, and match outcomes while you play bonk.io. This data is sent to Bonkverse to populate your player profile and contribute to leaderboards. The extension only operates on bonk.io and does not monitor any other sites.</p>
+        <p>The Bonkverse browser extension tracks in-game events including kills, deaths, wins, losses, and match outcomes while you play bonk.io. This data is sent to Bonkverse to populate your player profile. The extension only operates on bonk.io and does not monitor any other sites.</p>
       </div>
 
       <div class="data-card">
@@ -106,6 +107,14 @@
           <span class="data-card-title">Authentication Token</span>
         </div>
         <p>The extension stores your Bonkverse authentication token locally in your browser to keep you logged in between sessions. This token is never shared with third parties.</p>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-header">
+          <span class="data-tag">Developers</span>
+          <span class="data-card-title">API Keys</span>
+        </div>
+        <p>When you create an API key on the developer portal, we store the name you give it, the contact you provide (such as a Discord username), when you accepted the API terms, and when the key was last used. We store only a hash of the key itself, so we cannot show it to you again.</p>
       </div>
 
     </div>
@@ -117,7 +126,7 @@
     </div>
     <ul>
       <li>To display your player profile, stats, and skin library on Bonkverse</li>
-      <li>To populate win/loss and skin leaderboards</li>
+      <li>To rank skins on the skin leaderboards</li>
       <li>To apply skins to your bonk.io skin slots when requested</li>
       <li>To build a community player and replay database for the bonk.io community</li>
       <li>To power in-game overlays and stats shown by the Bonkverse extension</li>
@@ -132,6 +141,7 @@
     <p>We do not sell your personal data. We do not share your data with third parties except:</p>
     <ul>
       <li><strong>Service providers</strong> — hosting infrastructure (Railway) and CDN/security services (Cloudflare) necessary to operate Bonkverse. These providers process data only as needed to deliver our service.</li>
+      <li><strong>The public API</strong> — developers with an API key can read players' levels, level history and game counts collected from public bonk.io replays, the estimated account age, and an image of the skin a player wears in game. The API never returns skin codes or the XP from your own bonk.io login. If you hide the Level section in your profile settings, the API does not return your level either. Developers agree to the <a href="{% url 'developers:developer_terms' %}">API terms</a>, which forbid reselling the data.</li>
       <li><strong>Legal requirements</strong> — if required by law or to protect the safety of our community.</li>
     </ul>
   </div>

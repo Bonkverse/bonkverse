@@ -24,12 +24,12 @@ class TestLinksStayOnThisSite:
         assert f'href="/skins/detail/{skin.id}"' in html
         assert "https://bonkverse.io/skins/" not in html
 
-    def test_skin_page_copies_the_share_link(self, client):
+    def test_skin_page_copies_its_own_address(self, client):
         skin = SkinFactory(name="Dragon")
 
-        html = client.get(f"/skins/detail/{skin.id}").content.decode()
+        html = client.get(f"/skins/detail/{skin.id}?from=search").content.decode()
 
-        assert f'data-bv-copy-text="http://testserver/skins/share/{skin.id}/{skin.uuid}/"' in html
+        assert f'data-bv-copy-text="http://testserver/skins/detail/{skin.id}"' in html
 
     def test_profile_and_favorites_link_relatively(self, logged_in_client, user):
         SkinFactory(creator=user.username)

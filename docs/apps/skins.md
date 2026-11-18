@@ -13,7 +13,7 @@ All in `skins/urls.py`; views in `skins/views/`, one module per area.
 | Path | Name | View |
 |---|---|---|
 | `/search/` | `search_skins` | `views/search.py` (index-backed, time-limited: [search.md](../search.md)) |
-| `/skins/detail/<id>`, `/skins/share/<id>/<uuid>/` | `skin_detail`, `share_skin` | `views/skin_detail.py`, `views/share.py` |
+| `/skins/detail/<id>`, `/skins/share/<id>/<uuid>/` | `skin_detail`, `share_skin` | `views/skin_detail.py`, `views/share.py` (old share links: a permanent redirect to the skin page) |
 | `/new/`, `/categories/`, `/category/<slug>/` | `new_releases`, `category_index`, `category_detail` | `views/browse.py` (categories and their queries: `categories.py`) |
 | `/my-profile/` (+ `skins-partial/`), `/skin/<id>/edit/`, `/skin/<id>/delete/`, `/skins/bulk-delete/` | `my_profile`, … | `views/my_skins.py` |
 | `/upload/` | `upload_skin` | `views/upload.py` (BonkLeagues link → `skin_import.py`) |
@@ -38,6 +38,7 @@ All in `skins/urls.py`; views in `skins/views/`, one module per area.
 - `skin_import.py`: importing a BonkLeagues skin (upload form, BonxBot); `bonxbot_migration.py`: the one-time BonxBot import behind `import_bonxbot_skins`.
 - `submitters.py`: who sent a skin in (`Submission`: upload form, editor, BonxBot), kept apart from who made it (`creator`; `creator_source` says where that name came from), and `backfill_submitters` behind `backfill_skin_submitters` for skins added before submitters were stored.
 - `svg_sanitizer.py`, `querysets.py` (`Skin.objects`: search, scores, periods), `categories.py`, `skin_code.py`.
+- Featured places: category covers, the home strips and the leaderboards use `Skin.objects.without_open_reports()`, so a skin with an unresolved `SkinReport` drops out of them until staff resolve the report (admin: Skin reports → "Mark as resolved"). Search and the skin's own page still show it. Category covers are hand-picked in the admin (`CategoryCover`, one skin per category); a category without a pick shows an empty tile. Covers are never picked automatically, because the most upvoted match can be anything (design review 2026-11-09).
 
 ## Management commands
 

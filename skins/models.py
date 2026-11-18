@@ -195,3 +195,21 @@ class SkinReport(models.Model):
 
     def __str__(self):
         return f"Report on {self.skin.name} ({self.reason})"
+
+
+class CategoryCover(models.Model):
+    """The skin a staff member picked as a category's cover on /categories/.
+
+    Covers are picked by hand because the most upvoted skin in a category
+    can be anything (design review 2026-11-09). A category without a pick,
+    or whose pick has an open report, shows an empty tile.
+    `category` is a key of skins.categories.CATEGORIES; the admin form
+    offers only those.
+    """
+
+    category = models.CharField(max_length=40, unique=True)
+    skin = models.ForeignKey(Skin, on_delete=models.CASCADE, related_name="+")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.category}: {self.skin.name}"

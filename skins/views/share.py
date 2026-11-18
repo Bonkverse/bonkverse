@@ -1,41 +1,16 @@
-# skins/views.py
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
+
 from core.ratelimits import limit
 from skins.models import Skin
-
-# skins/views/skin_detail.py
-from django.conf import settings
 
 
 @limit("browse")
 def share_skin(request, skin_id, uuid):
+    """Old share links (/skins/share/<id>/<uuid>/) go to the skin's page.
+
+    The share page was a second, older skin page that still showed the
+    generated description; links to it are all over Discord, so the address
+    stays and points at the one skin page (design review 2026-11-09).
+    """
     skin = get_object_or_404(Skin, id=skin_id, uuid=uuid)
-
-    page_url = request.build_absolute_uri()  # absolute URL to this skin page
-
-    # Social previews need an absolute URL to this site's rendered PNG.
-    png_path = f"{settings.MEDIA_URL}skins/{skin.id}.png"
-    image_url = request.build_absolute_uri(png_path)
-
-    # Nice description (fallbacks if none)
-    desc = skin.description or f"{skin.name} by {skin.creator} on Bonkverse."
-    desc = desc.strip()[:200]  # keep it short for cards
-
-    og = {
-        "title": f"{skin.name} by {skin.creator} — Bonkverse",
-        "description": desc,
-        "url": page_url,
-        "image": image_url,
-        "site_name": "Bonkverse",
-    }
-
-    # "Add to Collection" adds the skin to the visitor's favorites.
-    is_favorited = (
-        request.user.is_authenticated and skin.favorited_by.filter(pk=request.user.pk).exists()
-    )
-
-    return render(
-        request,
-        "skins/share_skin.html",
-        {"skin": skin, "og": og, "is_favorited": is_favorited},
-    )
+    return redirect(skin, permanent=True)

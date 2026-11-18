@@ -14,9 +14,8 @@ One page per `LEADERBOARDS` entry, made by `stats/urls.py`:
 |---|---|---|
 | `/leaderboards/upvoted/` | `leaderboards_upvoted` | Most upvoted |
 | `/leaderboards/favorited/` | `leaderboards_favorited` | Most favorited |
-| `/leaderboards/downvoted/` | `leaderboards_downvoted` | (none: reachable by URL only) |
 
-An unknown board is a 404. Rate limit `browse`. Each board page is one query for an anonymous visitor.
+An unknown board is a 404. There is deliberately no Most Downvoted board (removed after the 2026-11-09 design review: ranking creators by dislike invites brigading; votes stay a sort). Rate limit `browse`. Each board page is one query for an anonymous visitor.
 
 ## Adding a board
 
