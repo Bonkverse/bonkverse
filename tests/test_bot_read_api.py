@@ -8,6 +8,7 @@ from django.db import OperationalError
 from integrations.map_decoder import DecodeError, DecodeResult
 from public_api import selectors as api_selectors
 from public_api.views import bot
+from skins.models import Skin
 from tests.factories import SkinFactory
 
 pytestmark = pytest.mark.django_db
@@ -205,3 +206,95 @@ def test_map_needs_a_code(client):
 def test_odd_decoder_output_doesnt_crash():
     assert bot.map_summary(["not", "a", "map"])["shapes"] == 0
     assert bot.map_summary({"m": "weird"})["name"] is None
+
+
+# --- collection ---------------------------------------------------------------------
+
+FETCHER = "https://fetcher.test/api/getSkin"
+LINK = "https://bonkleagues.io/s/AbC1234"
+SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10">'
+    '<rect width="10" height="10" fill="red"/></svg>'
+)
+
+
+def collect(client, **body):
+    return client.post(
+        "/api/bot/collection/", json.dumps(body), content_type="application/json", **AUTH
+    )
+
+
+@pytest.fixture
+def fetcher(settings, mocked_http, tmp_path):
+    import base64
+
+    import responses
+
+    settings.MEDIA_ROOT = tmp_path
+    settings.BLSKIN_FETCHER_URL = FETCHER
+    body = {
+        "skinCode": "CODE123",
+        "name": "Fire Dragon",
+        "author": "Some Artist",
+        "media": {"svg": SVG, "pngBase64": base64.b64encode(b"\x89PNG fake").decode()},
+    }
+    mocked_http.add(responses.GET, FETCHER, json=body)
+    return mocked_http
+
+
+def test_collecting_a_new_link_uploads_it_credited_to_the_bonkleagues_author(client, fetcher):
+    from accounts.models import BonkUser
+
+    reply = collect(client, bonk_username="The Saucy Tulip", link=LINK, discord_user_id="42")
+    data = reply.json()["data"]
+
+    assert reply.status_code == 200
+    assert (data["uploaded"], data["already_collected"], data["collection_size"]) == (
+        True,
+        False,
+        1,
+    )
+    skin = Skin.objects.get(id=data["skin"]["id"])
+    assert (skin.name, skin.creator) == ("Fire Dragon", "Some Artist")
+    assert (skin.creator_source, skin.submission_source) == ("bonkleagues", "discord")
+    assert skin.submitted_by_discord_id == 42
+    user = BonkUser.objects.get(username="The Saucy Tulip")  # made, as first sign-in would
+    assert skin.favorited_by.filter(pk=user.pk).exists()
+
+
+def test_collecting_an_existing_skin_never_contacts_bonkleagues(client, mocked_http):
+    from accounts.models import BonkUser
+
+    owner = BonkUser.objects.create_user(username="The Saucy Tulip")
+    skin = SkinFactory(link=LINK, name="Hot Dog")
+
+    first = collect(client, bonk_username="the saucy tulip", link=LINK + "/?ref=discord").json()[
+        "data"
+    ]
+    again = collect(client, bonk_username="THE SAUCY TULIP", skin_id=skin.id).json()["data"]
+
+    assert (first["uploaded"], first["already_collected"]) == (False, False)
+    assert again["already_collected"] is True
+    assert list(skin.favorited_by.all()) == [owner]  # same account, matched ignoring case
+    assert len(mocked_http.calls) == 0
+
+
+def test_collection_problems(client, fetcher):
+    bad_link = collect(client, bonk_username="Tulip", link="https://example.com/x")
+    assert (bad_link.status_code, bad_link.json()["error"]) == (422, "invalid_link")
+    assert collect(client, bonk_username="Tulip").json()["error"] == "missing_skin"
+    assert (
+        collect(client, bonk_username="Tulip", skin_id=999999).json()["error"] == "skin_not_found"
+    )
+    assert collect(client, bonk_username="", link=LINK).json()["error"] == "invalid_username"
+    assert collect(client, link=LINK).json()["error"] == "invalid_username"
+
+
+def test_collecting_when_bonkleagues_is_down(client, settings, mocked_http, tmp_path):
+    import responses
+
+    settings.MEDIA_ROOT = tmp_path
+    settings.BLSKIN_FETCHER_URL = FETCHER
+    mocked_http.add(responses.GET, FETCHER, status=503)
+    reply = collect(client, bonk_username="Tulip", link=LINK)
+    assert (reply.status_code, reply.json()["error"]) == (502, "fetch_failed")

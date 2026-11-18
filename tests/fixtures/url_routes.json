@@ -20,6 +20,10 @@
     "name": "skins:bonk_login_for_wear"
   },
   {
+    "route": "api/bot/collection/",
+    "name": "bot_api:collect"
+  },
+  {
     "route": "api/bot/maps/decode/",
     "name": "bot_api:decode_map"
   },
