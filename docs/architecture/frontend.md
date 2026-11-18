@@ -54,10 +54,18 @@ release: the colors for the three themes, Jost, the `bv-` components and
   the developers page and the staff report queue.
 - **Three classes were renamed** to make room for the package:
   `site-toast`, `site-pagination` and `site-num` (they were `bv-`).
-- **Check every screen size.** `node scripts/check_responsive.mjs` (needs
-  Playwright) opens the main pages at 15 sizes from 280 px to 3,440 px in all
-  three themes and fails on sideways scrolling, anything off screen, cut-off
-  text or a control under 44 px.
+- **Check every screen size and contrast.** `node scripts/check_responsive.mjs`
+  (needs Playwright) opens the main pages at 15 sizes from 280 px to 3,440 px in
+  all three themes and fails on sideways scrolling, anything off screen, cut-off
+  text or a control under 44 px. `node scripts/check_contrast.mjs` fails on text,
+  control edges, chart bars, hover, selected and disabled states that are hard
+  to see (WCAG AA). **CI runs both on every pull request** (job `browser`, one
+  per theme, ~6 minutes) against `python manage.py seed_ui_checks`, which seeds
+  skins with drawn images, a reported skin, players, Discord servers and a staff
+  account whose session the scripts use for signed-in pages. A new page goes in
+  both scripts' `PAGES` lists; if it needs data, seed it there too. When the job
+  fails, its screenshots (375 and 1,440 px) and the server log are attached to
+  the run.
 
 ## The shared pieces
 

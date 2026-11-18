@@ -14,6 +14,7 @@
 //   node scripts/check_responsive.mjs [--base http://localhost:8000]
 //        [--session <sessionid cookie>]   # to check signed-in pages too
 //        [--pages search,detail]          # only some pages
+//        [--themes light,dark]            # only some themes (CI runs one per job)
 //        [--shots shots/]                 # save screenshots at 375 and 1440 px
 //   BV_LUCIDE_FILE=path/to/lucide.min.js   serve the icon library locally (offline)
 //
@@ -57,7 +58,7 @@ const SIZES = [
   [280, 653], [320, 568], [375, 667], [430, 932], [667, 375], [600, 900], [768, 1024], [899, 900],
   [900, 900], [1024, 768], [1199, 900], [1280, 800], [1440, 900], [1920, 1080], [3440, 1440],
 ];
-const THEMES = ["bonkverse", "light", "dark"];
+const THEMES = arg("themes", "bonkverse,light,dark").split(",");
 
 // Things that scroll sideways on purpose; what's inside them may be wider.
 const SCROLLERS = ".bv-table-wrap, .bv-tabs, .bv-code pre, pre, .carousel, .carousel-track, .site-scroll, .pv-tabs, .pv-tablewrap";
