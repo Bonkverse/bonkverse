@@ -14,7 +14,7 @@ Every page extends the frame, `templates/base.html`, which loads, in order:
 | `<head>` | `ui/theme.js`, then `ui/tokens.css`, `ui/base.css`, `ui/components.css`; `ui/ui.js` (deferred) | the Bonkverse/ui look: three themes, Jost, `bv-` components, menus and dialogs ([below](#the-bonkverseui-package)) |
 | `<head>` | `css/*.css` (base, forms, cards, skin_cards, modal, …) | the site's own styles for pages not yet on `bv-` components |
 | `<head>` | `{% block extra_head %}` | the page's own stylesheet, if it has one |
-| `<head>` | Lucide (pinned version, unpkg), `js/scripts.js`, `js/pagination.js` | icons, carousel behavior, `BVPagination` |
+| `<head>` | Lucide (pinned version, unpkg), `js/scripts.js`, `js/pagination.js` | icons, `.notification` fade-out, `BVPagination` |
 | `<head>` | `js/toast.js` | `BVToast.show(text, {type})` |
 | `<head>` | `core/js/bv-api.js` | `BVApi`: every POST from a page script |
 | `<head>` | `core/js/bv-wear.js` | `BVWear.wear(url)`: wearing a skin and the bonk.io login modal |
@@ -49,9 +49,9 @@ release: the colors for the three themes, Jost, the `bv-` components and
 - **Pages move onto `bv-` components one at a time.** A page built on them
   sets `{% block content_class %}site-page{% endblock %}`. Every other page is
   `site-legacy`, and the old bare `form`, `input` and `button` rules
-  (`css/forms.css`) only apply inside it. Today `site-page` covers skin
-  search, the skin page, new and category pages, log in, upload and the
-  developers page.
+  (`css/forms.css`) only apply inside it. Today `site-page` covers the home
+  page, skin search, the skin page, new and category pages, log in, upload,
+  the developers page and the staff report queue.
 - **Three classes were renamed** to make room for the package:
   `site-toast`, `site-pagination` and `site-num` (they were `bv-`).
 - **Check every screen size.** `node scripts/check_responsive.mjs` (needs
@@ -86,7 +86,7 @@ the modal partial.
   queries (`tests/test_query_budgets.py`). Descriptions and tags are never
   shown; they're for search and moderation.
 - `skins/partials/_skin_card_compact.html`: the linked tile on the home
-  carousels and browse pages.
+  page's skin rows and the Skins card on player profiles.
 
 `core/js/bv-cards.js` handles Enlarge (a `<dialog>`), the broken-image
 fallback, Favorite and Wear (Wear → Applying… → ✓ Applied or Retry, with the

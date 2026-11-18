@@ -1,12 +1,12 @@
 {% comment %}
 The one compact skin card: image, name and creator, linking to the skin page.
-Used by the home carousels and the browse pages (New Releases, categories).
+Used by the home page's skin rows and the Skins card on player profiles.
 Unlike the full card (_skin_card.html) it has no buttons: the whole tile is a link.
 
-  {% include 'skins/partials/_skin_card_compact.html' with skin=s card_class='carousel-card' %}
+  {% include 'skins/partials/_skin_card_compact.html' with skin=s card_class='home-skin' %}
 
-card_class  the container's look: carousel-card (home, css/carousel.css) or
-            browse-card (browse pages, css/browse.css)
+card_class  the container's look: home-skin (site_pages/css/home.css) or
+            pv-skin (css/player_profile.css)
 show_date   also show the upload date (browse)
 name_len    characters before the name is cut (default 22)
 {% endcomment %}

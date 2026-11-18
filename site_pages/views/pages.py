@@ -1,13 +1,13 @@
 """Home, privacy, terms and the staff page.
 
-Owns: what these pages show. Does not own: the skins on the home page
-(`skins.selectors.home_strips`).
+Owns: what these pages show. Does not own: the home page's data
+(`site_pages.selectors.home`).
 """
 
 from django.shortcuts import render
 
 from core.ratelimits import limit
-from skins.selectors import home_strips
+from site_pages import selectors
 
 STAFF_MEMBERS = [
     {
@@ -39,7 +39,7 @@ STAFF_MEMBERS = [
 
 @limit("browse")
 def home(request):
-    return render(request, "site_pages/home.html", home_strips())
+    return render(request, "site_pages/home.html", selectors.home())
 
 
 @limit("browse")

@@ -60,15 +60,21 @@ def decorate_skins_for_user(skins, user=None):
     return skins
 
 
-def home_strips(size=24):
-    """The home page's four skin strips: newest, random, most favorited and
-    trending (upvotes minus downvotes). Skins with an open report are left out."""
+def home_strips(size=6):
+    """The home page's skin rows: the newest skins and the most favorited.
+    Skins with an open report are left out."""
     skins = Skin.objects.without_open_reports()
     return {
-        "recent": skins.order_by("-created_at")[:size],
-        "top_favs": skins.with_favorite_count().order_by("-fav_count", "-upvotes")[:size],
-        "trending": skins.with_score().order_by("-score", "-created_at")[:size],
-        "random_strip": skins.order_by("?")[:size],
+        "recent": list(skins.order_by("-created_at")[:size]),
+        "top_favs": list(skins.with_favorite_count().order_by("-fav_count", "-upvotes")[:size]),
+    }
+
+
+def skin_counts(now=None) -> dict:
+    """{"total": every skin, "today": skins uploaded today (core.periods)}."""
+    return {
+        "total": Skin.objects.count(),
+        "today": Skin.objects.created_in("today", now).count(),
     }
 
 

@@ -1,32 +1,119 @@
 {% extends "base.html" %}
-
-{% load static %}
+{% load static humanize bv_links %}
 
 {% block title %}Bonkverse{% endblock %}
+{% block content_class %}site-page{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'site_pages/css/home.css' %}">
+{% endblock %}
 
 {% block content %}
+{% comment %}
+The home page (design review step 2f): what Bonkverse is in one line, the three
+doors (Skins, Replays, Players), then what's happening now. Data:
+site_pages/selectors.py. The replay countdown ticks in site_pages/js/home.js.
+{% endcomment %}
+<div class="bv-main home">
+  <header class="home-intro">
+    <h1>Skins, replays and stats for bonk.io players</h1>
+    <p class="bv-lead">
+      {{ skin_counts.total|intcomma }} skins made by players{% if skin_counts.today %} · {{ skin_counts.today|intcomma }} new today{% endif %}.
+      Profiles for {{ player_count|intcomma }} players, built from their games.
+    </p>
+    <form class="home-search" method="get" action="{% url 'skins:search_skins' %}" role="search">
+      <div class="bv-search">
+        <input type="search" name="q" placeholder="Skin name or creator" aria-label="Search skins" autocomplete="off">
+        <button type="submit">Search</button>
+      </div>
+    </form>
+  </header>
 
-<section class="hero">
-  <div class="hero-inner">
-    <img class="hero-logo" src="{% static 'images/BonkverseLogo.png' %}" alt="Bonkverse" />
-    <h1 class="hero-title">Discover. Create. Share.</h1>
-    <p class="hero-sub">Explore thousands of Bonk.io skins from the community.</p>
+  <nav class="home-doors" aria-label="Bonkverse">
+    <a class="bv-card home-door" href="{% url 'skins:search_skins' %}">
+      <span class="home-door__icon" aria-hidden="true"><i data-lucide="shirt"></i></span>
+      <span class="home-door__title">Skins</span>
+      <span class="home-door__text">Find a skin and wear it in one click, or upload your own.</span>
+    </a>
+    <a class="bv-card home-door" href="{{ replays_url }}/">
+      <span class="home-door__icon" aria-hidden="true"><i data-lucide="clapperboard"></i></span>
+      <span class="home-door__title">Replays</span>
+      <span class="home-door__text">Watch public bonk.io games, collected every few minutes.</span>
+    </a>
+    <a class="bv-card home-door" href="{% url 'players:players_directory' %}">
+      <span class="home-door__icon" aria-hidden="true"><i data-lucide="users"></i></span>
+      <span class="home-door__title">Players</span>
+      <span class="home-door__text">Look up anyone's level, maps and who they play with. Find your own profile.</span>
+    </a>
+  </nav>
 
-    {% include "skins/partials/search_bar.html" %}
+  {% if replays %}
+  <section class="home-section" aria-labelledby="home-replays-title">
+    <div class="home-section__head">
+      <div>
+        <h2 id="home-replays-title">Latest replays</h2>
+        {% if collector %}
+          <p class="bv-muted home-collector">
+            {% if collector.seconds_to_next %}
+              <span data-collector-next>Next collection in <time data-countdown="{{ collector.seconds_to_next }}">{{ collector.next_in }}</time></span>
+            {% else %}
+              Collecting new replays now
+            {% endif %}
+            {% if collector.last_added is not None %} · the last one added {{ collector.last_added|intcomma }} replay{{ collector.last_added|pluralize }}{% if collector.last_ago %} {{ collector.last_ago }}{% endif %}{% endif %}
+          </p>
+        {% endif %}
+      </div>
+      <a class="bv-btn bv-btn--ghost" href="{{ replays_url }}/">All replays</a>
+    </div>
+    <ul class="home-replays">
+      {% for replay in replays %}
+        <li class="bv-card home-replay">
+          <a class="home-replay__thumb" href="{{ replay.watch_url }}" aria-label="Watch {{ replay.map_name }}">
+            {% if replay.thumbnail_url %}<img src="{{ replay.thumbnail_url }}" alt="" loading="lazy" width="320" height="180">{% endif %}
+          </a>
+          <div class="home-replay__body">
+            <a class="home-replay__map" href="{{ replay.watch_url }}">{{ replay.map_name }}</a>
+            <p class="home-replay__players">
+              {% for p in replay.players %}{% with url=p.username|profile_url %}{% if url and not p.guest %}<a href="{{ url }}">{{ p.username }}</a>{% else %}<span>{{ p.username }}</span>{% endif %}{% endwith %}{% if not forloop.last %}, {% endif %}{% endfor %}{% if replay.more_players %} +{{ replay.more_players }}{% endif %}
+            </p>
+            {% if replay.ago %}<p class="bv-muted home-replay__when"><time datetime="{{ replay.fetched_at|date:'c' }}" title="{{ replay.fetched_at|date:'M j, Y, g:i A' }}">{{ replay.ago }}</time></p>{% endif %}
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
 
-  </div>
-</section>
+  {% if recent %}
+  <section class="home-section" aria-labelledby="home-new-title">
+    <div class="home-section__head">
+      <h2 id="home-new-title">New skins</h2>
+      <a class="bv-btn bv-btn--ghost" href="{% url 'skins:new_releases' %}">See all</a>
+    </div>
+    <div class="home-skins">
+      {% for s in recent %}
+        {% include 'skins/partials/_skin_card_compact.html' with skin=s card_class='home-skin' name_len=24 %}
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 
-<!-- Animated carousels -->
-{% url 'skins:new_releases' as recent_url %}
-{% include 'skins/partials/carousel.html' with title="Recently Uploaded" skins=recent seeall_url=recent_url %}
+  {% if top_favs %}
+  <section class="home-section" aria-labelledby="home-favs-title">
+    <div class="home-section__head">
+      <h2 id="home-favs-title">Most favorited</h2>
+      <a class="bv-btn bv-btn--ghost" href="{% url 'stats:leaderboards_favorited' %}">See all</a>
+    </div>
+    <div class="home-skins">
+      {% for s in top_favs %}
+        {% include 'skins/partials/_skin_card_compact.html' with skin=s card_class='home-skin' name_len=24 %}
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
 
-{% include 'skins/partials/carousel.html' with title="Random Picks" skins=random_strip %}
-{# no seeall_url → falls back to search, which is the right behavior for a random strip #}
-
-{% url 'stats:leaderboards_favorited' as favs_url %}
-{% include 'skins/partials/carousel.html' with title="Most Favorited" skins=top_favs seeall_url=favs_url %}
-
-
+{% block extra_scripts %}
+<script src="{% static 'site_pages/js/home.js' %}" defer></script>
 {% endblock %}
