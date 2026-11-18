@@ -29,8 +29,8 @@
       </div>
     {% endfor %}
     {% if retry_after %}
-      {# The login has to wait (bonk.io's pause, or too many wrong passwords): the
-         button stays off until the wait ends (accounts/js/login.js; accounts/views.py). #}
+      {% comment %}The login has to wait (bonk.io's pause, or too many wrong passwords): the
+         button stays off until the wait ends (accounts/js/login.js; accounts/views.py).{% endcomment %}
       <button type="submit" class="bv-btn bv-btn--primary" id="login-submit" disabled data-retry-after="{{ retry_after }}">Log in (wait {{ retry_after }}s)</button>
     {% else %}
       <button type="submit" class="bv-btn bv-btn--primary" id="login-submit">Log in</button>

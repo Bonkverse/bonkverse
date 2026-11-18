@@ -10,6 +10,7 @@ from urllib.parse import urlencode
 from django import forms
 from django.contrib import admin
 from django.shortcuts import redirect, render
+from django.utils.html import format_html
 from django.urls import reverse
 
 from .categories import CATEGORIES
@@ -60,9 +61,35 @@ def bulk_update_creator(modeladmin, request, queryset):
     )
 
 
+def skin_image(skin, size=48):
+    """A skin's image, linked to its page, for admin lists and forms."""
+    if skin is None or not skin.image_url:
+        return "-"
+    return format_html(
+        '<a href="{}" target="_blank" rel="noopener"><img src="{}" alt="" width="{}" '
+        'height="{}" loading="lazy"></a>',
+        skin.get_absolute_url(),
+        skin.image_url,
+        size,
+        size,
+    )
+
+
 @admin.register(Skin)
 class SkinAdmin(admin.ModelAdmin):
     actions = [bulk_update_creator]
+    list_display = ["image", "name", "creator", "created_at"]
+    list_display_links = ["name"]
+    search_fields = ["name", "creator"]
+    readonly_fields = ["preview"]
+
+    @admin.display(description="Image")
+    def image(self, obj):
+        return skin_image(obj)
+
+    @admin.display(description="Preview")
+    def preview(self, obj):
+        return skin_image(obj, 160)
 
 
 class CategoryCoverForm(forms.ModelForm):
@@ -80,8 +107,19 @@ class CategoryCoverAdmin(admin.ModelAdmin):
     """Pick each category's cover on /categories/ (one skin per category)."""
 
     form = CategoryCoverForm
-    list_display = ["category", "skin", "updated_at"]
+    list_display = ["image", "category", "skin", "updated_at"]
+    list_display_links = ["category"]
+    list_select_related = ["skin"]
     raw_id_fields = ["skin"]
+    readonly_fields = ["preview"]
+
+    @admin.display(description="Cover")
+    def image(self, obj):
+        return skin_image(obj.skin)
+
+    @admin.display(description="Preview")
+    def preview(self, obj):
+        return skin_image(obj.skin, 160)
 
 
 @admin.action(description="Mark as resolved (the skin shows in featured places again)")
@@ -97,6 +135,17 @@ class SkinReportAdmin(admin.ModelAdmin):
     it back; deleting the skin removes it everywhere."""
 
     actions = [resolve_reports]
-    list_display = ["skin", "reason", "reporter", "created_at", "resolved"]
+    list_display = ["image", "skin", "reason", "reporter", "created_at", "resolved"]
+    list_display_links = ["skin"]
     list_filter = ["resolved", "reason"]
+    list_select_related = ["skin", "reporter"]
     raw_id_fields = ["skin", "reporter"]
+    readonly_fields = ["preview"]
+
+    @admin.display(description="Skin image")
+    def image(self, obj):
+        return skin_image(obj.skin)
+
+    @admin.display(description="Preview")
+    def preview(self, obj):
+        return skin_image(obj.skin, 160)
