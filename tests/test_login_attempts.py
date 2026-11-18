@@ -57,6 +57,7 @@ class TestPerAccount:
         assert _messages(response)[0].startswith(HELD_MESSAGE_START)
         assert response.context["retry_after"] == HOLD_SECONDS
         assert b'id="login-submit" disabled' in response.content
+        assert b"button stays off" not in response.content  # template comment stays hidden
 
     def test_the_last_wrong_try_says_it_was_the_last(self, client, mocked_http):
         _bonk_says(mocked_http, "login_wrong_password")
