@@ -101,6 +101,55 @@
     background-color: var(--bv-hover);
 }
 
+/* The Discord servers page's search box (communities/server_list.html).
+   Same look as plain inputs: input background, thin border, a focus ring.
+   Goes when that page moves onto bv- components (.bv-search). */
+.hero-search {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bv-input);
+    border: 1px solid var(--bv-outline);
+    border-radius: 14px;
+    padding: 10px 14px;
+    backdrop-filter: blur(6px);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    flex: 1;
+}
+
+.hero-search:focus-within {
+    border-color: var(--bv-link);
+}
+
+.hero-search input {
+    all: unset;
+    flex: 1;
+    font-size: 1rem;
+    color: var(--bv-text);
+    background: transparent;
+    padding: 8px 10px;
+}
+
+.hero-search input::placeholder {
+    color: var(--bv-muted);
+}
+
+.hero-search button {
+    background: var(--bv-action);
+    border: 1px solid var(--bv-action-border);
+    border-radius: 10px;
+    padding: 10px 16px;
+    color: var(--bv-action-ink);
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.hero-search button:hover {
+    background: var(--bv-action-hover);
+    border-color: var(--bv-action-ink);
+}
+
 /* Search row + filter controls */
 .search-row {
     align-items: center;

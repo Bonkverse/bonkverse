@@ -197,9 +197,12 @@
 }
 
 /* =====================
-   Search filter controls (search.html)
+   Search filter controls (search.html), Discord servers search
    ===================== */
 @media (max-width: 480px) {
+  .hero-search {
+    flex-wrap: wrap;
+  }
   .search-controls-inline {
     flex-wrap: wrap;
     justify-content: center;
