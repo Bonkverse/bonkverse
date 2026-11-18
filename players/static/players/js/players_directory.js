@@ -11,7 +11,7 @@
 // Data (#qb-state, from players/selectors.py _builder):
 //   fields: [{key, label, value: text|number|year|choice|none,
 //             ops: [{key, label}], choices?: [{key, label}], min?, max?, unit?}]
-//   rules:  [{conn, field, op, value, value2, case}]
+//   rules:  [{conn, field, op, value, value2, case, trim}]
 //   max:    how many lines are allowed
 //
 // Without JavaScript the server-drawn lines still submit; picking another
@@ -72,7 +72,7 @@
   function defaults(field) {
     const spec = byKey[field];
     const first = spec.choices ? spec.choices[0].key : "";
-    return { op: spec.ops[0].key, value: first, value2: first, case: false };
+    return { op: spec.ops[0].key, value: first, value2: first, case: false, trim: false };
   }
 
   function valueCell(rule, i) {
@@ -86,6 +86,9 @@
         el("label", { class: "pv-qb__case", title: "Match case" },
           el("input", { type: "checkbox", name: `k${i}`, value: "1", checked: !!rule.case }),
           el("span", { text: "Aa" }), hidden("Match case")),
+        el("label", { class: "pv-qb__case", title: "Ignore spaces at the end of names" },
+          el("input", { type: "checkbox", name: `t${i}`, value: "1", checked: !!rule.trim }),
+          el("span", { text: "␣", "aria-hidden": "true" }), hidden("Ignore spaces at the end of names")),
       );
     } else if (spec.value === "number") {
       const num = (name, v, label) => el("label", { class: "pv-qb__input pv-qb__input--num" }, hidden(label),
@@ -141,6 +144,7 @@
     else if (kind === "v") rule.value = target.value;
     else if (kind === "w") rule.value2 = target.value;
     else if (kind === "k") rule.case = target.checked;
+    else if (kind === "t") rule.trim = target.checked;
     else if (kind === "f" && redraw) {
       Object.assign(rule, { field: target.value }, defaults(target.value));
       li.replaceWith(row(rule, i));

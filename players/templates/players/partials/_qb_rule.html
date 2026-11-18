@@ -1,7 +1,7 @@
 {% comment %}
 One line of the advanced-search rule builder (players/directory.html):
-[Where / AND / OR] [field] [condition] [value] [Aa] [remove]. Field names are
-numbered (c0 f0 o0 v0 w0 k0) as players/search.py reads them. With
+[Where / AND / OR] [field] [condition] [value] [Aa] [␣] [remove]. Field names
+are numbered (c0 f0 o0 v0 w0 k0 t0) as players/search.py reads them. With
 JavaScript, players/js/players_directory.js redraws these lines from the same schema
 and changes the conditions and value box when the field changes.
 {% endcomment %}
@@ -35,6 +35,7 @@ and changes the conditions and value box when the field changes.
     {% if row.spec.value == "text" %}
       <label class="pv-qb__input"><span class="pv-visually-hidden">Value</span><input type="text" name="v{{ row.i }}" value="{{ row.value }}" placeholder="Text" maxlength="100" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
       <label class="pv-qb__case" title="Match case"><input type="checkbox" name="k{{ row.i }}" value="1"{% if row.case %} checked{% endif %}><span>Aa</span><span class="pv-visually-hidden">Match case</span></label>
+      <label class="pv-qb__case" title="Ignore spaces at the end of names"><input type="checkbox" name="t{{ row.i }}" value="1"{% if row.trim %} checked{% endif %}><span aria-hidden="true">␣</span><span class="pv-visually-hidden">Ignore spaces at the end of names</span></label>
     {% elif row.spec.value == "number" %}
       <label class="pv-qb__input pv-qb__input--num"><span class="pv-visually-hidden">Value</span><input type="number" name="v{{ row.i }}" value="{{ row.value }}" min="{{ row.spec.min }}" max="{{ row.spec.max }}" inputmode="numeric"></label>
       {% if row.op == "between" %}<span class="pv-qb__and">and</span><label class="pv-qb__input pv-qb__input--num"><span class="pv-visually-hidden">Second value</span><input type="number" name="w{{ row.i }}" value="{{ row.value2 }}" min="{{ row.spec.min }}" max="{{ row.spec.max }}" inputmode="numeric"></label>{% endif %}

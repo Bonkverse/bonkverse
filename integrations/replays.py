@@ -156,11 +156,14 @@ def lookup_players(base_url: str, names, *, timeout=DEFAULT_TIMEOUT) -> PlayerRe
 
 
 def search_players(base_url: str, query: str, *, timeout=DEFAULT_TIMEOUT) -> PlayerResult:
-    """Up to 10 registered names starting with `query`, most played first:
-    data is [{username, games, level}]. Needs at least 3 characters."""
+    """Up to 10 registered names for `query`, most played first: data is
+    [{username, games, level}]. The name `query` itself comes first,
+    ignoring case and spaces at the end of the name; from 3 characters,
+    names starting with it follow. Shorter queries only find that name,
+    since rare 1-2 character accounts are what people look up."""
     if not base_url:
         return PlayerResult(error=PlayerError.NOT_CONFIGURED)
-    if len(query) < 3 or len(query) > MAX_USERNAME_LENGTH:
+    if not query or len(query) > MAX_USERNAME_LENGTH:
         return PlayerResult(data=[])
     data, error = _get_json(f"{base_url}/api/players", {"q": query}, "search", timeout)
     if error:

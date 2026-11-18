@@ -23,7 +23,7 @@ from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db.models import Case, Count, Exists, IntegerField, OuterRef, Q, Value, When
-from django.db.models.functions import Lower
+from django.db.models.functions import Lower, RTrim
 from django.utils import timezone
 
 from integrations.replays import (
@@ -667,16 +667,28 @@ def shown_name(name):
     return name
 
 
+def _exact_first(qs, name_field, text):
+    """`qs` with `exact` = 0 for the name `text` (ignoring case and spaces at
+    the end of the name), 1 for the rest. The search box is trimmed, and
+    padded names ("ako" + 17 spaces) look unpadded wherever they're shown,
+    so typing what you see still puts that account first."""
+    qs = qs.annotate(exact_key=Lower(RTrim(name_field)))
+    return qs.annotate(
+        exact=Case(
+            When(exact_key=text.lower(), then=Value(0)),
+            default=Value(1),
+            output_field=IntegerField(),
+        )
+    )
+
+
 def _players_base(f):
     """BonkPlayers with `linked`, an exact name first when there is one."""
     qs = BonkPlayer.objects.annotate(
         linked=Exists(BonkAccountLink.objects.filter(bonk_player=OuterRef("pk"), active=True))
     )
     if f.text:
-        exact = Q(username__iexact=f.text)
-        qs = qs.annotate(
-            exact=Case(When(exact, then=Value(0)), default=Value(1), output_field=IntegerField())
-        )
+        qs = _exact_first(qs, "username", f.text)
         return qs.order_by("exact", "-linked", "-last_friend_count", "username")
     return qs.order_by("-linked", "-last_friend_count", "username")
 
@@ -684,10 +696,7 @@ def _players_base(f):
 def _flash_base(f):
     qs = FlashFriend.objects.select_related("bonk_player").annotate(listed_by=Count("friend_of"))
     if f.text:
-        exact = Q(name__iexact=f.text)
-        qs = qs.annotate(
-            exact=Case(When(exact, then=Value(0)), default=Value(1), output_field=IntegerField())
-        )
+        qs = _exact_first(qs, "name", f.text)
         return qs.order_by("exact", "-listed_by", "name")
     return qs.order_by("-listed_by", "name")
 
@@ -743,7 +752,7 @@ def _directory(get):
         ctx.update(_builder(f, view))
 
     if view == "replays":
-        if len(query) < 3:
+        if not query:
             ctx["needs_query"] = True
             return ctx
         found, error = _cached(
@@ -830,6 +839,7 @@ def _builder(f, view):
                 "value": rule.value,
                 "value2": rule.value2,
                 "case": rule.case,
+                "trim": rule.trim,
                 "spec": spec,
             }
         )
@@ -846,6 +856,7 @@ def _builder(f, view):
                     "value": r["value"],
                     "value2": r["value2"],
                     "case": r["case"],
+                    "trim": r["trim"],
                 }
                 for r in rows
             ],
