@@ -97,6 +97,16 @@ def test_spaces_still_matter(client, tulip):
     assert _delete(client, skin).status_code == 403
 
 
+def test_delete_refuses_a_plain_visit(client, tulip):
+    """A GET (a link or <img> on another site) must never delete anything."""
+    skin = SkinFactory(creator="The Saucy Tulip")
+
+    response = client.get(f"/skin/{skin.id}/delete/")
+
+    assert response.status_code == 405
+    assert Skin.objects.filter(id=skin.id).exists()
+
+
 def test_bulk_delete_removes_only_own_skins(client, tulip):
     mine = SkinFactory(creator="the saucy tulip")
     theirs = SkinFactory(creator="Somepoop")
