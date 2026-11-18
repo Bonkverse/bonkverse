@@ -2,8 +2,9 @@
 
 Owns: the `GET /api/player/<name>`, `/api/player/<name>/map/<mapid>`
 (or `?name=` for "." and ".."),
-`/api/players/lookup`, `/api/players?q=` and `/api/levels/distribution`
-requests, URL-encoding the username, the
+`/api/players/lookup`, `/api/players?q=`, `/api/levels/distribution`,
+`/api/recent` and `/api/status` requests, the replay site's page URLs
+(`watch_url`, `thumbnail_url`), URL-encoding the username, the
 timeout, and sorting the reply into found / no such player / no usable
 answer. Every call returns a `PlayerResult` instead of raising.
 Does not own: what a profile page shows or who may see it (players/), or
@@ -195,6 +196,54 @@ def level_distribution(base_url: str, *, timeout=(3.0, 30.0)) -> PlayerResult:
     return PlayerResult(data=data)
 
 
+# The home page asks for these on a visitor's request, so it waits briefly
+# and shows the page without replays rather than hang.
+HOME_TIMEOUT = (1.0, 2.0)  # (connect, read) seconds
+
+
+def recent_replays(base_url: str, limit: int = 4, *, timeout=HOME_TIMEOUT) -> PlayerResult:
+    """The newest replays the site stored, newest first: data is a list of
+    {cycle, id, mapid, mapname, fetched_at, players: [{username, guest}]}."""
+    if not base_url:
+        return PlayerResult(error=PlayerError.NOT_CONFIGURED)
+    data, error = _get_json(f"{base_url}/api/recent", {"limit": limit}, "recent", timeout)
+    if error:
+        return PlayerResult(error=error)
+    return PlayerResult(
+        data=[r for r in data["results"] if isinstance(r, dict) and r.get("id") and r.get("cycle")]
+    )
+
+
+def collector_status(base_url: str, *, timeout=HOME_TIMEOUT) -> PlayerResult:
+    """What the replay collector is doing: data has status, next_fetch_at,
+    last_run_added and last_run_at (ISO times or null)."""
+    if not base_url:
+        return PlayerResult(error=PlayerError.NOT_CONFIGURED)
+    try:
+        response = requests.get(f"{base_url}/api/status", timeout=timeout)
+        data = response.json()
+    except requests.RequestException as exc:
+        logger.warning("replays api (status): unreachable: %s", type(exc).__name__)
+        return PlayerResult(error=PlayerError.UNAVAILABLE)
+    except ValueError:
+        logger.warning("replays api (status): non-JSON reply, http=%s", response.status_code)
+        return PlayerResult(error=PlayerError.UNAVAILABLE)
+    if not response.ok or not isinstance(data, dict):
+        logger.warning("replays api (status): http=%s", response.status_code)
+        return PlayerResult(error=PlayerError.UNAVAILABLE)
+    return PlayerResult(data=data)
+
+
+def watch_url(base_url: str, cycle, replay_id) -> str:
+    """A replay's watch page (ReplayRenderer browser/app/router.js)."""
+    return f"{base_url}/watch/{cycle}/{replay_id}"
+
+
+def thumbnail_url(base_url: str, mapid) -> str:
+    """A map's thumbnail (an SVG drawn by the replay site)."""
+    return f"{base_url}/api/map/{mapid}/thumbnail.svg"
+
+
 def get_player_configured(username: str) -> PlayerResult:
     """`get_player` against settings.BONKVERSE_REPLAYS_URL."""
     from django.conf import settings
@@ -228,3 +277,17 @@ def level_distribution_configured() -> PlayerResult:
     from django.conf import settings
 
     return level_distribution(settings.BONKVERSE_REPLAYS_URL)
+
+
+def recent_replays_configured(limit: int = 4) -> PlayerResult:
+    """`recent_replays` against settings.BONKVERSE_REPLAYS_URL."""
+    from django.conf import settings
+
+    return recent_replays(settings.BONKVERSE_REPLAYS_URL, limit)
+
+
+def collector_status_configured() -> PlayerResult:
+    """`collector_status` against settings.BONKVERSE_REPLAYS_URL."""
+    from django.conf import settings
+
+    return collector_status(settings.BONKVERSE_REPLAYS_URL)

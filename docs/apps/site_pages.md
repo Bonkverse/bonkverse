@@ -10,7 +10,7 @@ Names are in the `site_pages` namespace (`app_name` in `site_pages/urls.py`): `{
 
 | Path | Name | View |
 |---|---|---|
-| `/` | `home` | `views/pages.py: home`: four skin strips (newest, random, most favorited, trending) |
+| `/` | `home` | `views/pages.py: home`, data from `selectors.py: home`: what Bonkverse is, three doors (Skins, Replays, Players), latest replays and the collector countdown from the replay site (cached a minute), new and most favorited skins |
 | `/privacy/` | `privacy` | `views/pages.py: privacy` |
 | `/terms/` | `terms` | `views/pages.py: terms` |
 | `/staff/` | `staff` | `views/pages.py: staff_page`: the team, from `STAFF_MEMBERS` |

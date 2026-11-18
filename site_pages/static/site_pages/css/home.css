@@ -1,0 +1,389 @@
+/* The home page (site_pages/templates/site_pages/home.html). */
+
+/* Hero: the line on what Bonkverse is, and its doors as tiles that show
+   something live from each part. Text above tiles on phones; side by side
+   from 960 px. */
+.home-hero {
+  display: grid;
+  gap: var(--bv-space-6);
+  padding-top: var(--bv-space-4);
+}
+@media (min-width: 960px) {
+  .home-hero {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    align-items: center;
+    gap: var(--bv-space-8);
+    padding-block: var(--bv-space-6);
+  }
+}
+.home-hero h1 {
+  margin: 0;
+  font-size: var(--bv-text-2xl);
+  line-height: var(--bv-leading-2xl);
+}
+@media (min-width: 960px) {
+  .home-hero h1 {
+    font-size: 2.5rem;
+    line-height: 1.15;
+  }
+}
+.home-hero .bv-lead {
+  margin: var(--bv-space-3) 0 0;
+}
+.home-search {
+  margin-top: var(--bv-space-5);
+}
+
+/* Tiles: Skins is the big one (two rows) on wide screens. */
+.home-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--bv-space-3);
+}
+.home-tile--skins,
+.home-tile--editor {
+  grid-column: 1 / -1;
+}
+@media (min-width: 640px) {
+  .home-tiles {
+    grid-template-columns: minmax(0, 6fr) minmax(0, 5fr) minmax(0, 5fr);
+  }
+  .home-tile--skins {
+    grid-column: 1;
+    grid-row: span 2;
+  }
+  .home-tile--editor {
+    grid-column: 2 / -1;
+  }
+}
+
+.home-tile {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--bv-outline);
+  border-radius: var(--bv-radius);
+  background: var(--bv-card);
+  color: var(--bv-text);
+  text-decoration: none;
+  transition: border-color var(--bv-fade) var(--bv-ease-out), transform var(--bv-fade) var(--bv-ease-out);
+}
+.home-tile:hover {
+  border-color: var(--bv-link);
+  transform: translateY(-2px);
+}
+.home-tile:focus-visible {
+  outline: 2px solid var(--bv-link);
+  outline-offset: 2px;
+}
+.home-tile__art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: 1;
+  min-height: 112px;
+  background: var(--bv-thumb);
+  color: var(--bv-link);
+}
+.home-tile__art > svg {
+  width: 40px;
+  height: 40px;
+}
+.home-tile__label {
+  display: grid;
+  gap: 2px;
+  padding: var(--bv-space-3) var(--bv-space-4);
+}
+.home-tile__title {
+  font-size: var(--bv-text-lg);
+  line-height: var(--bv-leading-lg);
+  font-weight: 600;
+}
+.home-tile__text {
+  color: var(--bv-muted);
+  font-size: var(--bv-text-sm);
+  line-height: var(--bv-leading-sm);
+}
+
+/* Skins: six favorite skins as bonk balls, bouncing out of line. */
+.home-balls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 180px;
+  padding: var(--bv-space-4);
+}
+.home-balls img {
+  width: 18%;
+  max-width: 104px;
+  height: auto;
+  aspect-ratio: 1;
+  margin-inline: -1%;
+  border-radius: 50%;
+  object-fit: contain;
+  transition: transform var(--bv-fade) var(--bv-ease-out);
+}
+.home-balls img:nth-child(odd) {
+  transform: translateY(-14px);
+}
+.home-balls img:nth-child(even) {
+  transform: translateY(14px);
+}
+.home-tile--skins:hover .home-balls img {
+  transform: translateY(0);
+}
+@media (min-width: 640px) {
+  .home-balls {
+    flex-wrap: wrap;
+    align-content: center;
+    min-height: 260px;
+  }
+  .home-balls img {
+    width: 33%;
+    max-width: 104px;
+    margin: 0 -4px;
+  }
+}
+
+/* Replays: the newest replay's map, with a live dot while collecting. */
+.home-tile__map {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.home-live {
+  position: absolute;
+  top: var(--bv-space-2);
+  left: var(--bv-space-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px var(--bv-space-2);
+  border-radius: var(--bv-radius-pill);
+  background: var(--bv-card);
+  color: var(--bv-text);
+  font-size: var(--bv-text-xs);
+  font-weight: 600;
+}
+.home-live__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--bv-link);
+  animation: home-pulse 2s ease-in-out infinite;
+}
+@keyframes home-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* Players: the people in the newest replays, wearing their skins. */
+.home-faces {
+  display: flex;
+  justify-content: center;
+  padding-inline: var(--bv-space-3);
+}
+.home-faces img,
+.home-faces__ball {
+  width: 22%;
+  max-width: 48px;
+  height: auto;
+  aspect-ratio: 1;
+  margin-inline: -2%;
+  border: 2px solid var(--bv-card);
+  border-radius: 50%;
+  background: var(--bv-thumb);
+  object-fit: contain;
+}
+/* A player Bonkverse hasn't seen a skin on: a plain bonk ball. */
+.home-faces__ball {
+  display: block;
+  background: var(--bv-muted);
+}
+
+/* The editor tile is a row: icon, then label. */
+.home-tile--editor {
+  flex-direction: row;
+  align-items: stretch;
+}
+.home-tile--editor .home-tile__art {
+  flex: 0 0 96px;
+  min-height: 0;
+}
+.home-tile--editor .home-tile__label {
+  align-content: center;
+}
+
+.home-section {
+  margin-top: var(--bv-space-8);
+}
+.home-section__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--bv-space-3);
+  margin-bottom: var(--bv-space-3);
+}
+.home-section__head h2 {
+  margin: 0;
+  font-size: var(--bv-text-xl);
+  line-height: var(--bv-leading-xl);
+}
+.home-collector {
+  margin: var(--bv-space-1) 0 0;
+  font-size: var(--bv-text-sm);
+}
+.home-collector time {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Replay cards: 2 stacked on phones, then 2 and 4 across. */
+.home-replays {
+  display: grid;
+  gap: var(--bv-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 640px) {
+  .home-replays {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 960px) {
+  .home-replays {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+@media (max-width: 639px) {
+  .home-replay:nth-child(n + 3) {
+    display: none;
+  }
+}
+.bv-card.home-replay {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+.bv-card.home-replay > * + * {
+  margin-top: 0;
+}
+.home-replay__thumb {
+  display: block;
+  aspect-ratio: 16 / 9;
+  background: var(--bv-thumb);
+}
+.home-replay__thumb {
+  overflow: hidden;
+}
+.home-replay__thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--bv-fade) var(--bv-ease-out);
+}
+/* Hovering the thumbnail zooms it a little: it's a link to the replay. */
+.home-replay__thumb:hover img {
+  transform: scale(1.04);
+}
+.home-replay__body {
+  display: grid;
+  gap: var(--bv-space-1);
+  padding: var(--bv-space-3) var(--bv-space-4) var(--bv-space-4);
+  min-width: 0;
+}
+.home-replay__map {
+  color: var(--bv-text);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.home-replay__map:hover {
+  color: var(--bv-link);
+}
+.home-replay__players,
+.home-replay__when {
+  margin: 0;
+  font-size: var(--bv-text-sm);
+  line-height: var(--bv-leading-sm);
+  overflow-wrap: anywhere;
+}
+
+/* Skin rows: 2, 3 then 6 across (one row on a laptop). */
+.home-skins {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--bv-space-3);
+}
+@media (min-width: 640px) {
+  .home-skins {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (min-width: 960px) {
+  .home-skins {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+.home-skin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--bv-space-1);
+  min-width: 0;
+  padding: var(--bv-space-3);
+  border: 1px solid var(--bv-outline);
+  border-radius: var(--bv-radius);
+  background: var(--bv-card);
+  color: var(--bv-text);
+  text-align: center;
+  text-decoration: none;
+  transition: border-color var(--bv-fade) var(--bv-ease-out), transform var(--bv-fade) var(--bv-ease-out);
+}
+.home-skin:hover {
+  border-color: var(--bv-link);
+  transform: translateY(-2px);
+}
+.home-skin .skin-tile-img {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: contain;
+  background: var(--bv-thumb);
+}
+.home-skin .skin-tile-meta {
+  display: contents;
+}
+.home-skin .name {
+  max-width: 100%;
+  font-size: var(--bv-text-sm);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.home-skin .by {
+  max-width: 100%;
+  color: var(--bv-muted);
+  font-size: var(--bv-text-xs);
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-tile,
+  .home-skin,
+  .home-balls img,
+  .home-replay__thumb img {
+    transition: none;
+  }
+  .home-tile:hover,
+  .home-skin:hover {
+    transform: none;
+  }
+  .home-live__dot {
+    animation: none;
+  }
+}

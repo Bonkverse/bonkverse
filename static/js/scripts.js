@@ -7,12 +7,3 @@ document.addEventListener("DOMContentLoaded", function () {
         }, 4000);
     });
 });
-
-// Marquee speed control: lower = faster (seconds for a full loop)
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.carousel').forEach(el => {
-    const speed = Number(el.dataset.speed || 20); // seconds
-    const track = el.querySelector('.carousel-track');
-    if (track) track.style.animationDuration = `${speed}s`;
-  });
-});

@@ -101,11 +101,9 @@
     background-color: var(--bv-hover);
 }
 
-/* Hero Search Bar — same modal-matching language as plain inputs:
-   dark translucent background, thin border, a focus ring instead of
-   a permanent neon glow. Keeps the pill shape and blur, drops the
-   always-on box-shadow so it stops reading as a separate design
-   language from every other search/input on the site. */
+/* The Discord servers page's search box (communities/server_list.html).
+   Same look as plain inputs: input background, thin border, a focus ring.
+   Goes when that page moves onto bv- components (.bv-search). */
 .hero-search {
     display: inline-flex;
     align-items: center;

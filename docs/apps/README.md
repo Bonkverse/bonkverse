@@ -26,7 +26,7 @@ Enforced by `tests/test_app_boundaries.py`:
 - Writes to another app's data go through that app's `services` (reviews check this; the test can't).
 - `core/` and `integrations/` import no app.
 - Need something another app has in a helper module? Add a function to its `selectors` or `services` and use that.
-- **Templates:** every page extends the shared frame `base.html` (in the project's `templates/`, with the header, footer, error pages and generic partials: pagination, the bonk.io login modal) and may include the skin partials in `skins/templates/skins/partials/` (cards, carousels, search bar, report modal): those are the skins app's public UI, the template equivalent of its selectors. Other apps' page templates are off-limits. The frame's files (the `ui/` package, `core/js`, images, site-wide CSS and JS) are in the project's `static/`.
+- **Templates:** every page extends the shared frame `base.html` (in the project's `templates/`, with the header, footer, error pages and generic partials: pagination, the bonk.io login modal) and may include the skin partials in `skins/templates/skins/partials/` (cards, report modal): those are the skins app's public UI, the template equivalent of its selectors. Other apps' page templates are off-limits. The frame's files (the `ui/` package, `core/js`, images, site-wide CSS and JS) are in the project's `static/`.
 
 - Two apps may need each other (accounts' login updates players; players writes to accounts' event log). If that makes an import cycle, the side that needs the other only occasionally imports inside the function, with a comment saying why (`players/friends_sync.py`). The same test imports each app's `services` and `selectors` first in a fresh interpreter, so a cycle fails CI.
 

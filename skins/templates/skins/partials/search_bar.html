@@ -1,8 +1,0 @@
-{% block content %}
-
-<form class="hero-search" method="GET" action="{% url 'skins:search_skins' %}">
-  <input type="text" name="q" placeholder="Search skins…" value="{{ query|default:'' }}">
-  <button type="submit">Search</button>
-</form>
-
-{% endblock %}

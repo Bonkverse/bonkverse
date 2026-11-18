@@ -1,32 +1,151 @@
 {% extends "base.html" %}
-
-{% load static %}
+{% load static humanize bv_links %}
 
 {% block title %}Bonkverse{% endblock %}
+{% block content_class %}site-page{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'site_pages/css/home.css' %}">
+{% endblock %}
 
 {% block content %}
+{% comment %}
+The home page (design review step 2f): a hero with what Bonkverse is in one line
+and its doors as tiles (Skins, Replays, Players, Skin editor), each showing
+something live from that part (favorite skins, the newest replay's map, the
+players in it), then what's happening now. Data:
+site_pages/selectors.py. The replay countdown ticks in site_pages/js/home.js.
+{% endcomment %}
+<div class="bv-main home">
+  <section class="home-hero" aria-labelledby="home-title">
+    <div class="home-hero__text">
+      <h1 id="home-title">Skins, replays and stats for bonk.io players</h1>
+      <p class="bv-lead">
+        {{ skin_counts.total|intcomma }} skins made by players{% if skin_counts.today %} · {{ skin_counts.today|intcomma }} new today{% endif %}.
+        Profiles for {{ player_count|intcomma }} players, built from their games.
+      </p>
+      <form class="home-search" method="get" action="{% url 'skins:search_skins' %}" role="search">
+        <div class="bv-search">
+          <input type="search" name="q" placeholder="Skin name or creator" aria-label="Search skins" autocomplete="off">
+          <button type="submit">Search</button>
+        </div>
+      </form>
+    </div>
 
-<section class="hero">
-  <div class="hero-inner">
-    <img class="hero-logo" src="{% static 'images/BonkverseLogo.png' %}" alt="Bonkverse" />
-    <h1 class="hero-title">Discover. Create. Share.</h1>
-    <p class="hero-sub">Explore thousands of Bonk.io skins from the community.</p>
+    {# The doors: each tile shows something real from that part of Bonkverse. #}
+    <nav class="home-tiles" aria-label="Bonkverse">
+      <a class="home-tile home-tile--skins" href="{% url 'skins:search_skins' %}">
+        <span class="home-tile__art home-balls" aria-hidden="true">
+          {% for s in top_favs|slice:":6" %}<img src="{{ s.image_url|default:'/static/images/default_skin.png' }}" alt="" width="96" height="96">{% endfor %}
+        </span>
+        <span class="home-tile__label">
+          <span class="home-tile__title">Skins</span>
+          <span class="home-tile__text">{{ skin_counts.total|intcomma }} to wear in one click, or upload your own</span>
+        </span>
+      </a>
 
-    {% include "skins/partials/search_bar.html" %}
+      <a class="home-tile home-tile--replays" href="{{ replays_url }}/">
+        <span class="home-tile__art" aria-hidden="true">
+          {% with first=replays.0 %}{% if first.thumbnail_url %}<img class="home-tile__map" src="{{ first.thumbnail_url }}" alt="" width="320" height="180">{% endif %}{% endwith %}
+          {% if collector %}<span class="home-live"><span class="home-live__dot"></span>Live</span>{% endif %}
+        </span>
+        <span class="home-tile__label">
+          <span class="home-tile__title">Replays</span>
+          <span class="home-tile__text">Public games, collected every few minutes</span>
+        </span>
+      </a>
 
-  </div>
-</section>
+      <a class="home-tile home-tile--players" href="{% url 'players:players_directory' %}">
+        <span class="home-tile__art home-faces" aria-hidden="true">
+          {% for p in hero_players %}
+            {% if p.skin %}<img src="{{ p.skin }}" alt="" width="56" height="56">{% else %}<span class="home-faces__ball"></span>{% endif %}
+          {% empty %}
+            <i data-lucide="users"></i>
+          {% endfor %}
+        </span>
+        <span class="home-tile__label">
+          <span class="home-tile__title">Players</span>
+          <span class="home-tile__text">{{ player_count|intcomma }} profiles. Find yours</span>
+        </span>
+      </a>
 
-<!-- Animated carousels -->
-{% url 'skins:new_releases' as recent_url %}
-{% include 'skins/partials/carousel.html' with title="Recently Uploaded" skins=recent seeall_url=recent_url %}
+      <a class="home-tile home-tile--editor" href="{{ editor_url }}/">
+        <span class="home-tile__art" aria-hidden="true"><i data-lucide="brush"></i></span>
+        <span class="home-tile__label">
+          <span class="home-tile__title">Skin editor</span>
+          <span class="home-tile__text">Make a skin from shapes, then wear it</span>
+        </span>
+      </a>
+    </nav>
+  </section>
 
-{% include 'skins/partials/carousel.html' with title="Random Picks" skins=random_strip %}
-{# no seeall_url → falls back to search, which is the right behavior for a random strip #}
+  {% if replays %}
+  <section class="home-section" aria-labelledby="home-replays-title">
+    <div class="home-section__head">
+      <div>
+        <h2 id="home-replays-title">Latest replays</h2>
+        {% if collector %}
+          <p class="bv-muted home-collector">
+            {% if collector.seconds_to_next %}
+              <span data-collector-next>Next collection in <time data-countdown="{{ collector.seconds_to_next }}">{{ collector.next_in }}</time></span>
+            {% else %}
+              Collecting new replays now
+            {% endif %}
+            {% if collector.last_added is not None %} · the last one added {{ collector.last_added|intcomma }} replay{{ collector.last_added|pluralize }}{% if collector.last_ago %} {{ collector.last_ago }}{% endif %}{% endif %}
+          </p>
+        {% endif %}
+      </div>
+      <a class="bv-btn bv-btn--ghost" href="{{ replays_url }}/">All replays</a>
+    </div>
+    <ul class="home-replays">
+      {% for replay in replays %}
+        <li class="bv-card home-replay">
+          <a class="home-replay__thumb" href="{{ replay.watch_url }}" aria-label="Watch {{ replay.map_name }}">
+            {% if replay.thumbnail_url %}<img src="{{ replay.thumbnail_url }}" alt="" loading="lazy" width="320" height="180">{% endif %}
+          </a>
+          <div class="home-replay__body">
+            <a class="home-replay__map" href="{{ replay.watch_url }}">{{ replay.map_name }}</a>
+            <p class="home-replay__players">
+              {% for p in replay.players %}{% with url=p.username|profile_url %}{% if url and not p.guest %}<a href="{{ url }}">{{ p.username }}</a>{% else %}<span>{{ p.username }}</span>{% endif %}{% endwith %}{% if not forloop.last %}, {% endif %}{% endfor %}{% if replay.more_players %} +{{ replay.more_players }}{% endif %}
+            </p>
+            {% if replay.ago %}<p class="bv-muted home-replay__when"><time datetime="{{ replay.fetched_at|date:'c' }}" title="{{ replay.fetched_at|date:'M j, Y, g:i A' }}">{{ replay.ago }}</time></p>{% endif %}
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
 
-{% url 'stats:leaderboards_favorited' as favs_url %}
-{% include 'skins/partials/carousel.html' with title="Most Favorited" skins=top_favs seeall_url=favs_url %}
+  {% if recent %}
+  <section class="home-section" aria-labelledby="home-new-title">
+    <div class="home-section__head">
+      <h2 id="home-new-title">New skins</h2>
+      <a class="bv-btn bv-btn--ghost" href="{% url 'skins:new_releases' %}">See all</a>
+    </div>
+    <div class="home-skins">
+      {% for s in recent %}
+        {% include 'skins/partials/_skin_card_compact.html' with skin=s card_class='home-skin' name_len=24 %}
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 
+  {% if top_favs %}
+  <section class="home-section" aria-labelledby="home-favs-title">
+    <div class="home-section__head">
+      <h2 id="home-favs-title">Most favorited</h2>
+      <a class="bv-btn bv-btn--ghost" href="{% url 'stats:leaderboards_favorited' %}">See all</a>
+    </div>
+    <div class="home-skins">
+      {% for s in top_favs %}
+        {% include 'skins/partials/_skin_card_compact.html' with skin=s card_class='home-skin' name_len=24 %}
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
 
+{% block extra_scripts %}
+<script src="{% static 'site_pages/js/home.js' %}" defer></script>
 {% endblock %}

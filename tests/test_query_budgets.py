@@ -30,7 +30,9 @@ OWNER = "Budget Tester"
 # Search's count includes 6 queries that set and reset its 3 s time limit
 # (docs/search.md).
 BUDGETS = {
-    "/": (4, 6),
+    # Home (2026-11-18 redesign): 2 skin rows, skin total and today, known
+    # players (cached an hour); signed in adds session, user and the header avatar.
+    "/": (5, 8),
     "/search/": (16, 20),
     "/search/?q=Test": (14, 18),
     "/search/?sort=favorites": (16, 20),

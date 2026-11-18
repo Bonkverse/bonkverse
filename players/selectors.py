@@ -917,3 +917,14 @@ def calculator_player(username, viewer):
     skin_code = worn_skin_codes([base["username"]]).get(base["username"].lower())
     summary["skin"] = skin_avatar_url(base["username"], skin_code) if skin_code else None
     return summary, None
+
+
+def known_player_count() -> int:
+    """How many bonk.io players Bonkverse knows of (friend lists and
+    replays). Cached an hour: it's a count over a large table, shown on
+    the home page."""
+    count = cache.get("players:known_count")
+    if count is None:
+        count = BonkPlayer.objects.count()
+        cache.set("players:known_count", count, 60 * 60)
+    return count
