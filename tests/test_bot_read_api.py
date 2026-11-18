@@ -298,3 +298,34 @@ def test_collecting_when_bonkleagues_is_down(client, settings, mocked_http, tmp_
     mocked_http.add(responses.GET, FETCHER, status=503)
     reply = collect(client, bonk_username="Tulip", link=LINK)
     assert (reply.status_code, reply.json()["error"]) == (502, "fetch_failed")
+
+
+# --- latest (for #skin-feed) -----------------------------------------------------------
+
+
+def test_latest_without_after_only_says_where_now_is(client):
+    SkinFactory()
+    newest = SkinFactory()
+    data = get(client, "skins/latest/").json()["data"]
+    assert data == {"newest_id": newest.id, "skins": []}
+
+
+def test_latest_after_an_id_oldest_first(client):
+    first = SkinFactory(name="One")
+    SkinFactory(name="Two", submission_source="website")
+    SkinFactory(name="Three", submission_source="discord")
+
+    data = get(client, f"skins/latest/?after={first.id}&limit=5").json()["data"]
+    assert [(s["name"], s["source"]) for s in data["skins"]] == [
+        ("Two", "website"),
+        ("Three", "discord"),
+    ]
+    assert (
+        get(client, f"skins/latest/?after={first.id}&limit=1").json()["data"]["skins"][0]["name"]
+        == "Two"
+    )
+    assert get(client, "skins/latest/?after=x").json()["error"] == "invalid_after"
+
+
+def test_latest_on_an_empty_site(client):
+    assert get(client, "skins/latest/").json()["data"] == {"newest_id": 0, "skins": []}
