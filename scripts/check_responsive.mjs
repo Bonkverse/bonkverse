@@ -51,6 +51,7 @@ const PAGES = [
   ["/upload/", "upload", true],
   ["/settings/profile/", "settings", true],
   ["/developers/keys/", "api-keys", true],
+  ["/moderation/", "moderation", true], // staff only: --session of a staff account
 ];
 const SIZES = [
   [280, 653], [320, 568], [375, 667], [430, 932], [667, 375], [600, 900], [768, 1024], [899, 900],

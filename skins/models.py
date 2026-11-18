@@ -28,6 +28,7 @@ class CreatorSource(models.TextChoices):
     SUBMITTER = "submitter", "The submitter's own account"
     AS_ENTERED = "as_entered", "Typed or accepted by the submitter, not checked"
     BONKLEAGUES = "bonkleagues", "The BonkLeagues author; the submitter didn't make it"
+    STAFF = "staff", "Set by staff after a report"
     LEGACY = "legacy", "Before creators' sources were recorded"
 
 
@@ -182,6 +183,15 @@ class SkinReport(models.Model):
     details = models.TextField(blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     resolved = models.BooleanField(default=False)
+    # The staff decision that closed it (skins/moderation.py); empty for
+    # reports closed before decisions were recorded, or in the Django admin.
+    decision = models.ForeignKey(
+        "skins.ModerationDecision",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="closed_reports",
+    )
 
     class Meta:
         # One report per user per skin (authenticated users only)
@@ -213,3 +223,43 @@ class CategoryCover(models.Model):
 
     def __str__(self):
         return f"{self.category}: {self.skin.name}"
+
+
+class ModerationDecision(models.Model):
+    """What staff decided about a reported skin, and who decided it.
+
+    Made by skins/moderation.py, one per decision. It keeps the skin's name,
+    the old and new creator, and who reported it, so the record (and, later,
+    telling reporters and creators what happened) outlives a deleted skin.
+    """
+
+    class Action(models.TextChoices):
+        DISMISSED = "dismissed", "Kept the skin"
+        CREATOR_CHANGED = "creator_changed", "Changed the creator"
+        DELETED = "deleted", "Deleted the skin"
+
+    skin = models.ForeignKey(
+        Skin, on_delete=models.SET_NULL, null=True, blank=True, related_name="decisions"
+    )
+    skin_name = models.CharField(max_length=1000)
+    action = models.CharField(max_length=20, choices=Action.choices)
+    old_creator = models.CharField(max_length=1000, blank=True)
+    new_creator = models.CharField(max_length=1000, blank=True)
+    note = models.TextField(blank=True)
+    report_count = models.PositiveIntegerField(default=0)
+    reasons = models.JSONField(default=list, blank=True)  # reason codes, one per report
+    reporter_ids = models.JSONField(default=list, blank=True)  # signed-in reporters
+    decided_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="moderation_decisions",
+    )
+    decided_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-decided_at"]
+
+    def __str__(self):
+        return f"{self.get_action_display()}: {self.skin_name}"
