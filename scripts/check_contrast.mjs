@@ -15,6 +15,7 @@
 //   node scripts/check_contrast.mjs [--base http://localhost:8000]
 //        [--session <sessionid cookie>]   # signed-in pages too
 //        [--pages search,detail]          # only some pages
+//        [--themes light,dark]            # only some themes (CI runs one per job)
 //        [--width 1280]                   # viewport width (default 1280)
 //   BV_LUCIDE_FILE=path/to/lucide.min.js   serve the icon library locally (offline)
 
@@ -54,7 +55,7 @@ const PAGES = [
   ["/moderation/", "moderation", true], // staff only: --session of a staff account
   ["/staff/", "staff", true],
 ];
-const THEMES = ["bonkverse", "light", "dark"];
+const THEMES = arg("themes", "bonkverse,light,dark").split(",");
 
 // Things you click, type in or read as a label.
 const CONTROLS = [

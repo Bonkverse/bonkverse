@@ -149,7 +149,9 @@ pre-commit run --all-files      # everything the commit hook runs
 -   `tests/test_architecture.py` fails if anything outside `integrations/` makes outside HTTP calls ([ADR 0006](docs/adr/0006-outside-calls-through-integrations.md)).
 -   `tests/test_smoke.py` requests every route automatically. Known bugs are marked `xfail(strict=True)`: when you fix one, the test turns red until you remove its mark.
 
-Every push and pull request runs `.github/workflows/ci.yml`: ruff, pytest on Postgres, a migrations check, `pip-audit`, `bandit` and `manage.py check --deploy`. `main` only accepts changes with a green run.
+Every push and pull request runs `.github/workflows/ci.yml`: ruff, pytest on Postgres, a migrations check, `pip-audit`, `bandit`, `manage.py check --deploy`, and the browser checks (every main page at 15 screen sizes and for contrast, in all three themes: [frontend.md](docs/architecture/frontend.md)). `main` only accepts changes with a green run.
+
+To run the browser checks yourself: `python manage.py seed_ui_checks --session-file /tmp/session` on an empty database, start `runserver`, `npm install --no-save playwright && npx playwright install chromium`, then `node scripts/check_responsive.mjs --session "$(cat /tmp/session)"` and the same for `check_contrast.mjs`.
 
 
 Working with the Database

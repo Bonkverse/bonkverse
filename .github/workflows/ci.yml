@@ -1,6 +1,7 @@
 # CI for the Bonkverse Django repo (RFC-0001, "Testing and CI/CD").
-# lint -> tests on Postgres -> migrations check -> security scan -> production image build.
-# Branch protection on main requires all four jobs; Railway deploys only a green main.
+# lint -> tests on Postgres -> migrations check -> security scan -> production image build,
+# plus the browser checks (sizes and contrast on real pages, one job per theme).
+# Branch protection on main requires lint, test, security and docker; Railway deploys only a green main.
 name: CI
 
 on:
@@ -103,6 +104,98 @@ jobs:
         run: >-
           BONK_TOKEN_KEYS=$(python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
           ENV=production python manage.py check --deploy --fail-level ERROR
+
+  browser:
+    # Opens the site's pages in Chromium and fails if one scrolls sideways, cuts
+    # text off, has a control under 44 px (scripts/check_responsive.mjs, 15 screen
+    # sizes) or is hard to see (scripts/check_contrast.mjs, WCAG AA). One job per
+    # theme so the three run side by side. Data: site_pages seed_ui_checks.
+    name: browser (${{ matrix.theme }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        theme: [bonkverse, light, dark]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: bonkverse
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      ENV: ci
+      SECRET_KEY: ci-only-not-a-secret
+      DATABASE_URL: postgresql://postgres@localhost:5432/bonkverse
+      REDIS_URL: redis://localhost:6379/0
+      # One browser opens hundreds of pages from one IP: lift the per-IP limits.
+      RATE_LIMIT_BROWSE: 100000/m
+      RATE_LIMIT_SEARCH: 100000/m
+      RATE_LIMIT_MEDIA: 100000/m
+      PLAYWRIGHT_VERSION: "1.63.0"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements*.txt
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: System libraries for CairoSVG
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libcairo2
+      - run: pip install -r requirements.txt
+      - name: Database and seed data
+        run: |
+          python manage.py migrate --noinput
+          python manage.py seed_ui_checks --session-file "$RUNNER_TEMP/session"
+      - name: Start the site
+        run: |
+          python manage.py runserver --noreload 127.0.0.1:8000 > "$RUNNER_TEMP/server.log" 2>&1 &
+          for _ in $(seq 1 30); do
+            curl -sf -o /dev/null http://127.0.0.1:8000/ && exit 0
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/server.log"
+          exit 1
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ env.PLAYWRIGHT_VERSION }}
+      - name: Playwright and Chromium
+        run: |
+          npm install --no-save --no-package-lock playwright@"$PLAYWRIGHT_VERSION"
+          npx playwright install --with-deps chromium
+      - name: Sizes (check_responsive.mjs)
+        run: >-
+          node scripts/check_responsive.mjs --themes ${{ matrix.theme }}
+          --session "$(cat "$RUNNER_TEMP/session")" --shots "$RUNNER_TEMP/shots"
+      - name: Contrast (check_contrast.mjs)
+        if: ${{ !cancelled() }}
+        run: >-
+          node scripts/check_contrast.mjs --themes ${{ matrix.theme }}
+          --session "$(cat "$RUNNER_TEMP/session")"
+      - name: Screenshots and server log
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: browser-${{ matrix.theme }}
+          path: |
+            ${{ runner.temp }}/shots
+            ${{ runner.temp }}/server.log
+          retention-days: 7
 
   docker:
     # Builds the exact image Railway deploys, so a broken Dockerfile or a vulnerable
