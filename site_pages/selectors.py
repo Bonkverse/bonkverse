@@ -26,11 +26,12 @@ from integrations.replays import (
     thumbnail_url,
     watch_url,
 )
-from players.selectors import known_player_count
+from players.selectors import known_player_count, with_skin_avatars
 from skins.selectors import home_strips, skin_counts
 
 REPLAY_CARDS = 4
 NAMES_PER_REPLAY = 4
+HERO_PLAYERS = 5  # avatars on the hero's Players tile
 _REPLAYS_KEY = "site_pages:home:replays:v1"
 _REPLAYS_SECONDS = 60
 
@@ -39,14 +40,29 @@ def home(now: datetime | None = None) -> dict:
     """Everything home.html shows."""
     now = now or timezone.now()
     replays = _replay_activity()
+    cards = [_replay_card(r, now) for r in replays["replays"]]
     return {
         **home_strips(),
         "skin_counts": skin_counts(now),
         "player_count": known_player_count(),
-        "replays": [_replay_card(r, now) for r in replays["replays"]],
+        "replays": cards,
         "collector": _collector(replays["status"], now),
+        "hero_players": _hero_players(replays["replays"]),
         "replays_url": settings.BONKVERSE_REPLAYS_URL,
+        "editor_url": settings.BONKVERSE_EDITOR_URL,
     }
+
+
+def _hero_players(replays: list[dict]) -> list[dict]:
+    """Registered players from the newest replays, each with their worn skin
+    as an avatar when Bonkverse has seen it ("skin": URL or None)."""
+    names = []
+    for replay in replays:
+        for p in replay.get("players") or []:
+            name = p.get("username") if isinstance(p, dict) else None
+            if name and not p.get("guest") and name.lower() not in {n.lower() for n in names}:
+                names.append(name)
+    return with_skin_avatars([{"username": n} for n in names[:HERO_PLAYERS]])
 
 
 def _replay_activity() -> dict:

@@ -65,7 +65,8 @@ def test_page_says_what_bonkverse_is_with_live_counts(client, mocked_http):
     assert "3 skins made by players · 3 new today" in html
     assert "Profiles for 2 players" in html
     assert "Discover. Create. Share." not in html  # the old slogan
-    for door in ('href="/search/"', f'href="{REPLAYS}/"', 'href="/players/"'):
+    # The hero's tiles are the doors.
+    for door in ('href="/search/"', f'href="{REPLAYS}/"', 'href="/players/"', "home-tile--editor"):
         assert door in html
 
 
@@ -163,3 +164,30 @@ def test_skin_rows_show_newest_and_most_favorited_without_reported_skins(client,
 )
 def test_ago_follows_the_design_guide(delta, text):
     assert ago(NOW - delta, NOW) == text
+
+
+def test_hero_players_tile_shows_registered_players_from_the_newest_replays(mocked_http):
+    _mock_replay_site(mocked_http)
+    BonkPlayerFactory(username="Isabelle26", worn_skin_code="code-1")
+
+    players = home(now=NOW)["hero_players"]
+
+    assert [p["username"] for p in players] == [
+        "Isabelle26",
+        "legendboss",
+        "Magic",
+        "zorro",
+        "ButDoge",
+    ]  # guests left out, at most 5
+    assert players[0]["skin"].startswith("/player/Isabelle26/")
+    assert players[1]["skin"] is None  # no skin seen: a plain ball
+
+
+def test_hero_skins_tile_shows_favorite_skins(client, mocked_http):
+    _mock_replay_site(mocked_http)
+    SkinFactory(image_url="/media/skins/fav.png")
+
+    html = client.get("/").content.decode()
+
+    assert 'class="home-tile__art home-balls"' in html
+    assert 'src="/media/skins/fav.png"' in html

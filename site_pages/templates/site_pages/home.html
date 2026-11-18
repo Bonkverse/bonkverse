@@ -10,42 +10,74 @@
 
 {% block content %}
 {% comment %}
-The home page (design review step 2f): what Bonkverse is in one line, the three
-doors (Skins, Replays, Players), then what's happening now. Data:
+The home page (design review step 2f): a hero with what Bonkverse is in one line
+and its doors as tiles (Skins, Replays, Players, Skin editor), each showing
+something live from that part (favorite skins, the newest replay's map, the
+players in it), then what's happening now. Data:
 site_pages/selectors.py. The replay countdown ticks in site_pages/js/home.js.
 {% endcomment %}
 <div class="bv-main home">
-  <header class="home-intro">
-    <h1>Skins, replays and stats for bonk.io players</h1>
-    <p class="bv-lead">
-      {{ skin_counts.total|intcomma }} skins made by players{% if skin_counts.today %} · {{ skin_counts.today|intcomma }} new today{% endif %}.
-      Profiles for {{ player_count|intcomma }} players, built from their games.
-    </p>
-    <form class="home-search" method="get" action="{% url 'skins:search_skins' %}" role="search">
-      <div class="bv-search">
-        <input type="search" name="q" placeholder="Skin name or creator" aria-label="Search skins" autocomplete="off">
-        <button type="submit">Search</button>
-      </div>
-    </form>
-  </header>
+  <section class="home-hero" aria-labelledby="home-title">
+    <div class="home-hero__text">
+      <h1 id="home-title">Skins, replays and stats for bonk.io players</h1>
+      <p class="bv-lead">
+        {{ skin_counts.total|intcomma }} skins made by players{% if skin_counts.today %} · {{ skin_counts.today|intcomma }} new today{% endif %}.
+        Profiles for {{ player_count|intcomma }} players, built from their games.
+      </p>
+      <form class="home-search" method="get" action="{% url 'skins:search_skins' %}" role="search">
+        <div class="bv-search">
+          <input type="search" name="q" placeholder="Skin name or creator" aria-label="Search skins" autocomplete="off">
+          <button type="submit">Search</button>
+        </div>
+      </form>
+    </div>
 
-  <nav class="home-doors" aria-label="Bonkverse">
-    <a class="bv-card home-door" href="{% url 'skins:search_skins' %}">
-      <span class="home-door__icon" aria-hidden="true"><i data-lucide="shirt"></i></span>
-      <span class="home-door__title">Skins</span>
-      <span class="home-door__text">Find a skin and wear it in one click, or upload your own.</span>
-    </a>
-    <a class="bv-card home-door" href="{{ replays_url }}/">
-      <span class="home-door__icon" aria-hidden="true"><i data-lucide="clapperboard"></i></span>
-      <span class="home-door__title">Replays</span>
-      <span class="home-door__text">Watch public bonk.io games, collected every few minutes.</span>
-    </a>
-    <a class="bv-card home-door" href="{% url 'players:players_directory' %}">
-      <span class="home-door__icon" aria-hidden="true"><i data-lucide="users"></i></span>
-      <span class="home-door__title">Players</span>
-      <span class="home-door__text">Look up anyone's level, maps and who they play with. Find your own profile.</span>
-    </a>
-  </nav>
+    {# The doors: each tile shows something real from that part of Bonkverse. #}
+    <nav class="home-tiles" aria-label="Bonkverse">
+      <a class="home-tile home-tile--skins" href="{% url 'skins:search_skins' %}">
+        <span class="home-tile__art home-balls" aria-hidden="true">
+          {% for s in top_favs|slice:":6" %}<img src="{{ s.image_url|default:'/static/images/default_skin.png' }}" alt="" width="96" height="96">{% endfor %}
+        </span>
+        <span class="home-tile__label">
+          <span class="home-tile__title">Skins</span>
+          <span class="home-tile__text">{{ skin_counts.total|intcomma }} to wear in one click, or upload your own</span>
+        </span>
+      </a>
+
+      <a class="home-tile home-tile--replays" href="{{ replays_url }}/">
+        <span class="home-tile__art" aria-hidden="true">
+          {% with first=replays.0 %}{% if first.thumbnail_url %}<img class="home-tile__map" src="{{ first.thumbnail_url }}" alt="" width="320" height="180">{% endif %}{% endwith %}
+          {% if collector %}<span class="home-live"><span class="home-live__dot"></span>Live</span>{% endif %}
+        </span>
+        <span class="home-tile__label">
+          <span class="home-tile__title">Replays</span>
+          <span class="home-tile__text">Public games, collected every few minutes</span>
+        </span>
+      </a>
+
+      <a class="home-tile home-tile--players" href="{% url 'players:players_directory' %}">
+        <span class="home-tile__art home-faces" aria-hidden="true">
+          {% for p in hero_players %}
+            {% if p.skin %}<img src="{{ p.skin }}" alt="" width="56" height="56">{% else %}<span class="home-faces__ball"></span>{% endif %}
+          {% empty %}
+            <i data-lucide="users"></i>
+          {% endfor %}
+        </span>
+        <span class="home-tile__label">
+          <span class="home-tile__title">Players</span>
+          <span class="home-tile__text">{{ player_count|intcomma }} profiles. Find yours</span>
+        </span>
+      </a>
+
+      <a class="home-tile home-tile--editor" href="{{ editor_url }}/">
+        <span class="home-tile__art" aria-hidden="true"><i data-lucide="brush"></i></span>
+        <span class="home-tile__label">
+          <span class="home-tile__title">Skin editor</span>
+          <span class="home-tile__text">Make a skin from shapes, then wear it</span>
+        </span>
+      </a>
+    </nav>
+  </section>
 
   {% if replays %}
   <section class="home-section" aria-labelledby="home-replays-title">
