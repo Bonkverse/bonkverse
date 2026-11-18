@@ -11,7 +11,7 @@ from urllib.parse import parse_qs
 import pytest
 import requests
 
-from core.bonk import AvatarSlot
+from core.bonk import DEFAULT_SKIN_CODE, AvatarSlot
 from integrations.bonk_api import (
     BROWSER_HEADERS,
     AVATAR_UPDATE_SCRIPT,
@@ -101,11 +101,24 @@ class TestLogin:
         [
             {"activeAvatarNumber": 3},  # slot holds ""
             {"activeAvatarNumber": 4},  # slot holds null
+            {"avatar2": None},  # key present, null
+            # A new account that never wore a skin (seen in a real login reply).
+            {f"avatar{n}": "" for n in range(1, 6)} | {"avatar": "", "activeAvatarNumber": 1},
+        ],
+    )
+    def test_empty_active_slot_is_the_default_skin(self, api, mocked_http, changes):
+        mocked_http.post(LOGIN, json={**load_bonk_fixture("login_success"), **changes})
+
+        assert api.login("testplayer", "hunter2").skin_code == DEFAULT_SKIN_CODE
+
+    @pytest.mark.parametrize(
+        "changes",
+        [
             {"activeAvatarNumber": None},  # no active slot
             {"avatar2": {"layers": []}},  # not a string
         ],
     )
-    def test_no_skin_code_when_the_active_slot_has_none(self, api, mocked_http, changes):
+    def test_no_skin_code_when_the_active_slot_is_unusable(self, api, mocked_http, changes):
         mocked_http.post(LOGIN, json={**load_bonk_fixture("login_success"), **changes})
 
         assert api.login("testplayer", "hunter2").skin_code is None

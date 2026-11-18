@@ -25,7 +25,7 @@ from dataclasses import dataclass, field
 
 import requests
 
-from core.bonk import AvatarSlot, BonkUsername, InvalidUsername
+from core.bonk import DEFAULT_SKIN_CODE, AvatarSlot, BonkUsername, InvalidUsername
 
 logger = logging.getLogger(__name__)
 
@@ -275,7 +275,10 @@ class BonkLoginResult:
     # BONK: the account's total XP ("xp"); its level is core.bonk.levels.
     xp: int | None = None
     # The skin code in the account's active slot: what the player wears in
-    # game. Unchecked here; callers check it with core.bonk.SkinCode.
+    # game. An empty slot is bonk.io's default skin (DEFAULT_SKIN_CODE).
+    # None only when there's no active slot or the slot held something
+    # other than a string. Unchecked here; callers check it with
+    # core.bonk.SkinCode.
     skin_code: str | None = field(default=None, repr=False)
 
 
@@ -546,13 +549,17 @@ def _refusal(code: str | None) -> str:
 
 
 def _slot_skin_code(data: dict, slot: AvatarSlot | None) -> str | None:
-    """The skin code bonk.io sent for `slot`, or None if it sent none."""
+    """The skin code in `slot`: bonk.io's default skin if the slot is empty,
+    None if there's no slot or it held something that isn't a code."""
     if slot is None:
         return None
     # BONK: each slot's skin code is its own key, "avatar1" to "avatar5"
-    # (DemystifyBonk's login notes). An empty slot may come back empty or null.
+    # (DemystifyBonk's login notes). A slot that was never worn comes back
+    # "" or null, and bonk.io shows the default skin for it.
     value = data.get(f"avatar{slot.number}")
-    return value if isinstance(value, str) and value else None
+    if value is None or value == "":
+        return DEFAULT_SKIN_CODE
+    return value if isinstance(value, str) else None
 
 
 def _int_or_none(value) -> int | None:

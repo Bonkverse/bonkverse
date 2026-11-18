@@ -10,7 +10,7 @@ import struct
 
 import pytest
 
-from core.bonk import InvalidSkinCode, SkinCode
+from core.bonk import DEFAULT_SKIN_CODE, InvalidSkinCode, SkinCode
 from core.bonk.skin_codes import MAX_CODE_LENGTH, MAX_LAYERS, MAX_SHAPE_ID
 from tests.factories import SKIN_CODE, SKIN_CODE_DOUBLE_ENCODED
 
@@ -117,6 +117,14 @@ class TestRealCodes:
 
     def test_the_whisp_and_the_layer_limit(self):
         SkinCode(_code(_skin(_layers([MAX_SHAPE_ID] * MAX_LAYERS)))).parse()
+
+    def test_bonk_default_skin(self):
+        """What bonk.io shows for an empty slot: no layers on 0x448AFF, and
+        the same code the editor writes for it."""
+        skin = SkinCode(DEFAULT_SKIN_CODE).parse()
+        assert skin.layers == ()
+        assert skin.base_color == 0x448AFF
+        assert SkinCode.from_layers([], 0x448AFF).raw == DEFAULT_SKIN_CODE
 
 
 class TestRefused:

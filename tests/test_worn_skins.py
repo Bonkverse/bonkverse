@@ -7,6 +7,7 @@ from datetime import timedelta
 import pytest
 from django.utils import timezone
 
+from core.bonk import DEFAULT_SKIN_CODE
 from players.models import BonkPlayer, WornSkinSource
 from players.services import record_worn_skin
 from tests.conftest import load_bonk_fixture
@@ -105,13 +106,20 @@ class TestLoginRecordsWornSkin:
         assert player.worn_skin_code == LOGIN_SKIN_CODE
         assert player.worn_skin_source == WornSkinSource.LOGIN
 
-    def test_login_with_an_empty_active_slot_stores_nothing(self, client, mocked_http):
-        body = {**load_bonk_fixture("login_success"), "activeAvatarNumber": 3}
+    def test_login_with_an_empty_active_slot_stores_the_default_skin(self, client, mocked_http):
+        """A bonk.io account that never wore a skin sends every slot empty.
+        bonk.io shows its default skin, so that's the avatar here too, and it
+        replaces an older skin seen in a replay."""
+        BonkPlayerFactory(bonk_id=1234567, username="TestPlayer", worn_skin_code=SKIN_CODE)
+        empty_slots = {f"avatar{n}": "" for n in range(1, 6)}
+        body = {**load_bonk_fixture("login_success"), **empty_slots, "activeAvatarNumber": 1}
         mocked_http.post(BONK_LOGIN_URL, json=body)
 
         client.post("/login/", {"username": "TestPlayer", "password": "hunter2"})
 
-        assert BonkPlayer.objects.get(bonk_id=1234567).worn_skin_code is None
+        player = BonkPlayer.objects.get(bonk_id=1234567)
+        assert player.worn_skin_code == DEFAULT_SKIN_CODE
+        assert player.worn_skin_source == WornSkinSource.LOGIN
 
     def test_a_bad_skin_code_does_not_stop_the_login(self, client, mocked_http):
         body = {**load_bonk_fixture("login_success"), "avatar2": "not a skin"}

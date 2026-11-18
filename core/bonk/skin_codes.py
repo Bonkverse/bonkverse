@@ -45,6 +45,11 @@ _EMPTY_SLOT = (0x00, 0x01)  # AMF3 undefined, null
 _LAYER_FIELDS = struct.Struct(">HHffffBBI")  # 1, shape, scale, angle, x, y, flipX, flipY, color
 _FORMAT_VERSION = bytes([0x00, 0x02])  # what bonk.io and the editor write
 
+# BONK: the skin bonk.io shows for an avatar slot that holds no code (a new
+# account that has never worn a skin): no layers on base color 0x448AFF.
+# bonk.io sends such a slot as "" or null, not as this code.
+DEFAULT_SKIN_CODE = "CgcDYQACCQEBAESK/w=="
+
 
 class InvalidSkinCode(ValueError):
     """The text isn't a bonk.io skin code. `reason` says why, for logs."""
