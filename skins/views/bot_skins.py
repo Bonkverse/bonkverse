@@ -14,19 +14,19 @@ Response: 201 created / 200 already on Bonkverse, both {"created", "skin": {...}
           otherwise {"error": "<code>", "retryable": bool}.
 """
 
-import hmac
 import json
 
-from django.conf import settings
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
+from core.auth_guards import bonxbot_authorized
 from core.ratelimits import limit
 from accounts.services import log_event
 from skins.models import CreatorSource, SubmissionSource
 from skins.skin_import import ImportFailure, import_bonkleagues_skin
-from skins.submitters import Submission, discord_id_or_none
+from core.discord import discord_id_or_none
+from skins.submitters import Submission
 
 ERROR_STATUS = {
     ImportFailure.INVALID_LINK: 422,
@@ -38,12 +38,6 @@ ERROR_STATUS = {
     ImportFailure.FETCH_FAILED: 502,
     ImportFailure.STORAGE_FAILED: 500,
 }
-
-
-def _bot_authorized(request) -> bool:
-    expected = settings.BONXBOT_API_TOKEN
-    given = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
-    return bool(expected) and hmac.compare_digest(given.encode(), expected.encode())
 
 
 def _discord_submission(body: dict) -> Submission:
@@ -63,7 +57,7 @@ def _error(code: str, status: int) -> JsonResponse:
 @limit("upload")
 @require_POST
 def submit_skin(request):
-    if not _bot_authorized(request):
+    if not bonxbot_authorized(request):
         return _error("unauthorized", 401)
     try:
         body = json.loads(request.body)

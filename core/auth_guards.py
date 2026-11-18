@@ -1,7 +1,10 @@
 # core/auth_guards.py
 # One auth contract for all JSON API endpoints. Returns machine-readable 401s
 # the editor branches on: auth="bonkverse" → site sign-in, auth="bonk" → bonk token.
+import hmac
 from functools import wraps
+
+from django.conf import settings
 
 from django.http import JsonResponse
 
@@ -32,3 +35,13 @@ def bonk_token_required(view):
         return view(request, *args, **kwargs)
 
     return wrapped
+
+
+def bonxbot_authorized(request) -> bool:
+    """Whether the request carries BonxBot's shared secret (Authorization: Bearer <token>).
+
+    Always False while BONXBOT_API_TOKEN is unset, so an empty header never passes.
+    """
+    expected = settings.BONXBOT_API_TOKEN
+    given = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
+    return bool(expected) and hmac.compare_digest(given.encode(), expected.encode())

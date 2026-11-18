@@ -29,6 +29,7 @@ Setting names and defaults: [configuration.md](../operations/configuration.md).
 | Map decoder service | `map_decoder.py` | `site_pages/views/tools.py` | "Couldn't decode that map string" (400, with the decoder's reason) or "isn't responding" (502) |
 | Replay site player API (`/api/player/<name>`, `/api/player/<name>/map/<mapid>`, `/api/players/lookup`, `/api/players?q=`, `/api/levels/distribution`) | `replays.py` | `players/selectors.py` (profile tabs, Players page cards, XP calculator) | "Replay stats can't be loaded right now" (page still renders); unknown name → 404 page |
 | BonxBot's Postgres (one-time migration) | `bonxbot_db.py` | `import_bonxbot_skins` command | Command output |
+| LevelBot's Postgres (one-time import, read only) | `levelbot_db.py` | `import_levelbot_links` command | Command output |
 
 ## Discord: pace your calls
 

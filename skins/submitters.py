@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 from django.db import transaction
 
 from accounts.models import UserEvent
+from core.discord import discord_id_or_none
 from skins.models import CreatorSource, Skin, SubmissionSource
 
 BACKFILL_BATCH_SIZE = 500
@@ -72,20 +73,6 @@ def resolve_creator(submitter: str, bonkleagues_author: str | None, made_it: boo
     if made_it is False:
         return CreatorChoice(author, CreatorSource.BONKLEAGUES)
     return None
-
-
-def discord_id_or_none(value) -> int | None:
-    """A Discord user id as an int, or None for anything that isn't one.
-
-    Discord ids are 64-bit snowflakes; the bot may send them as int or string.
-    """
-    if isinstance(value, bool):
-        return None
-    try:
-        number = int(value)
-    except (TypeError, ValueError):
-        return None
-    return number if 0 < number < 2**63 else None
 
 
 @dataclass

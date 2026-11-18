@@ -11,11 +11,11 @@ from django.core.management import call_command
 
 from accounts.services import log_event
 from skins.models import Skin
+from core.discord import discord_id_or_none
 from skins.submitters import (
     CreatorChoice,
     Submission,
     backfill_submitters,
-    discord_id_or_none,
     resolve_creator,
 )
 from tests.factories import SkinFactory, UserFactory

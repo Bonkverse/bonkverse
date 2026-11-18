@@ -20,6 +20,10 @@
     "name": "skins:bonk_login_for_wear"
   },
   {
+    "route": "api/bot/discord-links/<int:discord_user_id>/",
+    "name": "accounts:api_bot_discord_links"
+  },
+  {
     "route": "api/bot/skins/",
     "name": "skins:api_bot_submit_skin"
   },

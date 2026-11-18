@@ -6,6 +6,8 @@ index names come from that table, so they're unchanged too. BonkUser, the
 site account (`AUTH_USER_MODEL`), followed in 5.5c the same way, keeping
 `skins_bonkuser` (ADR 0017), and UserEvent (the event log) in 5.6c, keeping
 `skins_userevent` and its index names.
+
+DiscordLink is new (not moved), so it has its own `accounts_discordlink` table.
 """
 
 from django.conf import settings
@@ -100,6 +102,45 @@ class BonkAccountLink(models.Model):
     def bonk_token(self) -> str | None:
         """The stored bonk.io token, or None if there is none or no key opens it."""
         return token_crypto.decrypt(self.token_encrypted)
+
+
+class DiscordLinkSource(models.TextChoices):
+    """How a Discord account was tied to a bonk.io player."""
+
+    LEVELBOT_IMPORT = "levelbot_import", "Imported from LevelBot (its room check)"
+
+
+class DiscordLink(models.Model):
+    """A Discord account tied to a bonk.io player, for BonxBot.
+
+    One Discord account may have several bonk.io players (alts); one is its
+    default. A bonk.io player belongs to at most one Discord account. Staff
+    remove a wrong link in the admin.
+    """
+
+    discord_user_id = models.BigIntegerField(db_index=True)
+    bonk_player = models.ForeignKey(
+        "players.BonkPlayer", on_delete=models.CASCADE, related_name="discord_links"
+    )
+    source = models.CharField(max_length=30, choices=DiscordLinkSource.choices)
+    is_default = models.BooleanField(default=False)
+    verified_at = models.DateTimeField(null=True, blank=True)  # when its source checked it
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["bonk_player"], name="discordlink_one_discord_per_player"
+            ),
+            models.UniqueConstraint(
+                fields=["discord_user_id"],
+                condition=models.Q(is_default=True),
+                name="discordlink_one_default_per_discord",
+            ),
+        ]
+
+    def __str__(self):
+        return f"Discord {self.discord_user_id} → {self.bonk_player.username}"
 
 
 class UserEvent(models.Model):

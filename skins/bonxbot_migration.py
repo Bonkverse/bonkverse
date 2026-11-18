@@ -25,7 +25,8 @@ from core.bonk import SkinCode
 from integrations.bonxbot_db import BonxBotDB, BotSkin
 from accounts.services import log_event
 from skins.models import CreatorSource, SubmissionSource
-from skins.submitters import Submission, discord_id_or_none
+from core.discord import discord_id_or_none
+from skins.submitters import Submission
 from skins.skin_import import (
     ImportFailure,
     existing_skin,

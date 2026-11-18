@@ -1,6 +1,6 @@
-"""The /login/ and /logout/ pages and /api/me/.
+"""The /login/ and /logout/ pages, /api/me/, and BonxBot's Discord-link lookup.
 
-Owns: the login, logout and who-am-I views.
+Owns: the login, logout and who-am-I views, and GET /api/bot/discord-links/<id>/.
 Does not own: the sentences shown when a login is turned down
 (login_messages.py), trying the bonk.io login and the limit on wrong
 passwords (login_attempts.py), what a successful login does (sign_in.py:
@@ -13,11 +13,13 @@ from django.contrib.auth import logout
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 
+from core.auth_guards import bonxbot_authorized
 from core.token_crypto import bonk_session
 from core.ratelimits import limit
 
+from .discord_links import discord_links_for
 from .forms import LoginForm
 from .login_attempts import attempt_login
 from .login_messages import login_failure_message
@@ -84,3 +86,27 @@ def me(request):
             },
         }
     )
+
+
+@require_GET
+@limit("browse")
+def bot_discord_links(request, discord_user_id):
+    """BonxBot asks which bonk.io players a Discord user has linked.
+
+    Authorization: Bearer <BONXBOT_API_TOKEN>. 200 {"ok": true, "links": [...]},
+    default first, or an empty list when the user has none (the bot then asks
+    them to link); 401 {"ok": false, "error": "unauthorized"} without the token.
+    """
+    if not bonxbot_authorized(request):
+        return JsonResponse({"ok": False, "error": "unauthorized"}, status=401)
+    links = [
+        {
+            "bonk_username": link.bonk_player.username,
+            "bonk_id": link.bonk_player.bonk_id,
+            "is_default": link.is_default,
+            "source": link.source,
+            "verified_at": link.verified_at.isoformat() if link.verified_at else None,
+        }
+        for link in discord_links_for(discord_user_id)
+    ]
+    return JsonResponse({"ok": True, "links": links})

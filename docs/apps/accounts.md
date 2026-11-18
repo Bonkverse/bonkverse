@@ -13,6 +13,7 @@ Names are in the `accounts` namespace (`app_name` in `accounts/urls.py`): `{% ur
 | `/login/` | `login` | Login page (GET) and bonk.io login (POST, `login` rate tier) |
 | `/logout/` | `logout` | POST only, so another site can't sign people out with a link |
 | `/api/me/` | `api_me` | Who is signed in (the skin editor uses it); 401 when nobody is |
+| `/api/bot/discord-links/<discord_user_id>/` | `api_bot_discord_links` | BonxBot only (`Authorization: Bearer <BONXBOT_API_TOKEN>`): a Discord user's linked bonk.io players, default first |
 
 ## Public entry points for other apps
 
@@ -20,9 +21,14 @@ Names are in the `accounts` namespace (`app_name` in `accounts/urls.py`): `{% ur
 - `attempt_login(request, username, password, via=...)`: tries the bonk.io login, holding a try first when this account or visitor has used up its wrong passwords. Every attempt is logged with pseudonyms, never names or IPs.
 - `login_failure_message(error, retry_after)`: the sentence for a turned-down login.
 - `log_event(user, event_type, skin=None, **metadata)`: the event log (logins, wears, votes, uploads, friend syncs…); never raises. `manage.py analyze_events` reports on it.
+- `discord_links_for(discord_user_id)`: a Discord user's linked bonk.io players (`DiscordLink`), default first. `import_levelbot_links(accounts, dry_run=...)`: the one-time copy of LevelBot's verified accounts (`manage.py import_levelbot_links`, reading `integrations/levelbot_db.py`). Logic: `discord_links.py`.
 - `sign_in(request, result)`: stores the bonk.io session, logs in the site account, links it to the BonkPlayer (recording the skin the player wears, `players.services.record_worn_skin`), stores Flash friends and queues the friend sync on the worker (`players.services`).
 
 The wear popup (`/api/bonk/login/`, in `skins`) uses the first two to refresh the bonk.io token of a player who is already signed in.
+
+## Discord links
+
+`DiscordLink` ties a Discord account to a bonk.io player (`players.BonkPlayer`) so BonxBot knows who is submitting (plan: `claude/plan-submissions-creator-and-discord-links` in the Bonkverse project). A Discord account may have several players, one of them its default; a player belongs to at most one Discord account (database constraints). `source` says how it was checked (`levelbot_import` so far). Names LevelBot knew but Bonkverse hadn't seen are added as name-only players (`players.services.player_named`), like names from replays. Staff remove a wrong link in the admin.
 
 ## How a login works
 
@@ -36,18 +42,20 @@ Log lines from step 1 still use the logger name **`skins.login`** (its name befo
 
 ```
 accounts/
-  views.py              # /login/, /logout/, /api/me/
+  views.py              # /login/, /logout/, /api/me/, BonxBot's Discord-link lookup
   services.py           # what other apps call
   login_attempts.py     # attempt_login + the wrong-password limit
   login_messages.py     # what a turned-down login says
   sign_in.py            # what a successful login does
   forms.py              # LoginForm (username and password never stripped)
-  models.py             # BonkUser (AUTH_USER_MODEL), BonkAccountLink, UserEvent
-  admin.py              # site accounts in /admin/
+  models.py             # BonkUser (AUTH_USER_MODEL), BonkAccountLink, DiscordLink, UserEvent
+  discord_links.py      # discord_links_for + the LevelBot import
+  admin.py              # site accounts and Discord links in /admin/
   templates/accounts/login.html
   static/accounts/js/login.js   # keeps Login off until a wait ends; one submit per click
   events.py             # log_event: the event log (UserEvent)
-  management/commands/grant_admin.py, reencrypt_bonk_tokens.py, analyze_events.py
+  management/commands/grant_admin.py, reencrypt_bonk_tokens.py, analyze_events.py,
+                      import_levelbot_links.py
 ```
 
 ## Models
