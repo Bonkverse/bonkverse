@@ -7,7 +7,9 @@ Does not own: rendering or storing the skin (skins/skin_import.py).
 
 Request:  Authorization: Bearer <BONXBOT_API_TOKEN>
           {"link": "...", "name": "...", "creator": "...", "skin_code": "...",
-           "discord_user_id": 123, "bonx_skin_id": 45}
+           "discord_user_id": 123, "bonx_skin_id": 45,
+           "creator_source": "submitter" | "bonkleagues"}
+          creator_source is optional (missing or anything else = unchecked).
           With skin_code the editor renders the skin and BonkLeagues is never
           contacted; without it, the link is read from BonkLeagues.
 Response: 201 created / 200 already on Bonkverse, both {"created", "skin": {...}};
@@ -46,11 +48,24 @@ def _bot_authorized(request) -> bool:
     return bool(expected) and hmac.compare_digest(given.encode(), expected.encode())
 
 
+# What BonxBot may say about the creator. It decides with the same rule as the
+# upload page (skins.submitters.resolve_creator): "submitter" = the user's own
+# linked bonk.io account, "bonkleagues" = the BonkLeagues author, because the
+# user said they didn't make it. BonxBot verifies the accounts (friend request);
+# Bonkverse trusts the token-authenticated bot (owner decision, 2026-11-17).
+_BOT_CREATOR_SOURCES = {CreatorSource.SUBMITTER, CreatorSource.BONKLEAGUES}
+
+
 def _discord_submission(body: dict) -> Submission:
-    """The bot sends the creator its user typed or accepted; nothing checks it yet."""
+    """Anything else, including older BonxBot versions that don't say, is unchecked."""
+    source = body.get("creator_source")
     return Submission(
         source=SubmissionSource.DISCORD,
-        creator_source=CreatorSource.AS_ENTERED,
+        creator_source=(
+            source
+            if isinstance(source, str) and source in _BOT_CREATOR_SOURCES
+            else CreatorSource.AS_ENTERED
+        ),
         discord_user_id=discord_id_or_none(body.get("discord_user_id")),
     )
 
