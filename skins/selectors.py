@@ -91,7 +91,7 @@ SKIN_SORTS = {
 def skins_created_by(username, sort="top"):
     """Skins `username` created, as a queryset in one of SKIN_SORTS' orders."""
     order = SKIN_SORTS.get(sort, SKIN_SORTS["top"])
-    return Skin.objects.filter(creator__iexact=username).order_by(*order)
+    return Skin.objects.made_by(username).order_by(*order)
 
 
 def favorites_of(user, sort="new"):
@@ -102,7 +102,7 @@ def favorites_of(user, sort="new"):
 
 def creator_stats(username):
     """How many skins `username` made, and the upvotes and favorites they got."""
-    totals = Skin.objects.filter(creator__iexact=username).aggregate(
+    totals = Skin.objects.made_by(username).aggregate(
         skins=Count("id", distinct=True),
         upvotes=Sum("upvotes"),
     )

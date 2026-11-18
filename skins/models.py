@@ -119,6 +119,17 @@ class Skin(models.Model):
     def get_absolute_url(self):
         return reverse("skins:skin_detail", kwargs={"skin_id": self.id})
 
+    def is_owned_by(self, user) -> bool:
+        """Whether `user` may edit or delete this skin: only its creator may.
+
+        Matches the creator name ignoring case but not spaces, like bonk.io
+        usernames (ADR 0007) and `Skin.objects.made_by`. Submitting someone
+        else's skin gives no rights over it.
+        """
+        if not getattr(user, "is_authenticated", False) or not self.creator:
+            return False
+        return self.creator.casefold() == user.username.casefold()
+
 
 class SkinVote(models.Model):
     VOTE_CHOICES = [

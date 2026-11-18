@@ -23,7 +23,7 @@ def _add_edit_labels(skins):
 @limit("browse")
 def my_profile(request):
     user = request.user
-    user_skins = Skin.objects.filter(creator__iexact=user.username).order_by("name")
+    user_skins = Skin.objects.made_by(user.username).order_by("name")
     favorites = user.favorite_skins.all().order_by("-created_at")
 
     paginator = Paginator(user_skins, 20)
@@ -41,8 +41,7 @@ def my_profile(request):
     # created. Nothing else here needs a new query: skin/favorite
     # counts below reuse objects we already built above.
     total_upvotes = (
-        Skin.objects.filter(creator__iexact=user.username).aggregate(total=Sum("upvotes"))["total"]
-        or 0
+        Skin.objects.made_by(user.username).aggregate(total=Sum("upvotes"))["total"] or 0
     )
 
     # Popped (not just read) so the toast only fires once, right after
@@ -77,7 +76,7 @@ def my_skins_partial(request):
     by navigation — see the "Go to page N" flow in my_profile.html.
     """
     user = request.user
-    user_skins = Skin.objects.filter(creator__iexact=user.username).order_by("name")
+    user_skins = Skin.objects.made_by(user.username).order_by("name")
 
     paginator = Paginator(user_skins, 20)
     page_number = request.GET.get("page", 1)
@@ -103,7 +102,7 @@ def delete_skin(request, skin_id):
     skin = get_object_or_404(Skin, id=skin_id)
     is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
-    if skin.creator != request.user.username:
+    if not skin.is_owned_by(request.user):
         if is_ajax:
             return JsonResponse({"ok": False, "error": "You don't own this skin."}, status=403)
         return redirect("skins:my_profile")
@@ -138,7 +137,7 @@ def bulk_delete_skins(request):
 
     # Scope strictly to skins this user owns — a spoofed id list can
     # only ever delete the subset the requester actually created.
-    owned_qs = Skin.objects.filter(id__in=ids, creator__iexact=request.user.username)
+    owned_qs = Skin.objects.made_by(request.user.username).filter(id__in=ids)
     deleted_ids = list(owned_qs.values_list("id", flat=True))
     owned_qs.delete()
 
@@ -151,7 +150,7 @@ def edit_skin(request, skin_id):
     skin = get_object_or_404(Skin, id=skin_id)
     is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
-    if skin.creator != request.user.username:
+    if not skin.is_owned_by(request.user):
         if is_ajax:
             return JsonResponse({"ok": False, "error": "You don't own this skin."}, status=403)
         return redirect("skins:my_profile")
