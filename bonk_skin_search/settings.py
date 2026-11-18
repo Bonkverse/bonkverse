@@ -465,6 +465,9 @@ RATE_LIMITS = {
         "api": "60/m",
         "api_partner": "300/m",
         "api_bulk": "10/m",  # POST /api/v1/lookup/players/ (up to 250 names each)
+        # BonxBot's read endpoints (/api/bot/, public_api/views/bot.py). One
+        # counter for the bot's one IP, shared by every Discord user it serves.
+        "bot": "300/m",
         "api_bulk_partner": "30/m",
         "api_auth_fail": "20/m",
     }.items()

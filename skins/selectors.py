@@ -9,11 +9,19 @@ Skins tab of their profile (players/).
 
 bonk_players_matching / flash_friends_matching / flash_friend_counts: the
 player directory (players/ "Players" page).
+
+best_matches / random_skin: BonxBot's /skin commands (public_api/views/bot.py).
 """
 
-from django.db.models import Count, F, Q, Sum
+import random
+
+from django.conf import settings
+from django.db.models import Count, F, Max, Min, Q, Sum
+
+from core.db import time_limited_queries
 
 from .models import Skin, SkinVote
+from .querysets import MIN_NAME_SIMILARITY
 from accounts.models import BonkAccountLink
 from players.models import BonkPlayer, FlashFriendship
 
@@ -61,6 +69,37 @@ def home_strips(size=24):
         "trending": Skin.objects.with_score().order_by("-score", "-created_at")[:size],
         "random_strip": Skin.objects.order_by("?")[:size],
     }
+
+
+def best_matches(query: str, limit: int) -> list:
+    """The `limit` most relevant skins for `query`, favorite counts included.
+
+    Same rules and time limit as the search page; raises OperationalError if
+    the search takes too long."""
+    skins = (
+        Skin.objects.search(query, "relevance")
+        .with_favorite_count()
+        .order_by("-rank", "-similarity", "name")
+    )
+    with time_limited_queries(
+        settings.SEARCH_STATEMENT_TIMEOUT_MS,
+        pg_trgm__similarity_threshold=MIN_NAME_SIMILARITY,
+    ):
+        return list(skins[:limit])
+
+
+def random_skin():
+    """One random skin, picked through the primary key index (never ORDER BY
+    random() over the whole table), or None if there are no skins."""
+    bounds = Skin.objects.aggregate(lo=Min("id"), hi=Max("id"))
+    if bounds["lo"] is None:
+        return None
+    for _ in range(5):  # ids can have gaps where skins were deleted
+        pick = random.randint(bounds["lo"], bounds["hi"])
+        skin = Skin.objects.with_favorite_count().filter(id__gte=pick).order_by("id").first()
+        if skin is not None:
+            return skin
+    return Skin.objects.with_favorite_count().order_by("id").first()
 
 
 # How skins can be ranked for a leaderboard: metric -> annotate `value`, order
