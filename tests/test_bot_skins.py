@@ -107,6 +107,26 @@ def test_creates_skin_with_images_and_discord_provenance(client, mocked_http, tm
 
 @pytest.mark.parametrize(
     "sent, stored",
+    [
+        ("submitter", "submitter"),
+        ("bonkleagues", "bonkleagues"),
+        (None, "as_entered"),  # older BonxBot
+        ("legacy", "as_entered"),
+        ("as_entered", "as_entered"),
+        ("anything", "as_entered"),
+        (["submitter"], "as_entered"),
+    ],
+)
+def test_creator_source_from_the_bot(client, mocked_http, sent, stored):
+    _fetcher_replies(mocked_http)
+
+    _submit(client, discord_user_id=42, creator_source=sent)
+
+    assert Skin.objects.get().creator_source == stored
+
+
+@pytest.mark.parametrize(
+    "sent, stored",
     [("1009876543210987654", 1009876543210987654), ("not-an-id", None), (None, None)],
 )
 def test_discord_id_is_stored_only_when_it_is_one(client, mocked_http, sent, stored):
