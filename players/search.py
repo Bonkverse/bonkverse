@@ -6,9 +6,11 @@ account (joined in 2014, 100+ friends, a low ID). Each rule is one line of
 the builder: [AND / OR] [field] [condition] [value]. AND binds before OR,
 like in a search engine: a AND b OR c is (a AND b) OR c.
 
-Rules travel in the address as numbered parameters (c0 f0 o0 v0 w0 k0,
-c1 f1 …): connector, field, condition, value, second value (for "between")
-and match case. Every field says which lists it works on (bonk.io accounts,
+Rules travel in the address as numbered parameters (c0 f0 o0 v0 w0 k0 t0,
+c1 f1 …): connector, field, condition, value, second value (for "between"),
+match case and ignore spaces at the end. The last is for padded names:
+"ako" with 17 spaces after it looks like "ako" everywhere it's shown, so
+"Name is exactly ako" only finds it with that switch on. Every field says which lists it works on (bonk.io accounts,
 Flash friends) and which conditions and value it takes; the page builds the
 form from FIELDS, so a new field is one entry here.
 """
@@ -20,7 +22,7 @@ from dataclasses import dataclass, field
 from datetime import date
 
 from django.db.models import F, Q
-from django.db.models.functions import Collate, Length, Lower
+from django.db.models.functions import Collate, Length, Lower, RTrim
 
 from core.bonk import dbid
 
@@ -171,6 +173,7 @@ class Rule:
     value: str = ""
     value2: str = ""
     case: bool = False
+    trim: bool = False  # ignore spaces at the end of the name (and the value)
 
     @property
     def spec(self):
@@ -186,6 +189,8 @@ class Rule:
             p[f"w{i}"] = self.value2
         if self.case:
             p[f"k{i}"] = "1"
+        if self.trim:
+            p[f"t{i}"] = "1"
         return p
 
     def describe(self):
@@ -198,7 +203,8 @@ class Rule:
             return f"{spec['label']} {op} {dict(spec['choices'])[self.value]}"
         if kind == "text":
             shown = self.value.replace(" ", "␣")
-            return f"{spec['label']} {op} “{shown}”" + (" (Aa)" if self.case else "")
+            flags = (" (Aa)" if self.case else "") + (" (ignoring end spaces)" if self.trim else "")
+            return f"{spec['label']} {op} “{shown}”{flags}"
         unit = f" {spec['unit']}" if spec.get("unit") else ""
         if self.op == "between":
             return f"{spec['label']} {op} {self.value} and {self.value2}{unit}"
@@ -256,6 +262,9 @@ def _clean_rule(get, i, view, today):
     if kind == "text":
         rule.value = raw[:MAX_TEXT]  # not trimmed: spaces are part of names
         rule.case = get.get(f"k{i}") == "1"
+        rule.trim = get.get(f"t{i}") == "1"
+        if rule.trim:
+            rule.value = rule.value.rstrip(" ")
         return rule if rule.value else None
     if kind == "choice":
         rule.value = raw if raw in dict(spec["choices"]) else ""
@@ -334,6 +343,7 @@ def rule_q(rule, name_field):
     """One rule as a Q object on a queryset of names in `name_field`."""
     nf = name_field
     if rule.field == "name":
+        nf = TRIMMED_NAME if rule.trim else nf
         lookup, negate = _TEXT[rule.op]
         value = pattern_regex(rule.value) if rule.op == "pattern" else rule.value
         q = Q(**{f"{nf}__{'' if rule.case else 'i'}{lookup}": value})
@@ -389,6 +399,10 @@ def combined_q(rules, name_field):
     return out
 
 
+# The annotation trimmed-name rules compare against (see apply).
+TRIMMED_NAME = "name_rtrim"
+
+
 def apply(qs, query, name_field, *, players=True):
     """`qs` narrowed by `query`'s plain text and rules, then sorted."""
     if query.text:
@@ -399,6 +413,8 @@ def apply(qs, query, name_field, *, players=True):
     needs_len = any(r.field == "length" for r in query.rules) or query.sort in ("short", "long")
     if needs_len:
         qs = qs.annotate(name_len=Length(name_field))
+    if any(r.field == "name" and r.trim for r in query.rules):
+        qs = qs.annotate(**{TRIMMED_NAME: RTrim(name_field)})
     if query.rules:
         qs = qs.filter(combined_q(query.rules, name_field))
     return _order(qs, query.sort, name_field)

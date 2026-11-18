@@ -76,6 +76,16 @@ def test_rule_text_keeps_spaces_but_the_box_trims():
     assert q.text == "ab" and q.rules[0].value == "  ab  "
 
 
+def test_ignore_end_spaces_switch_trims_the_value_and_round_trips():
+    q = search.parse(
+        QueryDict(rules(("name", "is", "ako  "), ("name", "is", "   "), t0="1", t1="1"))
+    )
+    # A value of only spaces is nothing once trimmed, so that rule is dropped.
+    assert [(r.value, r.trim) for r in q.rules] == [("ako", True)]
+    assert q.chips() == [("", "Name is exactly “ako” (ignoring end spaces)")]
+    assert search.parse(QueryDict(urlencode(q.params()))).params() == q.params()
+
+
 def test_unusable_rules_are_dropped():
     q = search.parse(
         QueryDict(
@@ -127,6 +137,11 @@ def test_examples_fit_their_list():
         (rules(("name", "starts", "a"), ("name", "not_contains", "_"), sort="az"), ["ABC", "abc"]),
         (rules(("name", "is", "abc")), ["ABC", "abc"]),
         (rules(("name", "is", "abc"), k0="1"), ["abc"]),
+        # Ignore spaces at the end: "trail " is exactly "trail" and ends with "l"
+        (rules(("name", "is", "trail")), []),
+        (rules(("name", "is", "trail"), t0="1"), ["trail "]),
+        (rules(("name", "ends", "l"), t0="1"), ["trail "]),
+        (rules(("name", "is", "TRAIL"), k0="1", t0="1"), []),
         (rules(("name", "pattern", "a??"), sort="az"), ["ABC", "abc"]),
         (rules(("name", "pattern", "a*c"), sort="az"), ["ab_c", "ABC", "abc"]),
         # AND before OR: (starts with z) OR (has symbols AND 3 characters)

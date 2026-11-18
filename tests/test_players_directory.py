@@ -46,9 +46,15 @@ def test_lookup_unavailable(mocked_http):
     assert lookup_players(REPLAYS, ["x"]).error == PlayerError.UNAVAILABLE
 
 
-def test_search_needs_three_letters(mocked_http):
-    assert search_players(REPLAYS, "ab").data == []
-    assert len(mocked_http.calls) == 0
+def test_search_takes_short_names_but_not_an_empty_one(mocked_http):
+    """Rare 1-2 character accounts are what people look up; the replay site
+    answers those with the exact name."""
+    mock_search(mocked_http, [{"username": "c", "games": 3, "level": 12}])
+    assert search_players(REPLAYS, "c").data == [{"username": "c", "games": 3, "level": 12}]
+    assert "q=c" in mocked_http.calls[0].request.url
+
+    assert search_players(REPLAYS, "").data == []
+    assert len(mocked_http.calls) == 1
 
 
 # ── Page ───────────────────────────────────────────────────────
@@ -82,6 +88,20 @@ def test_exact_name_and_members_come_first(client, mocked_http):
 
 
 @pytest.mark.django_db
+def test_padded_name_counts_as_an_exact_match(client, mocked_http):
+    """ "ako" with 17 spaces after it is shown as "ako" everywhere, and the
+    search box is trimmed, so typing "ako" must still put it first."""
+    padded = "ako" + " " * 17
+    BonkPlayer.objects.create(bonk_id=1, username="akobir", last_friend_count=99)
+    BonkPlayer.objects.create(bonk_id=2, username="AKone", last_friend_count=50)
+    BonkPlayer.objects.create(bonk_id=3, username=padded, last_friend_count=0)
+    mock_lookup(mocked_http, [])
+
+    response = client.get(reverse("players:players_directory") + "?q=ako ")
+    assert [c["username"] for c in response.context["cards"]][0] == padded
+
+
+@pytest.mark.django_db
 def test_search_by_bonk_id(client, mocked_http):
     BonkPlayer.objects.create(bonk_id=4242, username="numbered")
     mock_lookup(mocked_http, [])
@@ -98,10 +118,17 @@ def test_most_active_view_uses_replay_search(client, mocked_http):
 
 
 @pytest.mark.django_db
-def test_most_active_asks_for_three_letters(client, mocked_http):
-    html = client.get(reverse("players:players_directory") + "?view=replays&q=th").content.decode()
-    assert "at least 3 letters" in html
+def test_most_active_asks_for_a_name(client, mocked_http):
+    html = client.get(reverse("players:players_directory") + "?view=replays&q=").content.decode()
+    assert "Type a name" in html
     assert len(mocked_http.calls) == 0
+
+
+@pytest.mark.django_db
+def test_most_active_finds_a_two_character_name(client, mocked_http):
+    mock_search(mocked_http, [{"username": "8j", "games": 4, "level": 30}])
+    html = client.get(reverse("players:players_directory") + "?view=replays&q=8j").content.decode()
+    assert reverse("players:player_profile", args=["8j"]) in html
 
 
 @pytest.mark.django_db

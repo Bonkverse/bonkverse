@@ -22,6 +22,12 @@ Names are in the `players` namespace (`app_name` in `players/urls.py`): `{% url 
 
 `<username>` is the `username` converter (`converters.py`, registered in `PlayersConfig.ready()`): `.` and `..` get a `~` in front.
 
+## Directory search
+
+The search box is trimmed and finds names containing it. A name equal to it, ignoring case and spaces at the end of the name, comes first: padded accounts ("ako" + 17 spaces) look unpadded wherever they're shown, so typing what you see finds them. The **In replays** view asks the replay site (`/api/players`), which answers any length: the exact name (same rule) first, then, from 3 characters, the most played names starting with it.
+
+The advanced search (`search.py`) has a per-rule **␣** switch next to **Aa**, "ignore spaces at the end of names" (`t0`, `t1` … in the address). With it on, a Name rule compares against the name with its trailing spaces removed (and the typed value too), so "Name is exactly ako" finds the padded account. The replay site's builder has the same switch for Player, Map name and Map author.
+
 ## Public entry points for other apps
 
 `players/services.py`: `queue_friend_sync(account_link_id)`, `sync_flash_friends_for_user(...)`, `adopt_replay_names(...)` (all used by `accounts/sign_in.py`), `record_worn_skin(bonk_id, skin_code, source)` (used by `accounts/sign_in.py` and `skins/views/wear.py`), `update_visibility(...)`. `players/selectors.py` for reads (profiles, directory, calculator).
