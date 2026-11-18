@@ -133,3 +133,25 @@ def test_resolving_a_report_in_the_admin_brings_the_skin_back(admin_client):
 
     assert SkinReport.objects.get(pk=report.pk).resolved
     assert list(top_skins("upvotes", 10)) == [skin]
+
+
+@pytest.mark.parametrize(
+    "url",
+    ["/admin/skins/skinreport/", "/admin/skins/categorycover/", "/admin/skins/skin/"],
+)
+def test_admin_lists_show_the_skin_image(admin_client, url):
+    skin = SkinFactory(image_url="/media/skins/look.png")
+    SkinReportFactory(skin=skin)
+    CategoryCoverFactory(skin=skin)
+
+    html = admin_client.get(url).content.decode()
+
+    assert 'src="/media/skins/look.png"' in html
+
+
+def test_admin_report_page_previews_the_skin(admin_client):
+    report = SkinReportFactory(skin=SkinFactory(image_url="/media/skins/look.png"))
+
+    html = admin_client.get(f"/admin/skins/skinreport/{report.pk}/change/").content.decode()
+
+    assert 'src="/media/skins/look.png"' in html and 'width="160"' in html

@@ -311,3 +311,15 @@ def test_messages_are_data_not_code(client):
 
     assert '<ul id="bv-messages" hidden>' in html
     assert '<li data-type="error">❌ Discord invite link is required.</li>' in html
+
+
+def test_template_comments_fit_on_one_line():
+    """Django's {# #} comments end at the line break: a two-line one is printed
+    on the page (the login page showed one while the wait button was on).
+    Longer comments use {% comment %}."""
+    found = []
+    for path in ALL_TEMPLATES:
+        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            if "{#" in line and "#}" not in line.split("{#", 1)[1]:
+                found.append(f"{path.relative_to(REPO)}:{number}")
+    assert found == []
