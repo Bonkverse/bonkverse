@@ -50,10 +50,11 @@ def test_missing_or_blank_author_is_none(mocked_http, author):
     assert result.skin.author is None
 
 
-def test_author_is_trimmed(mocked_http):
-    mocked_http.get(FETCHER_URL, json=_reply(author="  The Saucy Tulip "))
+def test_author_keeps_its_spaces(mocked_http):
+    """bonk.io names can start or end with spaces (core/bonk/usernames.py), so they stay."""
+    mocked_http.get(FETCHER_URL, json=_reply(author=" The Saucy Tulip "))
 
-    assert fetch(FETCHER_URL, LINK).skin.author == "The Saucy Tulip"
+    assert fetch(FETCHER_URL, LINK).skin.author == " The Saucy Tulip "
 
 
 def test_reply_without_name_or_author_still_imports(mocked_http):

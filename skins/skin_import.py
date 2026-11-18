@@ -2,7 +2,9 @@
 
 Owns: turning a BonkLeagues link plus a name, creator and (usually) its skin
 code into a Skin with its SVG, PNG and thumbnail files; deciding when a
-submission is a duplicate; and cleaning names the upload form would have refused.
+submission is a duplicate; cleaning names the upload form would have refused;
+and remembering a BonkLeagues answer while the upload page asks who made the
+skin (`fetch_skin_cached`).
 Used by: the upload form (skins/views/upload.py), the BonxBot submission API
 (skins/views/bot_skins.py) and the one-time migration (skins/bonxbot_migration.py).
 Does not own: HTTP to the editor or the fetcher (integrations/), authentication,
@@ -34,6 +36,7 @@ from typing import Callable
 from urllib.parse import urlparse
 
 from django.conf import settings
+from django.core.cache import cache
 from django.db import connection, transaction
 
 from core.bonk import InvalidSkinCode, SkinCode
@@ -53,6 +56,8 @@ NAME_MAX_LENGTH = Skin._meta.get_field("name").max_length
 CREATOR_MAX_LENGTH = Skin._meta.get_field("creator").max_length
 DEFAULT_NAME = "UnnamedSkin"
 DEFAULT_CREATOR = "UnknownSkinCreator"
+# How long a BonkLeagues answer is kept while the upload page asks who made the skin.
+FETCH_CACHE_SECONDS = 10 * 60
 
 # A BonkLeagues short link: /s/<code>. The code is case-sensitive, so it is never lowercased.
 _SHORT_LINK_PATH = re.compile(r"^/s/([A-Za-z0-9]+)$")
@@ -150,6 +155,23 @@ def existing_skin(raw: str | None) -> Skin | None:
     if link is None:
         return None
     return Skin.objects.filter(link__in=_stored_spellings(link)).order_by("id").first()
+
+
+def fetch_skin_cached(link: str) -> FetchResult:
+    """`fetch_skin`, remembering a successful answer for FETCH_CACHE_SECONDS.
+
+    The upload page fetches once to read the BonkLeagues author, may ask the
+    uploader who made the skin, then imports: the import reuses this answer
+    instead of rendering the skin again. Failures are never remembered.
+    """
+    key = f"bl-fetch:{link}"
+    cached = cache.get(key)
+    if cached is not None:
+        return cached
+    result = fetch_skin(link)
+    if not result.error:
+        cache.set(key, result, FETCH_CACHE_SECONDS)
+    return result
 
 
 def import_bonkleagues_skin(
