@@ -28,6 +28,7 @@ in `settings.RATE_LIMITS`; each can be overridden with `RATE_LIMIT_<TIER>`:
 | `submit` | 7/h | Discord server submissions |
 | `api` / `api_partner` | 60/m / 300/m, **per API key** | Public API reads (`/api/v1/`), [public-api.md](../architecture/public-api.md) |
 | `api_bulk` / `api_bulk_partner` | 10/m / 30/m, **per API key** | `POST /api/v1/lookup/players/` (up to 250 names each) |
+| `bot` | 300/m | BonxBot's read endpoints, `/api/bot/` skins (search, random, by id), players and map decoding (token-authenticated; one counter for the bot's IP) |
 | `api_auth_fail` | 20/m, per IP | Failed key checks on `/api/v1/` before that IP waits |
 
 The public API's tiers use `public_api.auth.api_endpoint` instead of `@limit`:

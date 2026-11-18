@@ -20,8 +20,28 @@
     "name": "skins:bonk_login_for_wear"
   },
   {
+    "route": "api/bot/maps/decode/",
+    "name": "bot_api:decode_map"
+  },
+  {
+    "route": "api/bot/players/<username:username>/",
+    "name": "bot_api:player"
+  },
+  {
     "route": "api/bot/skins/",
     "name": "skins:api_bot_submit_skin"
+  },
+  {
+    "route": "api/bot/skins/<int:skin_id>/",
+    "name": "bot_api:skin"
+  },
+  {
+    "route": "api/bot/skins/random/",
+    "name": "bot_api:random_skin"
+  },
+  {
+    "route": "api/bot/skins/search/",
+    "name": "bot_api:search_skins"
   },
   {
     "route": "api/discords/submit/",

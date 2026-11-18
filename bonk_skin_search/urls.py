@@ -36,6 +36,8 @@ urlpatterns = [
     path("", include("accounts.urls")),
     # Public, versioned API for other sites and bots (public_api/, ADR 0011).
     path("api/v1/", include("public_api.urls")),
+    # BonxBot's read endpoints, token-authenticated (public_api/views/bot.py).
+    path("api/bot/", include("public_api.bot_urls")),
     # Developer portal: API terms and your own API keys (public_api/, ADR 0012).
     path("developers/", include("public_api.portal_urls")),
     # Leaderboards: one page per stats/leaderboards.py entry (stats/, docs/apps/stats.md).
