@@ -51,6 +51,7 @@ const PAGES = [
   ["/upload/", "upload", true],
   ["/settings/profile/", "settings", true],
   ["/developers/keys/", "api-keys", true],
+  ["/moderation/", "moderation", true], // staff only: --session of a staff account
   ["/staff/", "staff", true],
 ];
 const THEMES = ["bonkverse", "light", "dark"];

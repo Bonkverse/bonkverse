@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Skin reports · Bonkverse{% endblock %}
+{% block content_class %}site-page{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/moderation.css' %}">
+{% endblock %}
+
+{% block content %}
+{% load bv_links %}
+{% comment %}
+Staff report queue (skins/views/moderation.py, skins/moderation.py). One card per
+reported skin with every open report on it; each button makes one decision
+that also closes all of the skin's reports. Delete asks first (ui/ui.js dialog).
+{% endcomment %}
+<div class="bv-main">
+  <div class="bv-page-header">
+    <div class="bv-page-header__text">
+      <h1>Skin reports</h1>
+      <p class="bv-muted">
+        {% if skins %}{{ skins|length }} skin{{ skins|length|pluralize }} waiting. Most reported first.{% else %}Nothing waiting.{% endif %}
+        Reported skins stay out of category covers, the home page and leaderboards until they're decided.
+      </p>
+    </div>
+    <div class="bv-page-header__actions">
+      <a class="bv-btn bv-btn--ghost" href="{% url 'admin:skins_skinreport_changelist' %}">All reports in the admin</a>
+    </div>
+  </div>
+
+  {% if not skins %}
+    <div class="bv-card bv-empty">
+      <p class="bv-empty__title">No open reports</p>
+      <p class="bv-muted">New reports show up here.</p>
+    </div>
+  {% endif %}
+
+  <div class="mod-queue">
+  {% for skin in skins %}
+    {% with creator_url=skin.creator|profile_url %}
+    <article class="bv-card mod-item" aria-labelledby="mod-skin-{{ skin.id }}">
+      <div class="mod-item__art">
+        {% if skin.image_url %}
+          <img class="bv-skin-art" src="{{ skin.image_url }}" alt="{{ skin.name }}" width="112" height="112" data-zoom>
+        {% else %}
+          <span class="bv-skin-art bv-skin-art--missing" aria-hidden="true"></span>
+        {% endif %}
+      </div>
+
+      <div class="mod-item__body">
+        <header class="mod-item__head">
+          <div>
+            <h2 class="mod-item__title" id="mod-skin-{{ skin.id }}">
+              <a href="{{ skin.get_absolute_url }}" target="_blank" rel="noopener">{{ skin.name }}</a>
+            </h2>
+            <p class="bv-creator">
+              by {% if creator_url %}<a href="{{ creator_url }}" target="_blank" rel="noopener">{{ skin.creator }}</a>{% else %}{{ skin.creator|default:"nobody" }}{% endif %}
+              · added {{ skin.created_at|date:"M j, Y" }}
+              {% if skin.submitted_by %}by {{ skin.submitted_by.username }}{% endif %}
+              {% if skin.link %}· <a href="{{ skin.link }}" target="_blank" rel="noopener">View on BonkLeagues ↗</a>{% endif %}
+            </p>
+          </div>
+          <span class="bv-pill bv-pill--accent">{{ skin.open_report_count }} report{{ skin.open_report_count|pluralize }}</span>
+        </header>
+
+        <ul class="mod-reasons" aria-label="Reasons">
+          {% for label, count in skin.reason_counts %}
+            <li class="bv-pill">{{ label }}{% if count > 1 %} ×{{ count }}{% endif %}</li>
+          {% endfor %}
+        </ul>
+
+        <ol class="mod-reports">
+          {% for report in skin.open_reports %}
+            <li>
+              <span class="mod-reports__who">{{ report.reporter.username|default:"Anonymous" }}</span>
+              <span class="bv-muted">{{ report.get_reason_display }} · {{ report.created_at|date:"M j, Y" }}</span>
+              {% if report.details %}<q class="mod-reports__details">{{ report.details }}</q>{% endif %}
+            </li>
+          {% endfor %}
+        </ol>
+
+        <form class="mod-decide" method="post" action="{% url 'skins:moderation_decide' skin.id %}" id="decide-{{ skin.id }}">
+          {% csrf_token %}
+          {# Enter in a field submits the first button: this one, which does nothing. #}
+          <button type="submit" disabled hidden aria-hidden="true" tabindex="-1"></button>
+          <div class="mod-decide__fields">
+            <div class="bv-field">
+              <label class="bv-label" for="creator-{{ skin.id }}">New creator (bonk.io name)</label>
+              <span class="bv-hint" id="creator-{{ skin.id }}-hint">Only for Change creator. Now: {{ skin.creator|default:"nobody" }}</span>
+              <input class="bv-input" type="text" id="creator-{{ skin.id }}" name="creator" autocomplete="off" aria-describedby="creator-{{ skin.id }}-hint">
+            </div>
+            <div class="bv-field">
+              <label class="bv-label" for="note-{{ skin.id }}">Note <span class="bv-muted">(optional, staff only)</span></label>
+              <input class="bv-input" type="text" id="note-{{ skin.id }}" name="note" maxlength="500" autocomplete="off">
+            </div>
+          </div>
+          <div class="mod-decide__actions">
+            <button class="bv-btn bv-btn--primary" type="submit" name="action" value="dismiss">Keep skin</button>
+            <button class="bv-btn" type="submit" name="action" value="change_creator">Change creator</button>
+            <button class="bv-btn bv-btn--danger-outline" type="button" data-bv-dialog-open="delete-{{ skin.id }}">Delete skin…</button>
+          </div>
+
+          <dialog class="bv-dialog" id="delete-{{ skin.id }}" aria-labelledby="delete-{{ skin.id }}-title">
+            <div class="bv-dialog__header">
+              <h3 class="bv-dialog__title" id="delete-{{ skin.id }}-title">Delete “{{ skin.name }}”?</h3>
+            </div>
+            <div class="bv-dialog__body">
+              <p>It disappears from Bonkverse for everyone, including {{ skin.creator|default:"its creator" }}. This can't be undone.</p>
+            </div>
+            <div class="bv-dialog__actions">
+              <button class="bv-btn" type="button" data-bv-dialog-close>Cancel</button>
+              <button class="bv-btn bv-btn--danger" type="submit" name="action" value="delete">Delete skin</button>
+            </div>
+          </dialog>
+        </form>
+        <p class="bv-hint">Any choice closes {% if skin.open_report_count == 1 %}the report{% else %}all {{ skin.open_report_count }} reports{% endif %} on this skin.</p>
+      </div>
+    </article>
+    {% endwith %}
+  {% endfor %}
+  </div>
+
+  {% if decisions %}
+  <section class="mod-history" aria-labelledby="mod-history-title">
+    <h2 id="mod-history-title">Recent decisions</h2>
+    <div class="bv-table-wrap">
+      <table class="bv-table">
+        <thead>
+          <tr><th>When</th><th>Skin</th><th>Decision</th><th>Reports</th><th>By</th><th>Note</th></tr>
+        </thead>
+        <tbody>
+          {% for d in decisions %}
+            <tr>
+              <td>{{ d.decided_at|date:"M j, Y" }}</td>
+              <td>{% if d.skin %}<a href="{{ d.skin.get_absolute_url }}">{{ d.skin_name }}</a>{% else %}{{ d.skin_name }}{% endif %}</td>
+              <td>{{ d.get_action_display }}{% if d.action == "creator_changed" %}: {{ d.old_creator|default:"nobody" }} → {{ d.new_creator }}{% endif %}</td>
+              <td class="bv-num">{{ d.report_count }}</td>
+              <td>{{ d.decided_by.username|default:"-" }}</td>
+              <td>{{ d.note }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

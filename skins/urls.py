@@ -1,6 +1,6 @@
-"""skins' routes: search, skin pages, browsing, your skins, upload, and the
-JSON endpoints skin cards use (vote, favorite, wear, report). Paths and names
-are pinned by tests/test_url_snapshot.py.
+"""skins' routes: search, skin pages, browsing, your skins, upload, the JSON
+endpoints skin cards use (vote, favorite, wear, report), and the staff report
+queue (moderation). Paths and names are pinned by tests/test_url_snapshot.py.
 """
 
 from django.urls import path
@@ -11,6 +11,7 @@ from skins.views import (
     browse,
     matchmaking,
     media,
+    moderation,
     my_skins,
     publish,
     report,
@@ -42,6 +43,8 @@ urlpatterns = [
     path("skins/bulk-delete/", my_skins.bulk_delete_skins, name="bulk_delete_skins"),
     # Staff
     path("skins/<int:skin_id>/rerender/", rerender.rerender_skin, name="rerender_skin"),
+    path("moderation/", moderation.queue, name="moderation"),
+    path("moderation/skins/<int:skin_id>/decide/", moderation.decide, name="moderation_decide"),
     # JSON for skin cards and pages (core/js/bv-api.js)
     path("api/", api_index.index, name="api_index"),
     path("api/skins/<int:skin_id>/vote/", votes.vote_skin_api, name="api_vote_skin"),

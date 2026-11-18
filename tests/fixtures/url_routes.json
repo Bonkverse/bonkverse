@@ -168,6 +168,14 @@
     "name": null
   },
   {
+    "route": "moderation/",
+    "name": "skins:moderation"
+  },
+  {
+    "route": "moderation/skins/<int:skin_id>/decide/",
+    "name": "skins:moderation_decide"
+  },
+  {
     "route": "my-profile/",
     "name": "skins:my_profile"
   },

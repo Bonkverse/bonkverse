@@ -1,0 +1,116 @@
+/* Staff report queue (skins/templates/skins/moderation.html). */
+
+.mod-queue {
+  display: grid;
+  gap: var(--bv-space-4);
+}
+
+.mod-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--bv-space-5);
+  align-items: start;
+}
+.bv-card.mod-item > * + * {
+  margin-top: 0;
+}
+
+.mod-item__art {
+  display: grid;
+  place-items: center;
+  padding: var(--bv-space-3);
+  border-radius: var(--bv-radius);
+  background: var(--bv-thumb);
+}
+.mod-item__art img {
+  cursor: zoom-in;
+}
+
+.mod-item__body {
+  display: grid;
+  gap: var(--bv-space-3);
+  min-width: 0;
+}
+
+.mod-item__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--bv-space-3);
+}
+.mod-item__head .bv-pill {
+  flex: none;
+  white-space: nowrap;
+}
+.mod-item__title {
+  margin: 0;
+  font-size: var(--bv-text-lg);
+  line-height: var(--bv-leading-lg);
+  overflow-wrap: anywhere;
+}
+.mod-item__title a {
+  color: var(--bv-text);
+}
+
+.mod-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bv-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mod-reports {
+  display: grid;
+  gap: var(--bv-space-2);
+  margin: 0;
+  padding: var(--bv-space-3) 0 0;
+  border-top: 1px solid var(--bv-divider);
+  list-style: none;
+}
+.mod-reports li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--bv-space-2);
+  font-size: var(--bv-text-sm);
+  line-height: var(--bv-leading-sm);
+}
+.mod-reports__who {
+  font-weight: 600;
+}
+.mod-reports__details {
+  flex-basis: 100%;
+  color: var(--bv-text);
+  overflow-wrap: anywhere;
+}
+
+.mod-decide {
+  display: grid;
+  gap: var(--bv-space-3);
+  padding-top: var(--bv-space-3);
+  border-top: 1px solid var(--bv-divider);
+}
+.mod-decide__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--bv-space-3);
+}
+.mod-decide__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bv-space-2);
+}
+
+.mod-history {
+  margin-top: var(--bv-space-8);
+}
+
+@media (max-width: 640px) {
+  .mod-item {
+    grid-template-columns: 1fr;
+  }
+  .mod-item__art {
+    justify-self: start;
+  }
+}

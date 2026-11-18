@@ -18,6 +18,7 @@ All in `skins/urls.py`; views in `skins/views/`, one module per area.
 | `/my-profile/` (+ `skins-partial/`), `/skin/<id>/edit/`, `/skin/<id>/delete/`, `/skins/bulk-delete/` | `my_profile`, … | `views/my_skins.py` |
 | `/upload/` | `upload_skin` | `views/upload.py` (BonkLeagues link → `skin_import.py`) |
 | `/skins/<id>/rerender/` | `rerender_skin` | `views/rerender.py` (staff; the re-render itself is `rerender.py`) |
+| `/moderation/`, `/moderation/skins/<id>/decide/` | `moderation`, `moderation_decide` | `views/moderation.py` (staff only, `core.auth_guards.staff_required`; the work is `moderation.py`) |
 | `/api/` | `api_index` | `views/api_index.py` |
 | `/api/skins/<id>/vote/`, `…/favorite/`, `…/report/` | `api_vote_skin`, `api_toggle_favorite`, `report_skin` | `views/votes.py`, `views/report.py` |
 | `/api/skins/<id>/wear/`, `/api/skins/wear-code/`, `/api/bonk/login/` | `wear_skin`, `wear_skin_code`, `bonk_login_for_wear` | `views/wear.py` |
@@ -37,8 +38,9 @@ All in `skins/urls.py`; views in `skins/views/`, one module per area.
 - `rerender.py`: `rerender(skin)`, shared by the staff button and `rerender_skins`.
 - `skin_import.py`: importing a BonkLeagues skin (upload form, BonxBot); `bonxbot_migration.py`: the one-time BonxBot import behind `import_bonxbot_skins`.
 - `submitters.py`: who sent a skin in (`Submission`: upload form, editor, BonxBot), kept apart from who made it (`creator`; `creator_source` says where that name came from), and `backfill_submitters` behind `backfill_skin_submitters` for skins added before submitters were stored.
+- `moderation.py`: the staff report queue (`report_queue`, reports grouped by skin) and its three decisions, `dismiss`, `change_creator` (the new name also becomes the owner; `creator_source = staff`) and `delete`. Each one closes all of the skin's open reports in one transaction and records a `ModerationDecision` (who, what, note, the reporters' ids, old and new creator) that outlives a deleted skin, so reporters and creators can be told later. The Django admin's "Mark as resolved" still works but records no decision.
 - `svg_sanitizer.py`, `querysets.py` (`Skin.objects`: search, scores, periods), `categories.py`, `skin_code.py`.
-- Featured places: category covers, the home strips and the leaderboards use `Skin.objects.without_open_reports()`, so a skin with an unresolved `SkinReport` drops out of them until staff resolve the report (admin: Skin reports → "Mark as resolved"). Search and the skin's own page still show it. Category covers are hand-picked in the admin (`CategoryCover`, one skin per category); a category without a pick shows an empty tile. Covers are never picked automatically, because the most upvoted match can be anything (design review 2026-11-09).
+- Featured places: category covers, the home strips and the leaderboards use `Skin.objects.without_open_reports()`, so a skin with an unresolved `SkinReport` drops out of them until staff decide on it on the report queue (`/moderation/`, in the account menu for staff). Search and the skin's own page still show it. Category covers are hand-picked in the admin (`CategoryCover`, one skin per category); a category without a pick shows an empty tile. Covers are never picked automatically, because the most upvoted match can be anything (design review 2026-11-09).
 
 ## Management commands
 
