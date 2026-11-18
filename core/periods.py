@@ -1,6 +1,6 @@
 """The one definition of the rolling time windows pages filter by.
 
-Owns: which period names exist ("today", "week") and how far back each
+Owns: which period names exist ("today", "week", "month") and how far back each
 reaches. Pages that filter "uploaded today / this week" go through here
 (Skin.objects.created_in, skins/querysets.py).
 Does not own: the visitor's calendar day (the search header's "uploaded
@@ -13,11 +13,12 @@ from datetime import datetime, timedelta
 from django.utils import timezone
 
 # Rolling windows that end now: "today" is the last 24 hours, not the
-# calendar day. Add a period here (e.g. "month") when a page offers it; a
-# name not listed means "all time".
+# calendar day, and "month" the last 30 days. Add a period here when a page
+# offers it; a name not listed means "all time".
 PERIODS = {
     "today": timedelta(days=1),
     "week": timedelta(days=7),
+    "month": timedelta(days=30),
 }
 
 

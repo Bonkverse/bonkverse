@@ -1,7 +1,9 @@
-"""Leaderboards (stats/leaderboards.py, stats/views.py): one view, one template,
-a config entry per board. Same URLs and URL names as the old views."""
+"""Leaderboards (stats/leaderboards.py, stats/views.py): one "Top skins" page,
+a tab per board (Most upvoted, Most favorited) and period chips (all time,
+this month, this week). Same URLs and URL names as the old views."""
 
 import ast
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
@@ -9,9 +11,11 @@ from django.http import Http404
 from django.template.loader import get_template
 from django.test import RequestFactory
 from django.urls import reverse
+from django.utils import timezone
 
+from skins.models import Skin
 from stats import leaderboards, views
-from tests.factories import SkinFactory, UserFactory
+from tests.factories import SkinFactory, SkinReportFactory, UserFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -20,6 +24,10 @@ REPO = Path(__file__).resolve().parent.parent
 
 def _rows(response):
     return [(skin.name, skin.value) for skin in response.context["rows"]]
+
+
+def _age(skin, days):
+    Skin.objects.filter(id=skin.id).update(created_at=timezone.now() - timedelta(days=days))
 
 
 @pytest.fixture
@@ -37,7 +45,7 @@ def skins():
     "board, expected",
     [
         ("upvoted", [("A", 9), ("B", 5), ("C", 1)]),
-        ("favorited", [("C", 3), ("A", 1), ("B", 0)]),
+        ("favorited", [("C", 3), ("A", 1)]),  # B has none: left out
     ],
 )
 def test_each_board_ranks_by_its_count(client, skins, board, expected):
@@ -45,7 +53,7 @@ def test_each_board_ranks_by_its_count(client, skins, board, expected):
 
     assert response.status_code == 200
     assert _rows(response) == expected
-    assert f"<th>{leaderboards.LEADERBOARDS[board].column}</th>" in response.text
+    assert f'class="bv-muted">{leaderboards.LEADERBOARDS[board].column}</span>' in response.text
 
 
 def test_urls_and_names_are_unchanged():
@@ -53,14 +61,69 @@ def test_urls_and_names_are_unchanged():
     assert reverse("stats:leaderboards_favorited") == "/leaderboards/favorited/"
 
 
-def test_tabs_list_upvoted_and_favorited_and_mark_the_current_one(client):
+def test_page_is_top_skins_with_a_tab_per_board(client):
     response = client.get(reverse("stats:leaderboards_favorited"))
 
+    assert "<h1>Top skins</h1>" in response.text
     assert response.context["tabs"] == [
         {"url_name": "stats:leaderboards_upvoted", "label": "Most upvoted", "current": False},
         {"url_name": "stats:leaderboards_favorited", "label": "Most favorited", "current": True},
     ]
     assert 'href="/leaderboards/favorited/" aria-current="page"' in response.text
+
+
+def test_period_keeps_skins_uploaded_in_that_window(client):
+    new = SkinFactory(name="New", upvotes=2)
+    month = SkinFactory(name="Month", upvotes=5)
+    old = SkinFactory(name="Old", upvotes=9)
+    _age(month, 20)
+    _age(old, 100)
+    url = reverse("stats:leaderboards_upvoted")
+
+    assert _rows(client.get(url + "?period=week")) == [("New", 2)]
+    assert _rows(client.get(url + "?period=month")) == [("Month", 5), ("New", 2)]
+    assert _rows(client.get(url)) == [("Old", 9), ("Month", 5), ("New", 2)]
+    assert new and old
+
+
+def test_period_chips_mark_the_current_one_and_tabs_keep_it(client):
+    response = client.get(reverse("stats:leaderboards_upvoted") + "?period=week")
+
+    assert 'href="?period=week" aria-current="page">This week' in response.text
+    assert 'href="/leaderboards/favorited/?period=week"' in response.text
+    assert "<title>Top skins · Most upvoted · This week · Bonkverse</title>" in response.text
+
+
+def test_unknown_period_is_all_time(client, skins):
+    response = client.get(reverse("stats:leaderboards_upvoted") + "?period=decade")
+
+    assert response.context["period"] == "all"
+    assert len(_rows(response)) == 3
+
+
+def test_empty_period_says_so(client):
+    old = SkinFactory(upvotes=3)
+    _age(old, 100)
+
+    response = client.get(reverse("stats:leaderboards_upvoted") + "?period=week")
+
+    assert "No skins here yet" in response.text
+
+
+def test_rows_link_the_skin_and_its_creator(client):
+    skin = SkinFactory(name="Bongo Cat", creator="Isabelle26", upvotes=4)
+
+    html = client.get(reverse("stats:leaderboards_upvoted")).text
+
+    assert f'href="{skin.get_absolute_url()}">Bongo Cat</a>' in html
+    assert 'href="/player/Isabelle26/">Isabelle26</a>' in html
+
+
+def test_reported_skins_are_left_out(client):
+    SkinFactory(name="Fine", upvotes=1)
+    SkinReportFactory(skin=SkinFactory(name="Reported", upvotes=50))
+
+    assert _rows(client.get(reverse("stats:leaderboards_upvoted"))) == [("Fine", 1)]
 
 
 def test_there_is_no_most_downvoted_board(client):
@@ -71,7 +134,7 @@ def test_there_is_no_most_downvoted_board(client):
 
 
 def test_shows_the_top_50(client):
-    SkinFactory.create_batch(55)
+    SkinFactory.create_batch(55, upvotes=1)
 
     assert len(client.get(reverse("stats:leaderboards_upvoted")).context["rows"]) == 50
 
@@ -85,23 +148,25 @@ def test_unknown_board_is_404():
 
 
 @pytest.mark.parametrize("board", list(leaderboards.LEADERBOARDS))
-def test_one_query_for_the_board_however_many_skins(client, django_assert_max_num_queries, board):
-    SkinFactory.create_batch(30)
+@pytest.mark.parametrize("period", list(leaderboards.PERIODS))
+def test_one_query_for_the_board_however_many_skins(
+    client, django_assert_max_num_queries, board, period
+):
+    SkinFactory.create_batch(30, upvotes=1)
 
-    # An anonymous visitor: only the board. (The page frame's changelog query
-    # went away with the changelog.)
+    # An anonymous visitor: only the board.
     with django_assert_max_num_queries(1):
-        client.get(reverse(f"stats:leaderboards_{board}"))
+        client.get(reverse(f"stats:leaderboards_{board}") + f"?period={period}")
 
 
 @pytest.mark.parametrize("board", list(leaderboards.LEADERBOARDS))
-def test_every_board_has_a_table_partial(board):
-    get_template(leaderboards.LEADERBOARDS[board].table)
+def test_every_board_has_a_row_partial(board):
+    get_template(leaderboards.LEADERBOARDS[board].partial)
 
 
 def test_stats_reads_other_apps_only_through_selectors():
-    """Boards get their rows from the owning app's selectors, so stats never
-    imports another app's models (counting stays with the data's owner)."""
+    """Boards get their rows from the owning app's selectors (counting stays
+    with the data's owner), so stats never imports another app's models."""
     apps = {path.parent.name for path in REPO.glob("*/apps.py")}
     found = []
     for path in (REPO / "stats").rglob("*.py"):
