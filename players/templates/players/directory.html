@@ -2,29 +2,37 @@
 {% load static %}
 
 {% block title %}{% if query %}“{{ query }}” · {% endif %}Players · Bonkverse{% endblock %}
+{% block content_class %}site-page{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/player_profile.css' %}">
+<link rel="stylesheet" href="{% static 'players/css/controls.css' %}">
+<link rel="stylesheet" href="{% static 'players/css/profile.css' %}">
+<link rel="stylesheet" href="{% static 'players/css/directory.css' %}">
 {% endblock %}
 
 {% block content %}
-<main class="pv" id="main">
+{% comment %}
+The Players page (players.selectors.directory): search, three lists (bonk.io
+accounts, replay players, Flash friends) and the advanced-search rule
+builder. Bonkverse/ui components; layout in players/css/directory.css.
+{% endcomment %}
+<div class="bv-main pv-dir">
 
-  <header class="pv-dir__head">
-    <h1 class="pv-dir__title">Players</h1>
-    <p class="pv-muted">Find anyone on bonk.io and open their profile: replays, level, maps, people, friends and skins.</p>
-  </header>
+  <div class="bv-page-header">
+    <div class="bv-page-header__text">
+      <h1>Players</h1>
+      <p class="bv-muted">Find anyone on bonk.io and open their profile: replays, level, maps, people, friends and skins.</p>
+    </div>
+  </div>
 
   <form class="pv-dir__form" method="get" action="{% url 'players:players_directory' %}" role="search" data-dir-form>
     <input type="hidden" name="view" value="{{ view }}">
-    <div class="pv-dir__search">
-      <label class="pv-dir__field">
-        <i data-lucide="search" aria-hidden="true"></i>
-        <span class="pv-visually-hidden">Search players</span>
-        <input type="search" name="q" value="{{ query }}" placeholder="{% if view == 'flash' %}Search flash friend names{% elif view == 'replays' %}Name starts with… (3+ letters){% else %}Search by name or bonk.io ID{% endif %}" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="100">
-      </label>
-      <button type="submit" class="pv-btn">Search</button>
+    <div class="bv-search pv-dir__search">
+      <label class="bv-visually-hidden" for="dir-q">{% if view == 'flash' %}Search Flash friends{% else %}Search players by name{% if view != 'replays' %} or bonk.io ID{% endif %}{% endif %}</label>
+      <input id="dir-q" type="search" name="q" value="{{ query }}" placeholder="{% if view == 'flash' %}Search Flash friends{% elif view == 'replays' %}Name starts with…{% else %}Search players{% endif %}" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="100">
+      <button type="submit">Search</button>
     </div>
+    <p class="pv-fine pv-dir__hint">{% if view == 'replays' %}Type 3 or more letters.{% elif view == 'flash' %}Old Flash bonk and TinyTanks names.{% else %}A name or a bonk.io account ID (DBID).{% endif %}</p>
 
     {% if advanced %}
       <details class="pv-adv"{% if adv_active %} open{% endif %}>
@@ -46,8 +54,8 @@
           </ol>
 
           <div class="pv-qb__bar">
-            <button type="button" class="pv-qb__add" data-add hidden><i data-lucide="plus" aria-hidden="true"></i> Add rule</button>
-            <a class="pv-qb__clear" href="?{{ clear_qs }}"><i data-lucide="rotate-ccw" aria-hidden="true"></i> Clear</a>
+            <button type="button" class="bv-btn" data-add hidden><i data-lucide="plus" aria-hidden="true"></i> Add rule</button>
+            <a class="bv-btn bv-btn--ghost" href="?{{ clear_qs }}"><i data-lucide="rotate-ccw" aria-hidden="true"></i> Clear</a>
             <span class="pv-qb__spacer"></span>
             <label class="pv-qb__select pv-qb__sort">
               <span class="pv-small pv-muted">Sort</span>
@@ -55,7 +63,7 @@
                 {% for key, label in sorts %}<option value="{{ key }}"{% if sort == key %} selected{% endif %}>{{ label }}</option>{% endfor %}
               </select>
             </label>
-            <button type="submit" class="pv-btn">Search</button>
+            <button type="submit" class="bv-btn bv-btn--primary">Search</button>
           </div>
 
           <div class="pv-qb__examples">
@@ -71,13 +79,13 @@
     <ul class="pv-adv__chips" aria-label="Rules">
       {% for conn, text in chips %}
         {% if conn %}<li class="pv-adv__conn">{{ conn }}</li>{% endif %}
-        <li class="pv-chip">{{ text }}</li>
+        <li class="bv-pill">{{ text }}</li>
       {% endfor %}
-      <li><a class="pv-link pv-small" href="?{{ clear_qs }}">Clear</a></li>
+      <li class="pv-small"><a href="?{{ clear_qs }}">Clear</a></li>
     </ul>
   {% endif %}
 
-  <nav class="pv-seg pv-dir__views" aria-label="Show">
+  <nav class="bv-seg pv-dir__views" aria-label="Show">
     {% for key, label in views %}
       <a href="?view={{ key }}{% if query %}&amp;q={{ query|urlencode }}{% endif %}"{% if view == key %} aria-current="page"{% endif %}>{{ label }}</a>
     {% endfor %}
@@ -88,17 +96,19 @@
     {% elif view == 'flash' %}
       Friends imported from the old Flash bonk and TinyTanks, most listed first. Names link to a profile when we know who they are now.
     {% else %}
-      Every bonk.io account Bonkverse has seen in friend lists or replays, Bonkverse members first. Accounts seen only in replays have no DBID until they turn up in a friend list.
+      Every bonk.io account Bonkverse has seen in friend lists or replays, Bonkverse members first. <span class="bv-pill bv-pill--accent">Member</span> means they signed in to Bonkverse.
     {% endif %}
   </p>
 
   {% if replays_error and replays_error != "not_found" %}
-    <p class="pv-note"><i data-lucide="info" aria-hidden="true"></i> Replay stats can't be loaded right now, so levels and replay counts are missing.</p>
+    <p class="bv-notice pv-dir__notice"><i data-lucide="info" aria-hidden="true"></i> <span>Replay stats can't be loaded right now, so levels and replay counts are missing.</span></p>
   {% endif %}
 
   {% if needs_query %}
-    <div class="pv-card pv-empty">
-      <p>Type a name to find it among replay players. From 3 letters, the most active names starting with it show too.</p>
+    <div class="bv-empty">
+      <i data-lucide="search" aria-hidden="true"></i>
+      <p class="bv-empty__title">Type a name to find it among replay players.</p>
+      <p>From 3 letters, the most active names starting with it show too.</p>
     </div>
   {% elif cards %}
     {% if page_obj %}
@@ -113,20 +123,20 @@
       {% include 'partials/pagination.html' with page_obj=page_obj elided_range=elided_range base_qs=base_qs %}
     {% endif %}
   {% else %}
-    <div class="pv-card pv-empty">
+    <div class="bv-empty">
       {% if adv_active %}
-        <p>No players match these rules.</p>
-        <p><a class="pv-link" href="?{{ clear_qs }}">Clear the rules</a></p>
+        <p class="bv-empty__title">No players match these rules.</p>
+        <a class="bv-btn" href="?{{ clear_qs }}">Clear the rules</a>
       {% else %}
-        <p>No players match “{{ query }}”.</p>
+        <p class="bv-empty__title">No players match “<span class="pv-name">{{ query }}</span>”.</p>
         {% if view != 'replays' and query|length >= 3 %}
-          <p><a class="pv-link" href="?view=replays&amp;q={{ query|urlencode }}">Look for it among replay players</a></p>
+          <a class="bv-btn" href="?view=replays&amp;q={{ query|urlencode }}">Look for it among replay players</a>
         {% endif %}
       {% endif %}
     </div>
   {% endif %}
 
-</main>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}

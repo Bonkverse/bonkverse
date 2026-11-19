@@ -194,7 +194,7 @@ def test_player_cards_show_join_date_and_hide_impossible_levels(client, mocked_h
         json={"results": [{"username": "Saucy Tulip", "games": 3, "level": -285}]},
     )
     html = client.get(reverse("players:players_directory")).content.decode()
-    assert "Joined ≈ Apr 2023" in html
+    assert "Joined bonk.io ≈ Apr 2023" in html
     assert "-285" not in html
 
 

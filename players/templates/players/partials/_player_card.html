@@ -1,21 +1,23 @@
 {% comment %}
-One player card on the Players page (players.selectors.directory → _card).
-Three fixed stats (level, replays, friends) so a grid of cards scans in
-columns; "—" when we don't know. The bonk.io account ID (DBID) sits small
-under the name when we know it. A card with a profile is a solid link; a
-card without one is dashed and quiet, so the two are easy to tell apart.
+One player card on the Players page (players.selectors.directory → _card),
+per the design review: worn-skin avatar, name, level pill, two stats
+(replays, and friends or "listed by" for Flash friends), "—" when we don't
+know. A card with a profile is one link (no separate "Profile" link); a card
+without one is dashed and quiet, so the two are easy to tell apart. The
+bonk.io account ID lives on the profile, not here.
 {% endcomment %}
 {% if card.profile_url %}<a class="pv-pcard" href="{{ card.profile_url }}">{% else %}<div class="pv-pcard pv-pcard--none">{% endif %}
   <span class="pv-pcard__top">
     {% include 'players/partials/_avatar.html' with initials=card.initials skin=card.skin extra="pv-pcard__avatar" %}
     <span class="pv-pcard__who">
       <span class="pv-pcard__name"{% if card.shown_name != card.username %} title="{{ card.username }}" aria-label="{{ card.username }}"{% endif %}>{{ card.shown_name }}</span>
-      {% if card.bonk_id %}<span class="pv-pcard__id">DBID {{ card.bonk_id }}</span>{% endif %}
+      <span class="pv-pcard__pills">
+        {% if card.level %}<span class="bv-pill">Level {{ card.level }}</span>{% endif %}
+        {% if card.member %}<span class="bv-pill bv-pill--accent" title="Signed in to Bonkverse">Member</span>{% endif %}
+      </span>
     </span>
-    {% if card.member %}<i data-lucide="badge-check" class="pv-pcard__member" aria-label="Bonkverse member"></i>{% endif %}
   </span>
   <span class="pv-pcard__stats">
-    <span class="pv-pcard__stat"><span class="pv-pcard__val">{{ card.level|default:"—" }}</span><span class="pv-pcard__lbl">Level</span></span>
     <span class="pv-pcard__stat"><span class="pv-pcard__val">{% if card.games %}{{ card.games|floatformat:"0g" }}{% else %}—{% endif %}</span><span class="pv-pcard__lbl">Replays</span></span>
     {% if card.listed_by is not None %}
       <span class="pv-pcard__stat"><span class="pv-pcard__val">{{ card.listed_by|floatformat:"0g" }}</span><span class="pv-pcard__lbl">Listed by</span></span>
@@ -23,14 +25,7 @@ card without one is dashed and quiet, so the two are easy to tell apart.
       <span class="pv-pcard__stat"><span class="pv-pcard__val">{% if card.friends %}{{ card.friends|floatformat:"0g" }}{% else %}—{% endif %}</span><span class="pv-pcard__lbl">Friends</span></span>
     {% endif %}
   </span>
-  <span class="pv-pcard__foot">
-    <span class="pv-pcard__meta">
-      {% if card.joined %}Joined {% if card.joined.extrapolated %}around{% else %}≈{% endif %} {{ card.joined.day|date:"M Y" }}{% elif card.listed_by is not None %}Flash friend{% elif card.replay_only %}Seen in replays{% else %}&nbsp;{% endif %}
-    </span>
-    {% if card.profile_url %}
-      <span class="pv-pcard__go">Profile <i data-lucide="arrow-right" aria-hidden="true"></i></span>
-    {% else %}
-      <span class="pv-pcard__none">No profile yet</span>
-    {% endif %}
+  <span class="pv-pcard__meta">
+    {% if card.joined %}Joined bonk.io {% if card.joined.extrapolated %}around{% else %}≈{% endif %} {{ card.joined.day|date:"M Y" }}{% elif card.listed_by is not None %}Flash friend{% elif card.replay_only %}Seen in replays{% else %}&nbsp;{% endif %}{% if not card.profile_url %} · No profile yet{% endif %}
   </span>
 {% if card.profile_url %}</a>{% else %}</div>{% endif %}

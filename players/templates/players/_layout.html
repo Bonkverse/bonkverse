@@ -36,11 +36,12 @@ header, the owner's privacy note and the tab bar, on Bonkverse/ui components
       <div class="pv-pills">
         {% if summary and shown.level_history and not level_in_body %}<span class="bv-pill">Level {{ summary.current_level }}</span>{% endif %}
         {% if account_age %}
-          <span class="bv-pill" title="Estimated from account ID {{ bonk_player.bonk_id }}">
+          <span class="bv-pill" title="Estimated from the account ID">
             <i data-lucide="cake" aria-hidden="true"></i>
             Joined bonk.io {% if account_age.extrapolated %}around{% else %}≈{% endif %} {{ account_age.day|date:"M Y" }}
           </span>
         {% endif %}
+        {% if bonk_player.bonk_id > 0 %}<span class="bv-pill pv-pill--quiet" title="bonk.io account ID">DBID {{ bonk_player.bonk_id }}</span>{% endif %}
         {% if account %}
           <span class="bv-pill">On Bonkverse since {{ account.date_joined|date:"M Y" }}</span>
         {% elif profile %}

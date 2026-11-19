@@ -3,6 +3,7 @@ integrations/replay_sync.py): replay names come in as BonkPlayers with no
 DBID, get their DBID when a friend list or login shows it, and DBIDs go out
 to the replay site."""
 
+import re
 import json
 from datetime import timedelta
 
@@ -244,7 +245,7 @@ def test_replay_only_players_show_on_the_players_page(client, mocked_http):
         json={"results": [{"username": "(%)", "games": 3, "level": 7}]},
     )
     html = client.get(reverse("players:players_directory") + "?q=%25").content.decode()
-    assert "(%)" in html and "Seen in replays" in html and "DBID" not in html.split("pv-pcards")[1]
+    assert "(%)" in html and "Seen in replays" in html and not re.search(r"DBID \d", html)
     assert charts.profile_path("(%)") in html
 
 

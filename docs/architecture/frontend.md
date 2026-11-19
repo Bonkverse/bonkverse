@@ -51,7 +51,7 @@ release: the colors for the three themes, Jost, the `bv-` components and
   `site-legacy`, and the old bare `form`, `input` and `button` rules
   (`css/forms.css`) only apply inside it. Today `site-page` covers the home
   page, skin search, the skin page, new and category pages, log in, upload,
-  the developers page, the staff report queue and player profiles.
+  the developers page, the staff report queue, player profiles and the Players page.
 - **Three classes were renamed** to make room for the package:
   `site-toast`, `site-pagination` and `site-num` (they were `bv-`).
 - **Check every screen size and contrast.** `node scripts/check_responsive.mjs`
