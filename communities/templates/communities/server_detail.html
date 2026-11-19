@@ -1,81 +1,61 @@
 {% extends "base.html" %}
+{% load static humanize %}
 
 {% block title %}{{ server.name }} · Bonkverse{% endblock %}
+{% block content_class %}site-page{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'communities/css/servers.css' %}">
+{% endblock %}
 
 {% block content %}
+{% with tags=server.tags.all %}
+<div class="bv-main site-narrow">
+  <a class="bv-back" href="{% url 'communities:list' %}"><span aria-hidden="true">←</span> Discord servers</a>
 
-<a href="{% url 'communities:list' %}" class="back-link">← Back to directory</a>
-
-<div class="server-detail-container">
-
-  <!-- Header -->
-  <div class="server-detail-header">
-    {% if server.icon_hash %}
-      <img
-        src="https://cdn.discordapp.com/icons/{{ server.guild_id }}/{{ server.icon_hash }}.png"
-        class="server-detail-icon"
-        alt="{{ server.name }}"
-      >
-    {% endif %}
-
-    <div class="server-detail-meta">
-      <h1 class="server-detail-title">{{ server.name }}</h1>
-
-      <div class="server-detail-stats">
-        👥 {{ server.member_count }} members
-        <span class="dot">•</span>
-        🟢 {{ server.online_count }} online
-      </div>
+  <header class="site-server-detail">
+    {% include 'communities/_server_icon.html' with server=server size=96 %}
+    <div class="site-server-detail__text">
+      <h1>{{ server.name }}</h1>
+      <p class="bv-muted">{{ server.member_count|intcomma }} members · {{ server.online_count|intcomma }} online</p>
     </div>
-  </div>
+    <a class="bv-btn bv-btn--primary" href="{{ server.invite_url }}" target="_blank" rel="noopener">Join on Discord</a>
+  </header>
 
-  <!-- Description -->
-  <div class="server-detail-description">
-    {{ server.description }}
-  </div>
+  {% if server.description %}<p class="site-server-detail__description">{{ server.description|linebreaksbr }}</p>{% endif %}
 
-{% if server.tags.exists %}
-  <div class="server-detail-tags">
-    <h3 class="server-detail-section-title">Tags</h3>
-
-    <div class="tags">
-      {% for tag in server.tags.all %}
-        <span class="bv-pill">{{ tag.name }}</span>
-      {% endfor %}
-    </div>
-  </div>
-{% endif %}
-
-
-  <!-- Actions -->
-  <div class="server-detail-actions">
-    <a
-      href="{{ server.invite_url }}"
-      target="_blank"
-      class="bv-btn bv-btn--primary"
-    >
-      Join Discord
-    </a>
-  </div>
-
-  <!-- Growth -->
-  <div class="server-growth">
-    <h2>Member Growth</h2>
-
-    <ul class="snapshot-list">
-      {% for s in snapshots %}
-        <li>
-          <span class="snapshot-date">
-            {{ s.recorded_at|date:"M d, H:i" }}
-          </span>
-          <span class="snapshot-count">
-            {{ s.member_count }} members
-          </span>
-        </li>
-      {% endfor %}
+  {% if tags %}
+    <ul class="site-server__tags" aria-label="Tags">
+      {% for tag in tags %}<li class="bv-pill">{{ tag.name }}</li>{% endfor %}
     </ul>
-  </div>
+  {% endif %}
 
+  {% if growth %}
+  <section class="bv-card site-growth" aria-labelledby="growth-title">
+    <div class="site-growth__head">
+      <h2 id="growth-title">Members</h2>
+      <p class="bv-muted">
+        {% if growth.change > 0 %}↑ {{ growth.change_size|intcomma }}{% elif growth.change < 0 %}↓ {{ growth.change_size|intcomma }}{% else %}No change{% endif %}
+        since {{ growth.first|date:"M j, g A" }}
+      </p>
+    </div>
+    <figure class="site-growth__chart">
+      <svg viewBox="0 0 {{ growth.width }} {{ growth.height }}" preserveAspectRatio="none" role="img"
+           aria-label="Members from {{ growth.low|intcomma }} to {{ growth.high|intcomma }} between {{ growth.first|date:'M j' }} and {{ growth.last|date:'M j' }}">
+        <polyline points="{{ growth.points }}" fill="none" vector-effect="non-scaling-stroke"/>
+      </svg>
+      <figcaption class="site-growth__axis">
+        <span>{{ growth.first|date:"M j, g A" }}</span>
+        <span>{{ growth.low|intcomma }}–{{ growth.high|intcomma }} members</span>
+        <span>{{ growth.last|date:"M j, g A" }}</span>
+      </figcaption>
+    </figure>
+  </section>
+  {% endif %}
 </div>
+{% endwith %}
+{% endblock %}
 
+{% block extra_scripts %}
+<script src="{% static 'communities/js/servers.js' %}" defer></script>
 {% endblock %}

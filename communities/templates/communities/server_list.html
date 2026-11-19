@@ -1,123 +1,89 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static humanize %}
 
 {% block title %}Discord servers · Bonkverse{% endblock %}
+{% block content_class %}site-page{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'communities/css/servers.css' %}">
+{% endblock %}
+
 {% block content %}
-
-<!-- HERO SEARCH -->
-<div class="hero">
-  <div class="hero-inner">
-    <h1 class="hero-title">Bonk.io Discord Servers</h1>
-    <p class="hero-sub">
-      Discover and join Bonk.io–related Discord communities
-    </p>
-
-    <form method="get" class="hero-search">
-      <input
-        type="text"
-        name="q"
-        placeholder="Search servers by name or description…"
-        value="{{ query }}"
-      >
-      <button type="submit">Search</button>
-    </form>
-  </div>
-</div>
-
-<!-- FILTERS -->
-<div class="filters">
-  <div class="filter-hint">
-    Click tags to filter servers by category
-  </div>
-
-  <form class="filter-form" method="get" id="tag-filter-form">
-    {% if query %}
-      <input type="hidden" name="q" value="{{ query }}">
-    {% endif %}
-
-    <div class="tag-bubbles bv-chips" role="group" aria-label="Filter by tag">
-      {% for tag in tags %}
-        <button type="button" class="bv-chip selectable-tag" data-tag="{{ tag.name }}"
-                aria-pressed="{% if tag.name in active_tags %}true{% else %}false{% endif %}">{{ tag.name }}</button>
-      {% endfor %}
-    </div>
-
-    <div id="tag-inputs"></div>
-    {{ active_tags|json_script:"active-tags" }}
-  </form>
-</div>
-
-{% if next_refresh %}
-  <div class="refresh-timer">
-    🔄 Next Discord server refresh in
-    <span id="refresh-countdown" data-next-refresh="{{ next_refresh|date:'c' }}">--</span>
-  </div>
-{% endif %}
-
-<!-- SERVER GRID -->
-<div class="server-grid">
-  {% for server in servers %}
-    <div class="server-card">
-
-      <div class="server-header">
-        {% if server.icon_hash %}
-          <img
-            src="https://cdn.discordapp.com/icons/{{ server.guild_id }}/{{ server.icon_hash }}.png"
-            alt="{{ server.name }}"
-            class="server-icon"
-          >
-        {% else %}
-          <div class="server-icon placeholder">🟣</div>
-        {% endif %}
-
-        <div class="server-title">
-          <strong>{{ server.name }}</strong>
-          <span class="members">
-            👥 {{ server.member_count }} • 🟢 {{ server.online_count }}
-          </span>
-        </div>
-      </div>
-
-      <p class="description {% if not server.description %}empty{% endif %}">
-        {% if server.description %}
-          {{ server.description|truncatechars:120 }}
-        {% else %}
-          <em>No description provided.</em>
-        {% endif %}
+{% comment %}
+The Discord server directory (communities/views/pages.py). Search and the tag
+chips are plain GET links (communities/selectors.py tag_filters): no script.
+{% endcomment %}
+<div class="bv-main">
+  <div class="bv-page-header">
+    <div class="bv-page-header__text">
+      <h1>Discord servers</h1>
+      <p class="bv-muted">
+        bonk.io communities to join.
+        {% if minutes_to_refresh is not None %}Member counts update every hour{% if minutes_to_refresh %}, next in {{ minutes_to_refresh }} min{% endif %}.{% endif %}
       </p>
-
-      <div class="tags {% if not server.tags.exists %}empty{% endif %}">
-        {% for tag in server.tags.all|slice:":4" %}
-          <span class="bv-pill">{{ tag.name }}</span>
-        {% endfor %}
-
-        {% if server.tags.count > 4 %}
-          <a
-            href="{% url 'communities:detail' server.id %}"
-            class="tag-more"
-          >
-            +{{ server.tags.count|add:"-4" }} more
-          </a>
-        {% endif %}
-
-        {% if not server.tags.exists %}
-          <span class="tag-placeholder">No tags provided</span>
-        {% endif %}
-      </div>
-
-      <div class="server-actions">
-        <a href="{{ server.invite_url }}" class="bv-btn bv-btn--primary">Join Discord</a>
-        <a href="{% url 'communities:detail' server.id %}" class="bv-btn">See details</a>
-      </div>
-
     </div>
-  {% empty %}
-    <p class="empty-state">No servers found.</p>
-  {% endfor %}
-</div>
+    <div class="bv-page-header__actions">
+      <a class="bv-btn" href="{% url 'communities:submit_server' %}">Submit a server</a>
+    </div>
+  </div>
 
+  <form class="site-servers-search" method="get" role="search">
+    <div class="bv-search">
+      <input type="search" name="q" value="{{ query }}" placeholder="Server name or description" aria-label="Search servers" autocomplete="off">
+      <button type="submit">Search</button>
+    </div>
+    {% for name in active_tags %}<input type="hidden" name="tag" value="{{ name }}">{% endfor %}
+  </form>
+
+  {% if tag_filters %}
+  <nav class="bv-chips site-servers-tags" aria-label="Filter by tag">
+    {% for chip in tag_filters %}
+      <a class="bv-chip" href="{{ chip.href }}" aria-pressed="{% if chip.on %}true{% else %}false{% endif %}">{{ chip.name }}</a>
+    {% endfor %}
+  </nav>
+  {% endif %}
+
+  {% if servers %}
+    <ul class="site-servers">
+      {% for server in servers %}
+        {% with tags=server.tags.all %}
+        <li class="bv-card site-server">
+          <div class="site-server__head">
+            {% include 'communities/_server_icon.html' with server=server size=56 %}
+            <div class="site-server__title">
+              <a class="site-server__name" href="{% url 'communities:detail' server.id %}">{{ server.name }}</a>
+              <span class="bv-muted site-server__counts">{{ server.member_count|intcomma }} members · {{ server.online_count|intcomma }} online</span>
+            </div>
+          </div>
+          {% if server.description %}<p class="site-server__description">{{ server.description|truncatechars:140 }}</p>{% endif %}
+          {% if tags %}
+            <ul class="site-server__tags">
+              {% for tag in tags|slice:":4" %}<li class="bv-pill">{{ tag.name }}</li>{% endfor %}
+              {% if tags|length > 4 %}<li class="bv-pill">+{{ tags|length|add:"-4" }}</li>{% endif %}
+            </ul>
+          {% endif %}
+          <div class="site-server__actions">
+            <a class="bv-btn bv-btn--primary" href="{{ server.invite_url }}" target="_blank" rel="noopener">Join on Discord</a>
+            <a class="bv-btn bv-btn--ghost" href="{% url 'communities:detail' server.id %}">Details</a>
+          </div>
+        </li>
+        {% endwith %}
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="bv-empty">
+      <h2 class="bv-empty__title">{% if query or active_tags %}No servers match{% else %}No servers yet{% endif %}</h2>
+      <p>{% if query or active_tags %}Try fewer tags or other words.{% else %}Know a bonk.io Discord? Add it.{% endif %}</p>
+      {% if query or active_tags %}
+        <a class="bv-btn" href="{% url 'communities:list' %}">Show all servers</a>
+      {% else %}
+        <a class="bv-btn" href="{% url 'communities:submit_server' %}">Submit a server</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{% static 'communities/js/server_list.js' %}"></script>
+<script src="{% static 'communities/js/servers.js' %}" defer></script>
 {% endblock %}

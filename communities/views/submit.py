@@ -14,18 +14,18 @@ from ..services import SubmitOutcome, submit_server as submit
 
 # What people see when the invite lookup fails, by InviteError code.
 LOOKUP_FAILURE_MESSAGES = {
-    InviteError.INVALID_CODE: "❌ Invalid Discord invite format.",
-    InviteError.NOT_FOUND: "❌ Invalid or inaccessible Discord invite.",
-    InviteError.RATE_LIMITED: "❌ Couldn't reach Discord right now. Try again in a minute.",
-    InviteError.UNAVAILABLE: "❌ Couldn't reach Discord right now. Try again in a minute.",
+    InviteError.INVALID_CODE: "That isn't a Discord invite link. It looks like https://discord.gg/abc123.",
+    InviteError.NOT_FOUND: "Discord doesn't know that invite. Check the link, or make a new one.",
+    InviteError.RATE_LIMITED: "Discord didn't answer. Try again in a minute.",
+    InviteError.UNAVAILABLE: "Discord didn't answer. Try again in a minute.",
 }
 
 # What people see when the server can't be added, by outcome.
 REFUSAL_MESSAGES = {
-    SubmitOutcome.MISSING_INVITE: "❌ Discord invite link is required.",
-    SubmitOutcome.INVALID_FORMAT: "❌ Invalid Discord invite format.",
-    SubmitOutcome.NO_SERVER: "❌ Could not determine Discord server from invite.",
-    SubmitOutcome.NOT_PERMANENT: "❌ Invite must be permanent (non-expiring).",
+    SubmitOutcome.MISSING_INVITE: "Paste an invite link to submit a server.",
+    SubmitOutcome.INVALID_FORMAT: "That isn't a Discord invite link. It looks like https://discord.gg/abc123.",
+    SubmitOutcome.NO_SERVER: "That invite doesn't lead to a server.",
+    SubmitOutcome.NOT_PERMANENT: "That invite expires. In Discord, make one set to never expire.",
 }
 
 
@@ -42,7 +42,7 @@ def submit_server(request):
         return redirect("communities:submit_server")
 
     if result.outcome == SubmitOutcome.ALREADY_LISTED:
-        messages.warning(request, "⚠️ This Discord server has already been submitted.")
+        messages.warning(request, "That server is already in the directory.")
     else:
-        messages.success(request, "✅ Discord server submitted successfully!")
+        messages.success(request, "Server added to the directory.")
     return redirect(reverse("communities:detail", kwargs={"server_id": result.server.id}))

@@ -1,0 +1,174 @@
+/* Discord server directory: list, one server, submit
+   (communities/templates/communities/). */
+
+/* A server's icon over its first letter (communities/_server_icon.html). */
+.site-server-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 56px;
+  height: 56px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--bv-thumb);
+  color: var(--bv-text);
+  font-size: var(--bv-text-xl);
+  font-weight: 600;
+}
+.site-server-icon[data-size="96"] {
+  width: 96px;
+  height: 96px;
+  font-size: var(--bv-text-2xl);
+}
+.site-server-icon img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* List */
+.site-servers-search {
+  margin-top: var(--bv-space-4);
+}
+.site-servers-tags {
+  margin: var(--bv-space-4) 0;
+}
+.site-servers {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: var(--bv-space-4);
+  margin: var(--bv-space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.bv-card.site-server {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bv-space-3);
+}
+.bv-card.site-server > * + * {
+  margin-top: 0;
+}
+.site-server__head {
+  display: flex;
+  align-items: center;
+  gap: var(--bv-space-3);
+  min-width: 0;
+}
+.site-server__title {
+  display: grid;
+  min-width: 0;
+}
+.site-server__name {
+  color: var(--bv-text);
+  font-size: var(--bv-text-lg);
+  line-height: var(--bv-leading-lg);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.site-server__name:hover {
+  color: var(--bv-link);
+}
+.site-server__counts {
+  font-size: var(--bv-text-sm);
+}
+.site-server__description {
+  margin: 0;
+  color: var(--bv-text);
+  font-size: var(--bv-text-sm);
+  line-height: var(--bv-leading-sm);
+  overflow-wrap: anywhere;
+}
+.site-server__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bv-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.site-server__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bv-space-2);
+  margin-top: auto;
+}
+
+/* One server */
+.site-server-detail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bv-space-4);
+  margin-top: var(--bv-space-4);
+}
+.site-server-detail__text {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.site-server-detail h1 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.site-server-detail .bv-muted {
+  margin: var(--bv-space-1) 0 0;
+}
+.site-server-detail__description {
+  margin: var(--bv-space-5) 0 var(--bv-space-4);
+  overflow-wrap: anywhere;
+}
+.site-growth {
+  margin-top: var(--bv-space-6);
+}
+.site-growth__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--bv-space-2);
+}
+.site-growth__head h2 {
+  margin: 0;
+  font-size: var(--bv-text-lg);
+}
+.site-growth__head p {
+  margin: 0;
+}
+.site-growth__chart {
+  margin: var(--bv-space-3) 0 0;
+}
+.site-growth__chart svg {
+  display: block;
+  width: 100%;
+  height: 160px;
+  border-radius: var(--bv-radius-sm);
+  background: var(--bv-thumb);
+}
+.site-growth__chart polyline {
+  stroke: var(--site-series-1);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+.site-growth__axis {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--bv-space-2);
+  margin-top: var(--bv-space-2);
+  color: var(--bv-muted);
+  font-size: var(--bv-text-sm);
+}
+
+/* Submit */
+.site-submit-tags {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.site-submit-tags legend {
+  margin-bottom: var(--bv-space-2);
+  padding: 0;
+}

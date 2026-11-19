@@ -162,3 +162,109 @@ def test_submit_refuses_before_calling_discord(mocked_http):
     assert submit_server("   ", []).outcome == SubmitOutcome.MISSING_INVITE
     assert submit_server("https://discord.gg/", []).outcome == SubmitOutcome.INVALID_FORMAT
     assert len(mocked_http.calls) == 0
+
+
+# ── The pages (design review: Discord servers) ───────────────────────
+
+
+@pytest.mark.django_db
+def test_list_has_no_placeholder_text_and_groups_numbers(client):
+    _server("1", name="Quiet", description="", member_count=12345, online_count=678)
+
+    html = client.get("/serverlist/").content.decode()
+
+    assert "12,345 members · 678 online" in html
+    assert "No description provided" not in html
+    assert "No tags provided" not in html
+
+
+@pytest.mark.django_db
+def test_tag_chips_are_links_that_toggle_the_tag_and_keep_the_search(client):
+    DiscordTag.objects.create(name="competitive")
+    DiscordTag.objects.create(name="casual")
+
+    html = client.get("/serverlist/?q=bonk&tag=casual").content.decode()
+
+    assert (
+        'href="?q=bonk&amp;tag=casual&amp;tag=competitive" aria-pressed="false">competitive' in html
+    )
+    assert 'href="?q=bonk" aria-pressed="true">casual' in html
+
+
+def test_tag_filters_toggle():
+    tags = [DiscordTag(name="a"), DiscordTag(name="b")]
+
+    chips = selectors.tag_filters(tags, ["a"], "")
+
+    assert chips == [
+        {"name": "a", "on": True, "href": "?"},
+        {"name": "b", "on": False, "href": "?tag=a&tag=b"},
+    ]
+
+
+@pytest.mark.django_db
+def test_icons_fall_back_to_a_letter_without_a_broken_image(client):
+    _server("1", name="bonk club", icon_hash="abc")
+    _server("2", name="Zed", icon_hash="")
+
+    html = client.get("/serverlist/").content.decode()
+
+    assert 'src="https://cdn.discordapp.com/icons/1/abc.png?size=128" alt=""' in html
+    assert "communities/js/servers.js" in html  # removes icons that fail to load
+    assert ">B</span>" in html and ">Z</span>" in html
+
+
+@pytest.mark.django_db
+def test_list_is_a_fixed_number_of_queries(client, django_assert_max_num_queries):
+    tag = DiscordTag.objects.create(name="competitive")
+    for i in range(10):
+        _server(str(i), name=f"S{i}").tags.add(tag)
+
+    with django_assert_max_num_queries(4):  # servers, their tags, all tags, refresh time
+        client.get("/serverlist/")
+
+
+@pytest.mark.django_db
+def test_empty_search_says_so_and_offers_all_servers(client):
+    html = client.get("/serverlist/?q=nothing").content.decode()
+
+    assert "No servers match" in html
+    assert 'href="/serverlist/">Show all servers' in html
+
+
+def test_growth_chart_line_and_change():
+    start = datetime(2026, 11, 1, tzinfo=UTC)
+    snaps = [
+        DiscordServerSnapshot(
+            member_count=c, online_count=0, recorded_at=start + timedelta(hours=i)
+        )
+        for i, c in enumerate([100, 120, 110])
+    ]
+
+    chart = selectors.growth_chart(snaps, width=100, height=50)
+
+    assert chart["points"] == "8.0,42.0 50.0,8.0 92.0,25.0"
+    assert (chart["low"], chart["high"], chart["change"], chart["change_size"]) == (
+        100,
+        120,
+        10,
+        10,
+    )
+    assert selectors.growth_chart(snaps[:1]) is None
+
+
+@pytest.mark.django_db
+def test_detail_shows_the_growth_chart(client):
+    server = _server("1", name="Grower", member_count=130)
+    for i, count in enumerate([100, 130]):
+        DiscordServerSnapshot.objects.create(
+            server=server,
+            member_count=count,
+            online_count=1,
+            recorded_at=datetime(2026, 11, 1, tzinfo=UTC) + timedelta(hours=i),
+        )
+
+    html = client.get(f"/{server.id}/").content.decode()
+
+    assert "<polyline" in html
+    assert "↑ 30" in html

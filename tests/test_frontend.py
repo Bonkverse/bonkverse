@@ -310,7 +310,7 @@ def test_messages_are_data_not_code(client):
     html = client.post("/api/discords/submit/", {"invite": ""}, follow=True).content.decode()
 
     assert '<ul id="bv-messages" hidden>' in html
-    assert '<li data-type="error">❌ Discord invite link is required.</li>' in html
+    assert '<li data-type="error">Paste an invite link to submit a server.</li>' in html
 
 
 def test_template_comments_fit_on_one_line():
