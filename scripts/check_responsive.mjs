@@ -45,6 +45,7 @@ const PAGES = [
   ["/categories/", "categories", false],
   ["/leaderboards/upvoted/", "leaderboards", false],
   ["/players/", "players", false],
+  ["/tools/map-decode/", "map-decode", false],
   ["/players/?f0=name&o0=contains&v0=a", "players-advanced", false], // the rule builder, open
   ["/serverlist/", "servers", false],
   ["/submit/", "submit-server", false],

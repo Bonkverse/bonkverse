@@ -76,3 +76,11 @@ def test_not_configured_is_503(client, mocked_http, settings):
 def test_empty_input_is_400(client, mocked_http):
     assert _decode(client, encoded="  ").status_code == 400
     assert len(mocked_http.calls) == 0
+
+
+def test_decoder_page_is_on_components_and_linked_from_developers(client, db):
+    html = client.get("/tools/map-decode/").content.decode()
+    assert 'class="content site-page"' in html
+    assert "data-decode-form" in html and 'data-bv-copy="map-json"' in html
+    developers = client.get("/developers/").content.decode()
+    assert 'href="/tools/map-decode/"' in developers
