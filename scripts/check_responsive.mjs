@@ -51,6 +51,7 @@ const PAGES = [
   ["/submit/", "submit-server", false],
   ["/tools/xp/", "xp", false],
   ["/developers/", "developers", false],
+  ["/tools/map-decode/", "map-decode", false],
   ["/login/", "login", false],
   ["/player/ui-check-staff/", "profile", true], // your own profile: Upload and settings in the header
   ["/player/ui-check-staff/friends/", "profile-friends", false],

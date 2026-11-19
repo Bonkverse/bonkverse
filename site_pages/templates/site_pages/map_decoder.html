@@ -2,77 +2,52 @@
 {% load static %}
 
 {% block title %}Map decoder · Bonkverse{% endblock %}
+{% block content_class %}site-page{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'site_pages/css/map_decoder.css' %}">
+{% endblock %}
 
 {% block content %}
-<div class="tool-wrap">
-  <header class="tool-head">
-    <h1 class="tool-title">Map Decoder</h1>
-    <p class="tool-sub">Paste a Bonk map encoded string and decode it into JSON.</p>
-  </header>
-
-  <section class="tool-card">
-    <div class="field">
-      <div class="field-label-row">
-        <label class="field-label" for="encoded">Encoded Map String</label>
-        <button type="button" id="clearBtn" class="btn btn-ghost" title="Clear">Clear</button>
-      </div>
-
-      <!-- single-line input -->
-      <input
-        id="encoded"
-        class="tool-input"
-        type="text"
-        placeholder="Paste encoded map string here..."
-        spellcheck="false"
-        autocomplete="off"
-      />
-      <div class="hint">Tip: click inside the input and press ⌘A / Ctrl+A to select everything.</div>
+{% comment %}
+The map decoder (site_pages/views/tools.py): paste a bonk.io map string,
+get its JSON and a short summary. Bonkverse/ui components; copying the JSON
+uses ui.js data-bv-copy. A developer tool, linked from the Developers page.
+{% endcomment %}
+<div class="bv-main md">
+  <div class="bv-page-header">
+    <div class="bv-page-header__text">
+      <a class="bv-back" href="{% url 'developers:developers' %}">← Developers</a>
+      <h1>Map decoder</h1>
+      <p class="bv-muted">Paste a bonk.io map string to see it as JSON. For people building map tools.</p>
     </div>
+  </div>
 
-    <div class="actions">
-      <button id="decodeBtn" class="btn btn-primary" type="button" data-decode-url="{% url 'site_pages:api_map_decode' %}">Decode</button>
-
-      <!-- optional: keep status for decode state only (not copy) -->
-      <span id="status" class="status-pill">Idle</span>
-
-      <div class="spacer"></div>
-
-    </div>
-
-    <div id="summary" class="summary"></div>
-    <div id="err" class="tool-error" role="alert"></div>
-
-    <div class="out-card">
-      <div class="out-head">
-        <div class="out-title">Decoded Map JSON</div>
-
-        <!-- copy icon + feedback -->
-        <button id="copyIcon" class="icon-btn" type="button" disabled aria-label="Copy JSON">
-          <span class="icon-default" aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M8 8V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-2"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              <path d="M6 8h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2Z"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </span>
-
-          <span class="icon-copied" aria-hidden="true">
-            <!-- check icon -->
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </span>
-
-          <span class="copy-text">Copy</span>
-        </button>
+  <section class="bv-card md-card" aria-label="Decode a map">
+    <form class="md-form" data-decode-form data-decode-url="{% url 'site_pages:api_map_decode' %}">
+      <div class="bv-field md-field">
+        <label class="bv-label" for="encoded">Map string</label>
+        <input class="bv-input md-input" id="encoded" type="text" placeholder="Paste the map string here" spellcheck="false" autocomplete="off" aria-describedby="encoded-hint encoded-error">
+        <span class="bv-hint" id="encoded-hint">Press Enter or Decode. Ctrl+A / ⌘A in the box selects all of it.</span>
+        <span class="bv-error" id="encoded-error" role="alert" data-error></span>
       </div>
+      <div class="md-actions">
+        <button type="submit" class="bv-btn bv-btn--primary" data-decode>Decode</button>
+        <button type="button" class="bv-btn bv-btn--ghost" data-clear>Clear</button>
+        <span class="bv-hint md-status" role="status" data-status></span>
+      </div>
+    </form>
 
-      <pre id="out" class="out-pre">{}</pre>
+    <ul class="md-summary" data-summary aria-label="Map summary" hidden></ul>
+
+    <div class="bv-code md-out">
+      <div class="bv-code__bar"><span>Map JSON</span>
+        <button class="bv-btn bv-btn--ghost" type="button" data-bv-copy="map-json" data-bv-copied-label="Copied" data-copy disabled><i data-lucide="copy" aria-hidden="true"></i><span>Copy</span></button>
+      </div>
+      <pre id="map-json" data-out><code>{}</code></pre>
     </div>
   </section>
 </div>
-
 {% endblock %}
 
 {% block extra_scripts %}
