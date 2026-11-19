@@ -41,8 +41,9 @@ js/skin_detail.js; Copy link is ui/ui.js; Report is core/js/bv-report.js.
            data-rerender-url="{% url 'skins:rerender_skin' skin.id %}"
            aria-labelledby="skin-title">
 
-    <a class="bv-back" href="{% url 'skins:search_skins' %}" data-back-to-search>
-      <span aria-hidden="true">←</span> Search results
+    {# Back to the page you came from, where you left it (js/skin_detail.js); search if there's none. #}
+    <a class="bv-back" href="{% url 'skins:search_skins' %}" data-back>
+      <span aria-hidden="true">←</span> Back
     </a>
 
     <button class="bv-skin-detail__art" type="button" aria-label="Enlarge {{ skin.name }}">
