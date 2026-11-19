@@ -31,6 +31,7 @@
         <li><a href="#first-request">Your first request</a></li>
         <li><a href="#response">The response</a></li>
         <li><a href="#limits">Limits and fair use</a></li>
+        <li><a href="#tools">Other tools</a></li>
       </ul>
     </nav>
 
@@ -181,6 +182,11 @@ print(body["data"] if body["ok"] else body["error"])</code></pre>
           <i data-lucide="message-circle" aria-hidden="true"></i>
           <span>Building something bigger, like a league leaderboard? Ask on <a href="{{ BONKVERSE_DISCORD_URL }}" target="_blank" rel="noopener">Discord</a> about a partner key.</span>
         </div>
+      </section>
+
+      <section aria-labelledby="tools">
+        <h2 id="tools">Other tools</h2>
+        <p><a href="{% url 'site_pages:map_decode_page' %}">Map decoder</a>: paste a bonk.io map string to see it as JSON, for map tools and bots that read maps.</p>
       </section>
     </article>
   </div>

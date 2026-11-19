@@ -45,19 +45,25 @@ const PAGES = [
   ["/categories/", "categories", false],
   ["/leaderboards/upvoted/", "leaderboards", false],
   ["/players/", "players", false],
+  ["/social-stats/", "social-stats", false],
   ["/players/?f0=name&o0=contains&v0=a", "players-advanced", false], // the rule builder, open
   ["/serverlist/", "servers", false],
   ["/submit/", "submit-server", false],
   ["/tools/xp/", "xp", false],
   ["/developers/", "developers", false],
+  ["/tools/map-decode/", "map-decode", false],
   ["/login/", "login", false],
+  ["/staff/", "team", false],
   ["/player/ui-check-staff/", "profile", true], // your own profile: Upload and settings in the header
   ["/player/ui-check-staff/friends/", "profile-friends", false],
   ["/player/no-such-player-here/", "player-not-found", false],
   ["/player/ui-check-staff/skins/", "my-skins", true], // your own Skins tab: owner cards (seed_ui_checks' account)
   ["/upload/", "upload", true],
   ["/settings/profile/", "settings", true],
+  ["/privacy/", "privacy", false],
+  ["/terms/", "terms", false],
   ["/developers/keys/", "api-keys", true],
+  ["/developers/terms/", "api-terms", false],
   ["/moderation/", "moderation", true], // staff only: --session of a staff account
 ];
 const SIZES = [

@@ -1,0 +1,16 @@
+/* map_decoder.css — the map decoder (site_pages/map_decoder.html).
+   Lays out Bonkverse/ui components; --bv-* tokens only. */
+
+.md { padding-bottom: var(--bv-space-8); }
+.md-card { max-width: 980px; }
+.md-form { display: grid; gap: var(--bv-space-3); }
+.md-field { max-width: none; }
+.md-input { font-family: var(--bv-mono); }
+.md-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--bv-space-2) var(--bv-space-3); }
+.md-status { margin-left: var(--bv-space-1); }
+
+.md-summary { display: flex; flex-wrap: wrap; gap: var(--bv-space-2); margin: 0; padding: 0; list-style: none; }
+.md-summary .bv-pill { gap: var(--bv-space-1); }
+.md-summary__label { color: var(--bv-muted); }
+
+.md-out pre { max-height: 60vh; overflow: auto; }
