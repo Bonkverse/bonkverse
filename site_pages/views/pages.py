@@ -7,7 +7,6 @@ Owns: what these pages show. Does not own: the home page's data
 from django.shortcuts import render
 
 from core.ratelimits import limit
-from players.charts import profile_path
 from site_pages import selectors
 
 # The team page (site_pages/staff.html). "player" is their bonk.io name: the
@@ -59,12 +58,4 @@ def terms(request):
 
 @limit("browse")
 def staff_page(request):
-    members = [
-        {
-            **m,
-            "profile_url": profile_path(m["player"]) if m.get("player") else None,
-            "skins_url": profile_path(m["player"], "skins") if m.get("player") else None,
-        }
-        for m in STAFF_MEMBERS
-    ]
-    return render(request, "site_pages/staff.html", {"staff_members": members})
+    return render(request, "site_pages/staff.html", {"staff_members": STAFF_MEMBERS})

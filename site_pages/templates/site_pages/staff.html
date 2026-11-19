@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static bv_links %}
 
 {% block title %}The team · Bonkverse{% endblock %}
 {% block content_class %}site-page{% endblock %}
@@ -35,12 +35,14 @@ no emoji), and profile/skins links instead of raw URLs in bios.
         <h2 class="team-card__name">{{ member.name }}</h2>
         <p class="bv-pill team-card__role">{{ member.role }}</p>
         <p class="team-card__bio">{{ member.bio }}</p>
-        {% if member.profile_url %}
-          <p class="team-card__links">
-            <a href="{{ member.profile_url }}">Profile</a>
-            <a href="{{ member.skins_url }}">Skins</a>
-          </p>
-        {% endif %}
+        {% with profile=member.player|profile_url %}
+          {% if profile %}
+            <p class="team-card__links">
+              <a href="{{ profile }}">Profile</a>
+              <a href="{{ profile }}skins/">Skins</a>
+            </p>
+          {% endif %}
+        {% endwith %}
       </li>
     {% endfor %}
   </ul>
