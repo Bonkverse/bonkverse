@@ -7,8 +7,12 @@ Owns: what these pages show. Does not own: the home page's data
 from django.shortcuts import render
 
 from core.ratelimits import limit
+from players.charts import profile_path
 from site_pages import selectors
 
+# The team page (site_pages/staff.html). "player" is their bonk.io name: the
+# card links to their profile and their skins (design review: no raw search
+# URLs in bios). Leave it out when we don't know it.
 STAFF_MEMBERS = [
     {
         "name": "The Saucy Tulip",
@@ -19,8 +23,9 @@ STAFF_MEMBERS = [
     {
         "name": "ButteredToast55",
         "role": "Co-Owner & Events Manager",
-        "bio": "Co-owner of Bonkverse.io and hosts many of our community events and tournaments. I love food and here are my skins 🫂  https://bonkverse.io/search/?q=ButteredToast55&mode=creator&sort=newest&tz_offset=240",
+        "bio": "Co-owner of Bonkverse.io and hosts many of our community events and tournaments. I love food 🫂",
         "image": "images/bt55.png",
+        "player": "ButteredToast55",
     },
     {
         "name": "Zorroloko CRZ",
@@ -54,4 +59,12 @@ def terms(request):
 
 @limit("browse")
 def staff_page(request):
-    return render(request, "site_pages/staff.html", {"staff_members": STAFF_MEMBERS})
+    members = [
+        {
+            **m,
+            "profile_url": profile_path(m["player"]) if m.get("player") else None,
+            "skins_url": profile_path(m["player"], "skins") if m.get("player") else None,
+        }
+        for m in STAFF_MEMBERS
+    ]
+    return render(request, "site_pages/staff.html", {"staff_members": members})

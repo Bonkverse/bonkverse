@@ -20,69 +20,6 @@
 }
 
 /* =============================
-   Staff Page
-============================= */
-.staff-container {
-    text-align: center;
-    padding: 40px 20px;
-    font-family: var(--bv-font);
-}
-
-.staff-title {
-    font-size: 2.5rem;
-    margin-bottom: 40px;
-    color: var(--bv-text);
-}
-
-.staff-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 30px;
-    justify-items: center;
-    align-items: start;
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-.staff-card {
-    background-color: color-mix(in srgb, var(--bv-text) 5%, transparent);
-    border-radius: 16px;
-    padding: 20px;
-    width: 100%;
-    max-width: 260px;
-    height: 400px;
-    text-align: center;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-
-.staff-card:hover {
-    transform: translateY(-6px) scale(1.03);
-}
-
-.staff-photo {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin-bottom: 15px;
-    border: 3px solid var(--bv-link);
-}
-
-.role {
-    color: var(--bv-link);
-    font-weight: 600;
-    margin-bottom: 10px;
-}
-
-.bio {
-    color: var(--bv-text);
-    font-size: 0.9rem;
-}
-
-/* =============================
    Map Decoder Tool
 ============================= */
 .tool-wrap {
