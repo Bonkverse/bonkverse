@@ -4,18 +4,6 @@
    ===================== */
 @media (max-width: 768px) {
 
-    /* Home logo + button */
-    .home-icon {
-        width: 50px;
-        margin-bottom: 10px;
-    }
-
-    .home-button {
-        position: static;
-        text-align: left;
-        margin-bottom: 10px;
-    }
-
     /* Forms */
     :where(.site-legacy) form {
         width: 90%;
@@ -31,13 +19,7 @@
         width: 90% !important;
     }
 
-    /* Skin grid: 2 columns */
-    .skins-container {
-        grid-template-columns: repeat(2, 1fr);
-        padding: 0 16px;
-        gap: 14px;
-    }
-
+    /* Skin cards */
     .skin-card img {
         width: 120px;
         height: 120px;
@@ -52,18 +34,11 @@
     }
 }
 
-
 /* =====================
    Mobile (≤ 540px)
    1-column grid, smaller cards
    ===================== */
 @media (max-width: 540px) {
-
-    .skins-container {
-        grid-template-columns: 1fr;
-        padding: 0 12px;
-        gap: 12px;
-    }
 
     .skin-card {
         flex-direction: column;
@@ -83,22 +58,12 @@
     .skin-card span {
         font-size: 0.85rem;
     }
-
-    .vote-row {
-        justify-content: center;
-    }
 }
-
 
 /* =====================
    Small phone (≤ 380px)
    ===================== */
 @media (max-width: 380px) {
-
-    .skins-container {
-        padding: 0 10px;
-        gap: 10px;
-    }
 
     .skin-card img {
         width: 90px;
@@ -110,38 +75,9 @@
     }
 }
 
-
 /* =====================
    Profile page (my_profile.html)
    ===================== */
-@media (max-width: 640px) {
-  .profile-header {
-    flex-direction: column;
-    text-align: center;
-    align-items: center;
-    gap: 12px;
-  }
-  .profile-stats {
-    justify-content: center;
-  }
-  .profile-tabs {
-    gap: 18px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    white-space: nowrap;
-  }
-  .skins-toolbar {
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-}
-
-@media (max-width: 420px) {
-  .profile-name { font-size: 1.3rem; }
-  .profile-avatar { width: 60px; height: 60px; font-size: 24px; }
-  .profile-stats { gap: 16px; row-gap: 10px; }
-  .profile-stat .val { font-size: 1rem; }
-}
 
 /* =====================
    Bulk selection action bar
@@ -149,24 +85,6 @@
    safe area (home indicator / browser chrome), instead of pinning
    flush to the physical edge where it can get clipped or overlapped.
    ===================== */
-@media (max-width: 560px) {
-  .bulk-bar-inner {
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-  }
-  .bulk-bar-inner > span {
-    width: 100%;
-    text-align: center;
-  }
-  .bulk-bar-actions {
-    width: 100%;
-  }
-  .bulk-bar-actions button {
-    flex: 1;
-  }
-}
 
 /* =====================
    Shared pagination component
@@ -186,15 +104,6 @@
 /* =====================
    Category / New Releases browse controls
    ===================== */
-@media (max-width: 480px) {
-  .browse-controls {
-    gap: 6px;
-  }
-  .browse-controls a {
-    padding: 5px 10px;
-    font-size: 0.8rem;
-  }
-}
 
 /* =====================
    Search filter controls (search.html)
