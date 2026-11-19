@@ -250,6 +250,8 @@ def collect(request):
             "uploaded": result.uploaded,
             "already_collected": result.already,
             "collection_size": user.favorite_skins.count(),
-            "collection_url": request.build_absolute_uri(reverse("skins:my_profile")),
+            "collection_url": request.build_absolute_uri(
+                reverse("players:player_skins", args=[user.username]) + "?view=favorites"
+            ),
         }
     )

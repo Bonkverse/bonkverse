@@ -77,6 +77,12 @@
     {# Messages to toasts, icons #}
     <script src="{% static 'core/js/bv-boot.js' %}"></script>
 
+    {% if friend_sync_url %}
+      {# First page after a login that started a friend sync: show its progress. #}
+      <span id="bv-friend-sync" data-url="{{ friend_sync_url }}" hidden></span>
+      <script src="{% static 'players/js/friend_sync.js' %}"></script>
+    {% endif %}
+
     {% block extra_scripts %}{% endblock %}
 
 </body>

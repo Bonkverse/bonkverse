@@ -107,10 +107,12 @@ def test_only_the_partial_defines_the_bonk_login_modal():
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("page", ["/search/", "DETAIL", "/my-profile/"])
-def test_pages_with_wear_have_one_modal_and_the_shared_scripts(logged_in_client, page):
-    skin = SkinFactory()
-    url = f"/skins/detail/{skin.id}" if page == "DETAIL" else page
+@pytest.mark.parametrize("page", ["/search/", "DETAIL", "MY_SKINS"])
+def test_pages_with_wear_have_one_modal_and_the_shared_scripts(logged_in_client, user, page):
+    skin = SkinFactory(creator=user.username)
+    url = {"DETAIL": f"/skins/detail/{skin.id}", "MY_SKINS": f"/player/{user.username}/skins/"}.get(
+        page, page
+    )
 
     html = logged_in_client.get(url).content.decode()
 
@@ -152,11 +154,12 @@ def test_only_bv_cards_wires_card_buttons():
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("page", ["/search/", "/my-profile/", "/new/"])
-def test_card_pages_load_bv_cards(logged_in_client, page):
-    SkinFactory()
+@pytest.mark.parametrize("page", ["/search/", "MY_SKINS", "/new/"])
+def test_card_pages_load_bv_cards(logged_in_client, user, page):
+    SkinFactory(creator=user.username)
+    url = f"/player/{user.username}/skins/" if page == "MY_SKINS" else page
 
-    html = logged_in_client.get(page).content.decode()
+    html = logged_in_client.get(url).content.decode()
 
     assert "core/js/bv-cards" in html
 

@@ -1,6 +1,11 @@
 {% extends 'players/_layout.html' %}
 
+{% load static %}
 {% block tab_title %} · Skins{% endblock %}
+
+{% block tab_head %}
+{% if owner_tools %}<link rel="stylesheet" href="{% static 'css/skin_owner.css' %}">{% endif %}
+{% endblock %}
 
 {% block tab %}
 <section class="pv-tiles pv-tiles--3" aria-label="Creator stats">
@@ -20,25 +25,38 @@
   {% else %}
     <h2 class="pv-section__title">{% if view == 'created' %}Created{% else %}Favorites{% endif %}</h2>
   {% endif %}
-  <nav class="pv-sorts" aria-label="Sort">
-    <span class="pv-muted pv-small">Sort</span>
-    {% for key, label in sorts %}
-      <a class="pv-sort" href="?view={{ view }}&amp;sort={{ key }}"{% if sort == key %} aria-current="true"{% endif %}>{{ label }}</a>
-    {% endfor %}
-  </nav>
+  <div class="pv-toolbar__end">
+    <nav class="pv-sorts bv-chips" aria-label="Sort">
+      <span class="pv-muted pv-small">Sort</span>
+      {% for key, label in sorts %}
+        <a class="bv-chip" href="?view={{ view }}&amp;sort={{ key }}"{% if sort == key %} aria-current="page"{% endif %}>{{ label }}</a>
+      {% endfor %}
+    </nav>
+    {% if owner_tools and page_obj.object_list %}
+      <button class="bv-btn" type="button" id="skin-select-toggle" aria-pressed="false">Select</button>
+    {% endif %}
+  </div>
 </div>
 
 {% if page_obj.object_list %}
-  <div class="bv-skin-grid site-skin-grid">
+  <div class="bv-skin-grid site-skin-grid" id="skin-grid">
     {% for skin in page_obj %}
-      {% include 'skins/partials/_skin_card.html' with skin=skin mode='search' %}
+      {% include 'skins/partials/_skin_card.html' with skin=skin mode=card_mode %}
     {% endfor %}
   </div>
   {% include 'partials/pagination.html' with page_obj=page_obj elided_range=elided_range base_qs=base_qs %}
 {% else %}
-  <p class="pv-card pv-empty pv-muted">{% if view == 'created' %}No skins yet.{% else %}No favorites yet.{% endif %}</p>
+  <div class="pv-card pv-empty">
+    <p class="pv-muted">{% if view == 'created' %}No skins yet.{% else %}No favorites yet.{% endif %}</p>
+    {% if is_owner and view == 'created' %}<a class="bv-btn bv-btn--primary" href="{% url 'skins:upload_skin' %}">Upload a skin</a>{% endif %}
+  </div>
 {% endif %}
 
 {% include 'partials/_bonk_login_modal.html' %}
 {% include 'skins/partials/_report_skin_modal.html' %}
+{% if owner_tools %}{% include 'skins/partials/_skin_owner_dialogs.html' %}{% endif %}
+{% endblock %}
+
+{% block tab_scripts %}
+{% if owner_tools %}<script src="{% static 'js/skin_owner.js' %}" defer></script>{% endif %}
 {% endblock %}

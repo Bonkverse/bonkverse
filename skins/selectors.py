@@ -13,6 +13,7 @@ player directory (players/ "Players" page).
 best_matches / random_skin: BonxBot's /skin commands (public_api/views/bot.py).
 """
 
+import json
 import random
 
 from django.conf import settings
@@ -20,6 +21,7 @@ from django.db.models import Count, F, Max, Min, Q, Sum
 
 from core.db import time_limited_queries
 
+from .editing import tags_of
 from .models import Skin, SkinVote
 from .querysets import MIN_NAME_SIMILARITY
 from accounts.models import BonkAccountLink
@@ -146,6 +148,14 @@ def skins_created_by(username, sort="top"):
     """Skins `username` created, as a queryset in one of SKIN_SORTS' orders."""
     order = SKIN_SORTS.get(sort, SKIN_SORTS["top"])
     return Skin.objects.made_by(username).order_by(*order)
+
+
+def with_edit_tags(skins):
+    """Set `tags_json` on each skin (its tags as a JSON list, skins/editing.py)
+    for the owner card's Edit dialog. No queries."""
+    for skin in skins:
+        skin.tags_json = json.dumps(tags_of(skin))
+    return skins
 
 
 def favorites_of(user, sort="new"):

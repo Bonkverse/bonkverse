@@ -25,7 +25,7 @@ def tulip(client):
 
 
 def _edit(client, skin, **fields):
-    data = {"name": "Renamed", "description": "", "labels": json.dumps({}), **fields}
+    data = {"name": "Renamed", "tags": json.dumps([]), **fields}
     return client.post(f"/skin/{skin.id}/edit/", data, headers=AJAX)
 
 
@@ -51,7 +51,7 @@ def test_creator_can_delete_when_credited_in_other_case(client, tulip):
 
     response = _delete(client, skin)
 
-    assert response.json() == {"ok": True, "deleted_ids": [skin.id]}
+    assert response.json() == {"ok": True, "data": {"deleted_ids": [skin.id]}}
     assert not Skin.objects.filter(id=skin.id).exists()
 
 
@@ -113,17 +113,17 @@ def test_bulk_delete_removes_only_own_skins(client, tulip):
 
     response = client.post("/skins/bulk-delete/", {"skin_ids": [mine.id, theirs.id]}, headers=AJAX)
 
-    assert response.json() == {"ok": True, "deleted_ids": [mine.id]}
+    assert response.json() == {"ok": True, "data": {"deleted_ids": [mine.id]}}
     assert list(Skin.objects.values_list("id", flat=True)) == [theirs.id]
 
 
-def test_my_profile_lists_own_skins_in_any_case(client, tulip):
+def test_profile_skins_tab_lists_own_skins_in_any_case(client, tulip):
     SkinFactory(creator="the saucy tulip", name="Hot Dog")
     SkinFactory(creator="Somepoop", name="Reality.exe")
 
-    response = client.get("/my-profile/")
+    response = client.get("/player/The Saucy Tulip/skins/")
 
-    assert [s.name for s in response.context["skins"]] == ["Hot Dog"]
+    assert [s.name for s in response.context["page_obj"]] == ["Hot Dog"]
 
 
 # --- the model and queryset helpers ------------------------------------------

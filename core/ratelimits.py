@@ -68,7 +68,7 @@ def limit(tier: str, *, method=ALL, key="ip", group: str | None = None):
             )
             if usage is not None and usage["should_limit"]:
                 logger.info("rate limited: tier=%s view=%s", tier, group)
-                return too_many_requests(request, retry_after=usage["time_left"], tier=tier)
+                return too_many_requests(request, retry_after=_seconds_left(usage), tier=tier)
             return view(request, *args, **kwargs)
 
         # Read by `manage.py audit_rate_limits` to list every route's limit.
@@ -78,6 +78,20 @@ def limit(tier: str, *, method=ALL, key="ip", group: str | None = None):
         return wrapped
 
     return decorator
+
+
+def _seconds_left(usage) -> int | None:
+    """Seconds until the window resets, from django-ratelimit's usage dict.
+
+    django-ratelimit counts whole seconds, so in the window's last second it
+    reports 0. The wait is real but under a second, so call it 1 rather than
+    "unknown" (which would drop the Retry-After header). -1 means the cache
+    failed and the wait really is unknown.
+    """
+    time_left = usage["time_left"]
+    if time_left < 0:
+        return None
+    return max(time_left, 1)
 
 
 def _wants_json(request) -> bool:

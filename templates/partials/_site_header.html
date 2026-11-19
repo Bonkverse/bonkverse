@@ -53,7 +53,8 @@ menus open with static/ui/ui.js.
 
         {% if user.is_authenticated %}
           <div class="bv-dropdown bv-header__account">
-            <a class="bv-header__link" href="{% url 'skins:my_profile' %}"{% if request.resolver_match.url_name == 'my_profile' %} aria-current="page"{% endif %}>
+            {% url 'players:player_profile' user.username as my_profile_url %}
+            <a class="bv-header__link" href="{{ my_profile_url }}"{% if request.path == my_profile_url %} aria-current="page"{% endif %}>
               {% if viewer_avatar.thumbnail %}
                 <span class="bv-nav-avatar bv-skin-avatar" style="--skin: url('{{ viewer_avatar.thumbnail }}')" aria-hidden="true"><i data-lucide="circle-user"></i></span>
               {% else %}

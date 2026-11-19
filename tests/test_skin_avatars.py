@@ -284,23 +284,6 @@ class TestViewerAvatar:
             html = client.get("/").content.decode()
         assert "bv-nav-avatar" not in html
 
-    def test_my_profile_header_shows_the_skin(self, client):
-        user, _ = _linked_user()
-        client.force_login(user)
-
-        html = client.get("/my-profile/").content.decode()
-
-        assert "profile-avatar bv-skin-avatar" in html
-        assert "/player/claus/skin.png?v=" in html
-
-    def test_my_profile_without_a_skin_shows_initials(self, client):
-        user, _ = _linked_user(skin_code=None)
-        client.force_login(user)
-
-        html = client.get("/my-profile/").content.decode()
-
-        assert '<div class="profile-avatar" aria-hidden="true">CL</div>' in html
-
     def test_header_is_cached_until_the_skin_changes(self, client, mocked_http):
         user, player = _linked_user()
         client.force_login(user)

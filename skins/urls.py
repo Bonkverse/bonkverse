@@ -35,8 +35,7 @@ urlpatterns = [
     path("categories/", browse.category_index, name="category_index"),
     path("category/<slug:slug>/", browse.category_detail, name="category_detail"),
     # Your skins
-    path("my-profile/", my_skins.my_profile, name="my_profile"),
-    path("my-profile/skins-partial/", my_skins.my_skins_partial, name="my_skins_partial"),
+    path("my-profile/", my_skins.my_profile, name="my_profile"),  # redirect to your profile
     path("upload/", upload.upload_skin, name="upload_skin"),
     path("skin/<int:skin_id>/edit/", my_skins.edit_skin, name="edit_skin"),
     path("skin/<int:skin_id>/delete/", my_skins.delete_skin, name="delete_skin"),

@@ -1,0 +1,80 @@
+/* Managing your own skins on your profile's Skins tab
+   (skins/partials/_skin_owner_dialogs.html, js/skin_owner.js). Card selected
+   states are in css/skin_cards.css. */
+
+/* Edit dialog */
+.site-skin-edit__art {
+  width: 96px;
+  height: 96px;
+  margin-inline: auto;
+  border-radius: 50%;
+  background: var(--bv-thumb);
+}
+.site-tag-editor {
+  display: grid;
+  gap: var(--bv-space-2);
+}
+.site-tag-editor__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bv-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.site-tag-editor__tags:empty {
+  display: none;
+}
+.site-tag-editor__tag {
+  gap: 2px;
+  padding-inline-end: 2px;
+}
+.site-tag-editor__remove {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  min-height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--bv-muted);
+  font: inherit;
+  font-size: var(--bv-text-md);
+  line-height: 1;
+  cursor: pointer;
+}
+.site-tag-editor__remove:hover {
+  background: var(--bv-hover);
+  color: var(--bv-text);
+}
+
+/* Select bar: pinned to the bottom of the screen while selecting. */
+.site-select-bar {
+  position: fixed;
+  inset-inline: var(--bv-gutter);
+  bottom: var(--bv-space-4);
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bv-space-2);
+  max-width: 720px;
+  margin-inline: auto;
+  padding: var(--bv-space-2) var(--bv-space-3);
+  border: 1px solid var(--bv-control);
+  border-radius: var(--bv-radius);
+  background: var(--bv-card);
+  box-shadow: var(--bv-shadow);
+}
+.site-select-bar__count {
+  flex: 1 1 auto;
+  font-weight: 600;
+}
+/* Room under the grid so the bar never covers the last cards. */
+.select-mode {
+  padding-bottom: 96px;
+}
+.select-mode .bv-skin-card:focus-visible {
+  outline: 2px solid var(--bv-link);
+  outline-offset: 2px;
+}

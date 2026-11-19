@@ -13,6 +13,8 @@ Names are in the `players` namespace (`app_name` in `players/urls.py`): `{% url 
 | `/players/` | `players_directory` | Directory and search (`views.directory`, rules in `search.py`) |
 | `/players_search/players/`, `/players_search/flash-friends/` | `players_page`, `flash_friends_page` | Old search pages, kept for old links |
 | `/player/<username>/` and `…/activity/`, `level/`, `maps/`, `people/`, `friends/`, `skins/` | `player_profile`, `player_activity`, … | Profile tabs (`views.py`, data from `selectors.py`) |
+
+**One profile** (design review): there is no separate My profile page any more (`/my-profile/` redirects to your Skins tab). Looking at your own profile, the header adds Upload a skin and Profile settings, and the Skins tab's Created view uses the owner card (Edit name and tags, Copy link, Delete, Select within the page and delete; the skins app's `_skin_owner_dialogs.html` and `js/skin_owner.js`). Everyone else sees the visitor card. After a login that started a friend sync, the first page shows its progress (`context_processors.friend_sync`, `js/friend_sync.js`).
 | `/player/<username>/skin.png`, `…/skin-thumb.png` | `player_skin_avatar`, `player_skin_avatar_thumb` | The player's worn skin as a 512 / 128 px PNG (`views.skin_avatar`, `media` rate tier); 404 when there's none |
 | `/settings/profile/` | `profile_settings` | Who sees which profile section |
 | `/tools/xp/` (+ `player.json`, `levels.json`) | `xp_calculator`, … | XP calculator |

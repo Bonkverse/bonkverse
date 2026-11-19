@@ -20,7 +20,7 @@
   fill: currentColor;
 }
 
-/* My skins, select mode (static/js/my_profile.js) */
+/* Your own skins, select mode (js/skin_owner.js on your profile's Skins tab) */
 .bv-skin-card {
   position: relative;
 }

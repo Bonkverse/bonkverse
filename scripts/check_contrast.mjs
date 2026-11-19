@@ -48,7 +48,7 @@ const PAGES = [
   ["/developers/", "developers", false],
   ["/login/", "login", false],
   ["/privacy/", "privacy", false],
-  ["/my-profile/", "my-profile", true],
+  ["/player/ui-check-staff/skins/", "my-skins", true], // your own Skins tab: owner cards (seed_ui_checks' account)
   ["/upload/", "upload", true],
   ["/settings/profile/", "settings", true],
   ["/developers/keys/", "api-keys", true],

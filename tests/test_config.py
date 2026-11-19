@@ -34,7 +34,7 @@ class TestLinksStayOnThisSite:
     def test_profile_and_favorites_link_relatively(self, logged_in_client, user):
         SkinFactory(creator=user.username)
 
-        html = logged_in_client.get("/my-profile/").content.decode()
+        html = logged_in_client.get(f"/player/{user.username}/skins/").content.decode()
 
         assert "https://bonkverse.io/skins/" not in html
 

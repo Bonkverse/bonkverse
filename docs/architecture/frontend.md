@@ -87,8 +87,9 @@ the modal partial.
   `.bv-skin-card` laid out as in the Skin card design guide: artwork,
   name, creator, Favorite, Wear and a "Skin details" link. Votes, Copy link,
   Open in, Re-render and Report are on the skin's page. `mode='search'`
-  (Favorite and Wear), `mode='mine'` (select checkbox, ⋯ menu with Edit,
-  Share link and Delete) or `mode='favorite'`. The view feeds it with
+  (Favorite and Wear), `mode='mine'` (your own skins on your profile's Skins tab:
+  select checkbox, ⋯ menu with Edit, Copy link and Delete, wired by
+  `skins/js/skin_owner.js`; needs `skins.selectors.with_edit_tags`) or `mode='favorite'`. The view feeds it with
   `skins.selectors.decorate_skins_for_user(skins, request.user)`, which adds
   the favorite count and the visitor's favorite in a fixed number of
   queries (`tests/test_query_budgets.py`). Descriptions and tags are never

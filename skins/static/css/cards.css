@@ -229,16 +229,6 @@
     pointer-events: none;
 }
 
-/* Delete button inside ··· — red like report */
-.card-delete-btn {
-    color: var(--bv-danger) !important;
-}
-
-.card-delete-btn:hover {
-    background: var(--bv-danger-surface) !important;
-    color: var(--bv-danger) !important;
-}
-
 /* Re-render button inside ··· — staff only, teal accent */
 .card-rerender-btn {
     color: var(--bv-link) !important;
