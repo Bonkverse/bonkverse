@@ -1,8 +1,39 @@
 {% extends "error_base.html" %}
+{% comment %}
+Design review: not "Oops!" in error red; offer search and the three doors
+(Skins, Replays, Players) so the visitor can carry on.
+{% endcomment %}
 
 {% block heading_title %}Page not found{% endblock %}
 {% block code %}404{% endblock %}
-{% block heading %}Page not found{% endblock %}
-{% block message %}
-  Oops! The page you’re looking for doesn’t exist or may have been moved.
+{% block heading %}This page isn't here{% endblock %}
+{% block message %}It may have moved, or the link has a typo. Search for a skin, or pick where to go next.{% endblock %}
+
+{% block actions %}
+  <form class="bv-search error-page__search" action="{% url 'skins:search_skins' %}" method="get" role="search">
+    <label class="bv-visually-hidden" for="nf-q">Search skins</label>
+    <input id="nf-q" type="search" name="q" placeholder="Search skins" autocomplete="off">
+    <button type="submit">Search</button>
+  </form>
+{% endblock %}
+
+{% block after %}
+  <nav class="error-page__doors" aria-label="Where to go">
+    <a class="error-page__door" href="{% url 'skins:search_skins' %}">
+      <i data-lucide="palette" aria-hidden="true"></i>
+      <span class="error-page__door-name">Skins</span>
+      <span class="bv-hint">Search, browse and wear</span>
+    </a>
+    <a class="error-page__door" href="{{ BONKVERSE_REPLAYS_URL }}">
+      <i data-lucide="film" aria-hidden="true"></i>
+      <span class="error-page__door-name">Replays</span>
+      <span class="bv-hint">Watch recent games</span>
+    </a>
+    <a class="error-page__door" href="{% url 'players:players_directory' %}">
+      <i data-lucide="users" aria-hidden="true"></i>
+      <span class="error-page__door-name">Players</span>
+      <span class="bv-hint">Find a profile</span>
+    </a>
+  </nav>
+  <p class="bv-hint"><a href="/">Home page</a></p>
 {% endblock %}

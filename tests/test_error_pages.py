@@ -14,6 +14,18 @@ def test_404_page_renders_with_site_layout(client, settings):
     assert b"css/errors.css" in response.content
 
 
+@pytest.mark.django_db
+def test_404_offers_search_and_the_three_doors(client, settings):
+    """Design review: not "Oops!" in error red; search and Skins, Replays,
+    Players so the visitor can carry on."""
+    settings.DEBUG = False
+    html = client.get("/this-page-does-not-exist/").content.decode()
+    assert 'class="content site-page"' in html and "Oops" not in html
+    assert 'action="/search/"' in html and 'name="q"' in html
+    for door in ("Skins", "Replays", "Players"):
+        assert f'<span class="error-page__door-name">{door}</span>' in html
+
+
 class TestServerError:
     """Production ran with DEBUG_PROPAGATE_EXCEPTIONS=True, so an unhandled error
     skipped Django's error handling: no 500 page, and with Django's default

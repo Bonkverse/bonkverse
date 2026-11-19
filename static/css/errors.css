@@ -1,59 +1,60 @@
-/* Error pages (404, 429): templates/error_base.html */
+/* errors.css — the 404 and 429 pages (templates/error_base.html, 404.html,
+   429.html). Bonkverse/ui components; --bv-* tokens only. 500.html is
+   standalone and carries its own styles. */
 
 .error-page {
-    text-align: center;
-    padding: 60px 20px;
-    max-width: 640px;
-    margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 720px;
+  padding-top: var(--bv-space-12);
+  padding-bottom: var(--bv-space-12);
+  text-align: center;
 }
 
-.error-page__code {
-    font-size: 0.95rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--bv-muted);
-    margin: 0 0 8px;
-}
+/* A plain bonk ball: the site's shape, not a warning sign. */
+.error-page__ball { width: 88px; height: 88px; margin-bottom: var(--bv-space-4); }
+.error-page__ball-fill { fill: var(--bv-thumb); }
+.error-page__ball-edge { fill: none; stroke: var(--bv-link); stroke-width: 4; }
+.error-page__ball-shine { fill: var(--bv-text); opacity: 0.18; }
 
-.error-page__title {
-    font-size: 2.6rem;
-    color: var(--bv-danger);
-    margin: 0 0 16px;
-}
+.error-page__code { margin: 0 0 var(--bv-space-2); }
+.error-page__title { margin: 0 0 var(--bv-space-3); font-size: var(--bv-text-2xl); line-height: var(--bv-leading-2xl); }
+.error-page__message { max-width: 34rem; margin: 0 0 var(--bv-space-6); color: var(--bv-muted); font-size: var(--bv-text-md); line-height: 1.6; }
 
-.error-page__message {
-    font-size: 1.15rem;
-    line-height: 1.6;
-    color: var(--bv-text);
-    margin: 0 auto 28px;
-}
+.error-page__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--bv-space-3); width: 100%; }
+.error-page__search { width: 100%; max-width: 480px; }
 
 /* "Collecting skins?" note on the media rate-limit page. */
-.error-page__note {
-    display: block;
-    margin: 20px auto 0;
-    padding: 14px 18px;
-    max-width: 34rem;
-    border: 1px solid var(--bv-link);
-    border-radius: 10px;
-    background: color-mix(in srgb, var(--bv-link) 12%, transparent);
-    font-size: 1rem;
-    color: var(--bv-text);
-}
+.error-page__note { display: flex; max-width: 34rem; margin: var(--bv-space-5) auto 0; text-align: left; }
 
-.error-page__note a {
-    color: var(--bv-link);
-    font-weight: 600;
+/* The three doors (404). */
+.error-page__doors {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--bv-space-3);
+  width: 100%;
+  margin: var(--bv-space-8) 0 var(--bv-space-5);
 }
-
-.error-page__actions {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-    flex-wrap: wrap;
+.error-page__door {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--bv-space-1);
+  padding: var(--bv-space-5) var(--bv-space-3);
+  border: 1px solid var(--bv-outline);
+  border-radius: var(--bv-radius);
+  background: var(--bv-card);
+  color: var(--bv-text);
+  text-decoration: none;
+  transition: border-color var(--bv-fade) ease-out;
 }
+.error-page__door:hover { border-color: var(--bv-link); background: var(--bv-hover); color: var(--bv-text); text-decoration: none; }
+.error-page__door svg.lucide { width: 28px; height: 28px; color: var(--bv-link); }
+.error-page__door-name { font-size: var(--bv-text-lg); font-weight: 700; }
 
-.error-page__actions .btn {
-    text-decoration: none;
-    display: inline-block;
+@media (max-width: 640px) {
+  .error-page { padding-top: var(--bv-space-8); }
+  .error-page__doors { grid-template-columns: minmax(0, 1fr); }
+  .error-page__door { flex-direction: row; justify-content: flex-start; gap: var(--bv-space-3); text-align: left; }
 }

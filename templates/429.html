@@ -20,18 +20,18 @@
     {% if auto_reload %}Try again in {{ wait }}.{% else %}Wait {{ wait }}, then submit again.{% endif %}
   </span>
   {% if bulk_access %}
-  <span class="error-page__note">
-    <strong>Collecting Bonkverse skins?</strong> You've hit the image limit.
+  <span class="bv-notice error-page__note">
+    <span><strong>Collecting Bonkverse skins?</strong> You've hit the image limit.
     We're happy to help with bulk access. Reach out on our
-    <a href="{{ discord_url }}" target="_blank" rel="noopener">Discord</a> instead of scraping.
+    <a href="{{ discord_url }}" target="_blank" rel="noopener">Discord</a> instead of scraping.</span>
   </span>
   {% endif %}
 {% endblock %}
 {% block actions %}
   {% if auto_reload %}
-    <a class="btn btn-primary" href="{{ request.get_full_path }}">Try again</a>
+    <a class="bv-btn bv-btn--primary" href="{{ request.get_full_path }}">Try again</a>
   {% endif %}
-  <a class="btn btn-ghost" href="/">Back to Home</a>
+  <a class="bv-btn" href="/">Back to the home page</a>
 {% endblock %}
 
 {% block extra_scripts %}
