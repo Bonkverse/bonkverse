@@ -49,9 +49,8 @@ release: the colors for the three themes, Jost, the `bv-` components and
 - **Pages move onto `bv-` components one at a time.** A page built on them
   sets `{% block content_class %}site-page{% endblock %}`. Every other page is
   `site-legacy`, and the old bare `form`, `input` and `button` rules
-  (`css/forms.css`) only apply inside it. Today `site-page` covers the home
-  page, skin search, the skin page, new and category pages, log in, upload,
-  the developers page, the staff report queue, player profiles, the Players page and the XP calculator.
+  (`css/forms.css`) only apply inside it. Most pages are on `site-page` now; `grep -rl 'site-page' --include=*.html .`
+  lists them, and the RFC-0002 progress notes track the rest.
 - **Three classes were renamed** to make room for the package:
   `site-toast`, `site-pagination` and `site-num` (they were `bv-`).
 - **Check every screen size and contrast.** `node scripts/check_responsive.mjs`
@@ -126,7 +125,7 @@ skins/static/css/skin_detail.css         styles, if no shared file fits
 Pages in apps created in RFC-0001 Phase 5 keep the same three files inside
 their app, namespaced by the app's name:
 `site_pages/templates/site_pages/privacy.html`,
-`site_pages/static/site_pages/css/privacy.css` (`{% static 'site_pages/css/privacy.css' %}`).
+`site_pages/static/site_pages/css/legal.css` (`{% static 'site_pages/css/legal.css' %}`).
 The shared page frame is the project's `templates/` (`base.html`, error
 pages, `partials/`: header, footer, skin tabs, pagination, bonk.io login
 modal) and `static/` (`ui/`, `core/js/`, `images/`, site-wide `css/` and
