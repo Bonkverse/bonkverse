@@ -62,7 +62,7 @@
     e.append(...kids.filter(Boolean));
     return e;
   }
-  const hidden = (text) => el("span", { class: "pv-visually-hidden", text });
+  const hidden = (text) => el("span", { class: "bv-visually-hidden", text });
   function select(name, options, current, label, extraClass) {
     const s = el("select", { name });
     options.forEach((o) => s.append(el("option", { value: o.key, text: o.label, selected: o.key === current })));
@@ -108,7 +108,7 @@
     const conn = el("div", { class: "pv-qb__conn" });
     if (i === 0) conn.append(el("span", { class: "pv-qb__where", text: "Where" }));
     else conn.append(select(`c${i}`, [{ key: "and", label: "AND" }, { key: "or", label: "OR" }], rule.conn, "Join with", "pv-qb__select--conn"));
-    const remove = el("button", { type: "button", class: "pv-qb__remove", "aria-label": "Remove this rule", text: "×" });
+    const remove = el("button", { type: "button", class: "bv-btn bv-btn--icon bv-btn--ghost pv-qb__remove", "aria-label": "Remove this rule", text: "×" });
     const li = el("li", { class: "pv-qb__rule", "data-rule": true },
       conn,
       select(`f${i}`, fields, rule.field, "Field", "pv-qb__field"),

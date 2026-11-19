@@ -67,7 +67,7 @@ def test_all_players_cards_show_replay_stats_and_link_profiles(client, mocked_ht
     mock_lookup(mocked_http, [{"username": "Saucy Tulip", "games": 2052, "level": 206}])
 
     html = client.get(reverse("players:players_directory") + "?q=sau").content.decode()
-    assert ">206<" in html and ">2,052<" in html and ">45<" in html
+    assert "Level 206<" in html and ">2,052<" in html and ">45<" in html
     assert reverse("players:player_profile", args=["Saucy Tulip"]) in html
     # No replays and no Bonkverse account, but known from friend lists:
     # a basic profile (overview and friends)
@@ -84,7 +84,7 @@ def test_exact_name_and_members_come_first(client, mocked_http):
 
     html = client.get(reverse("players:players_directory") + "?q=tulip").content.decode()
     assert html.index(">tulip<") < html.index("tulip_member") < html.index("tulipfan")
-    assert 'aria-label="Bonkverse member"' in html
+    assert 'title="Signed in to Bonkverse">Member<' in html
 
 
 @pytest.mark.django_db
@@ -114,7 +114,7 @@ def test_most_active_view_uses_replay_search(client, mocked_http):
     BonkPlayer.objects.create(bonk_id=7, username="The Saucy Tulip", last_friend_count=45)
     mock_search(mocked_http, [{"username": "The Saucy Tulip", "games": 2052, "level": 206}])
     html = client.get(reverse("players:players_directory") + "?view=replays&q=the").content.decode()
-    assert "The Saucy Tulip" in html and ">45<" in html and ">206<" in html
+    assert "The Saucy Tulip" in html and ">45<" in html and "Level 206<" in html
 
 
 @pytest.mark.django_db
@@ -187,8 +187,21 @@ def test_navbar_links_to_players(client, mocked_http):
 
 
 @pytest.mark.django_db
-def test_cards_show_the_account_id(client, mocked_http):
+def test_the_account_id_is_on_the_card_and_the_profile(client, mocked_http):
     BonkPlayer.objects.create(bonk_id=13159907, username="dbid haver")
     mock_lookup(mocked_http, [])
-    html = client.get(reverse("players:players_directory") + "?q=dbid").content.decode()
+    html = client.get(reverse("players:players_directory") + "?q=13159907").content.decode()
     assert "DBID 13159907" in html
+    mocked_http.get(f"{REPLAYS}/api/player/dbid%20haver", json={"error": "x"}, status=404)
+    profile = client.get(reverse("players:player_profile", args=["dbid haver"])).content.decode()
+    assert "DBID 13159907" in profile
+
+
+@pytest.mark.django_db
+def test_cards_are_one_link_with_level_and_member_pills(client, mocked_http):
+    BonkPlayer.objects.create(bonk_id=5, username="solo")
+    mock_lookup(mocked_http, [])
+    html = client.get(reverse("players:players_directory") + "?q=solo").content.decode()
+    assert '<a class="pv-pcard" href="/player/solo/">' in html
+    assert "Profile <i" not in html
+    assert 'placeholder="Search players"' in html

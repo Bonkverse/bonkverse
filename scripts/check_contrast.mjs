@@ -39,6 +39,7 @@ const PAGES = [
   ["/categories/", "categories", false],
   ["/leaderboards/upvoted/", "leaderboards", false],
   ["/players/", "players", false],
+  ["/players/?f0=name&o0=contains&v0=a", "players-advanced", false], // the rule builder, open
   ["/player/tester/", "player", false],
   ["/tools/xp/", "xp", false],
   ["/social-stats/", "social-stats", false],
