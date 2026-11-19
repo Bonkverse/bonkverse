@@ -134,6 +134,17 @@ def _redirect_to_directory(request, view):
     return redirect(f"{reverse('players:players_directory')}?{selectors.urlencode_qs(query, view)}")
 
 
+def _calculator_player(request):
+    """Who the calculator loads first: `?player=`, else (signed in, with a
+    linked bonk.io account) yourself, else nobody and the page starts from
+    an example."""
+    name = request.GET.get("player", "")[:100]
+    if name or request.GET.get("goal"):
+        return name
+    mine = selectors.viewer_player(request.user)
+    return mine.username if mine else ""
+
+
 @limit("browse")
 def xp_calculator(request):
     """The public XP & Level calculator. `?player=` and `?goal=` prefill it."""
@@ -149,7 +160,7 @@ def xp_calculator(request):
         "players/xp_calculator.html",
         {
             "constants": constants,
-            "prefill_player": request.GET.get("player", "")[:100],
+            "prefill_player": _calculator_player(request),
             "prefill_goal": request.GET.get("goal", "")[:6],
         },
     )

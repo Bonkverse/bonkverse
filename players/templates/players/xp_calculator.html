@@ -7,8 +7,10 @@
 <meta name="description" content="bonk.io XP and level calculator: plan a level goal, compare players, see where a level stands and when an account was made.">
 {% endblock %}
 
+{% block content_class %}site-page{% endblock %}
+
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/player_profile.css' %}">
+<link rel="stylesheet" href="{% static 'players/css/profile.css' %}">
 <link rel="stylesheet" href="{% static 'players/css/charts.css' %}">
 <link rel="stylesheet" href="{% static 'players/css/controls.css' %}">
 <link rel="stylesheet" href="{% static 'players/css/xp_calculator.css' %}">
@@ -16,20 +18,23 @@
 
 {% block content %}
 {{ constants|json_script:"xc-constants" }}
-<main class="pv xc" id="main" data-xc data-prefill-player="{{ prefill_player }}" data-prefill-goal="{{ prefill_goal }}">
+{% comment %}
+The XP & Level calculator (players/js/xp_calculator.js does the work).
+Bonkverse/ui components; layout in players/css/xp_calculator.css. It starts
+with ?player=, else your own account when signed in, else an example plan
+(data-example) so a first visit isn't empty (design review).
+{% endcomment %}
+<div class="bv-main xc" data-xc data-prefill-player="{{ prefill_player }}" data-prefill-goal="{{ prefill_goal }}">
 
   <header class="xc-hero">
     <div class="xc-hero__text">
       <h1 class="xc-title">XP &amp; Level calculator</h1>
-      <p class="pv-muted">bonk.io's own numbers: level <var>L</var> takes 100·(<var>L</var>−1)² XP in total, a won round gives {{ constants.xp_per_win }} XP, and a day tops out at {{ constants.daily_cap|floatformat:"0g" }} XP.</p>
+      <p class="bv-muted">bonk.io's own numbers: level <var>L</var> takes 100·(<var>L</var>−1)² XP in total, a won round gives {{ constants.xp_per_win }} XP, and a day tops out at {{ constants.daily_cap|floatformat:"0g" }} XP.</p>
     </div>
-    <form class="xc-load" data-load-form role="search">
-      <label class="pv-dir__field">
-        <i data-lucide="user" aria-hidden="true"></i>
-        <span class="pv-visually-hidden">Player name</span>
-        <input type="text" name="player" placeholder="Load a player…" autocomplete="off" maxlength="100" data-load-input>
-      </label>
-      <button type="submit" class="pv-btn">Load</button>
+    <form class="bv-search xc-load" data-load-form role="search">
+      <label class="bv-visually-hidden" for="xc-player">Player name</label>
+      <input id="xc-player" type="search" name="player" placeholder="Load a player" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="100" data-load-input>
+      <button type="submit">Load</button>
     </form>
   </header>
 
@@ -48,17 +53,23 @@
     </dl>
   </section>
 
-  <noscript><p class="pv-note">The calculator needs JavaScript.</p></noscript>
+  <noscript><p class="bv-notice">The calculator needs JavaScript.</p></noscript>
 
-  <nav class="pv-tabs xc-tabs" role="tablist" aria-label="Calculator">
-    <a class="pv-tab" href="#plan" role="tab" data-tab="plan">Plan a goal</a>
-    <a class="pv-tab" href="#compare" role="tab" data-tab="compare">Compare players</a>
-    <a class="pv-tab" href="#spread" role="tab" data-tab="spread">Level spread</a>
-    <a class="pv-tab" href="#age" role="tab" data-tab="age">Account age</a>
-  </nav>
+  <div class="pv-tabs xc-tabs" data-pv-tabs>
+    <nav class="bv-tabs" role="tablist" aria-label="Calculator">
+      <a class="bv-tab" href="#plan" role="tab" data-tab="plan">Plan a goal</a>
+      <a class="bv-tab" href="#compare" role="tab" data-tab="compare">Compare players</a>
+      <a class="bv-tab" href="#spread" role="tab" data-tab="spread">Level spread</a>
+      <a class="bv-tab" href="#age" role="tab" data-tab="age">Account age</a>
+    </nav>
+  </div>
 
   {# ── Plan ─────────────────────────────────────────────── #}
   <section class="xc-panel" id="plan" role="tabpanel" data-panel="plan">
+    <p class="bv-notice xc-example" data-example hidden>
+      <i data-lucide="lightbulb" aria-hidden="true"></i>
+      <span>An example to start: a new account going for level 100. Change the levels, or load a player above.</span>
+    </p>
     <div class="xc-plan">
       <div class="xc-plan__inputs">
         <div class="xc-pair">
@@ -135,13 +146,10 @@
   {# ── Compare ──────────────────────────────────────────── #}
   <section class="xc-panel" id="compare" role="tabpanel" data-panel="compare" hidden>
     <div class="xc-chartbar">
-      <form class="xc-addplayer" data-cmp-form>
-        <label class="pv-dir__field">
-          <i data-lucide="user-plus" aria-hidden="true"></i>
-          <span class="pv-visually-hidden">Add a player to compare</span>
-          <input type="text" placeholder="Add a player…" autocomplete="off" maxlength="100" data-cmp-input>
-        </label>
-        <button type="submit" class="pv-btn pv-btn--ghost">Add</button>
+      <form class="bv-search xc-addplayer" data-cmp-form>
+        <label class="bv-visually-hidden" for="xc-add">Add a player to compare</label>
+        <input id="xc-add" type="search" placeholder="Add a player" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="100" data-cmp-input>
+        <button type="submit">Add</button>
       </form>
       <div class="bv-seg" role="group" aria-label="Show" data-cmp-view>
         <button type="button" data-view="level" aria-pressed="true">Level</button>
@@ -151,15 +159,15 @@
     <p class="xc-status" data-cmp-status></p>
     <ul class="xc-chips" data-cmp-chips></ul>
     <div class="xc-chart" data-cmp-chart></div>
-    <div class="pv-tablewrap">
-      <table class="pv-table xc-table" data-cmp-table hidden>
+    <div class="bv-table-wrap xc-tablewrap">
+      <table class="bv-table xc-table" data-cmp-table hidden>
         <thead>
           <tr>
             <th scope="col">Player</th>
-            <th scope="col" class="pv-num">Level</th>
-            <th scope="col" class="pv-num">XP</th>
+            <th scope="col" class="bv-num">Level</th>
+            <th scope="col" class="bv-num">XP</th>
             <th scope="col">Account made</th>
-            <th scope="col" class="pv-num">Levels / 30 days</th>
+            <th scope="col" class="bv-num">Levels / 30 days</th>
             <th scope="col">Reaches <span data-cmp-goal-label>goal</span></th>
           </tr>
         </thead>
@@ -204,7 +212,7 @@
       </label>
       <div class="xc-age__out" aria-live="polite">
         <span class="xc-age__date" data-dbid-date>—</span>
-        <span class="pv-muted" data-dbid-age>Type an account ID to date it.</span>
+        <span class="bv-muted" data-dbid-age>Type an account ID to date it.</span>
       </div>
     </div>
     <div class="xc-chartbar">
@@ -219,11 +227,12 @@
   </section>
 
   <p class="pv-fine xc-foot">Replays show levels, not XP, so a player's XP is exact only when they've signed in to Bonkverse; otherwise it's the least XP their level needs. Paces come from level-ups in their last 90 days of replays.</p>
-</main>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script src="{% static 'core/js/bv-chart.js' %}"></script>
 <script src="{% static 'core/js/bv-controls.js' %}"></script>
 <script src="{% static 'players/js/xp_calculator.js' %}"></script>
+<script src="{% static 'players/js/profile.js' %}" defer></script>
 {% endblock %}

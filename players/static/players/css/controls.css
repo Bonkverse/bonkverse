@@ -35,7 +35,7 @@
 
 .bv-range {
   -webkit-appearance: none; appearance: none; width: 100%; height: 32px; margin: 0; padding: 0;
-  background: transparent; border: 0; box-shadow: none; cursor: pointer; --fill: 0%;
+  background: transparent; border: 0; box-shadow: none; color: var(--bv-text); cursor: pointer; --fill: 0%;
 }
 .bv-range:focus { outline: none; }
 .bv-range::-webkit-slider-runnable-track {
