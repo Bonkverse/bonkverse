@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block tab %}
-<section class="pv-tiles pv-tiles--3" aria-label="Creator stats">
+<section class="pv-tiles pv-tiles--row" aria-label="Creator stats">
   {% if shown.skins %}
     <div class="pv-tile"><span class="pv-tile__val">{{ creator.skins }}</span><span class="pv-tile__lbl">Skins created</span></div>
     <div class="pv-tile"><span class="pv-tile__val">{{ creator.upvotes }}</span><span class="pv-tile__lbl">Upvotes received</span></div>
@@ -18,7 +18,7 @@
 
 <div class="pv-toolbar">
   {% if views|length > 1 %}
-    <nav class="pv-seg" aria-label="Show">
+    <nav class="bv-seg" aria-label="Show">
       <a href="?view=created"{% if view == 'created' %} aria-current="page"{% endif %}>Created · {{ creator.skins }}</a>
       <a href="?view=favorites"{% if view == 'favorites' %} aria-current="page"{% endif %}>Favorites · {{ favorites_total }}</a>
     </nav>
@@ -46,8 +46,8 @@
   </div>
   {% include 'partials/pagination.html' with page_obj=page_obj elided_range=elided_range base_qs=base_qs %}
 {% else %}
-  <div class="pv-card pv-empty">
-    <p class="pv-muted">{% if view == 'created' %}No skins yet.{% else %}No favorites yet.{% endif %}</p>
+  <div class="bv-empty">
+    <p class="bv-empty__title">{% if view == 'created' %}No skins yet.{% else %}No favorites yet.{% endif %}</p>
     {% if is_owner and view == 'created' %}<a class="bv-btn bv-btn--primary" href="{% url 'skins:upload_skin' %}">Upload a skin</a>{% endif %}
   </div>
 {% endif %}

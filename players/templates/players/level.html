@@ -5,14 +5,13 @@
 
 {% block tab_head %}
 <link rel="stylesheet" href="{% static 'players/css/charts.css' %}">
-<link rel="stylesheet" href="{% static 'players/css/controls.css' %}">
 {% endblock %}
 
 {% block tab %}
 {{ script_data|json_script:"level-data" }}
 
-<section class="pv-open" aria-labelledby="lx-title" data-level>
-  <div class="pv-open__head">
+<section class="bv-card pv-section" aria-labelledby="lx-title" data-level>
+  <div class="pv-section__head">
     <div>
       <h2 id="lx-title" class="pv-section__title">Level over time</h2>
       <span class="pv-muted" data-range-label>
@@ -30,15 +29,14 @@
 
   <div class="pv-levelchart" data-level-chart>
     {% if sparkline %}
-      <svg class="pv-levelchart__fallback" viewBox="0 0 1000 280" preserveAspectRatio="none" role="img"
-           aria-label="Level {{ sparkline.low }} on {{ sparkline.first_day|date:'M j, Y' }} to {{ sparkline.high }} on {{ sparkline.last_day|date:'M j, Y' }}">
-        <polygon class="pv-spark__area" points="{{ sparkline.area }}"></polygon>
-        <polyline class="pv-spark__line" points="{{ sparkline.line }}"></polyline>
-      </svg>
+      {% include 'players/partials/_sparkline.html' with sparkline=sparkline class='pv-levelchart__fallback' %}
     {% else %}
       <p class="pv-muted">Not enough days with replays to draw a line yet.</p>
     {% endif %}
   </div>
+  {% if sparkline.gaps %}
+    <p class="pv-chartnote"><span class="pv-chartnote__dash" aria-hidden="true"></span>Dashed: two weeks or more without replays. The level went up somewhere in that stretch, not all at once.</p>
+  {% endif %}
 
   <dl class="pv-statrow" data-range-stats hidden>
     <div><dt>Levels gained</dt><dd data-t-gained>—</dd></div>
@@ -48,21 +46,21 @@
   </dl>
 </section>
 
-<div class="pv-open-split">
-  <section class="pv-open" aria-labelledby="ups-title">
+<div class="pv-split">
+  <section class="pv-split__main" aria-labelledby="ups-title">
     <h2 id="ups-title" class="pv-section__title">Level-ups <span class="pv-muted pv-small" data-ups-scope>latest</span></h2>
-    <div class="pv-tablewrap">
-      <table class="pv-table">
+    <div class="bv-table-wrap">
+      <table class="bv-table">
         <thead>
-          <tr><th scope="col">Level</th><th scope="col">First seen</th><th scope="col" class="pv-num">Replays since last</th><th scope="col" class="pv-num">Days since last</th></tr>
+          <tr><th scope="col">Level</th><th scope="col">First seen</th><th scope="col" class="bv-num">Replays since last</th><th scope="col" class="bv-num">Days since last</th></tr>
         </thead>
         <tbody data-ups>
           {% for u in level_ups %}
             <tr>
               <td><a href="{{ u.url }}">{{ u.level }}</a></td>
               <td>{{ u.day|date:"M j, Y" }}</td>
-              <td class="pv-num">{{ u.replays|default:"—" }}</td>
-              <td class="pv-num">{{ u.days|default_if_none:"—" }}</td>
+              <td class="bv-num">{{ u.replays|default:"—" }}</td>
+              <td class="bv-num">{{ u.days|default_if_none:"—" }}</td>
             </tr>
           {% empty %}
             <tr><td colspan="4" class="pv-muted">No level-ups seen in replays yet.</td></tr>
@@ -73,11 +71,11 @@
     <p class="pv-fine">Replays show a player's level, not their XP, so a level-up is dated by the first replay that shows it. Older replays have estimated days.</p>
   </section>
 
-  <section class="pv-open pv-next" aria-labelledby="next-title" data-next>
-    <h2 id="next-title" class="pv-section__title">What's next</h2>
+  <section class="bv-card pv-split__side" aria-labelledby="next-title" data-next>
+    <h2 id="next-title" class="pv-card__title">What's next</h2>
     <p class="pv-next__text" data-next-text>Pick a stretch of the chart to see the pace.</p>
     <p class="pv-muted pv-small">An estimate from the pace in the stretch you're looking at, not a promise.</p>
-    <a class="pv-btn" href="{% url 'players:xp_calculator' %}?player={{ username|urlencode }}#plan">Plan it in the XP calculator</a>
+    <a class="bv-btn" href="{% url 'players:xp_calculator' %}?player={{ username|urlencode }}#plan">Plan it in the XP calculator</a>
   </section>
 </div>
 {% endblock %}

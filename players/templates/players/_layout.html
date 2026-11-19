@@ -2,11 +2,14 @@
 {% load static %}
 {% comment %}
 Shared frame for every player profile tab (players/views.py): the player
-header, the owner's privacy note and the tab bar. Each tab fills
-{% block tab %} and can add {% block tab_head %} / {% block tab_scripts %}.
+header, the owner's privacy note and the tab bar, on Bonkverse/ui components
+(players/css/profile.css). Each tab fills {% block tab %}, names itself in
+{% block tab_title %} (" · Level" → "Name · Level · Bonkverse") and can add
+{% block tab_head %} / {% block tab_scripts %}.
 {% endcomment %}
 
 {% block title %}{{ username }}{% block tab_title %}{% endblock %} · Bonkverse{% endblock %}
+{% block content_class %}site-page{% endblock %}
 
 {% block social_meta %}
 <meta name="description" content="{{ username }}'s bonk.io profile on Bonkverse: activity, level, maps, people, friends{% if account %} and skins{% endif %}.">
@@ -14,12 +17,13 @@ header, the owner's privacy note and the tab bar. Each tab fills
 {% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/player_profile.css' %}">
+<link rel="stylesheet" href="{% static 'players/css/controls.css' %}">
+<link rel="stylesheet" href="{% static 'players/css/profile.css' %}">
 {% block tab_head %}{% endblock %}
 {% endblock %}
 
 {% block content %}
-<main class="pv" id="main">
+<div class="bv-main pv">
 
   <header class="pv-hero{% if active_tab %} pv-hero--compact{% endif %}">
     <a class="pv-avatar{% if skin_avatar %} pv-avatar--skin{% endif %}" href="{% url 'players:player_profile' username %}"{% if skin_avatar %} style="--skin: url('{{ skin_avatar }}')"{% endif %} aria-label="{{ username }}'s overview">{{ username|slice:":2"|upper }}</a>
@@ -29,67 +33,74 @@ header, the owner's privacy note and the tab bar. Each tab fills
       {% else %}
         <h1 class="pv-hero__name">{{ username }}</h1>
       {% endif %}
-      <div class="pv-chips">
-        {% if summary and shown.level_history %}<span class="pv-chip">Level {{ summary.current_level }}</span>{% endif %}
+      <div class="pv-pills">
+        {% if summary and shown.level_history and not level_in_body %}<span class="bv-pill">Level {{ summary.current_level }}</span>{% endif %}
         {% if account_age %}
-          <span class="pv-chip" title="Estimated from account ID {{ bonk_player.bonk_id }}">
+          <span class="bv-pill" title="Estimated from account ID {{ bonk_player.bonk_id }}">
             <i data-lucide="cake" aria-hidden="true"></i>
             Joined bonk.io {% if account_age.extrapolated %}around{% else %}≈{% endif %} {{ account_age.day|date:"M Y" }}
           </span>
         {% endif %}
         {% if account %}
-          <span class="pv-chip">On Bonkverse since {{ account.date_joined|date:"M Y" }}</span>
+          <span class="bv-pill">On Bonkverse since {{ account.date_joined|date:"M Y" }}</span>
         {% elif profile %}
-          <span class="pv-chip pv-chip--quiet">Profile built from replays</span>
+          <span class="bv-pill pv-pill--quiet">Profile built from replays</span>
         {% else %}
-          <span class="pv-chip pv-chip--quiet">Seen in friend lists</span>
+          <span class="bv-pill pv-pill--quiet">Seen in friend lists</span>
         {% endif %}
       </div>
     </div>
-    <div class="pv-hero__actions">
-      {% if summary %}
-        <a class="pv-btn" href="{{ all_replays_url }}">Watch replays</a>
-      {% endif %}
-      {% if is_owner %}
-        <a class="pv-btn pv-btn--ghost" href="{% url 'skins:upload_skin' %}">
-          <i data-lucide="upload" aria-hidden="true"></i> Upload a skin
-        </a>
-        <a class="pv-btn pv-btn--ghost pv-btn--settings" href="{% url 'players:profile_settings' %}" aria-label="Profile settings" title="Profile settings">
-          <i data-lucide="settings" aria-hidden="true"></i><span class="pv-btn__label" aria-hidden="true">Profile settings</span>
-        </a>
-      {% endif %}
-    </div>
+    {% if summary or is_owner %}
+      <div class="pv-hero__actions">
+        {% if summary %}
+          <a class="bv-btn bv-btn--primary pv-hero__watch" href="{{ all_replays_url }}">
+            <i data-lucide="play" aria-hidden="true"></i> Watch replays
+          </a>
+        {% endif %}
+        {% if is_owner %}
+          <a class="bv-btn pv-hero__icon-on-phone" href="{% url 'skins:upload_skin' %}" title="Upload a skin" aria-label="Upload a skin">
+            <i data-lucide="upload" aria-hidden="true"></i><span class="pv-hero__label" aria-hidden="true">Upload a skin</span>
+          </a>
+          <a class="bv-btn pv-hero__icon-on-phone" href="{% url 'players:profile_settings' %}" title="Profile settings" aria-label="Profile settings">
+            <i data-lucide="settings" aria-hidden="true"></i><span class="pv-hero__label" aria-hidden="true">Profile settings</span>
+          </a>
+        {% endif %}
+      </div>
+    {% endif %}
   </header>
 
   {% if is_owner and hidden_labels %}
-    <p class="pv-note">
+    <p class="bv-notice pv-note">
       <i data-lucide="eye-off" aria-hidden="true"></i>
-      Only you can see: {{ hidden_labels|join:", " }}.
-      <a class="pv-link" href="{% url 'players:profile_settings' %}">Change</a>
+      <span>Only you can see: {{ hidden_labels|join:", " }}. <a href="{% url 'players:profile_settings' %}">Change</a></span>
     </p>
   {% endif %}
 
-  <nav class="pv-tabs" aria-label="Profile">
-    {% for t in tabs %}
-      <a class="pv-tab" href="{{ t.url }}"{% if t.active %} aria-current="page"{% endif %}>
-        {{ t.label }}
-        {% if is_owner and t.private %}<i data-lucide="lock" class="pv-tab__lock" aria-label="Only you can see this"></i>{% endif %}
-      </a>
-    {% endfor %}
-  </nav>
+  {# The tab row scrolls sideways on phones; players/js/profile.js fades the edge that has more. #}
+  <div class="pv-tabs" data-pv-tabs>
+    <nav class="bv-tabs" aria-label="Profile">
+      {% for t in tabs %}
+        <a class="bv-tab" href="{{ t.url }}"{% if t.active %} aria-current="page"{% endif %}>
+          {{ t.label }}
+          {% if is_owner and t.private %}<i data-lucide="lock" class="pv-tab__lock" aria-label="Only you can see this"></i>{% endif %}
+        </a>
+      {% endfor %}
+    </nav>
+  </div>
 
   {% if not summary and replays_error and replays_error != "not_found" %}
-    <div class="pv-card pv-empty">
-      <p>Replay stats can't be loaded right now.</p>
-      <p class="pv-muted">Please try again in a few minutes.</p>
+    <div class="bv-empty pv-gap">
+      <p class="bv-empty__title">Replay stats can't be loaded right now.</p>
+      <p>Please try again in a few minutes.</p>
     </div>
   {% endif %}
 
   {% block tab %}{% endblock %}
 
-</main>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="{% static 'players/js/profile.js' %}" defer></script>
 {% block tab_scripts %}{% endblock %}
 {% endblock %}

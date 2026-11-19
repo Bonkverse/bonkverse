@@ -1,6 +1,7 @@
 {% comment %}
 A year of daily activity (charts.heatmap): 53 week columns, Monday at the top,
-newest week first (the stylesheet lays them out right to left).
+newest week first (the stylesheet lays them out right to left). Each day is
+shaded 0–4 with the theme's colors (pv-heat__day--N, players/css/profile.css).
 interactive=True makes each week a button that player_activity.js uses to
 show that week; otherwise it's a picture inside a link.
 {% endcomment %}
@@ -9,11 +10,11 @@ show that week; otherwise it's a picture inside a link.
     {% for w in heatmap.newest_first %}
       {% if interactive %}
         <button type="button" class="pv-heat__week" data-week="{{ w.start|date:'Y-m-d' }}" aria-label="Week of {{ w.start|date:'M j, Y' }}">
-          {% for c in w.cells %}<span class="pv-heat__day" style="--heat: {{ c.color }}" title="{{ c.day|date:'D M j' }}: {{ c.games }} replay{{ c.games|pluralize }}"></span>{% endfor %}
+          {% for c in w.cells %}<span class="pv-heat__day pv-heat__day--{{ c.shade }}" title="{{ c.day|date:'D M j' }}: {{ c.games }} replay{{ c.games|pluralize }}"></span>{% endfor %}
         </button>
       {% else %}
         <span class="pv-heat__week" aria-hidden="true">
-          {% for c in w.cells %}<span class="pv-heat__day" style="--heat: {{ c.color }}"></span>{% endfor %}
+          {% for c in w.cells %}<span class="pv-heat__day pv-heat__day--{{ c.shade }}"></span>{% endfor %}
         </span>
       {% endif %}
     {% endfor %}

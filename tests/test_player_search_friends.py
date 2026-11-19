@@ -370,7 +370,10 @@ def test_player_known_only_from_friend_lists_has_a_profile(client, mocked_http, 
     assert "Seen in friend lists" in html
     assert reverse("players:player_friends", args=["bob"]) in html
     assert reverse("players:player_activity", args=["bob"]) not in html
-    assert ">1</strong>" in html  # the Friends card: claus
+    # The Friends card: the count and the friend himself (design review:
+    # top friends, not one number in a big box).
+    assert "1 on bonk.io" in html
+    assert 'href="/player/claus/"' in html
 
 
 @pytest.mark.django_db
@@ -379,7 +382,13 @@ def test_overview_counts_mutual_friends(client, mocked_http, circle):
     client.force_login(claus)
     mock_player(mocked_http, "tulip", status=404, body={"error": "x"})
     response = client.get(reverse("players:player_profile", args=["tulip"]))
-    assert response.context["friend_counts"] == {"friends": 2, "flash": 0, "mutual": 1}
+    counts = response.context["friend_counts"]
+    assert {k: counts[k] for k in ("friends", "flash", "mutual")} == {
+        "friends": 2,
+        "flash": 0,
+        "mutual": 1,
+    }
+    assert len(counts["top"]) == 2
 
 
 @pytest.mark.django_db

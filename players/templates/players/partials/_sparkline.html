@@ -1,0 +1,12 @@
+{% comment %}
+The level over time as a static picture (players/charts.py sparkline): steps
+on days with replays, a dashed line across long gaps without replays in which
+the level rose. Takes `sparkline` and `class` (pv-spark on the Overview,
+pv-levelchart__fallback on the Level tab before its script draws the chart).
+{% endcomment %}
+<svg class="{{ class }}" viewBox="0 0 {{ sparkline.width }} {{ sparkline.height }}" preserveAspectRatio="none" role="img"
+     aria-label="Level {{ sparkline.low }} on {{ sparkline.first_day|date:'M j, Y' }} to {{ sparkline.high }} on {{ sparkline.last_day|date:'M j, Y' }}{% if sparkline.gaps %}. Dashed: weeks without replays{% endif %}">
+  <polygon class="pv-spark__area" points="{{ sparkline.area }}"></polygon>
+  <path class="pv-spark__line" d="{{ sparkline.line }}"></path>
+  {% if sparkline.gaps %}<path class="pv-spark__line pv-spark__gap" d="{{ sparkline.gaps }}"></path>{% endif %}
+</svg>

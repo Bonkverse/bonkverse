@@ -3,15 +3,11 @@
 
 {% block tab_title %} · Friends{% endblock %}
 
-{% block tab_head %}
-<link rel="stylesheet" href="{% static 'players/css/controls.css' %}">
-{% endblock %}
-
 {% block tab %}
 {{ friend_data|json_script:"friends-data" }}
 
-<section class="pv-open pv-friends" aria-labelledby="fr-title" data-friends>
-  <div class="pv-open__head">
+<section class="bv-card pv-section pv-friends" aria-labelledby="fr-title" data-friends>
+  <div class="pv-section__head">
     <div>
       <h2 id="fr-title" class="pv-section__title">Friends</h2>
       <span class="pv-muted pv-small">
@@ -27,8 +23,8 @@
   </div>
 
   {% if can_compare %}
-    <div class="pv-friends__you">
-      <span class="pv-initials" aria-hidden="true"><i data-lucide="users"></i></span>
+    <div class="bv-notice pv-friends__you">
+      <i data-lucide="users" aria-hidden="true"></i>
       <p>
         {% if you_are_friends %}<strong>You're friends.</strong> {% endif %}
         You have <strong data-mutual-n>{{ mutual_total|floatformat:"0g" }}</strong> bonk.io friend{{ mutual_total|pluralize }} in common{% if has_flash and flash_mutual_total %} and <strong>{{ flash_mutual_total|floatformat:"0g" }}</strong> Flash friend{{ flash_mutual_total|pluralize }}{% endif %}.
@@ -37,14 +33,13 @@
   {% endif %}
 
   <div class="pv-friends__tools" data-tools hidden>
-    <label class="pv-dir__field pv-friends__search">
-      <i data-lucide="search" aria-hidden="true"></i>
-      <span class="pv-visually-hidden">Search friends</span>
-      <input type="search" placeholder="Search {{ username }}'s friends" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="100" data-search>
+    <label class="pv-friends__search">
+      <span class="bv-visually-hidden">Search friends</span>
+      <input class="bv-input" type="search" placeholder="Search {{ username }}'s friends" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="100" data-search>
     </label>
-    <label class="pv-adv__select">
-      <span class="pv-visually-hidden">Sort</span>
-      <select data-sort>
+    <label>
+      <span class="bv-visually-hidden">Sort</span>
+      <select class="bv-select" data-sort>
         <option value="az">A–Z</option>
         <option value="friends" data-bonk-only>Most friends</option>
         <option value="old" data-bonk-only>Oldest account</option>
@@ -52,7 +47,7 @@
       </select>
     </label>
     {% if can_compare %}
-      <label class="pv-check"><input type="checkbox" data-mutual-only><span>Mutual only</span></label>
+      <label class="bv-check pv-friends__check"><input type="checkbox" data-mutual-only><span>Mutual only</span></label>
     {% endif %}
   </div>
   <p class="pv-muted pv-small pv-friends__count" data-count aria-live="polite"></p>
@@ -78,13 +73,13 @@
   {% if bonk_total > bonk_preview|length %}
     <p class="pv-muted pv-small" data-nojs-more>Showing the first {{ bonk_preview|length }}. Search needs JavaScript.</p>
   {% endif %}
-  <button type="button" class="pv-btn pv-btn--ghost pv-friends__more" data-more hidden>Show more</button>
+  <button type="button" class="bv-btn pv-friends__more" data-more hidden>Show more</button>
 </section>
 
 <p class="pv-fine">
   bonk.io friends come from friend lists that players shared by signing in to Bonkverse, so a player who never signed in shows only the members who list them.
   Flash friends are the old Flash bonk and TinyTanks lists a member imported.
-  {% if is_owner %}You can hide your lists in <a class="pv-link" href="{% url 'players:profile_settings' %}">profile settings</a>.{% elif not account %}Is this you? <a class="pv-link" href="{% url 'accounts:login' %}">Sign in</a> to add your whole list.{% endif %}
+  {% if is_owner %}You can hide your lists in <a href="{% url 'players:profile_settings' %}">profile settings</a>.{% elif not account %}Is this you? <a href="{% url 'accounts:login' %}">Sign in</a> to add your whole list.{% endif %}
 </p>
 {% endblock %}
 

@@ -8,6 +8,8 @@
 // the chart shows only that stretch; "Reset zoom" goes back.
 //
 //   const chart = BVChart.line(el, { series, xType: "time", height: 380, zoom: true });
+//   series: [{ name, color, points: [[x, y]], step, area, extend, dashed, gaps }]
+//   (gaps: an x distance; points further apart get a dashed join)
 //   chart.update({ series });   chart.setDomain([x0, x1]);   chart.reset();
 //   BVChart.bars(el, { bars: [{ label, value, highlight, tip }], height: 360 });
 //
@@ -230,18 +232,42 @@
       if (l.label) svg("text", { x: pad.left + iw - 6, y: Y(l.y) - 6, "text-anchor": "end", class: "bv-chart__hlabel" }, plot).textContent = l.label;
     }
     for (const s of series) {
+      // s.gaps (an x distance): two points further apart than that with
+      // different values have no data between them, so they're joined by a
+      // dashed straight line instead of a step or a solid line.
       const pts = [];
-      let prev = null;
+      const runs = [[]];
+      const gapLines = [];
+      let prev = null, prevX = null;
       for (const [x, y] of s.points) {
-        if (s.step && prev != null) pts.push(`${X(x).toFixed(1)},${Y(prev).toFixed(1)}`);
-        pts.push(`${X(x).toFixed(1)},${Y(y).toFixed(1)}`);
+        const p = `${X(x).toFixed(1)},${Y(y).toFixed(1)}`;
+        if (s.gaps && prev != null && x - prevX > s.gaps && y !== prev) {
+          gapLines.push(`${X(prevX).toFixed(1)},${Y(prev).toFixed(1)} ${p}`);
+          runs.push([]);
+        } else if (s.step && prev != null) {
+          const corner = `${X(x).toFixed(1)},${Y(prev).toFixed(1)}`;
+          pts.push(corner);
+          runs[runs.length - 1].push(corner);
+        }
+        pts.push(p);
+        runs[runs.length - 1].push(p);
         prev = y;
+        prevX = x;
       }
-      if (s.step && s.extend && prev != null && s.points[s.points.length - 1][0] < x1) pts.push(`${X(x1).toFixed(1)},${Y(prev).toFixed(1)}`);
+      if (s.step && s.extend && prev != null && s.points[s.points.length - 1][0] < x1) {
+        const end = `${X(x1).toFixed(1)},${Y(prev).toFixed(1)}`;
+        pts.push(end);
+        runs[runs.length - 1].push(end);
+      }
       if (s.area) {
         svg("polygon", { points: `${X(s.points[0][0]).toFixed(1)},${pad.top + ih} ${pts.join(" ")} ${pts.length ? pts[pts.length - 1].split(",")[0] : 0},${pad.top + ih}`, class: "bv-chart__area", style: `--c: ${s.color}` }, plot);
       }
-      svg("polyline", { points: pts.join(" "), class: `bv-chart__line${s.dashed ? " bv-chart__line--dashed" : ""}`, style: `--c: ${s.color}` }, plot);
+      for (const run of runs) {
+        if (run.length) svg("polyline", { points: run.join(" "), class: `bv-chart__line${s.dashed ? " bv-chart__line--dashed" : ""}`, style: `--c: ${s.color}` }, plot);
+      }
+      for (const g of gapLines) {
+        svg("polyline", { points: g, class: "bv-chart__line bv-chart__line--dashed bv-chart__line--gap", style: `--c: ${s.color}` }, plot);
+      }
     }
     for (const m of o.markers || []) {
       if (m.x < x0 || m.x > x1) continue;
