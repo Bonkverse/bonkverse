@@ -59,6 +59,8 @@ const PAGES = [
   ["/player/ui-check-staff/skins/", "my-skins", true], // your own Skins tab: owner cards (seed_ui_checks' account)
   ["/upload/", "upload", true],
   ["/settings/profile/", "settings", true],
+  ["/privacy/", "privacy", false],
+  ["/terms/", "terms", false],
   ["/developers/keys/", "api-keys", true],
   ["/developers/terms/", "api-terms", false],
   ["/moderation/", "moderation", true], // staff only: --session of a staff account

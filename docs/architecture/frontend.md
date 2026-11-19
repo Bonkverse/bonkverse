@@ -125,7 +125,7 @@ skins/static/css/skin_detail.css         styles, if no shared file fits
 Pages in apps created in RFC-0001 Phase 5 keep the same three files inside
 their app, namespaced by the app's name:
 `site_pages/templates/site_pages/privacy.html`,
-`site_pages/static/site_pages/css/privacy.css` (`{% static 'site_pages/css/privacy.css' %}`).
+`site_pages/static/site_pages/css/legal.css` (`{% static 'site_pages/css/legal.css' %}`).
 The shared page frame is the project's `templates/` (`base.html`, error
 pages, `partials/`: header, footer, skin tabs, pagination, bonk.io login
 modal) and `static/` (`ui/`, `core/js/`, `images/`, site-wide `css/` and
