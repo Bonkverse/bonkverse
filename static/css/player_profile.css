@@ -1,8 +1,7 @@
-/* player_profile.css — the pages not yet on Bonkverse/ui components that
-   share the old player look: the XP calculator (players/xp_calculator.html)
-   and the developer key and terms pages (public_api/templates/developers/).
-   Player profiles and the Players page moved to players/css/; delete this
-   file when these pages move too.
+/* player_profile.css — the old player look, now used only by the developer
+   key and terms pages (public_api/templates/developers/). Profiles, the
+   Players page and the XP calculator moved to players/css/; delete this
+   file when those two pages move too.
 
    Everything is scoped under .pv or a .pv-* class so it can't leak into
    other pages. */
@@ -62,36 +61,12 @@
 .pv-hero { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
 .pv-hero__text { flex: 1 1 240px; min-width: 0; }
 .pv-hero__actions { display: flex; gap: 8px; flex-wrap: wrap; }
-/* Worn skin as the avatar (players/partials/_avatar.html): the template
-   passes the image URL as --skin, layered over the initials. A skin that
-   can't load draws nothing, so the initials show through. */
-.pv-initials--skin { position: relative; }
-.pv-initials--skin::after {
-  content: ""; position: absolute; inset: 0; border-radius: 50%;
-  background: var(--skin) center / cover no-repeat;
-}
 
 .pv-note {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   background: var(--pv-panel); border: 1px solid var(--pv-outline);
   border-radius: 12px; padding: 10px 14px; margin: 18px 0 0; color: var(--pv-muted);
 }
-
-.pv-tabs {
-  display: flex; gap: 4px; margin: 22px 0 24px;
-  border-bottom: 1px solid var(--pv-outline);
-  overflow-x: auto; scrollbar-width: none;
-}
-.pv-tabs::-webkit-scrollbar { display: none; }
-.pv-tab {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 12px 14px; white-space: nowrap;
-  border-bottom: 3px solid transparent; margin-bottom: -1px;
-  font-weight: 500; text-decoration: none;
-}
-.pv a.pv-tab { color: var(--pv-muted); }
-.pv a.pv-tab:hover { color: var(--pv-text); }
-.pv a.pv-tab[aria-current="page"] { color: var(--pv-text); font-weight: 600; border-bottom-color: var(--pv-action); }
 
 /* ── Cards and layout ──────────────────────────────── */
 .pv-card {
@@ -111,13 +86,6 @@
 .pv-table td { padding: 10px 8px 10px 0; border-top: 1px solid var(--pv-rule); }
 .pv-table th.pv-num, .pv-table td.pv-num { text-align: right; padding-right: 0; }
 
-/* ── Avatars ───────────────────────────────────────── */
-.pv-initials {
-  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: var(--pv-panel-2); color: var(--pv-link); font-size: 0.8rem; font-weight: 600;
-}
-
 /* ── Phones ────────────────────────────────────────── */
 @media (max-width: 640px) {
   .pv { padding: 16px 16px 40px; }
@@ -131,33 +99,10 @@
   .pv * { transition: none !important; }
 }
 
-/* ── Search field and hidden labels (XP calculator) ── */
+/* ── Hidden labels ─────────────────────────────────── */
 .pv-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.pv-dir__field {
-  flex: 1; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px;
-  background: var(--pv-inset); border: 1px solid var(--pv-outline); border-radius: 12px; color: var(--pv-muted);
-}
-.pv-dir__field:focus-within { border-color: var(--pv-action); }
-.pv-dir__field input {
-  flex: 1; min-width: 0; border: 0; outline: none; background: transparent;
-  color: var(--pv-text); font: inherit; font-size: 1rem;
-}
 
 /* Undo the site-wide form/label rules (forms.css) inside these pages. */
 .pv form:not(.pv-card) { width: auto; margin: 0 auto; padding: 0; border: 0; background: none; box-shadow: none; }
 .pv form.pv-card { width: auto; box-shadow: none; }
 .pv label { margin-top: 0; font-size: inherit; font-weight: inherit; }
-.pv .pv-dir__field input { padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; height: auto; }
-
-/* Search fields: one focus ring on the field, none on the input inside it
-   (the site-wide input rules in forms.css and .pv :focus-visible otherwise
-   draw a second highlighted box). */
-.pv .pv-dir__field { transition: border-color 0.15s, box-shadow 0.15s; }
-.pv .pv-dir__field:focus-within { border-color: var(--pv-action); }
-.pv .pv-dir__field input, .pv .pv-dir__field input:focus, .pv .pv-dir__field input:focus-visible { outline: none; border: 0; box-shadow: none; background: transparent; }
-
-/* The XP calculator's charts (core/js/bv-chart.js) on phones */
-@media (max-width: 640px) {
-  .bv-chart { padding: 12px 8px 8px; }
-  .bv-chart--zoom { padding-top: 52px; }
-}

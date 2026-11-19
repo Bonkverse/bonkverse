@@ -123,6 +123,30 @@ def test_calculator_page_is_public(client):
     assert response.status_code == 200
     assert 'id="xc-constants"' in html and "js/xp_calculator.js" in html
     assert 'data-prefill-player="Saucy Tulip"' in html and 'data-prefill-goal="250"' in html
+    assert 'class="content site-page"' in html and "css/player_profile.css" not in html
+
+
+@pytest.mark.django_db
+def test_calculator_starts_from_an_example_for_visitors(client):
+    """Design review: no page of dashes. Without a player it starts from an
+    example plan (xp_calculator.js), which the page says is an example."""
+    html = client.get(reverse("players:xp_calculator")).content.decode()
+    assert 'data-prefill-player=""' in html
+    assert "data-example hidden" in html and "An example to start" in html
+
+
+@pytest.mark.django_db
+def test_calculator_loads_you_when_signed_in(client, user):
+    player = BonkPlayer.objects.create(bonk_id=77, username="Saucy Tulip")
+    user.bonk_accounts.create(bonk_player=player, active=True)
+    client.force_login(user)
+    html = client.get(reverse("players:xp_calculator")).content.decode()
+    assert 'data-prefill-player="Saucy Tulip"' in html
+    # A link to someone else (or just a goal) still wins.
+    other = client.get(reverse("players:xp_calculator") + "?player=Rival").content.decode()
+    assert 'data-prefill-player="Rival"' in other
+    goal_only = client.get(reverse("players:xp_calculator") + "?goal=300").content.decode()
+    assert 'data-prefill-player=""' in goal_only
 
 
 @pytest.mark.django_db

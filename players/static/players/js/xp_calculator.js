@@ -74,6 +74,7 @@
   }
 
   // ── Plan a goal ──────────────────────────────────────────────
+  const EXAMPLE_GOAL = 100;
   const plan = {
     startLevel: $("[data-start-level]"), startXp: $("[data-start-xp]"),
     goalLevel: $("[data-goal-level]"), goalXp: $("[data-goal-xp]"),
@@ -278,7 +279,7 @@
       player = await fetchPlayer(name);
     } catch (err) {
       status.textContent = err.message;
-      return;
+      return false;
     }
     status.hidden = true;
     $("[data-player]").hidden = false;
@@ -323,6 +324,7 @@
     const url = new URL(window.location.href);
     url.searchParams.set("player", player.username);
     history.replaceState(null, "", url);
+    return true;
   }
   $("[data-load-form]").addEventListener("submit", (e) => {
     e.preventDefault();
@@ -423,7 +425,7 @@
       cells.forEach((c, k) => {
         const td = c instanceof Node ? c : document.createElement("td");
         if (!(c instanceof Node)) td.textContent = String(c);
-        if (k === 1 || k === 2 || k === 4) td.classList.add("pv-num");
+        if (k === 1 || k === 2 || k === 4) td.classList.add("bv-num");
         tr.append(td);
       });
       return tr;
@@ -575,12 +577,26 @@
     renderAge();
   }
 
+  // A first visit shouldn't be a page of dashes and an empty chart (design
+  // review): load the player from the link or, signed in, your own. Until
+  // then, and if that load fails, the plan shows an example (a new account
+  // going for level 100) and says so until the visitor changes a level or
+  // loads someone.
   const prefill = root.dataset.prefillPlayer;
   const prefillGoal = parseInt(root.dataset.prefillGoal, 10);
-  update();
-  if (prefillGoal > 0) setGoal(prefillGoal);
+  const example = $("[data-example]");
+  plan.startLevel.value = 1;
+  plan.startXp.value = xpFor(1);
+  setGoal(prefillGoal > 0 ? prefillGoal : EXAMPLE_GOAL);
+  let edited = false;
+  const showExample = (on) => { if (example) example.hidden = !on || edited || prefillGoal > 0; };
+  const hideExample = () => { edited = true; showExample(false); };
+  [plan.startLevel, plan.startXp, plan.goalLevel, plan.goalXp].forEach((i) => i.addEventListener("input", hideExample));
+  $("[data-load-form]").addEventListener("submit", hideExample);
+  $("[data-quick-goals]").addEventListener("click", hideExample);
+  showExample(!prefill);
   if (prefill) {
     $("[data-load-input]").value = prefill;
-    loadPlayer(prefill, { keepGoal: prefillGoal > 0 });
+    loadPlayer(prefill, { keepGoal: prefillGoal > 0 }).then((ok) => { if (!ok) showExample(true); });
   }
 })();
