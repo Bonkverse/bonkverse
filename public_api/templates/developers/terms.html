@@ -2,23 +2,26 @@
 {% load static %}
 
 {% block title %}API terms · Bonkverse{% endblock %}
+{% block content_class %}site-page{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/player_profile.css' %}">
 <link rel="stylesheet" href="{% static 'public_api/css/developers.css' %}">
 {% endblock %}
 
 {% block content %}
-<main class="pv pv--narrow dev" id="main">
-  <header class="pv-hero">
-    <div class="pv-hero__text">
-      <a class="pv-link pv-small" href="{% url 'developers:developers' %}">← Developers</a>
-      <h1 class="dev-hero__title">Bonkverse API terms</h1>
-      <p class="pv-muted">Version {{ terms_version }}. You agree to these when you create an API key.</p>
+<div class="bv-main dev">
+  <div class="bv-page-header">
+    <div class="bv-page-header__text">
+      <a class="bv-back" href="{% url 'developers:developers' %}">← Developers</a>
+      <h1>Bonkverse API terms</h1>
+      <p class="bv-muted">Version {{ terms_version }}. You agree to these when you create an API key.</p>
     </div>
-  </header>
+    <div class="bv-page-header__actions">
+      <a class="bv-btn bv-btn--primary" href="{% url 'developers:developer_keys' %}"><i data-lucide="key-round" aria-hidden="true"></i>Get an API key</a>
+    </div>
+  </div>
 
-  <article class="pv-card dev-terms">
+  <article class="bv-card dev-terms">
     <h2>Using the data</h2>
     <ol>
       <li>Show where the data came from: "Levels from Bonkverse", with a link to the player's profile (<code>profile_url</code>) where you can.</li>
@@ -41,12 +44,10 @@
       <li>If these terms change, you'll be asked to agree again before your next new key. Your existing keys keep working.</li>
     </ol>
 
-    <p class="pv-fine">
+    <p class="bv-hint">
       Bonkverse's <a href="{% url 'site_pages:terms' %}">Terms of Service</a> and
       <a href="{% url 'site_pages:privacy' %}">Privacy Policy</a> also apply. Bonkverse is not affiliated with bonk.io.
     </p>
   </article>
-
-  <a class="pv-btn" href="{% url 'developers:developer_keys' %}"><i data-lucide="key-round"></i>Get an API key</a>
-</main>
+</div>
 {% endblock %}

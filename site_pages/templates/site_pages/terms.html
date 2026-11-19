@@ -3,32 +3,26 @@
 
 {% block title %}Terms of service · Bonkverse{% endblock %}
 
+{% block content_class %}site-page{% endblock %}
+
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'site_pages/css/terms.css' %}">
+<link rel="stylesheet" href="{% static 'site_pages/css/legal.css' %}">
 {% endblock %}
 
 {% block content %}
-
-<div class="terms-page">
-
-  <div class="terms-hero">
-    <h1>Terms of Service</h1>
-    <p>Last updated: June 5, 2026</p>
+<div class="bv-main legal">
+  <div class="bv-page-header">
+    <div class="bv-page-header__text">
+      <span class="bv-eyebrow">Bonkverse</span>
+      <h1>Terms of Service</h1>
+      <p class="bv-muted">Last updated: June 5, 2026</p>
+    </div>
   </div>
 
-  <!-- Disclaimer banner -->
-  <div class="terms-disclaimer">
-    <i data-lucide="alert-triangle"></i>
-    <p>
-      Bonkverse is an independent, fan-made platform. We are not affiliated with, endorsed by, or
-      connected to the creators of bonk.io in any way. By using Bonkverse, you agree to these terms.
-    </p>
-  </div>
-
-  <!-- TOC -->
-  <div class="terms-toc">
-    <p>Contents</p>
-    <ol>
+  <div class="legal__layout">
+    <nav class="legal__toc" aria-label="Contents">
+      <p class="bv-eyebrow">Contents</p>
+      <ol>
       <li><a href="#about">About Bonkverse</a></li>
       <li><a href="#accounts">Accounts</a></li>
       <li><a href="#content">Content & Uploads</a></li>
@@ -39,23 +33,24 @@
       <li><a href="#disclaimer">Disclaimer & Liability</a></li>
       <li><a href="#changes">Changes to Terms</a></li>
       <li><a href="#contact">Contact</a></li>
-    </ol>
-  </div>
+      </ol>
+    </nav>
 
+    <article class="legal__body">
+  <div class="bv-notice legal__notice"><i data-lucide="info" aria-hidden="true"></i><span>
+      Bonkverse is an independent, fan-made platform. We are not affiliated with, endorsed by, or
+      connected to the creators of bonk.io in any way. By using Bonkverse, you agree to these terms.
+    </span></div>
   <!-- Intro -->
-  <div class="terms-section">
+  <section>
     <p>
       These Terms of Service govern your use of <strong>bonkverse.io</strong> and the
       <strong>Bonkverse browser extension</strong> (collectively, "Bonkverse" or "the platform").
       By accessing or using Bonkverse, you agree to be bound by these terms. If you do not agree, please do not use the platform.
     </p>
-  </div>
-
-  <!-- 1 -->
-  <div class="terms-section" id="about">
-    <div class="terms-section-title">
-      <i data-lucide="info"></i> 1. About Bonkverse
-    </div>
+  </section>
+  <section id="about">
+    <h2><i data-lucide="info" aria-hidden="true"></i>1. About Bonkverse</h2>
     <p>
       Bonkverse is a fan-made community platform built for players of the browser game bonk.io. It is
       independently developed and operated, and is not affiliated with or endorsed by the creators of bonk.io.
@@ -65,61 +60,53 @@
     <p>
       Bonkverse is open source. The codebase is publicly available at
       <a href="https://github.com/orgs/Bonkverse/repositories" target="_blank" rel="noopener"
-         class="terms-link">github.com/orgs/Bonkverse</a>.
+        >github.com/orgs/Bonkverse</a>.
     </p>
-  </div>
-
-  <!-- 2 -->
-  <div class="terms-section" id="accounts">
-    <div class="terms-section-title">
-      <i data-lucide="user"></i> 2. Accounts
-    </div>
+  </section>
+  <section id="accounts">
+    <h2><i data-lucide="user" aria-hidden="true"></i>2. Accounts</h2>
     <p>
       Bonkverse accounts are linked to your bonk.io account. Bonkverse facilitates authentication through
       bonk.io's own endpoints to verify your identity — we do not store your bonk.io password and do not
       own your bonk.io account. We are not responsible for unauthorized access to, theft of, or loss of
       your bonk.io account.
     </p>
-    <div class="rule-cards">
-      <div class="rule-card">
-        <div class="rule-card-header">
-          <span class="rule-tag allowed">Allowed</span>
-          <span class="rule-card-title">Alternate Accounts</span>
+    <div class="legal-cards">
+      <div class="legal-card">
+        <div class="legal-card__head">
+          <span class="legal-tag legal-tag--allowed">Allowed</span>
+          <span class="legal-card__title">Alternate Accounts</span>
         </div>
         <p>You may use alternate bonk.io accounts ("alts") on Bonkverse. This helps us associate accounts that belong to the same player and improves the accuracy of our community data.</p>
       </div>
-      <div class="rule-card">
-        <div class="rule-card-header">
-          <span class="rule-tag prohibited">Prohibited</span>
-          <span class="rule-card-title">Account Theft & Guest Accounts</span>
+      <div class="legal-card">
+        <div class="legal-card__head">
+          <span class="legal-tag legal-tag--prohibited">Prohibited</span>
+          <span class="legal-card__title">Account Theft & Guest Accounts</span>
         </div>
         <p>You may not access, use, or impersonate another player's account without their explicit permission. bonk.io guest accounts are not permitted on Bonkverse.</p>
       </div>
-      <div class="rule-card">
-        <div class="rule-card-header">
-          <span class="rule-tag prohibited">Prohibited</span>
-          <span class="rule-card-title">Impersonation</span>
+      <div class="legal-card">
+        <div class="legal-card__head">
+          <span class="legal-tag legal-tag--prohibited">Prohibited</span>
+          <span class="legal-card__title">Impersonation</span>
         </div>
         <p>You may not impersonate another player, community figure, or Bonkverse staff member. Accounts found to be impersonating others may be removed.</p>
       </div>
     </div>
-  </div>
-
-  <!-- 3 -->
-  <div class="terms-section" id="content">
-    <div class="terms-section-title">
-      <i data-lucide="image"></i> 3. Content & Uploads
-    </div>
+  </section>
+  <section id="content">
+    <h2><i data-lucide="image" aria-hidden="true"></i>3. Content & Uploads</h2>
     <p>
       Bonkverse is open to players of all ages. We recognize that the bonk.io community includes young
       teens and a broad, growing audience. We value freedom of expression and want Bonkverse to be a
       creative, welcoming space — but we will not host public content that harms or endangers our community.
     </p>
-    <div class="rule-cards">
-      <div class="rule-card">
-        <div class="rule-card-header">
-          <span class="rule-tag prohibited">Not Allowed</span>
-          <span class="rule-card-title">Harmful or Offensive Public Content</span>
+    <div class="legal-cards">
+      <div class="legal-card">
+        <div class="legal-card__head">
+          <span class="legal-tag legal-tag--prohibited">Not Allowed</span>
+          <span class="legal-card__title">Harmful or Offensive Public Content</span>
         </div>
         <p>
           Publicly visible content must not include: overtly NSFW or sexually explicit material, hate speech,
@@ -127,10 +114,10 @@
           content intended to harass, threaten, or harm any individual or group.
         </p>
       </div>
-      <div class="rule-card">
-        <div class="rule-card-header">
-          <span class="rule-tag note">Note</span>
-          <span class="rule-card-title">Community Standards Apply</span>
+      <div class="legal-card">
+        <div class="legal-card__head">
+          <span class="legal-tag legal-tag--note">Note</span>
+          <span class="legal-card__title">Community Standards Apply</span>
         </div>
         <p>
           We want Bonkverse to feel safe and welcoming for everyone. Content that causes genuine discomfort
@@ -139,22 +126,18 @@
         </p>
       </div>
     </div>
-  </div>
-
-  <!-- 4 -->
-  <div class="terms-section" id="skin-ownership">
-    <div class="terms-section-title">
-      <i data-lucide="layers"></i> 4. Skin Ownership
-    </div>
+  </section>
+  <section id="skin-ownership">
+    <h2><i data-lucide="layers" aria-hidden="true"></i>4. Skin Ownership</h2>
     <p>
       Skins you create on Bonkverse belong to you. Bonkverse does not claim ownership over your creations.
       As the creator, you have full control over what you do with your skin:
     </p>
-    <div class="rule-cards">
-      <div class="rule-card">
-        <div class="rule-card-header">
-          <span class="rule-tag allowed">Your Rights</span>
-          <span class="rule-card-title">What You Can Do With Your Skins</span>
+    <div class="legal-cards">
+      <div class="legal-card">
+        <div class="legal-card__head">
+          <span class="legal-tag legal-tag--allowed">Your Rights</span>
+          <span class="legal-card__title">What You Can Do With Your Skins</span>
         </div>
         <p>
           You are free to share, distribute, monetize, keep private, or collaborate on skins you create.
@@ -162,10 +145,10 @@
           your call as the creator.
         </p>
       </div>
-      <div class="rule-card">
-        <div class="rule-card-header">
-          <span class="rule-tag note">Platform License</span>
-          <span class="rule-card-title">Display on Bonkverse</span>
+      <div class="legal-card">
+        <div class="legal-card__head">
+          <span class="legal-tag legal-tag--note">Platform License</span>
+          <span class="legal-card__title">Display on Bonkverse</span>
         </div>
         <p>
           By uploading a skin to Bonkverse, you grant us a non-exclusive license to display, index, and
@@ -173,10 +156,10 @@
           using or publishing your skin elsewhere.
         </p>
       </div>
-      <div class="rule-card">
-        <div class="rule-card-header">
-          <span class="rule-tag prohibited">Prohibited</span>
-          <span class="rule-card-title">Uploading Others' Work Without Credit</span>
+      <div class="legal-card">
+        <div class="legal-card__head">
+          <span class="legal-tag legal-tag--prohibited">Prohibited</span>
+          <span class="legal-card__title">Uploading Others' Work Without Credit</span>
         </div>
         <p>
           Do not upload skins created by other players without giving proper credit. If you believe your
@@ -184,13 +167,9 @@
         </p>
       </div>
     </div>
-  </div>
-
-  <!-- 5 -->
-  <div class="terms-section" id="conduct">
-    <div class="terms-section-title">
-      <i data-lucide="users"></i> 5. Community Conduct
-    </div>
+  </section>
+  <section id="conduct">
+    <h2><i data-lucide="users" aria-hidden="true"></i>5. Community Conduct</h2>
     <p>
       Bonkverse is a platform open to everyone. We expect all users to treat each other with respect.
       The following behaviors are not tolerated:
@@ -206,23 +185,19 @@
       Bonkverse is meant to be a place where the bonk.io community can grow together. Behavior that
       undermines that — whether or not it fits neatly into the list above — may result in moderation action.
     </p>
-  </div>
-
-  <!-- 6 -->
-  <div class="terms-section" id="api">
-    <div class="terms-section-title">
-      <i data-lucide="code-2"></i> 6. API & Open Source
-    </div>
+  </section>
+  <section id="api">
+    <h2><i data-lucide="code-2" aria-hidden="true"></i>6. API & Open Source</h2>
     <p>
       Bonkverse's source code is open source and publicly available. We welcome the community to learn from
       it, contribute to it, or build on top of it. We also allow use of Bonkverse APIs for personal projects,
       educational work, or additions that benefit the bonk.io community through Bonkverse.
     </p>
-    <div class="rule-cards">
-      <div class="rule-card">
-        <div class="rule-card-header">
-          <span class="rule-tag note">Permission Required</span>
-          <span class="rule-card-title">Using Bonkverse Data or APIs</span>
+    <div class="legal-cards">
+      <div class="legal-card">
+        <div class="legal-card__head">
+          <span class="legal-tag legal-tag--note">Permission Required</span>
+          <span class="legal-card__title">Using Bonkverse Data or APIs</span>
         </div>
         <p>
           Permission to use Bonkverse data or APIs beyond casual personal use remains with Bonkverse.
@@ -230,10 +205,10 @@
           reach out to us first through our Discord server. We're generally open to it.
         </p>
       </div>
-      <div class="rule-card">
-        <div class="rule-card-header">
-          <span class="rule-tag prohibited">Prohibited</span>
-          <span class="rule-card-title">DDoS & Abuse</span>
+      <div class="legal-card">
+        <div class="legal-card__head">
+          <span class="legal-tag legal-tag--prohibited">Prohibited</span>
+          <span class="legal-card__title">DDoS & Abuse</span>
         </div>
         <p>
           Deliberately overloading, disrupting, or attempting to take down Bonkverse infrastructure is
@@ -242,13 +217,9 @@
         </p>
       </div>
     </div>
-  </div>
-
-  <!-- 7 -->
-  <div class="terms-section" id="moderation">
-    <div class="terms-section-title">
-      <i data-lucide="shield"></i> 7. Moderation
-    </div>
+  </section>
+  <section id="moderation">
+    <h2><i data-lucide="shield" aria-hidden="true"></i>7. Moderation</h2>
     <p>
       Bonkverse staff and admins reserve the right to remove content or restrict access to any account
       that harms, endangers, discriminates against, offends, or causes discomfort to members of our community —
@@ -262,13 +233,9 @@
       If you believe a moderation action was made in error, you may appeal by contacting us through our
       Discord server.
     </p>
-  </div>
-
-  <!-- 8 -->
-  <div class="terms-section" id="disclaimer">
-    <div class="terms-section-title">
-      <i data-lucide="alert-circle"></i> 8. Disclaimer & Limitation of Liability
-    </div>
+  </section>
+  <section id="disclaimer">
+    <h2><i data-lucide="alert-circle" aria-hidden="true"></i>8. Disclaimer & Limitation of Liability</h2>
     <p>
       Bonkverse is a fan-made platform provided as-is. We are not affiliated with the creators of bonk.io
       and make no claims of ownership over the bonk.io game, its assets, or trademarks.
@@ -286,44 +253,38 @@
       Bonkverse is built and maintained by a small team. We do our best to keep it running well, but
       we cannot guarantee uninterrupted availability or data preservation in all circumstances.
     </p>
-  </div>
-
-  <!-- 9 -->
-  <div class="terms-section" id="changes">
-    <div class="terms-section-title">
-      <i data-lucide="refresh-cw"></i> 9. Changes to These Terms
-    </div>
+  </section>
+  <section id="changes">
+    <h2><i data-lucide="refresh-cw" aria-hidden="true"></i>9. Changes to These Terms</h2>
     <p>
       We may update these terms as the platform grows and evolves. When we do, the "Last updated" date
       at the top of this page will change. Continued use of Bonkverse after an update constitutes
       acceptance of the revised terms.
     </p>
-  </div>
-
-  <!-- 10 -->
-  <div class="terms-contact" id="contact">
-    <div class="terms-section-title">
-      <i data-lucide="mail"></i> 10. Contact
-    </div>
-    <p class="terms-contact-intro">
+  </section>
+  <section id="contact">
+    <h2><i data-lucide="mail" aria-hidden="true"></i>10. Contact</h2>
+    <p class="legal__intro">
       Questions about these terms, moderation appeals, API access requests, or data inquiries:
     </p>
-    <div class="contact-row">
-      <i data-lucide="message-circle"></i>
+    <div class="legal__contact">
+      <i data-lucide="message-circle" aria-hidden="true"></i>
       <span>Discord:</span>
       <a href="https://discord.gg/2Zx7Cwhr4Z" target="_blank" rel="noopener">discord.gg/2Zx7Cwhr4Z</a>
     </div>
-    <div class="contact-row">
-      <i data-lucide="github"></i>
+    <div class="legal__contact">
+      <i data-lucide="github" aria-hidden="true"></i>
       <span>GitHub:</span>
       <a href="https://github.com/orgs/Bonkverse/repositories" target="_blank" rel="noopener">github.com/orgs/Bonkverse</a>
     </div>
-    <div class="contact-row">
-      <i data-lucide="globe"></i>
+    <div class="legal__contact">
+      <i data-lucide="globe" aria-hidden="true"></i>
       <span>Website:</span>
       <a href="https://bonkverse.io">bonkverse.io</a>
     </div>
-  </div>
+  </section>
 
+</article>
+</div>
 </div>
 {% endblock %}

@@ -172,3 +172,16 @@ def test_your_list_shows_only_your_keys(logged_in_client):
     page = logged_in_client.get(KEYS).content.decode()
     assert "Mine" in page
     assert "Someone else" not in page
+
+
+@pytest.mark.django_db
+def test_keys_and_terms_pages_are_on_components(logged_in_client, user):
+    """RFC-0002: no page uses the old player_profile.css any more. Revoke asks
+    in a bv-dialog (ui.js) instead of window.confirm."""
+    create(logged_in_client, agree="on")
+    keys = logged_in_client.get(reverse("developers:developer_keys")).content.decode()
+    terms = logged_in_client.get(reverse("developers:developer_terms")).content.decode()
+    for html in (keys, terms):
+        assert 'class="content site-page"' in html and "player_profile.css" not in html
+    assert 'data-bv-dialog-open="revoke-' in keys and 'class="bv-dialog"' in keys
+    assert "developers.js" not in keys

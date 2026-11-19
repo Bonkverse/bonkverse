@@ -1,250 +1,88 @@
-/* Community stats (/social-stats/). Template: players/social_stats.html */
+/* social_stats.css — Community stats (/social-stats/, players/social_stats.html).
+   Lays out Bonkverse/ui components; --bv-* tokens only. Numbers are in the
+   text color (the design review's neon green is gone). */
 
-.stats-page {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0 24px 60px;
-  text-align: left;
-}
+.ss { padding-bottom: var(--bv-space-8); }
 
-.stats-hero {
-  text-align: center;
-  padding: 40px 0 32px;
-}
-
-.stats-hero h1 { font-size: 2rem; margin: 0 0 8px; color: var(--bv-text); }
-.stats-hero p  { color: var(--bv-muted); margin: 0; font-size: 1rem; }
-
-/* ── Headline cards ── */
-.stat-cards {
+.ss-tiles {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 16px;
-  margin-bottom: 40px;
+  grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+  gap: var(--bv-space-3);
+  margin: 0 0 var(--bv-space-6);
 }
-
-.stat-card {
-  background: var(--bv-card);
-  border: 1px solid var(--bv-outline);
-  border-radius: 12px;
-  padding: 20px 16px;
-  text-align: center;
-}
-
-.stat-card .stat-value {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: var(--bv-link);
-  display: block;
-  margin-bottom: 4px;
-}
-
-.stat-card .stat-label {
-  font-size: 0.82rem;
-  color: var(--bv-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-/* ── Section title ── */
-.section-title {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--bv-text);
-  margin: 0 0 14px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--bv-outline);
+.ss-tile {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column-reverse;
+  gap: 2px;
+  padding: var(--bv-space-4);
+  border: 1px solid var(--bv-outline);
+  border-radius: var(--bv-radius);
+  background: var(--bv-card);
+}
+.ss-tile dt { color: var(--bv-muted); font-size: var(--bv-text-sm); }
+.ss-tile dd {
+  margin: 0;
+  font-size: var(--bv-text-2xl);
+  line-height: var(--bv-leading-2xl);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
-/* ── Grid layout ── */
-.stats-grid {
+.ss-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr));
+  align-items: start;
+  gap: var(--bv-space-5);
 }
-
-@media (max-width: 720px) { .stats-grid { grid-template-columns: 1fr; } }
-
-.stats-panel {
-  background: var(--bv-card);
-  border: 1px solid var(--bv-outline);
-  border-radius: 12px;
-  padding: 20px;
-}
-
-.stats-panel--spaced { margin-bottom: 24px; }
-
-/* ── Leaderboard rows ── */
-.lb-row {
+.ss-title {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 7px 0;
-  border-bottom: 1px solid var(--bv-outline);
-  font-size: 0.87rem;
+  gap: var(--bv-space-2);
+  font-size: var(--bv-text-lg);
+  line-height: var(--bv-leading-lg);
 }
+.ss-title svg.lucide { width: 20px; height: 20px; flex: none; color: var(--bv-link); }
 
-.lb-row:last-child { border-bottom: none; }
-
-.lb-rank {
-  width: 22px;
-  text-align: right;
-  color: var(--bv-muted);
-  font-size: 0.77rem;
-  flex-shrink: 0;
-}
-
-.lb-rank.gold   { color: var(--bv-gold); font-weight: 700; }
-.lb-rank.silver { color: var(--bv-muted); font-weight: 700; }
-.lb-rank.bronze { color: var(--bv-gold); font-weight: 700; }
-
-.lb-name {
-  flex: 1;
-  color: var(--bv-text);
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.lb-meta  { color: var(--bv-muted); font-size: 0.78rem; white-space: nowrap; }
-.lb-date  { color: var(--bv-muted); font-size: 0.78rem; white-space: nowrap; }
-.lb-value { color: var(--bv-link); font-weight: 700; font-size: 0.9rem; white-space: nowrap; }
-
-/* ── Bar charts ── */
-.bar-wrap { display: flex; flex-direction: column; gap: 9px; }
-
-.bar-row {
-  display: flex;
+/* Ranked rows: rank, name (with a line under it), one number. */
+.ss-rows, .ss-bars, .ss-flash { margin: 0; padding: 0; list-style: none; }
+.ss-row {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
   align-items: center;
-  gap: 10px;
-  font-size: 0.83rem;
+  gap: var(--bv-space-3);
+  min-height: 52px;
+  padding: var(--bv-space-1) 0;
 }
+.ss-row + .ss-row { border-top: 1px solid var(--bv-outline); }
+.ss-row__rank { color: var(--bv-muted); font-size: var(--bv-text-sm); font-variant-numeric: tabular-nums; text-align: right; }
+.ss-row__who { display: flex; flex-direction: column; min-width: 0; }
+.ss-row__who a { font-weight: 600; text-decoration: none; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ss-row__who a:hover { text-decoration: underline; }
+.ss-row__num { font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.ss-row__num--quiet { color: var(--bv-muted); font-weight: 500; }
 
-.bar-label {
-  width: 72px;
-  flex-shrink: 0;
-  color: var(--bv-muted);
-  text-align: right;
-  font-size: 0.8rem;
-}
-
-.bar-outer {
-  flex: 1;
-  background: color-mix(in srgb, var(--bv-text) 7%, transparent);
-  border-radius: 4px;
-  height: 17px;
-  overflow: hidden;
-}
-
-/* The template sets each bar's length as --bar (style="--bar: 42%"). */
-.bar-inner {
-  width: var(--bar, 0%);
-  height: 100%;
-  border-radius: 4px;
-  min-width: 2px;
-  transition: width 0.5s ease;
-}
-
-.bar-teal   { background: var(--site-series-1); }
-.bar-purple { background: var(--site-series-4); }
-.bar-blue   { background: var(--site-series-2); }
-
-.bar-count {
-  width: 52px;
-  text-align: right;
-  color: var(--bv-text);
-  font-size: 0.8rem;
-  flex-shrink: 0;
-}
-
-.scale-note { font-size: 0.75rem; color: var(--bv-muted); margin: 0 0 10px; }
-
-/* ── Graph density ── */
-.bar-outer--density { height: 22px; margin-bottom: 6px; }
-
-.density-scale {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.75rem;
-  color: var(--bv-muted);
-  margin-bottom: 10px;
-}
-
-.density-value {
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: var(--bv-link);
-  margin-bottom: 4px;
-}
-
-.density-note {
-  font-size: 0.8rem;
-  color: var(--bv-muted);
-  line-height: 1.6;
-  margin-top: 14px;
-}
-
-.density-note strong { color: var(--bv-text); }
-
-/* ── Flash chips ── */
-.flash-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-
-.flash-chip {
-  background: rgba(124,58,237,0.2);
-  border: 1px solid rgba(124,58,237,0.4);
-  border-radius: 999px;
-  padding: 4px 12px;
-  font-size: 0.82rem;
-  color: #c4b5fd;
-  display: flex;
+/* Bar lists: label, bar, count. */
+.ss-bar {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr) 5rem;
   align-items: center;
-  gap: 6px;
+  gap: var(--bv-space-3);
+  min-height: 32px;
 }
-
-.flash-chip .chip-count {
-  background: rgba(124,58,237,0.45);
-  border-radius: 999px;
-  padding: 1px 7px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--bv-text);
+.ss-bar__label { font-size: var(--bv-text-sm); font-weight: 600; font-variant-numeric: tabular-nums; }
+.ss-bar__bar {
+  height: 10px;
+  border-radius: 5px;
+  background: linear-gradient(var(--bv-link), var(--bv-link)) no-repeat left / max(var(--bar), 3px) 100%, var(--bv-input);
 }
+.ss-bar__num { font-size: var(--bv-text-sm); font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
 
-/* ── CTA ── */
-.cta-strip {
-  margin-top: 36px;
-  background:color-mix(in srgb, var(--bv-link) 15%, transparent);
-  border: 1px solid var(--bv-outline);
-  border-radius: 12px;
-  padding: 24px;
-  text-align: center;
-}
+.ss-flash { display: flex; flex-wrap: wrap; gap: var(--bv-space-2); }
+.ss-flash .bv-pill { gap: var(--bv-space-2); }
+.ss-flash__n { color: var(--bv-muted); font-variant-numeric: tabular-nums; }
 
-.cta-strip h3 { margin: 0 0 8px; color: var(--bv-text); font-size: 1.1rem; }
-.cta-strip p  { margin: 0 0 16px; color: var(--bv-muted); font-size: 0.9rem; }
+.ss-cta { max-width: none; margin-top: var(--bv-space-6); }
 
-.cta-btn {
-  display: inline-block;
-  background: var(--bv-action);
-  border: 1px solid var(--bv-action-border);
-  color: var(--bv-action-ink);
-  padding: 10px 24px;
-  border-radius: 8px;
-  text-decoration: none;
-  font-weight: 700;
-  font-size: 0.95rem;
-  transition: background 0.2s ease;
-}
-
-.cta-btn:hover { background: var(--bv-action-hover); border-color: var(--bv-action-ink); }
-
-.subtext {
-  font-size: 0.8rem;
-  color: var(--bv-muted);
-  margin: 0 0 12px;
+@media (max-width: 640px) {
+  .ss-bar { grid-template-columns: 5.5rem minmax(0, 1fr) 4rem; gap: var(--bv-space-2); }
 }

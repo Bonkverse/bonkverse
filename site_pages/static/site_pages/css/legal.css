@@ -1,0 +1,85 @@
+/* legal.css — the privacy policy and terms of service
+   (site_pages/privacy.html, terms.html). Read like the Developers page: a
+   contents list on the left on wide screens, one column of sections.
+   Bonkverse/ui components; --bv-* tokens only. */
+
+.legal { padding-bottom: var(--bv-space-8); }
+.legal__layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--bv-space-8); }
+
+.legal__toc ol { margin: var(--bv-space-2) 0 0; padding: 0; list-style: none; counter-reset: toc; }
+.legal__toc li { counter-increment: toc; }
+.legal__toc a {
+  display: flex;
+  align-items: center;
+  gap: var(--bv-space-2);
+  min-height: 36px;
+  color: var(--bv-muted);
+  font-size: var(--bv-text-sm);
+  font-weight: 500;
+  text-decoration: none;
+}
+.legal__toc a::before { content: counter(toc) "."; min-width: 1.4em; font-variant-numeric: tabular-nums; }
+.legal__toc a:hover { color: var(--bv-link); }
+
+.legal__body { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--bv-space-12); max-width: 760px; }
+.legal__body section { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--bv-space-3); scroll-margin-top: calc(var(--bv-header-height) + var(--bv-space-4)); }
+.legal__body h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--bv-space-2);
+  padding-bottom: var(--bv-space-2);
+  border-bottom: 1px solid var(--bv-outline);
+  font-size: var(--bv-text-xl);
+  line-height: var(--bv-leading-xl);
+}
+.legal__body h2 svg.lucide { width: 20px; height: 20px; flex: none; color: var(--bv-link); }
+.legal__body p, .legal__body li { max-width: 68ch; line-height: 1.65; }
+.legal__body ul, .legal__body ol { margin: 0; padding-left: 1.3em; }
+.legal__body li + li { margin-top: var(--bv-space-1); }
+.legal__notice { max-width: none; }
+.legal__intro { color: var(--bv-muted); }
+
+/* Cards: what we collect (privacy) and what's allowed (terms). */
+.legal-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: var(--bv-space-3); }
+.legal-card {
+  display: grid;
+  gap: var(--bv-space-2);
+  padding: var(--bv-space-4);
+  border: 1px solid var(--bv-outline);
+  border-radius: var(--bv-radius);
+  background: var(--bv-card);
+}
+.legal-card p { margin: 0; color: var(--bv-muted); font-size: var(--bv-text-sm); line-height: 1.55; }
+.legal-card__head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--bv-space-2); }
+.legal-card__title { font-weight: 700; }
+
+/* Tags: a word with an outline, colored by meaning; the word carries it. */
+.legal-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 var(--bv-space-2);
+  border: 1px solid var(--bv-link);
+  border-radius: var(--bv-radius-pill);
+  color: var(--bv-text);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.legal-tag--allowed, .legal-tag--ext { background: var(--bv-selected); }
+.legal-tag--prohibited { border-color: var(--bv-danger-border); background: var(--bv-danger-surface); color: var(--bv-danger); }
+.legal-tag--note { border-color: var(--bv-control); }
+
+.legal__contact { display: flex; flex-wrap: wrap; align-items: center; gap: var(--bv-space-2); min-height: var(--bv-target); }
+.legal__contact span { color: var(--bv-muted); }
+.legal__contact a { overflow-wrap: anywhere; }
+
+@media (min-width: 1000px) {
+  .legal__layout { grid-template-columns: 220px minmax(0, 1fr); }
+  .legal__toc { position: sticky; top: calc(var(--bv-header-height) + var(--bv-space-6)); align-self: start; }
+}
+@media (max-width: 999px) {
+  /* On phones the contents list sits at the top, like a short index. */
+  .legal__toc { padding: var(--bv-space-4); border: 1px solid var(--bv-outline); border-radius: var(--bv-radius); background: var(--bv-card); }
+}

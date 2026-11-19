@@ -49,6 +49,7 @@ const PAGES = [
   ["/developers/", "developers", false],
   ["/login/", "login", false],
   ["/privacy/", "privacy", false],
+  ["/terms/", "terms", false],
   ["/player/ui-check-staff/", "profile", true], // your own profile: Upload and settings in the header
   ["/player/ui-check-staff/friends/", "profile-friends", false],
   ["/player/no-such-player-here/", "player-not-found", false],
@@ -56,6 +57,7 @@ const PAGES = [
   ["/upload/", "upload", true],
   ["/settings/profile/", "settings", true],
   ["/developers/keys/", "api-keys", true],
+  ["/developers/terms/", "api-terms", false],
   ["/moderation/", "moderation", true], // staff only: --session of a staff account
   ["/staff/", "staff", true],
 ];

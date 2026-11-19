@@ -2,188 +2,135 @@
 {% load static %}
 
 {% block title %}Community stats · Bonkverse{% endblock %}
+{% block content_class %}site-page{% endblock %}
+
+{% block social_meta %}
+<meta name="description" content="bonk.io community stats from Bonkverse: players, friendships, the most connected and oldest accounts, and the best-remembered Flash-era players.">
+{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'players/css/social_stats.css' %}">
 {% endblock %}
 
 {% block content %}
-
-<div class="stats-page">
-
-  <!-- Hero -->
-  <div class="stats-hero">
-    <h1>🌐 Bonk.io Community Graph</h1>
-    <p>Live stats built from friend lists collected when players log into Bonkverse.</p>
-  </div>
-
-  <!-- Headline cards -->
-  <div class="stat-cards">
-    <div class="stat-card">
-      <span class="stat-value">{{ total_players|floatformat:0 }}</span>
-      <span class="stat-label">Players discovered</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-value">{{ total_edges|floatformat:0 }}</span>
-      <span class="stat-label">Friendship edges</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-value">{{ synced_players|floatformat:0 }}</span>
-      <span class="stat-label">Players synced</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-value">{{ total_flash|floatformat:0 }}</span>
-      <span class="stat-label">Flash-era friends</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-value">{{ density_pct }}</span>
-      <span class="stat-label">Graph density %</span>
+{% comment %}
+Community stats (players/social_stats.py) on Bonkverse/ui components; layout
+in players/css/social_stats.css. Design review: numbers with thousands
+separators, plain names ("Friendships"), no graph density, numbers in the
+text color, no emoji. Player names link to their profiles.
+{% endcomment %}
+<div class="bv-main ss">
+  <div class="bv-page-header">
+    <div class="bv-page-header__text">
+      <span class="bv-eyebrow">Players</span>
+      <h1>Community stats</h1>
+      <p class="bv-lead">Built from the friend lists Bonkverse sees when players sign in, and from bonk.io account IDs.</p>
     </div>
   </div>
 
-  <!-- Row 1: Most connected + Oldest accounts -->
-  <div class="stats-grid">
+  <dl class="ss-tiles">
+    <div class="ss-tile"><dt>Players found</dt><dd>{{ total_players|floatformat:"0g" }}</dd></div>
+    <div class="ss-tile"><dt>Friendships</dt><dd>{{ total_edges|floatformat:"0g" }}</dd></div>
+    <div class="ss-tile"><dt>Friend lists synced</dt><dd>{{ synced_players|floatformat:"0g" }}</dd></div>
+    <div class="ss-tile"><dt>Flash-era friends</dt><dd>{{ total_flash|floatformat:"0g" }}</dd></div>
+  </dl>
 
-    <div class="stats-panel">
-      <div class="section-title"><i data-lucide="users"></i> Most Connected Players</div>
-      {% for p in most_connected %}
-      <div class="lb-row">
-        <span class="lb-rank {% if forloop.counter == 1 %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">{{ forloop.counter }}</span>
-        <span class="lb-name" title="{{ p.username }}">{{ p.username }}</span>
-        {% if p.est_date %}<span class="lb-date">{{ p.est_date }}</span>{% endif %}
-        <span class="lb-value">{{ p.last_friend_count }}</span>
-      </div>
-      {% endfor %}
-    </div>
+  <div class="ss-grid">
+    <section class="bv-card" aria-labelledby="ss-connected">
+      <h2 class="ss-title" id="ss-connected"><i data-lucide="users" aria-hidden="true"></i>Most friends</h2>
+      <ol class="ss-rows">
+        {% for p in most_connected %}
+          <li class="ss-row">
+            <span class="ss-row__rank">{{ forloop.counter }}</span>
+            <span class="ss-row__who"><a href="{{ p.url }}">{{ p.username }}</a>{% if p.est_date %}<span class="bv-hint">Joined ≈ {{ p.est_date }}</span>{% endif %}</span>
+            <span class="ss-row__num">{{ p.last_friend_count|floatformat:"0g" }}</span>
+          </li>
+        {% empty %}
+          <li class="bv-muted">No friend lists yet.</li>
+        {% endfor %}
+      </ol>
+    </section>
 
-    <div class="stats-panel">
-      <div class="section-title"><i data-lucide="clock"></i> Oldest Known Accounts</div>
-      <p class="subtext">Lower bonk_id = earlier registration. Dates are estimated.</p>
-      {% for p in oldest_accounts %}
-      <div class="lb-row">
-        <span class="lb-rank {% if forloop.counter == 1 %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">{{ forloop.counter }}</span>
-        <span class="lb-name" title="{{ p.username }}">{{ p.username }}</span>
-        {% if p.est_date %}<span class="lb-date">≈ {{ p.est_date }}</span>{% endif %}
-        <span class="lb-meta">#{{ p.bonk_id }}</span>
-      </div>
-      {% endfor %}
-    </div>
+    <section class="bv-card" aria-labelledby="ss-oldest">
+      <h2 class="ss-title" id="ss-oldest"><i data-lucide="clock" aria-hidden="true"></i>Oldest known accounts</h2>
+      <p class="bv-hint">A lower account ID means an older account. Dates are estimated.</p>
+      <ol class="ss-rows">
+        {% for p in oldest_accounts %}
+          <li class="ss-row">
+            <span class="ss-row__rank">{{ forloop.counter }}</span>
+            <span class="ss-row__who"><a href="{{ p.url }}">{{ p.username }}</a><span class="bv-hint">DBID {{ p.bonk_id }}</span></span>
+            <span class="ss-row__num ss-row__num--quiet">{% if p.est_date %}≈ {{ p.est_date }}{% endif %}</span>
+          </li>
+        {% empty %}
+          <li class="bv-muted">No accounts yet.</li>
+        {% endfor %}
+      </ol>
+    </section>
 
-  </div>
-
-  <!-- Row 2: Registration year chart + Friend distribution -->
-  <div class="stats-grid">
-
-    <div class="stats-panel">
-      <div class="section-title"><i data-lucide="bar-chart-2"></i> Players by Registration Year</div>
-      <p class="subtext">Estimated from bonk_id using community-tracked creation dates.</p>
-      <div class="bar-wrap">
+    <section class="bv-card" aria-labelledby="ss-years">
+      <h2 class="ss-title" id="ss-years"><i data-lucide="calendar" aria-hidden="true"></i>Players by year joined</h2>
+      <p class="bv-hint">Estimated from account IDs and community-collected creation dates.</p>
+      <ol class="ss-bars">
         {% for row in year_distribution %}
-        <div class="bar-row">
-          <span class="bar-label">{{ row.year }}</span>
-          <div class="bar-outer">
-            <div class="bar-inner bar-teal"
-                 style="--bar: {% widthratio row.player_count year_max 100 %}%">
-            </div>
-          </div>
-          <span class="bar-count">{{ row.player_count }}</span>
-        </div>
+          <li class="ss-bar">
+            <span class="ss-bar__label">{{ row.year }}</span>
+            <span class="ss-bar__bar" style="--bar: {% widthratio row.player_count year_max 100 %}%" aria-hidden="true"></span>
+            <span class="ss-bar__num">{{ row.player_count|floatformat:"0g" }}</span>
+          </li>
         {% endfor %}
-      </div>
-    </div>
+      </ol>
+    </section>
 
-    <div class="stats-panel">
-      <div class="section-title"><i data-lucide="pie-chart"></i> Friend Count Distribution</div>
-      <p class="subtext">How social is the bonk.io playerbase?</p>
-      <p class="scale-note">
-        Bar widths use a log scale so smaller groups are visible.
-      </p>
-      <div class="bar-wrap">
+    <section class="bv-card" aria-labelledby="ss-friends">
+      <h2 class="ss-title" id="ss-friends"><i data-lucide="user-plus" aria-hidden="true"></i>Players by number of friends</h2>
+      <p class="bv-hint">Bars use a log scale so the small groups stay visible next to the big ones.</p>
+      <ol class="ss-bars">
         {% for row in friend_distribution %}
-        <div class="bar-row">
-          <span class="bar-label">{{ row.bracket }}</span>
-          <div class="bar-outer">
-            <div class="bar-inner bar-purple"
-                 style="--bar: {{ row.bar_width }}%">
-            </div>
-          </div>
-          <span class="bar-count">{{ row.player_count }}</span>
-        </div>
+          <li class="ss-bar">
+            <span class="ss-bar__label">{{ row.bracket }}</span>
+            <span class="ss-bar__bar" style="--bar: {{ row.bar_width }}%" aria-hidden="true"></span>
+            <span class="ss-bar__num">{{ row.player_count|floatformat:"0g" }}</span>
+          </li>
         {% endfor %}
-      </div>
-    </div>
+      </ol>
+    </section>
 
+    <section class="bv-card" aria-labelledby="ss-gains">
+      <h2 class="ss-title" id="ss-gains"><i data-lucide="trending-up" aria-hidden="true"></i>Biggest friend jumps</h2>
+      <p class="bv-hint">The most friends gained between two syncs of one player's list.</p>
+      <ol class="ss-rows">
+        {% for g in biggest_gains %}
+          <li class="ss-row">
+            <span class="ss-row__rank">{{ forloop.counter }}</span>
+            <span class="ss-row__who"><a href="{{ g.url }}">{{ g.username }}</a><span class="bv-hint">{{ g.captured_at|date:"M j, Y" }}</span></span>
+            <span class="ss-row__num">+{{ g.gained|floatformat:"0g" }}</span>
+          </li>
+        {% empty %}
+          <li class="bv-muted">Not enough syncs yet.</li>
+        {% endfor %}
+      </ol>
+    </section>
+
+    <section class="bv-card" aria-labelledby="ss-flash">
+      <h2 class="ss-title" id="ss-flash"><i data-lucide="zap" aria-hidden="true"></i>Best-remembered Flash-era players</h2>
+      <p class="bv-hint">Names on more than one player's Flash friend list, from before Flash ended in 2020. The number is how many lists.</p>
+      <ul class="ss-flash">
+        {% for f in top_flash %}
+          <li class="bv-pill">{{ f.name }} <span class="ss-flash__n">{{ f.times_listed|floatformat:"0g" }}</span></li>
+        {% empty %}
+          <li class="bv-muted">None yet.</li>
+        {% endfor %}
+      </ul>
+    </section>
   </div>
 
-  <!-- Row 3: Graph density + Biggest gains -->
-  <div class="stats-grid">
-
-    <div class="stats-panel">
-      <div class="section-title"><i data-lucide="activity"></i> Social Graph Density</div>
-      <p class="subtext">What % of all possible friendships are recorded?</p>
-      <div class="density-value">{{ density_pct }}%</div>
-      <div class="bar-outer bar-outer--density">
-        <div class="bar-inner bar-blue"
-             style="--bar: {% widthratio density_pct 1 100 %}%">
-        </div>
-      </div>
-      <div class="density-scale">
-        <span>0%</span><span>0.5%</span><span>1%+</span>
-      </div>
-      <div class="density-note">
-        <strong>{{ total_edges|floatformat:0 }}</strong> edges recorded<br>
-        <strong>{{ possible_edges|floatformat:0 }}</strong> possible edges<br>
-        Real social networks are typically 0.1–1% dense.
-        The graph grows every time a player logs in.
-      </div>
-    </div>
-
-    <div class="stats-panel">
-      <div class="section-title"><i data-lucide="trending-up"></i> Biggest Friend Gains</div>
-      <p class="subtext">Largest single-session friend count increases</p>
-      {% for g in biggest_gains %}
-      <div class="lb-row">
-        <span class="lb-rank {% if forloop.counter == 1 %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">{{ forloop.counter }}</span>
-        <span class="lb-name" title="{{ g.username }}">{{ g.username }}</span>
-        <span class="lb-date">{{ g.captured_at|date:"M j" }}</span>
-        <span class="lb-value">+{{ g.gained }}</span>
-      </div>
-      {% endfor %}
-    </div>
-
+  <div class="bv-notice ss-cta">
+    <i data-lucide="{% if user.is_authenticated %}search{% else %}log-in{% endif %}" aria-hidden="true"></i>
+    {% if user.is_authenticated %}
+      <span>Your friends are in here somewhere. <a href="{% url 'players:players_directory' %}">Search players</a> to find them, or check whether your Flash-era friends are still around.</span>
+    {% else %}
+      <span>Want to be counted? <a href="{% url 'accounts:login' %}">Sign in with your bonk.io account</a> and Bonkverse syncs your friend list.</span>
+    {% endif %}
   </div>
-
-  <!-- Flash friends -->
-  <div class="stats-panel stats-panel--spaced">
-    <div class="section-title"><i data-lucide="zap"></i> Most Remembered Flash-Era Players</div>
-    <p class="subtext">
-      Names that appeared in multiple players' Flash friend lists —
-      the well-known players from before Flash died (~2020).
-    </p>
-    <div class="flash-chips">
-      {% for f in top_flash %}
-      <div class="flash-chip">
-        {{ f.name }}
-        <span class="chip-count">×{{ f.times_listed }}</span>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-
-  <!-- CTA -->
-  {% if not user.is_authenticated %}
-  <div class="cta-strip">
-    <h3>Want to appear in the graph?</h3>
-    <p>Log in with your Bonk.io account to sync your friends list and see where you fit.</p>
-    <a href="{% url 'accounts:login' %}" class="cta-btn">Log in with Bonk.io</a>
-  </div>
-  {% else %}
-  <div class="cta-strip">
-    <h3>Your friends are in here somewhere.</h3>
-    <p>Search the player database to find people you know, or check if your Flash-era friends are still around.</p>
-    <a href="{% url 'players:players_directory' %}" class="cta-btn">Search Players</a>
-  </div>
-  {% endif %}
-
 </div>
 {% endblock %}

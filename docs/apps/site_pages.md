@@ -26,7 +26,7 @@ site_pages/
   views/pages.py, views/tools.py
   urls.py                         # included at "" from bonk_skin_search/urls.py
   templates/site_pages/           # home, privacy, terms, staff, map_decoder
-  static/site_pages/css/          # privacy.css, terms.css
+  static/site_pages/css/          # legal.css (privacy, terms), home.css, map_decoder.css
   static/site_pages/js/           # map_decoder.js
 ```
 

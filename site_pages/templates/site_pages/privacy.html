@@ -3,22 +3,26 @@
 
 {% block title %}Privacy policy · Bonkverse{% endblock %}
 
+{% block content_class %}site-page{% endblock %}
+
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'site_pages/css/privacy.css' %}">
+<link rel="stylesheet" href="{% static 'site_pages/css/legal.css' %}">
 {% endblock %}
 
 {% block content %}
-
-<div class="privacy-page">
-
-  <div class="privacy-hero">
-    <h1>Privacy Policy</h1>
-    <p>Last updated: November 18, 2026</p>
+<div class="bv-main legal">
+  <div class="bv-page-header">
+    <div class="bv-page-header__text">
+      <span class="bv-eyebrow">Bonkverse</span>
+      <h1>Privacy Policy</h1>
+      <p class="bv-muted">Last updated: November 18, 2026</p>
+    </div>
   </div>
 
-  <div class="privacy-toc">
-    <p>Contents</p>
-    <ol>
+  <div class="legal__layout">
+    <nav class="legal__toc" aria-label="Contents">
+      <p class="bv-eyebrow">Contents</p>
+      <ol>
       <li><a href="#what-is-bonkverse">What Bonkverse Is</a></li>
       <li><a href="#what-we-collect">What We Collect</a></li>
       <li><a href="#how-we-use">How We Use Your Data</a></li>
@@ -29,22 +33,21 @@
       <li><a href="#your-rights">Your Rights</a></li>
       <li><a href="#changes">Changes to This Policy</a></li>
       <li><a href="#contact">Contact</a></li>
-    </ol>
-  </div>
+      </ol>
+    </nav>
 
-  <div class="privacy-section">
+    <article class="legal__body">
+<section>
     <p>
       Bonkverse ("we", "us", or "our") operates the website at <strong>bonkverse.io</strong>
       and the <strong>Bonkverse browser extension</strong>. This policy explains what data
       we collect, why we collect it, and how it is used. We are committed to transparency and only collect
       what is necessary to provide our services.
     </p>
-  </div>
+  </section>
 
-  <div class="privacy-section" id="what-is-bonkverse">
-    <div class="privacy-section-title">
-      <i data-lucide="info"></i> 1. What Bonkverse Is
-    </div>
+  <section id="what-is-bonkverse">
+    <h2><i data-lucide="info" aria-hidden="true"></i>1. What Bonkverse Is</h2>
     <p>
       Bonkverse is a community platform for the browser game <strong>bonk.io</strong>.
       It provides a skin library where players can discover, upload, vote on, and apply skins; player profile
@@ -53,77 +56,73 @@
       The Bonkverse browser extension enhances the bonk.io game client with in-game overlays, kill tracking,
       and stat submission.
     </p>
-  </div>
+  </section>
 
-  <div class="privacy-section" id="what-we-collect">
-    <div class="privacy-section-title">
-      <i data-lucide="database"></i> 2. What We Collect
-    </div>
-    <div class="data-cards">
+  <section id="what-we-collect">
+    <h2><i data-lucide="database" aria-hidden="true"></i>2. What We Collect</h2>
+    <div class="legal-cards">
 
-      <div class="data-card">
-        <div class="data-card-header">
-          <span class="data-tag">Website</span>
-          <span class="data-card-title">Bonk.io Account Identity</span>
+      <div class="legal-card">
+        <div class="legal-card__head">
+          <span class="legal-tag">Website</span>
+          <span class="legal-card__title">Bonk.io Account Identity</span>
         </div>
         <p>When you log in to Bonkverse, we collect your bonk.io username and a session token used to verify your identity and apply skins to your in-game skin slots. We do not collect or store your bonk.io password.</p>
       </div>
 
-      <div class="data-card">
-        <div class="data-card-header">
-          <span class="data-tag">Website</span>
-          <span class="data-card-title">Player & Social Data</span>
+      <div class="legal-card">
+        <div class="legal-card__head">
+          <span class="legal-tag">Website</span>
+          <span class="legal-card__title">Player & Social Data</span>
         </div>
         <p>We collect bonk.io player usernames, friends list relationships, and associated game history to build player profiles and our community database. This data comes from the bonk.io platform when players connect their accounts.</p>
       </div>
 
-      <div class="data-card">
-        <div class="data-card-header">
-          <span class="data-tag">Website</span>
-          <span class="data-card-title">Skin Uploads</span>
+      <div class="legal-card">
+        <div class="legal-card__head">
+          <span class="legal-tag">Website</span>
+          <span class="legal-card__title">Skin Uploads</span>
         </div>
         <p>When you upload a skin, we store the skin image data and associate it with your username to give proper credit. Uploaded skins are publicly visible on Bonkverse by default. For skins submitted through BonxBot on Discord, we also store the Discord user ID of the person who submitted it.</p>
       </div>
 
-      <div class="data-card">
-        <div class="data-card-header">
-          <span class="data-tag">Website</span>
-          <span class="data-card-title">Game Replays</span>
+      <div class="legal-card">
+        <div class="legal-card__head">
+          <span class="legal-tag">Website</span>
+          <span class="legal-card__title">Game Replays</span>
         </div>
         <p>We collect bonk.io game replay data to build a searchable replay archive. Replays may include player usernames, match outcomes, and room metadata from public bonk.io games.</p>
       </div>
 
-      <div class="data-card">
-        <div class="data-card-header">
-          <span class="data-tag ext">Extension</span>
-          <span class="data-card-title">In-Game Activity</span>
+      <div class="legal-card">
+        <div class="legal-card__head">
+          <span class="legal-tag legal-tag--ext">Extension</span>
+          <span class="legal-card__title">In-Game Activity</span>
         </div>
         <p>The Bonkverse browser extension tracks in-game events including kills, deaths, wins, losses, and match outcomes while you play bonk.io. This data is sent to Bonkverse to populate your player profile. The extension only operates on bonk.io and does not monitor any other sites.</p>
       </div>
 
-      <div class="data-card">
-        <div class="data-card-header">
-          <span class="data-tag ext">Extension</span>
-          <span class="data-card-title">Authentication Token</span>
+      <div class="legal-card">
+        <div class="legal-card__head">
+          <span class="legal-tag legal-tag--ext">Extension</span>
+          <span class="legal-card__title">Authentication Token</span>
         </div>
         <p>The extension stores your Bonkverse authentication token locally in your browser to keep you logged in between sessions. This token is never shared with third parties.</p>
       </div>
 
-      <div class="data-card">
-        <div class="data-card-header">
-          <span class="data-tag">Developers</span>
-          <span class="data-card-title">API Keys</span>
+      <div class="legal-card">
+        <div class="legal-card__head">
+          <span class="legal-tag">Developers</span>
+          <span class="legal-card__title">API Keys</span>
         </div>
         <p>When you create an API key on the developer portal, we store the name you give it, the contact you provide (such as a Discord username), when you accepted the API terms, and when the key was last used. We store only a hash of the key itself, so we cannot show it to you again.</p>
       </div>
 
     </div>
-  </div>
+  </section>
 
-  <div class="privacy-section" id="how-we-use">
-    <div class="privacy-section-title">
-      <i data-lucide="settings"></i> 3. How We Use Your Data
-    </div>
+  <section id="how-we-use">
+    <h2><i data-lucide="settings" aria-hidden="true"></i>3. How We Use Your Data</h2>
     <ul>
       <li>To display your player profile, stats, and skin library on Bonkverse</li>
       <li>To rank skins on the skin leaderboards</li>
@@ -132,57 +131,47 @@
       <li>To power in-game overlays and stats shown by the Bonkverse extension</li>
       <li>To detect and moderate content that violates our community guidelines</li>
     </ul>
-  </div>
+  </section>
 
-  <div class="privacy-section" id="sharing">
-    <div class="privacy-section-title">
-      <i data-lucide="share-2"></i> 4. Data Sharing
-    </div>
+  <section id="sharing">
+    <h2><i data-lucide="share-2" aria-hidden="true"></i>4. Data Sharing</h2>
     <p>We do not sell your personal data. We do not share your data with third parties except:</p>
     <ul>
       <li><strong>Service providers</strong> — hosting infrastructure (Railway) and CDN/security services (Cloudflare) necessary to operate Bonkverse. These providers process data only as needed to deliver our service.</li>
       <li><strong>The public API</strong> — developers with an API key can read players' levels, level history and game counts collected from public bonk.io replays, the estimated account age, and an image of the skin a player wears in game. The API never returns skin codes or the XP from your own bonk.io login. If you hide the Level section in your profile settings, the API does not return your level either. Developers agree to the <a href="{% url 'developers:developer_terms' %}">API terms</a>, which forbid reselling the data.</li>
       <li><strong>Legal requirements</strong> — if required by law or to protect the safety of our community.</li>
     </ul>
-  </div>
+  </section>
 
-  <div class="privacy-section" id="retention">
-    <div class="privacy-section-title">
-      <i data-lucide="clock"></i> 5. Data Retention
-    </div>
+  <section id="retention">
+    <h2><i data-lucide="clock" aria-hidden="true"></i>5. Data Retention</h2>
     <p>
       Player profile data, game stats, and uploaded skins are retained as long as your account is active
       or as long as they are useful for the community platform. You may request deletion of your data at
       any time by contacting us. Replay data collected from public games may be retained for archival purposes.
     </p>
-  </div>
+  </section>
 
-  <div class="privacy-section" id="ai-tools">
-    <div class="privacy-section-title">
-      <i data-lucide="cpu"></i> 6. AI Tools
-    </div>
+  <section id="ai-tools">
+    <h2><i data-lucide="cpu" aria-hidden="true"></i>6. AI Tools</h2>
     <p>
       We use AI tools including Claude (Anthropic) and ChatGPT (OpenAI) to assist in building and improving
       the Bonkverse platform. We do not share identifiable user data with these tools. Their use is limited
       to development assistance only.
     </p>
-  </div>
+  </section>
 
-  <div class="privacy-section" id="children">
-    <div class="privacy-section-title">
-      <i data-lucide="shield"></i> 7. Children's Privacy
-    </div>
+  <section id="children">
+    <h2><i data-lucide="shield" aria-hidden="true"></i>7. Children's Privacy</h2>
     <p>
       Bonkverse is not directed at children under 13. We do not knowingly collect personal information from
       children under 13. If you believe a child has provided us with personal information, please contact us
       and we will delete it promptly.
     </p>
-  </div>
+  </section>
 
-  <div class="privacy-section" id="your-rights">
-    <div class="privacy-section-title">
-      <i data-lucide="user-check"></i> 8. Your Rights
-    </div>
+  <section id="your-rights">
+    <h2><i data-lucide="user-check" aria-hidden="true"></i>8. Your Rights</h2>
     <p>You have the right to:</p>
     <ul>
       <li>Request access to the data we hold about you</li>
@@ -190,37 +179,35 @@
       <li>Request deletion of your account and associated data</li>
       <li>Opt out of game stat submission by disabling the Bonkverse extension</li>
     </ul>
-  </div>
+  </section>
 
-  <div class="privacy-section" id="changes">
-    <div class="privacy-section-title">
-      <i data-lucide="refresh-cw"></i> 9. Changes to This Policy
-    </div>
+  <section id="changes">
+    <h2><i data-lucide="refresh-cw" aria-hidden="true"></i>9. Changes to This Policy</h2>
     <p>
       We may update this policy as Bonkverse grows and new features are added. When we do, the
       "Last updated" date at the top of this page will change. Continued use of Bonkverse after
       changes constitutes acceptance of the updated policy.
     </p>
-  </div>
+  </section>
 
-  <div class="privacy-contact" id="contact">
-    <div class="privacy-section-title">
-      <i data-lucide="mail"></i> 10. Contact
-    </div>
-    <p class="privacy-contact-intro">
+  <section id="contact">
+    <h2><i data-lucide="mail" aria-hidden="true"></i>10. Contact</h2>
+    <p class="legal__intro">
       For privacy-related questions or data deletion requests, reach us through:
     </p>
-    <div class="contact-row">
-      <i data-lucide="message-circle"></i>
+    <div class="legal__contact">
+      <i data-lucide="message-circle" aria-hidden="true"></i>
       <span>Discord:</span>
       <a href="https://discord.gg/2Zx7Cwhr4Z" target="_blank" rel="noopener">discord.gg/2Zx7Cwhr4Z</a>
     </div>
-    <div class="contact-row">
-      <i data-lucide="globe"></i>
+    <div class="legal__contact">
+      <i data-lucide="globe" aria-hidden="true"></i>
       <span>Website:</span>
       <a href="https://bonkverse.io">bonkverse.io</a>
     </div>
-  </div>
+  </section>
 
+</article>
+</div>
 </div>
 {% endblock %}
