@@ -44,6 +44,7 @@ a.pv-pcard:hover { border-color: var(--bv-link); color: var(--bv-text); text-dec
 .pv-pcard__who { display: flex; flex: 1; flex-direction: column; gap: var(--bv-space-1); min-width: 0; }
 .pv-pcard__name { font-size: var(--bv-text-md); font-weight: 700; white-space: pre-wrap; overflow-wrap: anywhere; }
 .pv-pcard__pills { display: flex; flex-wrap: wrap; gap: var(--bv-space-1); }
+.pv-pcard__id { margin-top: -2px; color: var(--bv-muted); font-size: var(--bv-text-xs); font-variant-numeric: tabular-nums; }
 .pv-pcard__stats {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

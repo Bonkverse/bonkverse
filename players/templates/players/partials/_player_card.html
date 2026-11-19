@@ -2,15 +2,16 @@
 One player card on the Players page (players.selectors.directory → _card),
 per the design review: worn-skin avatar, name, level pill, two stats
 (replays, and friends or "listed by" for Flash friends), "—" when we don't
-know. A card with a profile is one link (no separate "Profile" link); a card
-without one is dashed and quiet, so the two are easy to tell apart. The
-bonk.io account ID lives on the profile, not here.
+know, and the bonk.io account ID (DBID) small under the name when we know
+it. A card with a profile is one link (no separate "Profile" link); a card
+without one is dashed and quiet, so the two are easy to tell apart.
 {% endcomment %}
 {% if card.profile_url %}<a class="pv-pcard" href="{{ card.profile_url }}">{% else %}<div class="pv-pcard pv-pcard--none">{% endif %}
   <span class="pv-pcard__top">
     {% include 'players/partials/_avatar.html' with initials=card.initials skin=card.skin extra="pv-pcard__avatar" %}
     <span class="pv-pcard__who">
       <span class="pv-pcard__name"{% if card.shown_name != card.username %} title="{{ card.username }}" aria-label="{{ card.username }}"{% endif %}>{{ card.shown_name }}</span>
+      {% if card.bonk_id %}<span class="pv-pcard__id">DBID {{ card.bonk_id }}</span>{% endif %}
       <span class="pv-pcard__pills">
         {% if card.level %}<span class="bv-pill">Level {{ card.level }}</span>{% endif %}
         {% if card.member %}<span class="bv-pill bv-pill--accent" title="Signed in to Bonkverse">Member</span>{% endif %}

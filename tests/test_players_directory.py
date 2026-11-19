@@ -187,13 +187,11 @@ def test_navbar_links_to_players(client, mocked_http):
 
 
 @pytest.mark.django_db
-def test_the_account_id_is_on_the_profile_not_the_card(client, mocked_http):
-    """Design review: a DBID on every card is developer data. Searching by
-    it still works; it's shown on the profile."""
+def test_the_account_id_is_on_the_card_and_the_profile(client, mocked_http):
     BonkPlayer.objects.create(bonk_id=13159907, username="dbid haver")
     mock_lookup(mocked_http, [])
     html = client.get(reverse("players:players_directory") + "?q=13159907").content.decode()
-    assert "dbid haver" in html and "DBID 13159907" not in html
+    assert "DBID 13159907" in html
     mocked_http.get(f"{REPLAYS}/api/player/dbid%20haver", json={"error": "x"}, status=404)
     profile = client.get(reverse("players:player_profile", args=["dbid haver"])).content.decode()
     assert "DBID 13159907" in profile
