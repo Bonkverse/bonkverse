@@ -3,6 +3,8 @@ connected players and Flash friends, and account-age estimates
 (players/dbid_lookup.py)."""
 
 import math
+
+from .charts import profile_path
 from core.ratelimits import limit
 from django.shortcuts import render
 from django.db.models import Count
@@ -21,17 +23,15 @@ def social_stats(request):
     total_flash = FlashFriend.objects.count()
     synced_players = BonkPlayer.objects.filter(last_friend_count__gt=0).count()
 
-    possible_edges = (total_players * (total_players - 1)) // 2
-    density_pct = round(total_edges * 100.0 / possible_edges, 6) if possible_edges > 0 else 0
-
     # ── Most connected players (with estimated reg date) ─────────
     most_connected_qs = list(
-        BonkPlayer.objects.filter(bonk_id__gt=0)
+        BonkPlayer.objects.filter(bonk_id__gt=0, last_friend_count__gt=0)
         .order_by("-last_friend_count")
         .values("username", "bonk_id", "last_friend_count", "last_seen")[:20]
     )
     for p in most_connected_qs:
         p["est_date"] = format_registration(p["bonk_id"])
+        p["url"] = profile_path(p["username"])
 
     # ── Oldest accounts (with estimated reg date) ─────────────────
     oldest_qs = list(
@@ -41,6 +41,7 @@ def social_stats(request):
     )
     for p in oldest_qs:
         p["est_date"] = format_registration(p["bonk_id"], fmt="%b %Y")
+        p["url"] = profile_path(p["username"])
 
     # ── Year-by-year registration breakdown ───────────────────────
     all_ids = list(BonkPlayer.objects.filter(bonk_id__gt=0).values_list("bonk_id", flat=True))
@@ -126,6 +127,7 @@ def social_stats(request):
             "count": row[3],
             "gained": row[4],
             "est_date": format_registration(row[1]),
+            "url": profile_path(row[0]),
         }
         for row in gain_rows
         if row[4] is not None
@@ -139,8 +141,6 @@ def social_stats(request):
             "total_edges": total_edges,
             "total_flash": total_flash,
             "synced_players": synced_players,
-            "density_pct": density_pct,
-            "possible_edges": possible_edges,
             "most_connected": most_connected_qs,
             "oldest_accounts": oldest_qs,
             "biggest_gains": biggest_gains,
