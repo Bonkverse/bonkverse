@@ -45,6 +45,8 @@ const PAGES = [
   ["/categories/", "categories", false],
   ["/leaderboards/upvoted/", "leaderboards", false],
   ["/players/", "players", false],
+  ["/serverlist/", "servers", false],
+  ["/submit/", "submit-server", false],
   ["/tools/xp/", "xp", false],
   ["/developers/", "developers", false],
   ["/login/", "login", false],

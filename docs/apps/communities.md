@@ -2,7 +2,7 @@
 
 The Discord server directory: the list of bonk.io community servers, filtering by text and tag, a page per server with its member history, submitting a server, and the hourly member-count refresh. Created in RFC-0001 Phase 5.2.
 
-**Owns:** which servers are listed and how, the submit rules (permanent invites only, one entry per server, only existing tags), snapshots of member and online counts. **Does not own:** the Discord API call (`integrations/discord_api.py`, see [integrations.md](../architecture/integrations.md)), the page frame (`skins/base.html`).
+**Owns:** which servers are listed and how, the submit rules (permanent invites only, one entry per server, only existing tags), snapshots of member and online counts. **Does not own:** the Discord API call (`integrations/discord_api.py`, see [integrations.md](../architecture/integrations.md)), the page frame (`templates/base.html`).
 
 ## Routes
 
@@ -19,7 +19,8 @@ The detail path sits at the site root (`/<uuid>/`), which is why it's matched by
 
 ## Layers
 
-- `selectors.py`: `listed_servers(query, tag_names)`, `all_tags()`, `recent_snapshots(server)`, `next_refresh_at()` (last run of the refresh schedule + `REFRESH_INTERVAL`).
+- `selectors.py`: `listed_servers(query, tag_names)` (tags prefetched), `all_tags()`, `tag_filters(tags, active, query)` (each tag chip is a plain link that switches the tag on or off, keeping the search), `recent_snapshots(server)`, `growth_chart(snapshots)` (points for the detail page's SVG line), `next_refresh_at()` / `minutes_to_refresh()` (last run of the refresh schedule + `REFRESH_INTERVAL`).
+- Pages: on `bv-` components (`site-page`), styles in `communities/static/communities/css/servers.css`. Server icons come from Discord's CDN over the server's first letter (`templates/communities/_server_icon.html`); `communities/js/servers.js` removes an icon that fails to load. Join buttons use the primary button, not Discord purple (design review).
 - `services.py`: `submit_server(invite, tag_names) -> SubmitResult` with a `SubmitOutcome`; `extract_invite_code()`. The view turns each outcome into the message people see.
 - `tasks.py`: `refresh_discord_servers`, hourly from `CELERY_BEAT_SCHEDULE["refresh-discord-servers"]`. One lookup per second, stalest first, stops on a second 429, at most once per run (`acks_late=False`). Details: [background-work.md](../architecture/background-work.md).
 - `management/commands/populate_discord.py`: local seed data.

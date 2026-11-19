@@ -115,7 +115,7 @@ def test_submit_creates_server_with_tags_and_snapshot(client, mocked_http):
     assert (server.guild_id, server.invite_code, server.member_count) == ("111", "abc", 120)
     assert list(server.tags.values_list("name", flat=True)) == ["Competitive"]
     assert DiscordServerSnapshot.objects.filter(server=server).count() == 1
-    assert "✅ Discord server submitted successfully!" in _messages(response)
+    assert "Server added to the directory." in _messages(response)
 
 
 @pytest.mark.django_db
@@ -124,19 +124,19 @@ def test_submit_creates_server_with_tags_and_snapshot(client, mocked_http):
     [
         (
             {"json": {"message": "Unknown Invite", "code": 10006}, "status": 404},
-            "❌ Invalid or inaccessible Discord invite.",
+            "Discord doesn't know that invite. Check the link, or make a new one.",
         ),
         (
             {"body": requests.Timeout("slow")},
-            "❌ Couldn't reach Discord right now. Try again in a minute.",
+            "Discord didn't answer. Try again in a minute.",
         ),
         (
             {"json": {"retry_after": 30}, "status": 429},
-            "❌ Couldn't reach Discord right now. Try again in a minute.",
+            "Discord didn't answer. Try again in a minute.",
         ),
         (
             {"json": _invite_body(expires_at="2026-12-01T00:00:00+00:00")},
-            "❌ Invite must be permanent",
+            "That invite expires",
         ),
     ],
 )
@@ -153,7 +153,9 @@ def test_submit_failures(client, mocked_http, setup, message):
 def test_submit_rejects_path_tricks_without_calling_discord(client, mocked_http):
     response = _submit(client, invite="https://discord.gg/abc%2F..%2Fusers")
 
-    assert _messages(response) == ["❌ Invalid Discord invite format."]
+    assert _messages(response) == [
+        "That isn't a Discord invite link. It looks like https://discord.gg/abc123."
+    ]
     assert len(mocked_http.calls) == 0
 
 
@@ -166,7 +168,7 @@ def test_submit_same_server_twice_keeps_one(client, mocked_http):
     response = _submit(client, invite="other")
 
     assert DiscordServer.objects.count() == 1
-    assert "⚠️ This Discord server has already been submitted." in _messages(response)
+    assert "That server is already in the directory." in _messages(response)
 
 
 # ---------- hourly refresh ----------

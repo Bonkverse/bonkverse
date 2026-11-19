@@ -1,0 +1,11 @@
+{% comment %}
+A server's icon from Discord's CDN, drawn over its first letter. If the icon
+fails to load (deleted, Discord down), communities/js/servers.js removes the
+image so the letter shows, without a broken-image mark. Pages that include
+this load that script.
+  {% include 'communities/_server_icon.html' with server=server size=56 %}
+{% endcomment %}
+<span class="site-server-icon" data-size="{{ size }}" aria-hidden="true">
+  <span class="site-server-icon__letter">{{ server.name|slice:":1"|upper }}</span>
+  {% if server.icon_hash %}<img src="https://cdn.discordapp.com/icons/{{ server.guild_id }}/{{ server.icon_hash }}.png?size=128" alt="" width="{{ size }}" height="{{ size }}" loading="lazy" data-server-icon>{% endif %}
+</span>

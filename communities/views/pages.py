@@ -12,15 +12,16 @@ from ..models import DiscordServer
 def server_list(request):
     query = request.GET.get("q", "").strip()
     tag_names = request.GET.getlist("tag")
+    servers = list(selectors.listed_servers(query, tag_names))
     return render(
         request,
         "communities/server_list.html",
         {
-            "servers": selectors.listed_servers(query, tag_names),
-            "tags": selectors.all_tags(),
+            "servers": servers,
+            "tag_filters": selectors.tag_filters(selectors.all_tags(), tag_names, query),
             "query": query,
             "active_tags": tag_names,
-            "next_refresh": selectors.next_refresh_at(),
+            "minutes_to_refresh": selectors.minutes_to_refresh(),
         },
     )
 
@@ -28,10 +29,11 @@ def server_list(request):
 @limit("browse")
 def server_detail(request, server_id):
     server = get_object_or_404(DiscordServer, id=server_id, status="active")
+    snapshots = selectors.recent_snapshots(server)
     return render(
         request,
         "communities/server_detail.html",
-        {"server": server, "snapshots": selectors.recent_snapshots(server)},
+        {"server": server, "growth": selectors.growth_chart(snapshots)},
     )
 
 

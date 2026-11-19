@@ -2,35 +2,49 @@
 {% load static %}
 
 {% block title %}Submit a Discord server · Bonkverse{% endblock %}
+{% block content_class %}site-page{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'communities/css/servers.css' %}">
+{% endblock %}
+
 {% block content %}
+<div class="bv-main site-narrow">
+  <a class="bv-back" href="{% url 'communities:list' %}"><span aria-hidden="true">←</span> Discord servers</a>
 
-<h1>Submit a Bonk.io Discord Server</h1>
-
-<form method="post" action="{% url 'communities:api_submit_server' %}" id="server-submit-form">
-  {% csrf_token %}
-
-  <label>Discord Invite Link</label>
-  <input type="text" name="invite" placeholder="https://discord.gg/xxxxx" required>
-
-  <h3>Tags</h3>
-
-  <!-- Visible tag bubbles -->
-  <div class="tag-bubbles bv-chips" role="group" aria-label="Tags">
-    {% for tag in tags %}
-      <button type="button" class="bv-chip selectable-tag" data-tag="{{ tag.name }}" aria-pressed="false">{{ tag.name }}</button>
-    {% endfor %}
+  <div class="bv-page-header">
+    <div class="bv-page-header__text">
+      <h1>Submit a Discord server</h1>
+      <p class="bv-muted">Add a bonk.io community to the directory. Its name, icon and member count come from Discord.</p>
+    </div>
   </div>
 
-  <!-- Hidden inputs will be injected here -->
-  <div id="selected-tags"></div>
+  <form class="bv-card bv-form" method="post" action="{% url 'communities:api_submit_server' %}" id="server-submit-form">
+    {% csrf_token %}
+    <div class="bv-field">
+      <label class="bv-label" for="invite">Invite link</label>
+      <span class="bv-hint" id="invite-hint">A permanent invite (set to never expire), like https://discord.gg/abc123</span>
+      <input class="bv-input" type="text" id="invite" name="invite" placeholder="https://discord.gg/abc123" required aria-describedby="invite-hint" autocomplete="off">
+    </div>
 
-  <button class="bv-btn bv-btn--primary" type="submit">Submit server</button>
-</form>
+    {% if tags %}
+    <fieldset class="bv-field site-submit-tags">
+      <legend class="bv-label">Tags <span class="bv-muted">(optional)</span></legend>
+      <div class="bv-chips" role="group" aria-label="Tags">
+        {% for tag in tags %}
+          <button type="button" class="bv-chip selectable-tag" data-tag="{{ tag.name }}" aria-pressed="false">{{ tag.name }}</button>
+        {% endfor %}
+      </div>
+      {# Selected tags as hidden "tags" fields: communities/js/submit_server.js #}
+      <div id="selected-tags"></div>
+    </fieldset>
+    {% endif %}
 
-<p class="note">
-  Servers must have permanent invites and be Bonk.io–related.
-</p>
-
+    <div>
+      <button class="bv-btn bv-btn--primary" type="submit">Submit server</button>
+    </div>
+  </form>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}

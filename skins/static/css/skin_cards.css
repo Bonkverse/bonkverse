@@ -8,7 +8,6 @@
   text-align: start;
 }
 /* A grid can't hold a centered empty message across its columns otherwise. */
-.site-skin-grid > .empty-state,
 .site-skin-grid > .bv-empty {
   grid-column: 1 / -1;
 }
