@@ -410,9 +410,15 @@ def test_saving_settings(logged_in_client, user):
 
 
 @pytest.mark.django_db
-def test_my_profile_links_to_the_public_profile(logged_in_client, user, mocked_http):
-    html = logged_in_client.get(reverse("skins:my_profile")).content.decode()
-    assert reverse("players:player_profile", args=[user.username]) in html
-    assert reverse("players:profile_settings") in html
-    assert 'data-tab="replays"' not in html
-    assert len(mocked_http.calls) == 0  # My Profile never waits on the replay site
+def test_my_profile_is_now_your_profiles_skins_tab(logged_in_client, user):
+    """One profile (design review): the old /my-profile/ address, still in
+    the account menu and old links, goes to your profile's Skins tab."""
+    response = logged_in_client.get(reverse("skins:my_profile"))
+    assert response.status_code == 302
+    assert response.url == reverse("players:player_skins", args=[user.username])
+
+
+def test_my_profile_asks_signed_out_visitors_to_log_in(client):
+    response = client.get(reverse("skins:my_profile"))
+    assert response.status_code == 302
+    assert response.url.startswith(reverse("accounts:login"))

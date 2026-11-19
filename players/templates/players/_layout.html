@@ -51,8 +51,11 @@ header, the owner's privacy note and the tab bar. Each tab fills
         <a class="pv-btn" href="{{ all_replays_url }}">Watch replays</a>
       {% endif %}
       {% if is_owner %}
-        <a class="pv-btn pv-btn--ghost" href="{% url 'players:profile_settings' %}">
-          <i data-lucide="settings" aria-hidden="true"></i> Profile settings
+        <a class="pv-btn pv-btn--ghost" href="{% url 'skins:upload_skin' %}">
+          <i data-lucide="upload" aria-hidden="true"></i> Upload a skin
+        </a>
+        <a class="pv-btn pv-btn--ghost pv-btn--settings" href="{% url 'players:profile_settings' %}" aria-label="Profile settings" title="Profile settings">
+          <i data-lucide="settings" aria-hidden="true"></i><span class="pv-btn__label" aria-hidden="true">Profile settings</span>
         </a>
       {% endif %}
     </div>

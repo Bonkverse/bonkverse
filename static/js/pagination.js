@@ -114,13 +114,9 @@ const BVPagination = (function () {
 // Wires up the "Go to page" input that appears in the shared
 // pagination partial once a page count crosses the threshold set
 // in pagination.html. Works for any server-rendered paginated page —
-// navigates via a real URL, since these pages aren't AJAX-driven.
-// Pages marked data-ajax handle their own jump input via a delegated
-// listener scoped to their swappable container (see my_profile.html),
-// so this skips those to avoid double-binding.
+// navigates via a real URL.
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.page-jump-input').forEach(input => {
-    if (input.closest('[data-ajax]')) return;
     input.addEventListener('keydown', (e) => {
       if (e.key !== 'Enter') return;
       const target = parseInt(input.value, 10);

@@ -2,23 +2,15 @@
 Usage:
   {% include 'partials/pagination.html' with page_obj=skins elided_range=elided_range base_qs=base_qs %}
 
-  Add ajax=True when this pagination lives inside a panel that swaps its
-  own content via fetch instead of a full page navigation (see my_profile's
-  My Skins tab). Links still carry real ?page=N hrefs so pagination keeps
-  working with JS disabled — the ajax flag just marks the <nav> so a
-  page-specific delegated click handler knows to intercept and swap
-  content instead of letting the browser navigate.
-
 - page_obj: a Django Page object (from Paginator.get_page())
 - elided_range: a plain list from pagination_utils.elided_page_range(page_obj) —
                  computed in the view, NOT here (templates can't call
                  get_elided_page_range with kwargs)
 - base_qs: querystring WITHOUT 'page' or a leading '?' — e.g. "q=fire&mode=name"
             or "" if there are no other params to preserve
-- ajax: optional. True marks this nav as AJAX-driven (see above).
 {% endcomment %}
 {% if page_obj.has_other_pages %}
-<nav class="site-pagination" aria-label="Pagination" {% if ajax %}data-ajax="true"{% endif %}>
+<nav class="site-pagination" aria-label="Pagination">
   {% if page_obj.has_previous %}
     <a class="page-nav" href="?{% if base_qs %}{{ base_qs }}&{% endif %}page={{ page_obj.previous_page_number }}">‹ Prev</a>
   {% else %}

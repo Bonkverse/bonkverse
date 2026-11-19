@@ -353,12 +353,7 @@ button.pv-heat__week:hover, button.pv-heat__week[aria-pressed="true"] { outline:
 
 .pv-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin: 4px 0 18px; }
 .pv-sorts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.pv-sort {
-  display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px;
-  border-radius: 999px; border: 1px solid var(--pv-control); text-decoration: none; font-size: 0.9rem;
-}
-.pv a.pv-sort { color: var(--pv-muted); }
-.pv a.pv-sort[aria-current="true"] { color: var(--pv-text); border-color: var(--pv-action); }
+.pv-toolbar__end { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 
 /* ── Settings switches ─────────────────────────────── */
 .pv-settings fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
@@ -389,6 +384,9 @@ button.pv-heat__week:hover, button.pv-heat__week[aria-pressed="true"] { outline:
   .pv-hero__name { font-size: 1.6rem; }
   .pv-hero__actions { width: 100%; }
   .pv-hero__actions .pv-btn { flex: 1; justify-content: center; }
+  /* Settings is an icon button on phones (design review). */
+  .pv-hero__actions .pv-btn--settings { flex: 0 0 44px; padding-inline: 0; }
+  .pv-btn--settings .pv-btn__label { display: none; }
   .pv-hero--compact .pv-hero__actions { display: none; }
   .pv-card { padding: 16px; }
   .pv-big__num { font-size: 2.8rem; }

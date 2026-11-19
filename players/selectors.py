@@ -44,6 +44,7 @@ from skins.selectors import (
     decorate_skins_for_user,
     favorites_of,
     skins_created_by,
+    with_edit_tags,
 )
 
 from accounts.models import BonkAccountLink
@@ -593,7 +594,14 @@ def skins(base, viewer, view, sort, page):
     )
     page_obj = Paginator(qs, SKINS_PER_PAGE).get_page(page)
     decorate_skins_for_user(page_obj, viewer)
+    # The owner manages their own skins here: Edit, Delete, Select
+    # (skins/js/skin_owner.js); everyone else gets the visitor card.
+    owner_tools = base["is_owner"] and view == "created"
+    if owner_tools:
+        with_edit_tags(page_obj)
     return {
+        "owner_tools": owner_tools,
+        "card_mode": "mine" if owner_tools else "search",
         "creator": creator_stats(account.username),
         "favorites_total": account.favorite_skins.count() if shown["favorites"] else None,
         "views": views,

@@ -180,10 +180,6 @@
     "name": "skins:my_profile"
   },
   {
-    "route": "my-profile/skins-partial/",
-    "name": "skins:my_skins_partial"
-  },
-  {
     "route": "new/",
     "name": "skins:new_releases"
   },

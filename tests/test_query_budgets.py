@@ -44,8 +44,8 @@ BUDGETS = {
     "/leaderboards/upvoted/": (2, 4),
     "/leaderboards/favorited/": (2, 4),
     "DETAIL": (3, 7),
-    "/my-profile/": (None, 8),
-    "/my-profile/skins-partial/": (None, 6),
+    # Your own profile's Skins tab (owner cards); signed in as OWNER only.
+    "MY_SKINS": (None, 15),
 }
 
 
@@ -60,7 +60,9 @@ def _make_skins(count):
 
 
 def _queries(client, page, skins) -> int:
-    url = f"/skins/detail/{skins[0].id}" if page == "DETAIL" else page
+    url = {"DETAIL": f"/skins/detail/{skins[0].id}", "MY_SKINS": f"/player/{OWNER}/skins/"}.get(
+        page, page
+    )
     # Cold cache every time, so a value cached by the first request (like the
     # header's skin avatar) can't make the second look cheaper.
     cache.clear()

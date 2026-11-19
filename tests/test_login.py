@@ -40,7 +40,7 @@ class TestSuccessfulLogin:
         response = _post_login(client)
 
         assert response.status_code == 302
-        assert response.url == reverse("skins:my_profile")
+        assert response.url == reverse("players:player_profile", args=["TestPlayer"])
 
     def test_logs_user_in_and_creates_site_account(self, client):
         _post_login(client)
@@ -125,7 +125,7 @@ class TestSuccessfulLogin:
     def test_ignores_offsite_next_url(self, client):
         response = _post_login(client, next="https://evil.example.com/")
 
-        assert response.url == reverse("skins:my_profile")
+        assert response.url == reverse("players:player_profile", args=["TestPlayer"])
 
 
 class TestSiteAccountMatching:
