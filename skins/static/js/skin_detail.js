@@ -1,6 +1,5 @@
 // skin_detail.js: the skin page (skins/skin_detail.html).
-// Votes, the staff Re-render, and "Search results" going back to the search
-// you came from. Favorite, Wear and Enlarge are core/js/bv-cards.js (the page
+// Votes, the staff Re-render, and "Back" returning to the page you came from. Favorite, Wear and Enlarge are core/js/bv-cards.js (the page
 // is a data-skin-card); Report is core/js/bv-report.js; Copy link is ui/ui.js.
 
 (function () {
@@ -46,12 +45,17 @@
     });
   }
 
-  // ── Back to the search you came from (query, page and scroll) ─
-  const back = page.querySelector("[data-back-to-search]");
+  // ── Back to the page you came from, where you left it ───────
+  // Came from another Bonkverse page (search, a profile, Top skins, home...):
+  // the link points there, and a click is the browser's Back, which brings
+  // the page back as it was, scroll position included, instead of loading
+  // it fresh. From outside Bonkverse (a Discord link) or a new tab, the
+  // link stays the plain link to skin search.
+  const back = page.querySelector("[data-back]");
   if (back && document.referrer) {
     try {
       const from = new URL(document.referrer);
-      if (from.origin === location.origin && from.pathname === back.pathname) {
+      if (from.origin === location.origin && from.pathname !== location.pathname) {
         back.href = from.href;
         back.addEventListener("click", (e) => {
           if (history.length > 1) { e.preventDefault(); history.back(); }
