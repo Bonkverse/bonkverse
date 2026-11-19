@@ -110,19 +110,28 @@ def random_skin():
 
 
 # How skins can be ranked for a leaderboard: metric -> annotate `value`, order
-# by it. Ties have no defined order.
+# by it. Ties go to the newer skin.
 SKIN_RANKINGS = {
-    "upvotes": lambda skins: skins.annotate(value=F("upvotes")).order_by("-upvotes"),
+    "upvotes": lambda skins: skins.annotate(value=F("upvotes")).order_by(
+        "-upvotes", "-created_at", "-id"
+    ),
     "favorites": lambda skins: (
-        skins.with_favorite_count().annotate(value=F("fav_count")).order_by("-fav_count")
+        skins.with_favorite_count()
+        .annotate(value=F("fav_count"))
+        .order_by("-fav_count", "-created_at", "-id")
     ),
 }
 
 
-def top_skins(metric: str, limit: int):
+def top_skins(metric: str, limit: int, period: str = "all"):
     """The `limit` skins ranked highest by `metric` (a SKIN_RANKINGS key), each
-    with its count as `value`. Skins with an open report are left out."""
-    return SKIN_RANKINGS[metric](Skin.objects.without_open_reports())[:limit]
+    with its count as `value`. `period` (core.periods: "week", "month"; any
+    other name is all time) keeps skins uploaded in that window: votes and
+    favorites aren't dated, so "top this week" means the best new skins.
+    Skins with an open report are left out."""
+    skins = Skin.objects.without_open_reports().created_in(period)
+    # A board of zeros says nothing (design review): only skins with a count.
+    return SKIN_RANKINGS[metric](skins).filter(value__gt=0)[:limit]
 
 
 # Sort orders for a player's skins (profile Skins tab): key -> order_by fields.

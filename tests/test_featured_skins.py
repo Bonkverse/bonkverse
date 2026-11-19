@@ -13,7 +13,7 @@ from django.core.cache import cache
 from skins.categories import category_tiles
 from skins.models import CategoryCover, Skin, SkinReport
 from skins.selectors import home_strips, top_skins
-from tests.factories import CategoryCoverFactory, SkinFactory, SkinReportFactory
+from tests.factories import CategoryCoverFactory, SkinFactory, SkinReportFactory, UserFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -105,8 +105,11 @@ def test_home_carousels_leave_out_reported_skins():
 
 
 def test_leaderboards_leave_out_reported_skins(client):
+    fan = UserFactory()
     clean = SkinFactory(upvotes=1)
     reported = SkinFactory(upvotes=50)
+    clean.favorited_by.add(fan)
+    reported.favorited_by.add(fan)
     SkinReportFactory(skin=reported)
 
     assert list(top_skins("upvotes", 10)) == [clean]
@@ -123,7 +126,7 @@ def test_search_and_the_skin_page_still_find_a_reported_skin(client):
 
 
 def test_resolving_a_report_in_the_admin_brings_the_skin_back(admin_client):
-    skin = SkinFactory()
+    skin = SkinFactory(upvotes=1)
     report = SkinReportFactory(skin=skin)
 
     admin_client.post(

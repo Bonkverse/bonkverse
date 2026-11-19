@@ -25,12 +25,12 @@ class TestPeriods:
         assert period_start("today", now) == now - timedelta(days=1)
         assert period_start("week", now) == now - timedelta(days=7)
 
-    @pytest.mark.parametrize("name", ["all", "", "month", "yesterday"])
+    @pytest.mark.parametrize("name", ["all", "", "year", "yesterday"])
     def test_other_names_mean_all_time(self, name):
         assert period_start(name) is None
 
     def test_only_the_periods_pages_offer(self):
-        assert set(PERIODS) == {"today", "week"}
+        assert set(PERIODS) == {"today", "week", "month"}
 
 
 @pytest.mark.django_db

@@ -1,4 +1,4 @@
-{% comment %}Switch between the skin leaderboards (the header no longer has a Leaderboards menu). Tabs come from stats/leaderboards.py.{% endcomment %}
-<nav class="bv-tabs site-leaderboard-tabs" aria-label="Leaderboards">
-{% for tab in tabs %}  <a class="bv-tab" href="{% url tab.url_name %}"{% if tab.current %} aria-current="page"{% endif %}>{{ tab.label }}</a>
+{% comment %}The Top skins tabs, one per board (stats/leaderboards.py); the period carries over.{% endcomment %}
+<nav class="bv-tabs site-leaderboard-tabs" aria-label="Rank by">
+{% for tab in tabs %}  <a class="bv-tab" href="{% url tab.url_name %}{% if period and period != 'all' %}?period={{ period }}{% endif %}"{% if tab.current %} aria-current="page"{% endif %}>{{ tab.label }}</a>
 {% endfor %}</nav>

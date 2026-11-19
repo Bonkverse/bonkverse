@@ -259,11 +259,6 @@ body {
     to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Plain links in tables and lists: underline on hover, so the pointer has
-   feedback in every theme. */
-a.skin-link { color: var(--bv-link); }
-a.skin-link:hover { color: var(--bv-text); text-decoration: underline; }
-
 /* A player's worn skin drawn over whatever placeholder the element holds
    (initials or an icon). The template passes the image URL as --skin; one
    that can't load draws nothing, so the placeholder shows through. Profile

@@ -5,7 +5,7 @@ from django.shortcuts import render
 
 from core.ratelimits import limit
 
-from .leaderboards import LEADERBOARDS, TOP_N, tabs
+from .leaderboards import LEADERBOARDS, PERIODS, TOP_N, period_from, periods, tabs
 
 
 @limit("browse")
@@ -13,9 +13,17 @@ def leaderboard(request, board: str):
     config = LEADERBOARDS.get(board)
     if config is None:
         raise Http404("Unknown leaderboard")
+    period = period_from(request.GET.get("period"))
 
     return render(
         request,
         "stats/leaderboard.html",
-        {"board": config, "rows": config.rows(TOP_N), "tabs": tabs(board)},
+        {
+            "board": config,
+            "rows": list(config.rows(TOP_N, period)),
+            "tabs": tabs(board),
+            "period": period,
+            "period_label": PERIODS[period],
+            "periods": periods(period),
+        },
     )

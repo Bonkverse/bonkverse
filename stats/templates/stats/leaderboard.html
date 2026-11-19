@@ -1,16 +1,44 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}{{ board.title }} · Bonkverse{% endblock %}
+{% block title %}Top skins · {{ board.tab }}{% if period != "all" %} · {{ period_label }}{% endif %} · Bonkverse{% endblock %}
+{% block content_class %}site-page{% endblock %}
 
-{% comment %}Any leaderboard (stats/leaderboards.py: LEADERBOARDS). The board's own table partial draws its rows.{% endcomment %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'stats/css/leaderboard.css' %}">
+{% endblock %}
 
 {% block content %}
-<div class="leaderboard-container">
-  <h2 class="leaderboard-title">{{ board.title }}</h2>
-{% if board.tab %}  {% include 'stats/_tabs.html' %}
-{% endif %}  <div class="site-scroll">
-  {% include board.table %}
+{% comment %}
+The Top skins page: one tab per board (stats/leaderboards.py LEADERBOARDS),
+narrowed by period chips. The board's partial draws its rows.
+{% endcomment %}
+<div class="bv-main site-top">
+  <div class="bv-page-header">
+    <div class="bv-page-header__text">
+      <h1>Top skins</h1>
+      <p class="bv-muted">
+        {% if period == "all" %}The skins with the most {{ board.column }}.{% else %}The skins uploaded {% if period == "week" %}in the last 7 days{% else %}in the last 30 days{% endif %} with the most {{ board.column }}.{% endif %}
+      </p>
+    </div>
   </div>
-</div>
 
+  {% include 'stats/_tabs.html' %}
+
+  <nav class="bv-chips site-top__periods" aria-label="Uploaded">
+    {% for p in periods %}
+      <a class="bv-chip" href="?period={{ p.value }}"{% if p.current %} aria-current="page"{% endif %}>{{ p.label }}</a>
+    {% endfor %}
+  </nav>
+
+  {% if rows %}
+    {% include board.partial %}
+  {% else %}
+    <div class="bv-empty">
+      <h2 class="bv-empty__title">No skins here yet</h2>
+      <p>Nothing uploaded in that time has any {{ board.column }} yet.</p>
+      <a class="bv-btn" href="?period=all">See all time</a>
+    </div>
+  {% endif %}
+</div>
 {% endblock %}

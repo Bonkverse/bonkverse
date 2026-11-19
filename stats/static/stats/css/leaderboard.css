@@ -1,0 +1,98 @@
+/* The Top skins page (stats/templates/stats/leaderboard.html). */
+
+.site-top .site-leaderboard-tabs {
+  margin-top: var(--bv-space-4);
+}
+.site-top__periods {
+  margin: var(--bv-space-4) 0;
+}
+
+/* Skin rows (stats/_skin_rows.html): rank, skin, name and creator, count. */
+.site-top-skins {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--bv-outline);
+  border-radius: var(--bv-radius);
+  background: var(--bv-card);
+}
+.site-top-skin {
+  display: grid;
+  grid-template-columns: 2.5rem 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--bv-space-3);
+  padding: var(--bv-space-2) var(--bv-space-4);
+}
+.site-top-skin + .site-top-skin {
+  border-top: 1px solid var(--bv-divider);
+}
+.site-top-skin__rank {
+  color: var(--bv-muted);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+.site-top-skin:nth-child(-n + 3) .site-top-skin__rank {
+  color: var(--bv-text);
+  font-size: var(--bv-text-lg);
+}
+.site-top-skin__art img {
+  display: block;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--bv-thumb);
+  object-fit: contain;
+  transition: transform var(--bv-fade) var(--bv-ease-out);
+}
+/* The skin's image is a link to its page too: it grows a little on hover. */
+.site-top-skin__art:hover img {
+  transform: scale(1.1);
+}
+.site-top-skin__text {
+  display: grid;
+  min-width: 0;
+}
+.site-top-skin__name {
+  color: var(--bv-text);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.site-top-skin__name:hover {
+  color: var(--bv-link);
+}
+.site-top-skin .bv-creator {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.site-top-skin__count {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Phones: the label under the number, the rank column narrower. */
+@media (max-width: 639px) {
+  .site-top-skin {
+    grid-template-columns: 1.75rem 40px minmax(0, 1fr) auto;
+    gap: var(--bv-space-2);
+    padding-inline: var(--bv-space-3);
+  }
+  .site-top-skin__art img {
+    width: 40px;
+    height: 40px;
+  }
+  .site-top-skin__count {
+    display: grid;
+  }
+  .site-top-skin__count .bv-muted {
+    font-size: var(--bv-text-xs);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-top-skin__art img {
+    transition: none;
+  }
+}
