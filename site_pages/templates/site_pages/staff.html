@@ -1,22 +1,50 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static bv_links %}
 
 {% block title %}The team · Bonkverse{% endblock %}
+{% block content_class %}site-page{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'site_pages/css/team.css' %}">
+{% endblock %}
 
 {% block content %}
-<div class="staff-container">
-    <h1 class="staff-title">🌟 Meet the Bonkverse Team</h1>
-    <div class="staff-grid">
-        {% for staff in staff_members %}
-        <div class="staff-card">
-            {% if staff.image %}
-                <img src="{% static staff.image %}" alt="{{ staff.name }}" class="staff-photo">
-            {% endif %}
-            <h2>{{ staff.name }}</h2>
-            <p class="role">{{ staff.role }}</p>
-            <p class="bio">{{ staff.bio }}</p>
-        </div>
-        {% endfor %}
+{% comment %}
+The team (site_pages/views/pages.py STAFF_MEMBERS). Bonkverse/ui components;
+layout in site_pages/css/team.css. Design review: a plain heading (no glow,
+no emoji), and profile/skins links instead of raw URLs in bios.
+{% endcomment %}
+<div class="bv-main team">
+  <div class="bv-page-header">
+    <div class="bv-page-header__text">
+      <span class="bv-eyebrow">Bonkverse</span>
+      <h1>The team</h1>
+      <p class="bv-lead">The people who build Bonkverse, run its Discord and keep it friendly.</p>
     </div>
+    <div class="bv-page-header__actions">
+      <a class="bv-btn" href="{{ BONKVERSE_DISCORD_URL }}" target="_blank" rel="noopener"><i data-lucide="message-circle" aria-hidden="true"></i>Join our Discord</a>
+    </div>
+  </div>
+
+  <ul class="team-grid">
+    {% for member in staff_members %}
+      <li class="bv-card team-card">
+        {% if member.image %}
+          <img class="team-card__photo" src="{% static member.image %}" alt="" width="112" height="112" loading="lazy">
+        {% endif %}
+        <h2 class="team-card__name">{{ member.name }}</h2>
+        <p class="bv-pill team-card__role">{{ member.role }}</p>
+        <p class="team-card__bio">{{ member.bio }}</p>
+        {% with profile=member.player|profile_url %}
+          {% if profile %}
+            <p class="team-card__links">
+              <a href="{{ profile }}">Profile</a>
+              <a href="{{ profile }}skins/">Skins</a>
+            </p>
+          {% endif %}
+        {% endwith %}
+      </li>
+    {% endfor %}
+  </ul>
 </div>
 {% endblock %}

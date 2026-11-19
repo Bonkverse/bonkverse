@@ -1,0 +1,31 @@
+/* team.css — the team page (site_pages/staff.html). Bonkverse/ui
+   components; --bv-* tokens only. */
+
+.team { padding-bottom: var(--bv-space-8); }
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+  gap: var(--bv-space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.team-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.team-card > * + * { margin-top: var(--bv-space-2); }
+.team-card__photo {
+  width: 112px;
+  height: 112px;
+  border: 3px solid var(--bv-link);
+  border-radius: 50%;
+  background: var(--bv-thumb);
+  object-fit: cover;
+}
+.team-card__name { font-size: var(--bv-text-lg); line-height: var(--bv-leading-lg); overflow-wrap: anywhere; }
+.team-card__role { margin-top: var(--bv-space-1); }
+.team-card__bio { color: var(--bv-muted); font-size: var(--bv-text-sm); line-height: 1.55; overflow-wrap: anywhere; }
+.team-card__links { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--bv-space-4); margin-top: auto; padding-top: var(--bv-space-2); font-size: var(--bv-text-sm); font-weight: 600; }
