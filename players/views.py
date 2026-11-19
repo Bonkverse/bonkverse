@@ -166,7 +166,11 @@ def xp_calculator(request):
     )
 
 
-_PLAYER_ERROR_STATUS = {"not_found": 404, "private": 403, "unavailable": 502}
+# "unavailable" (the replay site is down) is a 200 with ok: false, like
+# levels.json: the calculator loads signed-in visitors' own account by
+# itself, so an outage shouldn't log a server error for every such visit.
+# The page says it can't load the player and starts from its example.
+_PLAYER_ERROR_STATUS = {"not_found": 404, "private": 403, "unavailable": 200}
 
 
 @limit("search")

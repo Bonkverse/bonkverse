@@ -236,3 +236,11 @@ def test_calculator_script_builds_profile_links_like_the_url_conf():
     script = Path("players/static/players/js/xp_calculator.js").read_text(encoding="utf-8")
     assert reverse("players:player_profile", args=["x"]) == "/player/x/"
     assert "`/player/${encodeURIComponent(urlName(String(name)))}/`" in script
+
+
+@pytest.mark.django_db
+def test_player_json_outage_is_not_a_server_error(client, mocked_http):
+    mocked_http.get(f"{REPLAYS}/api/player/Saucy%20Tulip", status=503, json={"error": "x"})
+    response = client.get(reverse("players:xp_calculator_player") + "?name=Saucy%20Tulip")
+    assert response.status_code == 200
+    assert response.json() == {"ok": False, "error": "unavailable"}
