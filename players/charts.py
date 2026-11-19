@@ -9,7 +9,6 @@ week view, Level explorer) get compact data for a page script instead.
 
 from __future__ import annotations
 
-import math
 from datetime import date, timedelta
 from urllib.parse import quote, urlencode
 
@@ -26,10 +25,10 @@ MODE_LABELS = {
 }
 ROOM_LABELS = {"1v1": "1v1", "ffa": "Free-for-all", "teams": "Teams", "solo": "Alone"}
 ROOM_ORDER = ["1v1", "ffa", "teams", "solo"]
-# Series colors: teal, blue, orange, then quieter ones. Neighbours differ in
-# lightness too, so they stay apart without relying on hue.
-SERIES = ["#47d8c4", "#90b7ff", "#ffb454", "#c79bff", "#ff8a8a", "#d8e36a", "#8fa3b8"]
-HEAT = ["#101a25", "#1d4f4d", "#2a7d74", "#38ab9c", "#47d8c4"]
+# A stretch with no replays for longer than this, across which the level
+# rose, is drawn dashed: the level-ups happened somewhere in it, not on the
+# day the player came back (design review).
+GAP_DAYS = 14
 REPLAY_MILESTONES = [100, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000]
 COMEBACK_DAYS = 30
 
@@ -96,32 +95,53 @@ class ReplayLinks:
 
 
 def sparkline(days, width=600, height=110):
-    """Highest level per day as SVG points; None with fewer than two days."""
-    points = [(d, lv) for d, _, lv in _played(days) if lv]
+    """The level over time as SVG paths, drawn as steps (levels only go up
+    in steps): `line` for days with replays, `gaps` (dashed) across a gap of
+    more than GAP_DAYS with no replays in which the level rose. None with
+    fewer than two days."""
+    points, best = [], 0
+    for d, _, lv in _played(days):
+        if lv:
+            best = max(best, lv)
+            points.append((d, best))
     if len(points) < 2:
         return None
     first, last = points[0][0], points[-1][0]
     span = max((last - first).days, 1)
-    low = min(lv for _, lv in points)
-    high = max(lv for _, lv in points)
+    low, high = points[0][1], points[-1][1]
     rise = max(high - low, 1)
 
     def xy(d, lv):
-        x = width * (d - first).days / span
-        y = height - 6 - (height - 12) * (lv - low) / rise
-        return f"{x:.1f},{y:.1f}"
+        return width * (d - first).days / span, height - 6 - (height - 12) * (lv - low) / rise
 
-    line = " ".join(xy(d, lv) for d, lv in points)
+    line, gaps, area = [], [], []
+    prev = None
+    for d, lv in points:
+        x, y = xy(d, lv)
+        if prev is None:
+            line.append(f"M{x:.1f},{y:.1f}")
+            area.append((x, y))
+        elif (d - prev[0]).days > GAP_DAYS and lv != prev[3]:
+            gaps.append(f"M{prev[1]:.1f},{prev[2]:.1f}L{x:.1f},{y:.1f}")
+            line.append(f"M{x:.1f},{y:.1f}")
+            area.append((x, y))
+        else:
+            line.append(f"L{x:.1f},{prev[2]:.1f}L{x:.1f},{y:.1f}")
+            area += [(x, prev[2]), (x, y)]
+        prev = (d, x, y, lv)
     return {
-        "line": line,
-        "area": f"0,{height} {line} {width},{height}",
+        "line": "".join(line),
+        "gaps": "".join(gaps),
+        "area": " ".join(
+            [f"0,{height}"] + [f"{x:.1f},{y:.1f}" for x, y in area] + [f"{width},{height}"]
+        ),
         "width": width,
         "height": height,
         "first_day": first,
         "last_day": last,
         "low": low,
         "high": high,
-        "gained": high - points[0][1],
+        "gained": high - low,
     }
 
 
@@ -148,8 +168,10 @@ def level_ups(profile, links, limit=None):
 
 
 def level_script_data(profile):
-    """Compact data for player_level.js: [[day, level]], games per day and level-ups."""
+    """Compact data for player_level.js: [[day, level]], games per day,
+    level-ups, and how many days without replays make a gap."""
     return {
+        "gap_days": GAP_DAYS,
         "days": [[p["day"], p["level"]] for p in profile.get("days", []) if p.get("level")],
         "games": [[p["day"], p["games"]] for p in profile.get("days", [])],
         "ups": [
@@ -168,8 +190,9 @@ def level_script_data(profile):
 
 
 def heatmap(days, today):
-    """The last 53 weeks as columns of 7 days (Monday first), colored by how
-    many replays that day had compared with the player's busier days."""
+    """The last 53 weeks as columns of 7 days (Monday first), each day shaded
+    0–4 by how many replays it had compared with the player's busier days
+    (the colors come from the theme, players/css/profile.css)."""
     counts = {d: g for d, g, _ in _played(days)}
     start = today - timedelta(days=today.weekday() + 52 * 7)
     nonzero = sorted(g for d, g in counts.items() if start <= d <= today)
@@ -186,7 +209,7 @@ def heatmap(days, today):
             d = week_start + timedelta(days=i)
             g = counts.get(d, 0)
             shade = 0 if g == 0 or d > today else 1 + sum(g > c for c in cuts)
-            cells.append({"day": d, "games": g, "color": HEAT[shade], "future": d > today})
+            cells.append({"day": d, "games": g, "shade": shade, "future": d > today})
         weeks.append({"start": week_start, "cells": cells})
         if w == 0 or week_start.month != (week_start - timedelta(days=7)).month:
             months.append({"week": w, "label": week_start})
@@ -269,47 +292,34 @@ def milestones(profile, links, *, show_level=True, show_activity=True):
 # ── Maps and modes ───────────────────────────────────────────────
 
 
-def mode_ring(modes, size=200, outer=92, inner=58):
-    """Donut slices as SVG paths. Tiny modes get a minimum sweep so they can
-    still be pointed at; the legend has the true share."""
+def mode_bars(modes):
+    """Replays by mode as a bar list, most played first. Each bar is sized
+    against the top mode so the smaller ones stay readable; the share of all
+    replays is printed beside it."""
     total = sum(int(m["games"]) for m in modes)
     if not total:
-        return {"slices": [], "total": 0, "size": size}
-    min_sweep = 0.12
-    raw = [int(m["games"]) / total * 2 * math.pi for m in modes]
-    small = sum(1 for r in raw if r < min_sweep)
-    spare = 2 * math.pi - small * min_sweep
-    big_total = sum(r for r in raw if r >= min_sweep) or 1
-    sweeps = [min_sweep if r < min_sweep else r / big_total * spare for r in raw]
-    c = size / 2
-
-    def pt(radius, angle):
-        return f"{c + radius * math.cos(angle):.2f} {c + radius * math.sin(angle):.2f}"
-
-    slices, angle = [], -math.pi / 2
-    for i, (m, sweep) in enumerate(zip(modes, sweeps, strict=True)):
-        a0 = angle
-        a1 = angle + sweep - (0.03 if len(modes) > 1 else 0.0001)
-        angle += sweep
-        large = 1 if (a1 - a0) > math.pi else 0
-        games = int(m["games"])
-        slices.append(
-            {
-                "d": (
-                    f"M {pt(outer, a0)} A {outer} {outer} 0 {large} 1 {pt(outer, a1)} "
-                    f"L {pt(inner, a1)} A {inner} {inner} 0 {large} 0 {pt(inner, a0)} Z"
-                ),
-                "color": SERIES[i % len(SERIES)],
-                "label": mode_label(m.get("mode")),
-                "games": games,
-                "share": round(100 * games / total),
-            }
-        )
-    return {"slices": slices, "total": total, "size": size}
+        return []
+    rows = sorted(modes, key=lambda m: -int(m["games"]))
+    top = int(rows[0]["games"])
+    return [
+        {
+            "label": mode_label(m.get("mode")),
+            "games": int(m["games"]),
+            "share": round(100 * int(m["games"]) / total),
+            # "<1" rather than "0" for a mode they did play
+            "share_label": str(round(100 * int(m["games"]) / total) or "<1"),
+            "bar": _pct(int(m["games"]), top),
+        }
+        for m in rows
+        if int(m["games"])
+    ]
 
 
 def room_split(rooms):
-    """1v1 / free-for-all / teams / alone as one stacked bar."""
+    """1v1 / free-for-all / teams / alone as one stacked bar. `only` names
+    the one kind when there's just one (the page then says so instead of
+    drawing a full bar), and the custom/quick play bar is left out the same
+    way when one side is 0 (design review)."""
     if not rooms:
         return None
     total = sum(int(rooms.get(k) or 0) for k in ROOM_ORDER)
@@ -321,7 +331,7 @@ def room_split(rooms):
             "label": ROOM_LABELS[k],
             "games": int(rooms.get(k) or 0),
             "share": _pct(int(rooms.get(k) or 0), total),
-            "color": SERIES[i],
+            "color": f"var(--site-series-{i + 1})",
         }
         for i, k in enumerate(ROOM_ORDER)
         if int(rooms.get(k) or 0)
@@ -329,6 +339,7 @@ def room_split(rooms):
     quick = _pct(int(rooms.get("quickplay") or 0), total)
     return {
         "parts": parts,
+        "only": parts[0]["label"] if len(parts) == 1 else None,
         "total": total,
         "quickplay_share": quick,
         "custom_share": round(100 - quick, 1),

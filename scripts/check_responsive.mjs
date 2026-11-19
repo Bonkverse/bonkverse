@@ -50,6 +50,9 @@ const PAGES = [
   ["/tools/xp/", "xp", false],
   ["/developers/", "developers", false],
   ["/login/", "login", false],
+  ["/player/ui-check-staff/", "profile", true], // your own profile: Upload and settings in the header
+  ["/player/ui-check-staff/friends/", "profile-friends", false],
+  ["/player/no-such-player-here/", "player-not-found", false],
   ["/player/ui-check-staff/skins/", "my-skins", true], // your own Skins tab: owner cards (seed_ui_checks' account)
   ["/upload/", "upload", true],
   ["/settings/profile/", "settings", true],
@@ -63,7 +66,7 @@ const SIZES = [
 const THEMES = arg("themes", "bonkverse,light,dark").split(",");
 
 // Things that scroll sideways on purpose; what's inside them may be wider.
-const SCROLLERS = ".bv-table-wrap, .bv-tabs, .bv-code pre, pre, .carousel, .carousel-track, .site-scroll, .pv-tabs, .pv-tablewrap";
+const SCROLLERS = ".bv-table-wrap, .bv-tabs, .bv-code pre, pre, .carousel, .carousel-track, .site-scroll, .pv-tabs, .pv-tablewrap, .pv-heat__grid";
 const CONTROLS = [
   ".bv-btn", ".bv-header__link", ".bv-menu__item", ".bv-tab", ".bv-details-link", ".bv-back", ".bv-fav",
   ".bv-theme-picker select", ".bv-input", ".bv-select", ".bv-search", ".bv-search button", ".page-btn", ".page-nav",

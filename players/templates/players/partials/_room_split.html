@@ -1,14 +1,19 @@
 {% comment %}
-1v1 / free-for-all / teams / alone as one stacked bar with a legend
-(players/charts.py room_split).
+1v1 / free-for-all / teams / alone (players/charts.py room_split) as one
+stacked bar with a legend, or one sentence when it's all one kind: a bar
+that's 100% one color says nothing (design review).
 {% endcomment %}
-<div class="pv-split-bar__row">
-  <div class="pv-stack" role="img" aria-label="{% for p in rooms.parts %}{{ p.label }} {{ p.share|floatformat:0 }}%{% if not forloop.last %}, {% endif %}{% endfor %}">
-    {% for p in rooms.parts %}<span class="pv-stack__part" style="--bar: {{ p.share }}%; --slice: {{ p.color }}"></span>{% endfor %}
+{% if rooms.only %}
+  <p class="pv-split-bar__row">All {{ rooms.only }} <span class="pv-muted pv-small">· {{ rooms.total|floatformat:"0g" }} replay{{ rooms.total|pluralize }}</span></p>
+{% else %}
+  <div class="pv-split-bar__row">
+    <div class="pv-stack" role="img" aria-label="{% for p in rooms.parts %}{{ p.label }} {{ p.share|floatformat:0 }}%{% if not forloop.last %}, {% endif %}{% endfor %}">
+      {% for p in rooms.parts %}<span class="pv-stack__part" style="--bar: {{ p.share }}%; --slice: {{ p.color }}"></span>{% endfor %}
+    </div>
+    <div class="pv-legend-inline pv-small">
+      {% for p in rooms.parts %}
+        <span><span class="pv-swatch" style="--slice: {{ p.color }}"></span>{{ p.label }} {{ p.share|floatformat:0 }}%</span>
+      {% endfor %}
+    </div>
   </div>
-  <div class="pv-legend-inline pv-small">
-    {% for p in rooms.parts %}
-      <span><span class="pv-swatch" style="--slice: {{ p.color }}"></span>{{ p.label }} {{ p.share|floatformat:0 }}%</span>
-    {% endfor %}
-  </div>
-</div>
+{% endif %}

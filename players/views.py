@@ -81,7 +81,10 @@ def maps(request, username):
 
 @limit("browse")
 def people(request, username):
-    return _tab(request, username, "people", "players/people.html", selectors.people)
+    which = request.GET.get("list")
+    return _tab(
+        request, username, "people", "players/people.html", lambda b: selectors.people(b, which)
+    )
 
 
 @limit("browse")
@@ -184,6 +187,10 @@ def profile_settings(request):
     """Switches for which profile sections other people can see."""
     if request.method == "POST":
         services.update_visibility(request.user, {k: True for k in request.POST})
+        # The switches save as they're flipped (players/js/profile_settings.js,
+        # design review); the Save button is for browsers without scripts.
+        if request.headers.get("Accept") == "application/json":
+            return JsonResponse({"ok": True})
         messages.success(request, "Profile settings saved.")
         return redirect("players:profile_settings")
 

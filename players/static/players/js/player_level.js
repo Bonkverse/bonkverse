@@ -36,18 +36,31 @@
   const ups = data.ups.filter((u) => u.day).map((u) => ({ ...u, t: parse(u.day) }));
   const first = points[0][0], last = points[points.length - 1][0];
 
+  // Long stretches without replays in which the level rose are drawn
+  // dashed: the level-ups happened somewhere inside, not on the day the
+  // player came back (design review; same rule as charts.sparkline).
+  const gapMs = (data.gap_days || 14) * DAY;
+  const gaps = [];
+  for (let i = 1; i < points.length; i++) {
+    const [t0, v0] = points[i - 1], [t1, v1] = points[i];
+    if (t1 - t0 > gapMs && v1 !== v0) gaps.push([t0, t1]);
+  }
+  const inGap = (t) => gaps.some(([a, b]) => t > a && t < b);
+
   const presets = root.querySelector("[data-presets]");
   const chart = BVChart.line(chartEl, {
     xType: "time", height: 420, zoom: true, yFloor: 1,
     label: "Level over time",
-    series: [{ name: "Level", color: "var(--site-series-1)", points, step: true, area: true, extend: true }],
+    series: [{ name: "Level", color: "var(--site-series-1)", points, step: true, area: true, extend: true, gaps: gapMs }],
     xDomain: [first, last],
     yFormat: (v) => `${Math.round(v)}`,
     tip: (t) => {
       const day = new Date(t); day.setHours(0, 0, 0, 0);
       const lv = BVChart.valueAt({ points, step: true, extend: true }, t);
       const up = ups.find((u) => u.t === day.getTime());
-      const rows = [{ label: "Level", value: lv == null ? "—" : String(lv), color: "var(--site-series-1)" }];
+      const rows = inGap(t)
+        ? [{ label: "No replays", value: "level unknown" }]
+        : [{ label: "Level", value: lv == null ? "—" : String(lv), color: "var(--site-series-1)" }];
       const n = games.get(day.getTime());
       if (n) rows.push({ label: "Replays that day", value: n.toLocaleString() });
       if (up) rows.push({ label: "Levelled up to", value: String(up.level) });
@@ -96,7 +109,7 @@
         ].forEach((text, c) => {
           const td = document.createElement("td");
           td.textContent = text;
-          if (c >= 2) td.className = "pv-num";
+          if (c >= 2) td.className = "bv-num";
           tr.append(td);
         });
         return tr;

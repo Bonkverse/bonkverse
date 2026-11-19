@@ -59,7 +59,9 @@ players/
   management/commands/                 # sync_replays, populate_* (local seed data)
 ```
 
-`charts.css` and `controls.css` are in `players/static/players/css/`. `player_profile.css` is shared with the developer portal, so it is in the frame's `static/css/`.
+Player profiles (every tab, settings, not found) are on Bonkverse/ui components (`site-page`): their own styles are `players/static/players/css/profile.css` (tokens only), `controls.css` (`bv-seg`) and `charts.css` (the Level chart). `profile.js` keeps the tab row's current tab in view and fades the edge that scrolls; `profile_settings.js` saves each switch as it's flipped (the view answers `Accept: application/json` with `{"ok": true}`). The Players page, the XP calculator and the developer key and terms pages still use `player_profile.css` in the frame's `static/css/` (`site-legacy`) until they move too.
+
+Review rules the profile follows: the level is shown once (the header leaves it out when the Overview's level card shows it); a stretch of more than `charts.GAP_DAYS` without replays in which the level rose is drawn dashed (sparkline and Level chart); modes are a sorted bar list (`charts.mode_bars`), and a room split that is all one kind is a sentence, not a full bar; People is one list with a `?list=with|team|against` switch; names wrap instead of being cut off.
 
 `dbid_lookup.py` (social stats' account-age estimates) is an older table than `core/bonk/dbid.py` (profiles, public API). Merging them would change the estimates on the social stats page, so it's a separate decision.
 

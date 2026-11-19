@@ -81,7 +81,7 @@ def test_owner_header_has_upload_and_settings(client, owner):
     html = _skins_tab(client)
 
     assert 'href="/upload/"' in html
-    assert 'aria-label="Profile settings"' in html
+    assert 'href="/settings/profile/"' in html and "Profile settings</span>" in html
 
 
 def test_owner_with_no_skins_is_offered_upload(client, owner):

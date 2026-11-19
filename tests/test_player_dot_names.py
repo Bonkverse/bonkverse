@@ -60,4 +60,4 @@ def test_dot_name_profile_page(client, mocked_http):
     response = client.get("/player/~../")
     assert response.status_code == 200
     assert response.context["username"] == ".."
-    assert 'class="pv-tab" href="/player/~../"' in response.content.decode()
+    assert 'class="bv-tab" href="/player/~../"' in response.content.decode()

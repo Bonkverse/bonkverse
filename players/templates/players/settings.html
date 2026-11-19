@@ -2,33 +2,40 @@
 {% load static %}
 
 {% block title %}Profile settings · Bonkverse{% endblock %}
+{% block content_class %}site-page{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/player_profile.css' %}">
+<link rel="stylesheet" href="{% static 'players/css/profile.css' %}">
 {% endblock %}
 
 {% block content %}
-<main class="pv pv--narrow" id="main">
-  <header class="pv-hero">
-    <div class="pv-hero__text">
+{% comment %}
+Which profile sections other people can see. Each switch saves as it's
+flipped (players/js/profile_settings.js) and says "Saved" beside it; the
+Save button is only for browsers without scripts.
+{% endcomment %}
+<div class="bv-main pv pv--narrow">
+  <div class="bv-page-header">
+    <div class="bv-page-header__text">
       <h1>Profile settings</h1>
-      <p class="pv-muted">Choose what other people see on your public profile. You always see everything on your own.</p>
+      <p class="bv-muted">Choose what other people see on your public profile. You always see everything on your own.</p>
     </div>
-    <div class="pv-hero__actions">
-      <a class="pv-btn pv-btn--ghost" href="{% url 'players:player_profile' user.username %}">View my profile</a>
+    <div class="bv-page-header__actions">
+      <a class="bv-btn" href="{% url 'players:player_profile' user.username %}">View my profile</a>
     </div>
-  </header>
+  </div>
 
-  <form method="post" class="pv-card pv-settings">
+  <form method="post" class="bv-card pv-settings" data-profile-settings>
     {% csrf_token %}
     <fieldset>
-      <legend>Public sections</legend>
+      <legend class="pv-card__title">Public sections</legend>
       {% for s in sections %}
         <label class="pv-switch">
           <span class="pv-switch__text">
             <span class="pv-switch__label">{{ s.label }}</span>
-            <span class="pv-muted">{{ s.help }}</span>
+            <span class="pv-muted pv-small">{{ s.help }}</span>
           </span>
+          <span class="pv-switch__saved pv-small" role="status" data-saved></span>
           <input type="checkbox" role="switch" name="{{ s.field }}" {% if s.on %}checked{% endif %}>
           <span class="pv-switch__track" aria-hidden="true"></span>
         </label>
@@ -38,7 +45,11 @@
       Replays themselves stay public on Bonkverse Replays, the same as on bonk.io.
       These switches hide the stats built from them on your profile.
     </p>
-    <button type="submit" class="pv-btn">Save</button>
+    <button type="submit" class="bv-btn bv-btn--primary" data-save>Save</button>
   </form>
-</main>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'players/js/profile_settings.js' %}" defer></script>
 {% endblock %}

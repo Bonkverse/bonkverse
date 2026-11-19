@@ -8,10 +8,13 @@
 
 .bv-chart__grid line { stroke: var(--bv-muted); stroke-width: 1; }
 .bv-chart__grid .bv-chart__xtick { stroke: var(--bv-muted); }
-.bv-chart__tick { fill: var(--bv-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+/* Axis labels: 13 px in the muted text color, which meets AA on every
+   theme's card (design review: 11 px labels were hard to read). */
+.bv-chart__tick { fill: var(--bv-muted); font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
 
 .bv-chart__line { fill: none; stroke: var(--c); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
 .bv-chart__line--dashed { stroke-dasharray: 6 6; }
+.bv-chart__line--gap { stroke-width: 2; stroke-linecap: butt; }
 .bv-chart__area { fill: var(--c); fill-opacity: 0.1; stroke: none; }
 .bv-chart__hline { stroke: var(--bv-muted); stroke-dasharray: 5 6; }
 .bv-chart__hlabel, .bv-chart__mlabel { fill: var(--bv-muted); font-size: 12px; font-weight: 600; paint-order: stroke; stroke: var(--bv-page); stroke-width: 4px; }

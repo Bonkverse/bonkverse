@@ -92,14 +92,17 @@
       : offset === 1 ? "Last week" : `${fmtDay.format(start)} – ${fmtDay.format(addDays(start, 6))}`;
     $("[data-week-total]").textContent = total.toLocaleString();
     $("[data-week-avg]").textContent = Math.round(avg).toLocaleString();
+    // Change in plain text with an arrow: playing less isn't a warning
+    // (design review), so no color.
     const delta = $("[data-week-delta]");
     if (prevTotal) {
       const pct = Math.round(((total - prevTotal) / prevTotal) * 100);
-      delta.textContent = `${pct >= 0 ? "+" : ""}${pct}%`;
-      delta.dataset.trend = pct >= 0 ? "up" : "down";
+      delta.textContent = pct === 0 ? "Same" : `${pct > 0 ? "↑" : "↓"} ${Math.abs(pct)}%`;
+      delta.setAttribute("aria-label", pct === 0 ? "Same as the week before"
+        : `${Math.abs(pct)}% ${pct > 0 ? "more" : "fewer"} than the week before`);
     } else {
       delta.textContent = "—";
-      delta.dataset.trend = "";
+      delta.removeAttribute("aria-label");
     }
     $("[data-prev]").disabled = offset >= oldestOffset;
     $("[data-next]").disabled = offset === 0;
@@ -193,6 +196,17 @@
       root.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
+
+  // The hour axis in the same clock format as every other time on the tab
+  // ("1 AM" next to "12 am" was the review's example).
+  const axis = document.querySelector("[data-hours-axis]");
+  if (axis) {
+    axis.replaceChildren(...[0, 6, 12, 18].map((h) => {
+      const span = document.createElement("span");
+      span.textContent = fmtHour.format(new Date(2000, 0, 1, h));
+      return span;
+    }));
+  }
 
   renderWeek();
   renderDay();

@@ -6,12 +6,12 @@
 {% block tab %}
 {{ script_data|json_script:"activity-data" }}
 
-<section class="pv-open" aria-labelledby="wk-title" data-activity>
+<section class="bv-card pv-section" aria-labelledby="wk-title" data-activity>
   <div class="pv-week__head">
     <div class="pv-week__nav">
-      <button type="button" class="pv-iconbtn" data-prev aria-label="Previous week"><i data-lucide="chevron-left" aria-hidden="true"></i></button>
+      <button type="button" class="bv-btn bv-btn--icon" data-prev aria-label="Previous week"><i data-lucide="chevron-left" aria-hidden="true"></i></button>
       <h2 id="wk-title" class="pv-week__label" data-week-label>This week</h2>
-      <button type="button" class="pv-iconbtn" data-next aria-label="Next week"><i data-lucide="chevron-right" aria-hidden="true"></i></button>
+      <button type="button" class="bv-btn bv-btn--icon" data-next aria-label="Next week"><i data-lucide="chevron-right" aria-hidden="true"></i></button>
     </div>
     <dl class="pv-week__stats">
       <div><dt>Replays</dt><dd data-week-total>—</dd></div>
@@ -26,17 +26,18 @@
   <noscript><p class="pv-muted">Turn on JavaScript to browse week by week.</p></noscript>
 </section>
 
-<section class="pv-open" aria-labelledby="day-title" data-day>
+<section class="bv-card pv-section" aria-labelledby="day-title" data-day>
   <div class="pv-card__head">
     <h2 id="day-title" class="pv-card__title" data-day-title>Pick a day</h2>
     <span class="pv-muted pv-small" data-day-summary></span>
   </div>
   <div class="pv-hours" data-day-hours></div>
-  <div class="pv-hours__axis pv-small pv-muted" aria-hidden="true"><span>12 am</span><span>6 am</span><span>12 pm</span><span>6 pm</span></div>
+  {# player_activity.js rewrites these in the viewer's own clock format, the same one the rest of the tab uses. #}
+  <div class="pv-hours__axis pv-small pv-muted" aria-hidden="true" data-hours-axis><span>12 AM</span><span>6 AM</span><span>12 PM</span><span>6 PM</span></div>
   <p class="pv-fine" data-day-note>Times are in your time zone.</p>
 </section>
 
-<section class="pv-tiles pv-tiles--open" aria-label="Habits">
+<section class="pv-tiles pv-section" aria-label="Habits">
   <div class="pv-tile">
     <span class="pv-tile__val">{{ streaks.current }} day{{ streaks.current|pluralize }}</span>
     <span class="pv-tile__lbl">Current streak</span>
@@ -55,7 +56,7 @@
   </div>
 </section>
 
-<section class="pv-open" aria-labelledby="yr-title">
+<section class="bv-card pv-section" aria-labelledby="yr-title">
   <div class="pv-card__head">
     <h2 id="yr-title" class="pv-card__title">Past year</h2>
     <span class="pv-muted pv-small">Pick a week to see it above</span>

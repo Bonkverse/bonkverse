@@ -1,9 +1,9 @@
 {% extends 'players/_layout.html' %}
 
 {% block tab %}
-<div class="pv-card pv-empty">
-  <i data-lucide="lock" class="pv-card__icon" aria-hidden="true"></i>
-  <p>{% if summary or account %}{{ username }} keeps this part of their profile private.{% else %}There's nothing to show here yet.{% endif %}</p>
-  <p><a class="pv-btn pv-btn--ghost" href="{% url 'players:player_profile' username %}">Back to overview</a></p>
+<div class="bv-empty pv-gap">
+  <i data-lucide="lock" aria-hidden="true"></i>
+  <p class="bv-empty__title">{% if summary or account %}{{ username }} keeps this part of their profile private.{% else %}There's nothing to show here yet.{% endif %}</p>
+  <a class="bv-btn" href="{% url 'players:player_profile' username %}">Back to overview</a>
 </div>
 {% endblock %}

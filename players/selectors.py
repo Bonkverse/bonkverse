@@ -22,7 +22,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.paginator import Paginator
-from django.db.models import Case, Count, Exists, IntegerField, OuterRef, Q, Value, When
+from django.db.models import Case, Count, Exists, F, IntegerField, OuterRef, Q, Value, When
 from django.db.models.functions import Lower, RTrim
 from django.utils import timezone
 
@@ -57,7 +57,8 @@ from .models import ProfileVisibility
 # Avatar image routes (players/urls.py), by image kind.
 SKIN_AVATAR_FILES = {"png": "skin.png", "thumbnail": "skin-thumb.png"}
 
-FEATURED_SKINS = 4
+FEATURED_SKINS = 6  # one row of six on the Overview (design review)
+TOP_FRIENDS = 5
 SKINS_PER_PAGE = 24
 
 # (slug, label, the ProfileVisibility section that hides it, needs replays)
@@ -315,6 +316,9 @@ def overview(base, viewer):
                 show_activity=shown["activity"],
             )[:5],
         )
+        # The level card shows the level, so the header leaves it out
+        # ("Level 206" twice in view, design review).
+        ctx["level_in_body"] = bool(ctx["sparkline"])
     account = base["account"]
     if account and shown["skins"]:
         ctx["featured"] = list(skins_created_by(account.username, "top")[:FEATURED_SKINS])
@@ -360,7 +364,7 @@ def maps(base, mapid=None):
             )
             with_skin_avatars(detail["people"])
     return {
-        "ring": charts.mode_ring(profile.get("modes") or []),
+        "modes": charts.mode_bars(profile.get("modes") or []),
         "rooms": charts.room_split(profile.get("rooms")),
         "maps": rows,
         "selected": selected,
@@ -369,38 +373,36 @@ def maps(base, mapid=None):
     }
 
 
-def people(base):
+PEOPLE_LISTS = [
+    # (key, switch label, profile field, what a count is, empty text)
+    ("with", "Plays with", "played_with", "replays", "No registered players seen together yet."),
+    ("team", "Teams with", "teammates", "team games", "No team games with registered players yet."),
+    (
+        "against",
+        "Plays against",
+        "rivals",
+        "games against",
+        "No team games or 1v1s against registered players yet.",
+    ),
+]
+
+
+def people(base, which=None):
+    """The People tab: one ranked list at a time, with a switch between
+    plays with / teams with / plays against (design review)."""
     profile, links, name = base["profile"], base["links"], base["username"]
+    keys = [key for key, *_ in PEOPLE_LISTS]
+    which = which if which in keys else keys[0]
+    key, title, field, unit, empty = next(row for row in PEOPLE_LISTS if row[0] == which)
     return {
-        "lists": [
-            {
-                "key": "with",
-                "title": "Plays with",
-                "unit": "replays",
-                "rows": with_skin_avatars(
-                    charts.people_rows(profile.get("played_with") or [], links, name)
-                ),
-                "empty": "No registered players seen together yet.",
-            },
-            {
-                "key": "team",
-                "title": "Teams with",
-                "unit": "team games",
-                "rows": with_skin_avatars(
-                    charts.people_rows(profile.get("teammates") or [], links, name)
-                ),
-                "empty": "No team games with registered players yet.",
-            },
-            {
-                "key": "rivals",
-                "title": "Plays against",
-                "unit": "games against",
-                "rows": with_skin_avatars(
-                    charts.people_rows(profile.get("rivals") or [], links, name)
-                ),
-                "empty": "No team games or 1v1s against registered players yet.",
-            },
-        ]
+        "lists": [{"key": k, "title": t} for k, t, *_ in PEOPLE_LISTS],
+        "list": {
+            "key": key,
+            "title": title,
+            "unit": unit,
+            "empty": empty,
+            "rows": with_skin_avatars(charts.people_rows(profile.get(field) or [], links, name)),
+        },
     }
 
 
@@ -466,7 +468,9 @@ def _joined(bonk_id):
 
 
 def friend_counts(base, viewer):
-    """Small numbers for the Overview card: friends, Flash friends, mutual."""
+    """The Overview's Friends card: how many friends, Flash friends and
+    mutual friends, and up to TOP_FRIENDS of them to show: the ones they play
+    with most first, then the friends with the most friends."""
     player, account = base["bonk_player"], base["account"]
     hidden_ids, hidden_names = _hidden_friend_lists(viewer)
     ids = friend_ids(player) - hidden_ids
@@ -480,7 +484,39 @@ def friend_counts(base, viewer):
     is_self = mine is not None and player is not None and mine.pk == player.pk
     mutual = len(ids & friend_ids(mine)) if mine and not is_self else None
     flash = FlashFriendship.objects.filter(user=account).count() if account else 0
-    return {"friends": len(ids), "flash": flash, "mutual": mutual}
+    return {"friends": len(ids), "flash": flash, "mutual": mutual, "top": _top_friends(base, ids)}
+
+
+def _top_friends(base, ids):
+    if not ids:
+        return []
+    partners = [p["username"].lower() for p in ((base["profile"] or {}).get("played_with") or [])]
+    rank = {name: i for i, name in enumerate(partners)}
+    together = list(
+        BonkPlayer.objects.annotate(lname=Lower("username")).filter(id__in=ids, lname__in=partners)
+    )
+    together.sort(key=lambda p: rank[p.username.lower()])
+    picked = together[:TOP_FRIENDS]
+    if len(picked) < TOP_FRIENDS:
+        picked += (
+            BonkPlayer.objects.filter(id__in=ids)
+            .exclude(id__in=[p.id for p in picked])
+            .order_by(F("last_friend_count").desc(nulls_last=True), Lower("username"))[
+                : TOP_FRIENDS - len(picked)
+            ]
+        )
+    return [
+        {
+            "username": p.username,
+            "shown": shown_name(p.username),
+            "initials": initials(p.username),
+            "skin": _versioned_thumb(p.username, skin_version(p.worn_skin_code))
+            if p.worn_skin_code
+            else None,
+            "url": charts.profile_path(p.username),
+        }
+        for p in picked
+    ]
 
 
 def friends(base, viewer):

@@ -189,11 +189,35 @@ def test_milestones_respect_privacy():
     assert not any("level" in m["what"] for m in found)
 
 
-def test_mode_ring_has_a_slice_per_mode():
-    ring = charts.mode_ring(profile_json()["modes"])
-    assert [s["label"] for s in ring["slices"]] == ["Death Arrows", "Classic"]
-    assert [s["share"] for s in ring["slices"]] == [75, 25]
-    assert all(s["d"].startswith("M ") for s in ring["slices"])
+def test_mode_bars_are_sorted_with_counts():
+    """A sorted bar list replaces the donut (design review)."""
+    modes = [{"mode": "b", "games": 30}, {"mode": "ard", "games": 90}, {"mode": "v", "games": 0}]
+    bars = charts.mode_bars(modes)
+    assert [b["label"] for b in bars] == ["Death Arrows", "Classic"]
+    assert [b["share"] for b in bars] == [75, 25]
+    assert [b["bar"] for b in bars] == [100, 33.3]
+    tiny = charts.mode_bars([{"mode": "ard", "games": 999}, {"mode": "b", "games": 1}])
+    assert tiny[1]["share_label"] == "<1"
+
+
+def test_sparkline_dashes_long_gaps_where_the_level_rose():
+    days = [
+        {"day": "2026-01-01", "games": 5, "level": 10},
+        {"day": "2026-01-02", "games": 5, "level": 11},
+        {"day": "2026-03-01", "games": 5, "level": 20},  # weeks away, then 9 levels up
+        {"day": "2026-03-02", "games": 5, "level": 20},
+    ]
+    line = charts.sparkline(days)
+    assert line["gaps"].count("M") == 1
+    assert line["line"].count("M") == 2
+    steady = charts.sparkline(days[:2])
+    assert steady["gaps"] == ""
+
+
+def test_one_kind_of_room_is_said_not_drawn():
+    rooms = charts.room_split({"1v1": 40, "ffa": 0, "teams": 0, "solo": 0})
+    assert rooms["only"] == "1v1"
+    assert charts.room_split(profile_json()["rooms"])["only"] is None
 
 
 def test_room_split_skips_empty_kinds():
@@ -236,6 +260,42 @@ def test_overview_cards(client, mocked_http):
     for text in ["Level explorer", "Main mode", "Home map", "Plays with most", "Milestones"]:
         assert text in html
     assert "Sign in with your bonk.io account" in html
+    # The level card shows the level, so the header doesn't repeat it.
+    assert "Level 54</span>" not in html
+    assert "Level 100 in about" in html
+
+
+@pytest.mark.django_db
+def test_other_tabs_keep_the_level_in_the_header(client, mocked_http):
+    mock_player(mocked_http, "Saucy Tulip")
+    html = client.get(reverse("players:player_people", args=["Saucy Tulip"])).content.decode()
+    assert "Level 54</span>" in html
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "tab,title",
+    [
+        ("player_profile", "Saucy Tulip · Bonkverse"),
+        ("player_activity", "Saucy Tulip · Activity · Bonkverse"),
+        ("player_level", "Saucy Tulip · Level · Bonkverse"),
+        ("player_maps", "Saucy Tulip · Maps &amp; modes · Bonkverse"),
+        ("player_people", "Saucy Tulip · People · Bonkverse"),
+    ],
+)
+def test_each_tab_has_its_own_title(client, mocked_http, tab, title):
+    mock_player(mocked_http, "Saucy Tulip")
+    mock_map(mocked_http, "Saucy Tulip")
+    html = client.get(reverse(f"players:{tab}", args=["Saucy Tulip"])).content.decode()
+    assert f"<title>{title}</title>" in html
+
+
+@pytest.mark.django_db
+def test_profile_is_on_bv_components(client, mocked_http):
+    mock_player(mocked_http, "Saucy Tulip")
+    html = client.get(reverse("players:player_profile", args=["Saucy Tulip"])).content.decode()
+    assert 'class="content site-page"' in html
+    assert "css/player_profile.css" not in html and "players/css/profile.css" in html
 
 
 @pytest.mark.django_db
@@ -258,11 +318,16 @@ def test_maps_tab_survives_a_map_outage(client, mocked_http):
 
 
 @pytest.mark.django_db
-def test_people_tab_has_three_lists(client, mocked_http):
+def test_people_tab_is_one_list_with_a_switch(client, mocked_http):
     mock_player(mocked_http, "Saucy Tulip")
-    html = client.get(reverse("players:player_people", args=["Saucy Tulip"])).content.decode()
+    url = reverse("players:player_people", args=["Saucy Tulip"])
+    html = client.get(url).content.decode()
     assert "Plays with" in html and "Teams with" in html and "Plays against" in html
-    assert "Rival Two" in html
+    assert 'href="?list=with" aria-current="page"' in html
+    assert "Friend One" in html and "Rival Two" not in html
+    against = client.get(url + "?list=against").content.decode()
+    assert "Rival Two" in against and 'href="?list=against" aria-current="page"' in against
+    assert "Friend One" in client.get(url + "?list=nonsense").content.decode()
 
 
 @pytest.mark.django_db
@@ -407,6 +472,17 @@ def test_saving_settings(logged_in_client, user):
     saved = ProfileVisibility.objects.get(user=user)
     assert saved.level_history and saved.skins
     assert not saved.activity and not saved.play_partners and not saved.favorites
+
+
+@pytest.mark.django_db
+def test_switches_save_as_they_flip(logged_in_client, user):
+    """profile_settings.js posts the form on every flip and wants JSON back."""
+    response = logged_in_client.post(
+        reverse("players:profile_settings"), {"skins": "on"}, HTTP_ACCEPT="application/json"
+    )
+    assert response.json() == {"ok": True}
+    saved = ProfileVisibility.objects.get(user=user)
+    assert saved.skins and not saved.level_history
 
 
 @pytest.mark.django_db

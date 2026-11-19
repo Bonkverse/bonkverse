@@ -48,6 +48,9 @@ const PAGES = [
   ["/developers/", "developers", false],
   ["/login/", "login", false],
   ["/privacy/", "privacy", false],
+  ["/player/ui-check-staff/", "profile", true], // your own profile: Upload and settings in the header
+  ["/player/ui-check-staff/friends/", "profile-friends", false],
+  ["/player/no-such-player-here/", "player-not-found", false],
   ["/player/ui-check-staff/skins/", "my-skins", true], // your own Skins tab: owner cards (seed_ui_checks' account)
   ["/upload/", "upload", true],
   ["/settings/profile/", "settings", true],
