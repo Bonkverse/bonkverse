@@ -31,3 +31,16 @@ def test_skin_page_never_shows_the_generated_description(client):
     response = client.get(skin.get_absolute_url())
 
     assert "evokes a sense of whimsy" not in response.content.decode()
+
+
+def test_skin_page_back_link_says_back_and_falls_back_to_search(client):
+    """Owner, 2026-11-18: "Back" returns to wherever you came from, where you
+    left it (js/skin_detail.js uses the browser's Back for Bonkverse pages);
+    without one, the plain link goes to skin search."""
+    skin = SkinFactory()
+
+    html = client.get(skin.get_absolute_url()).content.decode()
+
+    assert 'class="bv-back" href="/search/" data-back>' in html
+    assert "</span> Back" in html
+    assert "Search results" not in html
