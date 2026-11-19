@@ -45,13 +45,13 @@ const PAGES = [
   ["/categories/", "categories", false],
   ["/leaderboards/upvoted/", "leaderboards", false],
   ["/players/", "players", false],
-  ["/staff/", "team", false],
   ["/players/?f0=name&o0=contains&v0=a", "players-advanced", false], // the rule builder, open
   ["/serverlist/", "servers", false],
   ["/submit/", "submit-server", false],
   ["/tools/xp/", "xp", false],
   ["/developers/", "developers", false],
   ["/login/", "login", false],
+  ["/staff/", "team", false],
   ["/player/ui-check-staff/", "profile", true], // your own profile: Upload and settings in the header
   ["/player/ui-check-staff/friends/", "profile-friends", false],
   ["/player/no-such-player-here/", "player-not-found", false],
