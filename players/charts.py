@@ -192,7 +192,8 @@ def level_script_data(profile):
 def heatmap(days, today):
     """The last 53 weeks as columns of 7 days (Monday first), each day shaded
     0–4 by how many replays it had compared with the player's busier days
-    (the colors come from the theme, players/css/profile.css)."""
+    (the colors come from the theme, players/css/profile.css). A week's
+    `month` is the date to label it with when a month starts in it."""
     counts = {d: g for d, g, _ in _played(days)}
     start = today - timedelta(days=today.weekday() + 52 * 7)
     nonzero = sorted(g for d, g in counts.items() if start <= d <= today)
@@ -210,9 +211,15 @@ def heatmap(days, today):
             g = counts.get(d, 0)
             shade = 0 if g == 0 or d > today else 1 + sum(g > c for c in cuts)
             cells.append({"day": d, "games": g, "shade": shade, "future": d > today})
-        weeks.append({"start": week_start, "cells": cells})
-        if w == 0 or week_start.month != (week_start - timedelta(days=7)).month:
-            months.append({"week": w, "label": week_start})
+        # Label the week a month starts in ("Nov" over its column), like a
+        # contribution grid. The oldest column only gets one if the next
+        # month is at least 3 weeks away, so two labels never collide.
+        first = next((c["day"] for c in cells if c["day"].day == 1), None)
+        if w == 0 and first is None and (week_start + timedelta(days=21)).month == week_start.month:
+            first = week_start
+        weeks.append({"start": week_start, "cells": cells, "month": first})
+        if first:
+            months.append({"week": w, "label": first})
     return {
         "weeks": weeks,
         "newest_first": weeks[::-1],

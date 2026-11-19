@@ -197,6 +197,19 @@
     });
   });
 
+  // Pointing at or tapping a day in the year grid says its count in the
+  // line under it (the squares' titles don't show on touch screens).
+  const readout = document.querySelector("[data-heat-readout]");
+  if (readout) {
+    const sayDay = (event) => {
+      const day = event.target.closest("[data-day-label]");
+      if (day) readout.textContent = day.dataset.dayLabel;
+    };
+    const grid = document.querySelector(".pv-heat__grid");
+    grid.addEventListener("pointerover", sayDay);
+    grid.addEventListener("click", sayDay);
+  }
+
   // The hour axis in the same clock format as every other time on the tab
   // ("1 AM" next to "12 am" was the review's example).
   const axis = document.querySelector("[data-hours-axis]");

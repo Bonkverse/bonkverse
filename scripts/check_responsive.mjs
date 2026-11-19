@@ -73,7 +73,7 @@ const SIZES = [
 const THEMES = arg("themes", "bonkverse,light,dark").split(",");
 
 // Things that scroll sideways on purpose; what's inside them may be wider.
-const SCROLLERS = ".bv-table-wrap, .bv-tabs, .bv-code pre, pre, .carousel, .carousel-track, .site-scroll, .pv-tabs, .pv-tablewrap, .pv-heat__grid";
+const SCROLLERS = ".bv-table-wrap, .bv-tabs, .bv-code pre, pre, .carousel, .carousel-track, .site-scroll, .pv-tabs, .pv-tablewrap, .pv-heat__scroll";
 const CONTROLS = [
   ".bv-btn", ".bv-header__link", ".bv-menu__item", ".bv-tab", ".bv-details-link", ".bv-back", ".bv-fav",
   ".bv-theme-picker select", ".bv-input", ".bv-select", ".bv-search", ".bv-search button", ".page-btn", ".page-nav",

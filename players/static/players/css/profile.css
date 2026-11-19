@@ -257,14 +257,31 @@
 /* ── Activity: heatmap, week, hours ───────────────── */
 /* Newest week first in the markup and laid out right to left, so the
    latest weeks sit on the right and a narrow screen starts scrolled to them. */
-.pv-heat__grid {
+/* Weekday names on the left, then a scroller holding the month row and the
+   week columns; both are 53 columns laid out right to left so the latest
+   weeks sit on the right. Weekday rows line up with the day rows: same
+   gap, and they start below the month row. */
+.pv-heat { --heat-gap: 3px; --months-h: 18px; }
+.pv-heat__body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--bv-space-2); }
+.pv-heat__days {
+  display: grid;
+  grid-template-rows: repeat(7, 1fr);
+  row-gap: var(--heat-gap);
+  padding: calc(var(--months-h) + var(--heat-gap)) 0 var(--bv-space-1);
+  line-height: 1;
+}
+.pv-heat__days span { display: flex; align-items: center; font-size: 11px; }
+.pv-heat__scroll { min-width: 0; padding-bottom: var(--bv-space-1); overflow-x: auto; direction: rtl; }
+.pv-heat__months, .pv-heat__grid {
   display: grid;
   grid-template-columns: repeat(53, minmax(10px, 1fr));
-  gap: 3px;
-  padding-bottom: var(--bv-space-1);
-  overflow-x: auto;
-  direction: rtl;
+  column-gap: var(--heat-gap);
+  min-width: calc(53 * 10px + 52 * var(--heat-gap));
 }
+.pv-heat__months { height: var(--months-h); margin-bottom: var(--heat-gap); }
+/* A month name starts at its week and runs over the older weeks to its left. */
+.pv-heat__months span { position: relative; direction: ltr; font-size: 11px; line-height: var(--months-h); white-space: nowrap; }
+.pv-heat__months span:not(:empty) { overflow: visible; }
 .pv-heat__week {
   display: grid;
   grid-template-rows: repeat(7, auto);
@@ -285,7 +302,9 @@ button.pv-heat__week[aria-pressed="true"] { box-shadow: 0 0 0 1px var(--bv-card)
 .pv-heat__day--2 { --heat: color-mix(in srgb, var(--bv-link) 55%, var(--bv-input)); }
 .pv-heat__day--3 { --heat: color-mix(in srgb, var(--bv-link) 78%, var(--bv-input)); }
 .pv-heat__day--4 { --heat: var(--bv-link); }
-.pv-heat__legend { display: flex; align-items: center; justify-content: flex-end; gap: var(--bv-space-1); margin-top: var(--bv-space-2); }
+.pv-heat__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--bv-space-2) var(--bv-space-4); margin-top: var(--bv-space-2); }
+.pv-heat__readout { color: var(--bv-text); font-variant-numeric: tabular-nums; }
+.pv-heat__legend { display: flex; align-items: center; gap: var(--bv-space-1); margin-left: auto; }
 .pv-heat__legend .pv-heat__day { display: inline-block; width: 11px; }
 
 .pv-week__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--bv-space-4); }
