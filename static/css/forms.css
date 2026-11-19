@@ -68,48 +68,7 @@
     cursor: pointer;
 }
 
-.suggestions {
-    list-style-type: none;
-    padding: 0;
-    margin: 5px 0;
-    margin-left: 30px;
-    background: var(--bv-card);
-    border: 2px solid var(--bv-link);
-    border-radius: 5px;
-    width: 93%;
-    max-height: 150px;
-    overflow-y: auto;
-}
-
-.suggestion-label {
-    font-size: 14px;
-    font-style: italic;
-    color: var(--bv-link);
-    margin-top: 5px;
-    margin-left: 30px;
-    text-align: left;
-}
-
-.suggestions li {
-    padding: 10px;
-    cursor: pointer;
-    color: var(--bv-text);
-    border-bottom: 1px solid var(--bv-link);
-}
-
-.suggestions li:hover {
-    background-color: var(--bv-hover);
-}
-
-/* Search row + filter controls */
-.search-row {
-    align-items: center;
-    justify-content: center;
-    gap: 18px;
-    margin: 0 auto;
-    max-width: 1100px;
-}
-
+/* Filter controls */
 .search-controls-inline {
     display: flex;
     align-items: center;
@@ -159,50 +118,6 @@
 
 #player-query::placeholder {
     color: var(--bv-muted);
-}
-
-/* Select wrapper (for custom chevron) */
-.slot-select {
-    position: relative;
-    display: inline-block;
-}
-
-.slot-select.sm select { padding: 6px 28px 6px 10px; font-size: 0.95rem; }
-.slot-select.md select { padding: 8px 34px 8px 12px; }
-
-.slot-select select {
-    width: auto;
-    margin: 0;
-    -webkit-appearance: none;
-    appearance: none;
-    background:color-mix(in srgb, var(--bv-text) 6%, transparent);
-    border: 1px solid var(--bv-outline);
-    border-radius: 10px;
-    color: var(--bv-text);
-    outline: none;
-    cursor: pointer;
-    line-height: 1.2;
-    box-shadow: 0 1px 0 rgba(0,0,0,.25) inset;
-    transition: border-color .15s ease, box-shadow .15s ease, transform .05s ease;
-}
-
-.slot-select select:hover { border-color: var(--bv-link); }
-.slot-select select:focus {
-    border-color: var(--bv-link);
-}
-
-.slot-select select:active { transform: translateY(1px); }
-
-.slot-select::after {
-    content: "▾";
-    position: absolute;
-    right: 9px;
-    top: 50%;
-    transform: translateY(-50%);
-    pointer-events: none;
-    color: var(--bv-text);
-    opacity: .85;
-    font-size: .9rem;
 }
 
 /* Upload page: the reason an upload failed */
