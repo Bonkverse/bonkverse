@@ -4,6 +4,8 @@ Covers core/client_ip.py and core/ratelimits.py. The production request path is
 visitor -> Cloudflare -> Railway edge -> Django; tests fake it with headers.
 """
 
+from unittest import mock
+
 import pytest
 from django.http import HttpResponse
 from django.test import RequestFactory
@@ -147,6 +149,40 @@ class TestTooManyRequests:
         assert f'data-seconds="{seconds}"'.encode() in response.content
         assert b'data-reload="true"' in response.content
         assert b"js/ratelimit.js" in response.content
+
+    def test_last_second_of_window_still_sends_retry_after(self, client):
+        """Regression: in a window's last second django-ratelimit reports 0
+        seconds left, and the 429 dropped its Retry-After header (a CI flake
+        about 1 run in 60, and a real gap for visitors)."""
+        from core import ratelimits
+
+        real_get_usage = ratelimits.get_usage
+
+        def last_second(*args, **kwargs):
+            usage = real_get_usage(*args, **kwargs)
+            return usage and {**usage, "time_left": 0}
+
+        with mock.patch.object(ratelimits, "get_usage", side_effect=last_second):
+            response = self._exhaust(client, "/search/?q=x")
+
+        assert response.status_code == 429
+        assert response["Retry-After"] == "1"
+
+    def test_unknown_wait_sends_no_retry_after(self, client):
+        """time_left -1 means the cache failed: no made-up wait."""
+        from core import ratelimits
+
+        real_get_usage = ratelimits.get_usage
+
+        def cache_failed(*args, **kwargs):
+            usage = real_get_usage(*args, **kwargs)
+            return usage and {**usage, "time_left": -1}
+
+        with mock.patch.object(ratelimits, "get_usage", side_effect=cache_failed):
+            response = self._exhaust(client, "/search/?q=x")
+
+        assert response.status_code == 429
+        assert "Retry-After" not in response
 
     def test_api_gets_json_error_contract(self, client):
         response = self._exhaust(client, "/api/players/search/?q=x")
