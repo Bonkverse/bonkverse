@@ -169,6 +169,26 @@ def test_heatmap_covers_a_year_newest_first():
     assert hm["days_played"] == 3  # 2025-03-05 is more than a year back
 
 
+def test_heatmap_labels_the_week_each_month_starts_in():
+    """Design review: month names across the top of the year grid."""
+    hm = charts.heatmap(profile_json()["days"], date(2026, 11, 8))
+    newest = hm["newest_first"]
+    # Nov 1 2026 is a Sunday: the week of Oct 26 carries "Nov".
+    assert newest[1]["start"] == date(2026, 10, 26) and newest[1]["month"] == date(2026, 11, 1)
+    assert newest[0]["month"] is None
+    labelled = [w["month"] for w in hm["weeks"] if w["month"]]
+    assert len(labelled) in (12, 13) and len({(d.year, d.month) for d in labelled}) == len(labelled)
+
+
+@pytest.mark.django_db
+def test_activity_year_grid_has_labels_and_a_day_readout(client, mocked_http):
+    mock_player(mocked_http, "Saucy Tulip")
+    html = client.get(reverse("players:player_activity", args=["Saucy Tulip"])).content.decode()
+    assert 'class="pv-heat__days' in html and "<span>Wed</span>" in html
+    assert 'class="pv-heat__months' in html and "data-heat-readout" in html
+    assert 'data-day-label="' in html
+
+
 def test_streaks():
     s = charts.streaks(profile_json()["days"], date(2026, 11, 8))
     assert s["current"] == 2 and s["longest"] == 2
