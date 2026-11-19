@@ -45,8 +45,6 @@ const PAGES = [
   ["/categories/", "categories", false],
   ["/leaderboards/upvoted/", "leaderboards", false],
   ["/players/", "players", false],
-  ["/privacy/", "privacy", false],
-  ["/terms/", "terms", false],
   ["/players/?f0=name&o0=contains&v0=a", "players-advanced", false], // the rule builder, open
   ["/serverlist/", "servers", false],
   ["/submit/", "submit-server", false],
@@ -59,6 +57,8 @@ const PAGES = [
   ["/player/ui-check-staff/skins/", "my-skins", true], // your own Skins tab: owner cards (seed_ui_checks' account)
   ["/upload/", "upload", true],
   ["/settings/profile/", "settings", true],
+  ["/privacy/", "privacy", false],
+  ["/terms/", "terms", false],
   ["/developers/keys/", "api-keys", true],
   ["/moderation/", "moderation", true], // staff only: --session of a staff account
 ];
