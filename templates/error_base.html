@@ -1,24 +1,35 @@
 {% extends "base.html" %}
 {% load static %}
 {% comment %}
-  Shared layout for error pages. Children fill: code, heading, message, actions.
+Shared layout for the 404 and 429 pages on Bonkverse/ui components
+(css/errors.css). Children fill: code, heading, message, actions, and
+optionally after (more under the actions). Design review: a small bonk ball
+instead of an error-red "Oops!": a missing page isn't the visitor's mistake.
+500.html stays standalone on purpose.
 {% endcomment %}
 
 {% block title %}{% block heading_title %}{% endblock %} · Bonkverse{% endblock %}
+{% block content_class %}site-page{% endblock %}
 
 {% block extra_head %}
   <link rel="stylesheet" href="{% static 'css/errors.css' %}">
 {% endblock %}
 
 {% block content %}
-<section class="error-page">
-  <p class="error-page__code">{% block code %}{% endblock %}</p>
+<div class="bv-main error-page">
+  <svg class="error-page__ball" viewBox="0 0 96 96" aria-hidden="true">
+    <circle cx="48" cy="48" r="44" class="error-page__ball-fill"></circle>
+    <circle cx="48" cy="48" r="44" class="error-page__ball-edge"></circle>
+    <ellipse cx="34" cy="32" rx="11" ry="7" class="error-page__ball-shine"></ellipse>
+  </svg>
+  <p class="bv-eyebrow error-page__code">{% block code %}{% endblock %}</p>
   <h1 class="error-page__title">{% block heading %}{% endblock %}</h1>
   <p class="error-page__message">{% block message %}{% endblock %}</p>
   <div class="error-page__actions">
     {% block actions %}
-      <a class="btn btn-primary" href="/">Back to Home</a>
+      <a class="bv-btn bv-btn--primary" href="/">Back to the home page</a>
     {% endblock %}
   </div>
-</section>
+  {% block after %}{% endblock %}
+</div>
 {% endblock %}
