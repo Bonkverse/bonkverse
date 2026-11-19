@@ -45,6 +45,7 @@ const PAGES = [
   ["/categories/", "categories", false],
   ["/leaderboards/upvoted/", "leaderboards", false],
   ["/players/", "players", false],
+  ["/social-stats/", "social-stats", false],
   ["/players/?f0=name&o0=contains&v0=a", "players-advanced", false], // the rule builder, open
   ["/serverlist/", "servers", false],
   ["/submit/", "submit-server", false],
@@ -59,6 +60,7 @@ const PAGES = [
   ["/upload/", "upload", true],
   ["/settings/profile/", "settings", true],
   ["/developers/keys/", "api-keys", true],
+  ["/developers/terms/", "api-terms", false],
   ["/moderation/", "moderation", true], // staff only: --session of a staff account
 ];
 const SIZES = [
