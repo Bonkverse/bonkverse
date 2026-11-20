@@ -45,6 +45,7 @@ const PAGES = [
   ["/social-stats/", "social-stats", false],
   ["/serverlist/", "servers", false],
   ["/submit/", "submit-server", false],
+  ["/matchmaking/", "matchmaking", false],
   ["/tools/map-decode/", "map-decode", false],
   ["/developers/", "developers", false],
   ["/login/", "login", false],

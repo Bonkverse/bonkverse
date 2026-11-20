@@ -82,7 +82,9 @@ def test_categories_page_shows_the_pick(client):
 
     html = client.get("/categories/").content.decode()
 
-    assert 'src="/media/skins/p.png" alt="Animals"' in html
+    # The cover is decorative: the tile's name sits right under it
+    assert 'src="/media/skins/p.png" alt=""' in html
+    assert ">Animals</span>" in html
 
 
 def test_admin_offers_only_real_categories():

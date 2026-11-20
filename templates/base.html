@@ -17,10 +17,8 @@
     {# The site's own styles, until each page moves onto bv- components #}
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
     <link rel="stylesheet" href="{% static 'css/pagination.css' %}">
-    <link rel="stylesheet" href="{% static 'css/forms.css' %}">
     <link rel="stylesheet" href="{% static 'css/cards.css' %}">
     <link rel="stylesheet" href="{% static 'css/skin_cards.css' %}">
-    <link rel="stylesheet" href="{% static 'css/skin_detail.css' %}">
     <link rel="stylesheet" href="{% static 'css/modal.css' %}">
     <link rel="stylesheet" href="{% static 'css/responsive.css' %}">
     {% block extra_head %}{% endblock %}
@@ -64,10 +62,8 @@
       <div class="site-skin-tabs-wrap">{% include 'partials/_skin_tabs.html' %}</div>
     {% endif %}
 
-    {# Pages built on bv- components set content_class to "site-page". The rest #}
-    {# are "site-legacy": every page follows the theme, but the old bare form,  #}
-    {# input and button rules (css/forms.css) apply only inside site-legacy.    #}
-    <div class="content {% block content_class %}site-legacy{% endblock %}" id="main">
+    {# Every page is built on bv- components (RFC-0002); content_class stays so a page can add its own class. #}
+    <div class="content {% block content_class %}site-page{% endblock %}" id="main">
         {% block content %}{% endblock %}
     </div>
 

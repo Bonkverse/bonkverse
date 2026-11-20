@@ -54,3 +54,4 @@ development are in the [README](../README.md); code conventions in
 - [0017 The site account model moved to `accounts` by pinning migration history](adr/0017-user-model-moved-by-pinning-history.md)
 - [0018 Domain apps that use each other only through services, selectors and models](adr/0018-domain-apps-and-their-boundaries.md)
 - [0019 A model changes app without its table moving](adr/0019-models-move-without-moving-tables.md)
+- [0020 Every page on the shared look, held by tests](adr/0020-one-look-held-by-tests.md)
