@@ -209,8 +209,11 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
 
+# Our own subdomains read /api/me/ with the shared session cookie, so their
+# headers can show who is signed in.
 CORS_ALLOWED_ORIGINS = [
     "https://editor.bonkverse.io",
+    "https://replays.bonkverse.io",
     "https://bonkverse.io",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
