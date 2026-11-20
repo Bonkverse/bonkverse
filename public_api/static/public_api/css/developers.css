@@ -164,7 +164,7 @@
 .dev-keys__name { font-weight: 600; overflow-wrap: anywhere; }
 .dev-keys__meta { display: block; margin-top: 2px; }
 .dev-keys__tier { margin-left: var(--bv-space-2); }
-.dev-keys__revoked td { opacity: 0.6; }
+.dev-keys__revoked td:not(:last-child) { opacity: 0.6; }
 .dev-keys code { white-space: nowrap; }
 /* The Revoke dialog sits in a right-aligned cell; its text reads left. */
 .dev-keys .bv-dialog { text-align: left; white-space: normal; }
@@ -179,3 +179,105 @@
 .dev-terms h2:not(:first-child) { margin-top: var(--bv-space-6); }
 .dev-terms ol { margin: 0; padding-left: 1.4em; line-height: 1.6; }
 .dev-terms li + li { margin-top: var(--bv-space-2); }
+
+/* Key list: the name opens the key's usage page; Usage and Revoke sit
+   side by side. */
+.dev-keys__name a { color: inherit; }
+.dev-keys__name a:hover { color: var(--bv-link); }
+.dev-keys__actions { display: inline-flex; gap: var(--bv-space-2); }
+
+/* One key's usage page (developers/key_usage.html) */
+.dev-usage__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bv-space-2);
+}
+.dev-usage__meta code { overflow-wrap: anywhere; }
+.dev-limits code,
+.dev-usage-table code { white-space: nowrap; }
+/* Phones: each row stacks, the endpoint on its own line and the numbers
+   under it with their column names (data-label), so nothing scrolls. */
+@media (max-width: 599px) {
+  .dev-limits thead,
+  .dev-usage-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .dev-limits tr,
+  .dev-usage-table tr {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--bv-space-1) var(--bv-space-3);
+    padding: var(--bv-space-3) var(--bv-space-4);
+  }
+  .dev-limits td,
+  .dev-usage-table td,
+  .dev-limits td.bv-num,
+  .dev-usage-table td.bv-num {
+    display: block;
+    padding: 0;
+    border: 0;
+    text-align: start;
+  }
+  .dev-limits td:first-child,
+  .dev-usage-table td:first-child { grid-column: 1 / -1; }
+  .dev-limits code,
+  .dev-usage-table code { white-space: normal; overflow-wrap: anywhere; }
+  .dev-limits td[data-label]::before,
+  .dev-usage-table td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    color: var(--bv-muted);
+    font-size: var(--bv-text-xs);
+    font-weight: 400;
+  }
+  .dev-limits tr + tr,
+  .dev-usage-table tr + tr { border-top: 1px solid var(--bv-divider); }
+}
+.dev-limits__out { color: var(--bv-danger); font-weight: 700; }
+.dev-usage__totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bv-space-2) var(--bv-space-6);
+  color: var(--bv-muted);
+}
+.dev-usage__totals strong {
+  color: var(--bv-text);
+  font-size: var(--bv-text-lg);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Requests per day: one bar per day, oldest left. Bars use the muted text
+   color so they read on every theme (3:1 against the card). */
+.dev-days { margin: 0; }
+.dev-days__bars {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  align-items: end;
+  gap: 2px;
+  height: 120px;
+  margin: 0;
+  padding: 0 0 1px;
+  border-bottom: 1px solid var(--bv-outline);
+  list-style: none;
+}
+.dev-days__bar {
+  height: var(--h);
+  min-height: 0;
+  border-radius: 2px 2px 0 0;
+  background: var(--bv-muted);
+}
+.dev-days__bar--none { background: none; }
+.dev-days__axis {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--bv-space-2);
+  margin-top: var(--bv-space-2);
+  color: var(--bv-muted);
+  font-size: var(--bv-text-xs);
+}

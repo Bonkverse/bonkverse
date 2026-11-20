@@ -9,13 +9,15 @@ stored); that reply is `no-store` so the browser doesn't keep it either.
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import Http404
 from django.shortcuts import redirect, render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 
 from core.ratelimits import limit
 
-from .. import selectors, services
+from .. import selectors, services, usage
+from ..auth import limits_now
 from ..models import ApiKey
 
 _ERRORS = {
@@ -80,6 +82,27 @@ def keys(request):
         messages.error(request, _error(err.code))
         return redirect("developers:developer_keys")
     return _keys_page(request, new_key=api_key, new_raw=raw)
+
+
+@never_cache
+@login_required
+@limit("browse")
+def key_usage(request, prefix):
+    """GET /developers/keys/<prefix>/: one of your keys' limits right now and
+    its last 30 days of use. Revoked keys keep their history, without limits."""
+    api_key = selectors.own_key(request.user, prefix)
+    if api_key is None:
+        raise Http404("No such key")
+    return render(
+        request,
+        "developers/key_usage.html",
+        {
+            "key": api_key,
+            "partner_tier": ApiKey.TIER_PARTNER,
+            "limits": limits_now(request, api_key) if api_key.is_active else [],
+            "usage": usage.summary(api_key),
+        },
+    )
 
 
 @require_POST

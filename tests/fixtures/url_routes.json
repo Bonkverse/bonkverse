@@ -136,6 +136,10 @@
     "name": "developers:developer_keys"
   },
   {
+    "route": "developers/keys/<str:prefix>/",
+    "name": "developers:developer_key_usage"
+  },
+  {
     "route": "developers/keys/<str:prefix>/revoke/",
     "name": "developers:developer_revoke_key"
   },

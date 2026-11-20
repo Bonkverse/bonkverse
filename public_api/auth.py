@@ -2,7 +2,9 @@
 
 Owns: reading the key from `Authorization: Bearer bvk_...`, the 401 replies,
 per-key rate limits (with RateLimit-* headers on every reply), slowing down
-key guessing by IP, and recording when a key was last used.
+key guessing by IP, recording when a key was last used and counting each
+request for the key's usage page (usage.py), and reading the current
+minute's limits back for that page (limits_now).
 Does not own: the key format or storage (keys.py), the reply envelope
 (responses.py) or what each endpoint returns (views.py).
 
@@ -25,6 +27,7 @@ from django_ratelimit.core import get_usage
 
 from core.client_ip import client_ip
 
+from . import usage as key_usage
 from .keys import find_active_key
 from .models import ApiKey
 from .responses import fail
@@ -139,11 +142,13 @@ def api_endpoint(tier: str, *, methods=("GET",)):
                 logger.info(
                     "public api: rate limited key=bvk_%s tier=%s", api_key.prefix, rate_tier
                 )
+                key_usage.record(api_key, view.__name__, 429)
                 return _with_rate_headers(_too_many(usage), usage)
 
             _touch(api_key)
             request.api_key = api_key
             response = view(request, *args, **kwargs)
+            key_usage.record(api_key, view.__name__, response.status_code)
             logger.info(
                 "public api: key=bvk_%s %s %s -> %s",
                 api_key.prefix,
@@ -153,9 +158,37 @@ def api_endpoint(tier: str, *, methods=("GET",)):
             )
             return _with_rate_headers(response, usage)
 
-        # Read by `manage.py audit_rate_limits` and the every-route-has-a-tier test.
+        # Read by `manage.py audit_rate_limits`, the every-route-has-a-tier test
+        # and limits_now() below.
         wrapped.rate_limit_tier = tier
         wrapped.rate_limit_method = ",".join(methods)
+        wrapped.rate_limit_group = group
         return wrapped
 
     return decorator
+
+
+def limits_now(request, api_key) -> list[dict]:
+    """Each endpoint's per-minute limit for this key and how much of the
+    current minute is left, for the key's usage page. Reads the same
+    counters the API uses without adding to them. `used` and `left` are
+    None when the cache can't be read."""
+    rows = []
+    for endpoint in key_usage.endpoints():
+        view = endpoint["view"]
+        rate_tier = _rate_tier(view.rate_limit_tier, api_key)
+        usage = _usage(
+            request, view.rate_limit_group, f"key:{api_key.pk}", rate_tier, increment=False
+        )
+        limit = int(settings.RATE_LIMITS[rate_tier].split("/")[0])
+        used = usage["count"] if usage is not None else None
+        rows.append(
+            {
+                **endpoint,
+                "limit": limit,
+                "used": used,
+                "left": max(limit - used, 0) if used is not None else None,
+                "resets_in": int(usage["time_left"]) if usage is not None and used else None,
+            }
+        )
+    return rows

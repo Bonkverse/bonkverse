@@ -554,6 +554,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "players.tasks.sync_replays",
         "schedule": REPLAY_SYNC_INTERVAL_SECONDS,
     },
+    # API keys keep 30 days of usage for their usage page (public_api/usage.py).
+    "prune-api-usage": {
+        "task": "public_api.tasks.prune_api_usage",
+        "schedule": 24 * 60 * 60,
+    },
 }
 
 # =========================================================

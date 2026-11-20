@@ -11,7 +11,7 @@
 {% block content %}
 {% comment %}
 Your API keys (public_api/views): the new key shown once, the form for a
-new key, and the list with Revoke. Bonkverse/ui components; copying and the
+new key, and the list with Usage (key_usage.html) and Revoke. Bonkverse/ui components; copying and the
 Revoke confirm dialog come from ui/ui.js (data-bv-copy, data-bv-dialog-open).
 {% endcomment %}
 <div class="bv-main dev">
@@ -84,7 +84,7 @@ Revoke confirm dialog come from ui/ui.js (data-bv-copy, data-bv-dialog-open).
               {% for key in keys %}
               <tr class="{% if not key.is_active %}dev-keys__revoked{% endif %}">
                 <td>
-                  <span class="dev-keys__name">{{ key.name }}</span>
+                  <span class="dev-keys__name"><a href="{% url 'developers:developer_key_usage' key.prefix %}">{{ key.name }}</a></span>
                   {% if key.tier == partner_tier %}<span class="bv-pill bv-pill--accent dev-keys__tier">Partner</span>{% endif %}
                   <span class="bv-hint dev-keys__meta">
                     Created {{ key.created_at|date:"M j, Y" }} ·
@@ -95,6 +95,8 @@ Revoke confirm dialog come from ui/ui.js (data-bv-copy, data-bv-dialog-open).
                 </td>
                 <td><code>bvk_{{ key.prefix }}_…</code></td>
                 <td class="bv-num">
+                  <span class="dev-keys__actions">
+                  <a class="bv-btn" href="{% url 'developers:developer_key_usage' key.prefix %}"><i data-lucide="chart-column" aria-hidden="true"></i>Usage</a>
                   {% if key.is_active %}
                   <button type="button" class="bv-btn bv-btn--danger-outline" data-bv-dialog-open="revoke-{{ key.prefix }}">Revoke…</button>
                   <dialog class="bv-dialog" id="revoke-{{ key.prefix }}" aria-labelledby="revoke-{{ key.prefix }}-title">
@@ -113,6 +115,7 @@ Revoke confirm dialog come from ui/ui.js (data-bv-copy, data-bv-dialog-open).
                     </form>
                   </dialog>
                   {% endif %}
+                  </span>
                 </td>
               </tr>
               {% endfor %}

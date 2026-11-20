@@ -78,3 +78,32 @@ class ApiTermsAcceptance(models.Model):
 
     def __str__(self):
         return f"{self.user} accepted {self.version}"
+
+
+class ApiKeyUsageDay(models.Model):
+    """How much one key used one endpoint on one day (UTC), for the key's
+    usage page (/developers/keys/<prefix>/). Written by public_api/usage.py
+    on every request that presents a valid key; rows older than
+    USAGE_DAYS are deleted daily (public_api/tasks.py).
+
+    `requests` counts every such request; `rate_limited` (answered 429) and
+    `errors` (any other 4xx or 5xx) are parts of it.
+    """
+
+    api_key = models.ForeignKey(ApiKey, on_delete=models.CASCADE, related_name="usage_days")
+    day = models.DateField()
+    endpoint = models.CharField(max_length=60, help_text="The API view's name, e.g. 'player'.")
+    requests = models.PositiveIntegerField(default=0)
+    rate_limited = models.PositiveIntegerField(default=0)
+    errors = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = "API key usage (one day)"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["api_key", "day", "endpoint"], name="public_api_usage_one_row_per_day"
+            )
+        ]
+
+    def __str__(self):
+        return f"bvk_{self.api_key.prefix} {self.day} {self.endpoint}: {self.requests}"

@@ -11,5 +11,6 @@ urlpatterns = [
     path("", portal.index, name="developers"),
     path("terms/", portal.terms, name="developer_terms"),
     path("keys/", portal.keys, name="developer_keys"),
+    path("keys/<str:prefix>/", portal.key_usage, name="developer_key_usage"),
     path("keys/<str:prefix>/revoke/", portal.revoke_key, name="developer_revoke_key"),
 ]
