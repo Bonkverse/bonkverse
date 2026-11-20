@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("public_api", "0003_user_fields_point_at_accounts"),
     ]

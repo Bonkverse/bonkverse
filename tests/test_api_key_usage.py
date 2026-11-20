@@ -127,7 +127,9 @@ def test_owner_sees_limits_left_this_minute_and_usage(logged_in_client, client, 
 
     assert "Limits right now" in html
     assert "<code>GET /api/v1/me/</code>" in html
-    left = re.search(r"<code>GET /api/v1/me/</code></td>\s*<td[^>]*>60</td>\s*<td[^>]*>\s*(\d+)", html)
+    left = re.search(
+        r"<code>GET /api/v1/me/</code></td>\s*<td[^>]*>60</td>\s*<td[^>]*>\s*(\d+)", html
+    )
     assert left and left.group(1) == "59"  # 60 a minute, one used
     assert "1</strong> request" in html
 

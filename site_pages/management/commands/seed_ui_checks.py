@@ -15,7 +15,6 @@ account with a session anyone holding the file could use.
     python manage.py seed_ui_checks [--session-file path]
 """
 
-import secrets
 from datetime import timedelta
 from pathlib import Path
 
@@ -128,7 +127,8 @@ class Command(BaseCommand):
             defaults={
                 "name": "League leaderboard bot",
                 "owner": staff,
-                "key_hash": secrets.token_hex(32),  # no raw key: it's never used
+                # Not the hash of any key: nothing can call the API with it.
+                "key_hash": "0" * 64,
             },
         )
         today = timezone.now().date()
@@ -138,7 +138,11 @@ class Command(BaseCommand):
                     api_key=api_key,
                     day=today - timedelta(days=days_ago),
                     endpoint=endpoint,
-                    defaults={"requests": requests, "errors": days_ago % 3, "rate_limited": days_ago % 5},
+                    defaults={
+                        "requests": requests,
+                        "errors": days_ago % 3,
+                        "rate_limited": days_ago % 5,
+                    },
                 )
 
         if session_file:

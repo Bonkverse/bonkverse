@@ -113,9 +113,7 @@ def summary(api_key) -> dict:
         {**row, "label": labels.get(name, name)}
         for name, row in sorted(by_endpoint.items(), key=lambda item: -item[1]["requests"])
     ]
-    totals = {
-        key: sum(row[key] for row in table) for key in ("requests", "rate_limited", "errors")
-    }
+    totals = {key: sum(row[key] for row in table) for key in ("requests", "rate_limited", "errors")}
     return {
         "first": first,
         "last": last,
