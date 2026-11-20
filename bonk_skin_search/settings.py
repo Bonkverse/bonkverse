@@ -214,6 +214,7 @@ CSRF_TRUSTED_ORIGINS = [
 CORS_ALLOWED_ORIGINS = [
     "https://editor.bonkverse.io",
     "https://replays.bonkverse.io",
+    "https://docs.bonkverse.io",
     "https://bonkverse.io",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
