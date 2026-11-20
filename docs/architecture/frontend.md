@@ -46,11 +46,10 @@ release: the colors for the three themes, Jost, the `bv-` components and
   color tokens too (no hard-coded colors, glows or gradient panels), and
   `--site-series-1…4` (`css/base.css`) color charts and swatches in each
   theme. Scripts pass those as `var(--site-series-N)`, never hex.
-- **Pages move onto `bv-` components one at a time.** A page built on them
-  sets `{% block content_class %}site-page{% endblock %}`. Every other page is
-  `site-legacy`, and the old bare `form`, `input` and `button` rules
-  (`css/forms.css`) only apply inside it. Most pages are on `site-page` now; `grep -rl 'site-page' --include=*.html .`
-  lists them, and the RFC-0002 progress notes track the rest.
+- **Every page is built on `bv-` components** (`site-page`, the default
+  `content_class` in `base.html`). `tests/test_one_look.py` fails on a color
+  that isn't a token, a font other than Jost, or anything left on the old
+  look ([ADR 0020](../adr/0020-one-look-held-by-tests.md)).
 - **Three classes were renamed** to make room for the package:
   `site-toast`, `site-pagination` and `site-num` (they were `bv-`).
 - **Check every screen size and contrast.** `node scripts/check_responsive.mjs`
@@ -117,9 +116,9 @@ bulk delete) a click only selects. Outside cards, `img[data-zoom]` zooms and
 ## A page's own script and styles
 
 ```
-skins/templates/skins/skin_detail.html   markup; data in data- attributes
-skins/static/js/skin_detail.js           behavior, loaded from {% block extra_scripts %}
-skins/static/css/skin_detail.css         styles, if no shared file fits
+skins/templates/skins/category_index.html   markup; data in data- attributes
+skins/static/js/upload.js                   behavior, loaded from {% block extra_scripts %} (upload.html)
+skins/static/css/categories.css             styles, if no shared file fits
 ```
 
 Pages in apps created in RFC-0001 Phase 5 keep the same three files inside
@@ -141,7 +140,7 @@ modal) and `static/` (`ui/`, `core/js/`, `images/`, site-wide `css/` and
 - **Show and hide** with the `hidden` attribute (`base.css` makes it win
   over any `display` a class sets).
 - **Styles** go in a shared file when the rule is shared (`modal.css`,
-  `cards.css`, `forms.css`), or in the page's file loaded from
+  `cards.css`), or in the page's file loaded from
   `{% block extra_head %}`. The one inline style allowed is a value the
   template computes, passed as a CSS custom property:
   `style="--bar: 42%"` with `.bar-inner { width: var(--bar) }`.
