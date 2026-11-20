@@ -17,6 +17,7 @@ from django.views.decorators.http import require_POST
 
 from core.token_crypto import bonk_session
 from core.ratelimits import limit
+from players import selectors as player_selectors
 
 from .forms import LoginForm
 from .login_attempts import attempt_login
@@ -68,16 +69,21 @@ def logout_view(request):
 
 @limit("browse")
 def me(request):
-    """Who is signed in, for the skin editor (401 when nobody is)."""
+    """Who is signed in, for the skin editor and the shared header on the
+    replay and docs sites (401 when nobody is). `avatar` is the absolute URL
+    of their worn skin's thumbnail, the picture bonkverse.io's own header
+    shows, or null before a skin has been seen."""
     if not request.user.is_authenticated:
         return JsonResponse({"authenticated": False}, status=401)
 
+    thumbnail = player_selectors.user_skin_avatars(request.user).get("thumbnail")
     return JsonResponse(
         {
             "authenticated": True,
             "user": {
                 "id": request.user.id,
                 "username": request.user.username,
+                "avatar": request.build_absolute_uri(thumbnail) if thumbnail else None,
             },
             "permissions": {
                 "publish_skins": True,
