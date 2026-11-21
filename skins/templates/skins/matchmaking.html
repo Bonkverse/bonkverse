@@ -2,10 +2,23 @@
 
 {% block title %}Matchmaking · Bonkverse{% endblock %}
 
+{% block content_class %}site-page{% endblock %}
 
 {% block content %}
+{# A placeholder kept on purpose (owner, 2026-11-20): matchmaking may grow into a feature with the Bonkverse extension. #}
+<div class="bv-main">
+  <div class="bv-page-header">
+    <div class="bv-page-header__text">
+      <h1>Matchmaking</h1>
+      <p class="bv-muted">Queue up for 1v1s, casual or ranked, without waiting in a room.</p>
+    </div>
+  </div>
 
-<h1>Matchmaking Coming Soon!</h1>
-<h2>Skip the wait and queue up for some 1v1s (casual or ranked)</h2>
-
+  <div class="bv-empty">
+    <i data-lucide="swords" aria-hidden="true"></i>
+    <h2 class="bv-empty__title">Coming soon</h2>
+    <p>Matchmaking isn't open yet. Join the Bonkverse Discord to hear when it is.</p>
+    <a class="bv-btn" href="https://discord.gg/2Zx7Cwhr4Z" target="_blank" rel="noopener">Join our Discord</a>
+  </div>
+</div>
 {% endblock %}

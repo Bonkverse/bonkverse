@@ -4,21 +4,6 @@
    ===================== */
 @media (max-width: 768px) {
 
-    /* Forms */
-    :where(.site-legacy) form {
-        width: 90%;
-        padding: 15px;
-    }
-
-    :where(.site-legacy) input,
-    :where(.site-legacy) textarea {
-        width: 90%;
-    }
-
-    :where(.site-legacy) input[type="text"] {
-        width: 90% !important;
-    }
-
     /* Skin cards */
     .skin-card img {
         width: 120px;

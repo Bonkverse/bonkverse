@@ -1,0 +1,81 @@
+/* The category index (/categories/, skins/category_index.html): one tile per
+   category, shaped like Bonkverse/ui's skin card (artwork stage, then text)
+   so it looks like the skin results it leads to. It isn't the card itself:
+   skin cards come only from the card partials (tests/test_frontend.py).
+   The whole tile is a single link. */
+
+/* Two across even on phones: a category tile has less to show than a skin
+   card, and fourteen in one column is a long scroll. */
+.site-category-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--bv-space-3);
+  margin-top: var(--bv-space-6);
+}
+
+@media (min-width: 700px) {
+  .site-category-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1000px) {
+  .site-category-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.site-category-tile {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--bv-outline);
+  border-radius: var(--bv-radius);
+  background: var(--bv-card);
+  color: var(--bv-text);
+  text-decoration: none;
+}
+
+.site-category-tile:hover {
+  border-color: var(--bv-link);
+}
+
+.site-category-tile:hover .site-category-tile__name {
+  color: var(--bv-link);
+  text-decoration: underline;
+}
+
+.site-category-tile:hover .bv-skin-art {
+  transform: scale(1.05);
+}
+
+.site-category-tile__stage {
+  display: flex;
+  justify-content: center;
+  padding: var(--bv-space-4) 0;
+  border-bottom: 1px solid var(--bv-divider);
+  background: var(--bv-thumb);
+}
+
+.site-category-tile__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bv-space-1);
+  padding: var(--bv-space-3) var(--bv-space-4) var(--bv-space-4);
+}
+
+.site-category-tile__name {
+  font-weight: 600;
+}
+
+@media (max-width: 420px) {
+  .site-category-tile .bv-skin-art,
+  .site-category-tile .bv-skin-art--missing {
+    width: 88px;
+    height: 88px;
+  }
+
+  .site-category-tile__body {
+    padding: var(--bv-space-2) var(--bv-space-3) var(--bv-space-3);
+  }
+}

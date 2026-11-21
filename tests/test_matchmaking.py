@@ -99,3 +99,18 @@ def test_nav_no_longer_links_to_win_loss_leaderboards(client):
     assert "/leaderboards/wins/" not in html
     # Skin leaderboards are a tab on the skin pages (Bonkverse/ui nav.json).
     assert 'href="/leaderboards/upvoted/"' in client.get("/search/").content.decode()
+
+
+def test_coming_soon_page_is_on_the_shared_components(client):
+    """Kept on purpose (owner, 2026-11-20); it may grow with the extension."""
+    html = client.get("/matchmaking/").content.decode()
+
+    assert "site-page" in html
+    assert "Coming soon" in html
+
+
+def test_old_api_page_sends_people_to_the_developers_page(client):
+    response = client.get("/api/")
+
+    assert response.status_code == 302
+    assert response.url == "/developers/"

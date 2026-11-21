@@ -1,31 +1,42 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static humanize %}
 
 {% block title %}Categories · Bonkverse{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/browse.css' %}">
+<link rel="stylesheet" href="{% static 'css/categories.css' %}">
 {% endblock %}
 
-{% block content %}
-<div class="browse-header browse-header--index">
-  <h1>Browse by Category</h1>
-  <p class="browse-blurb">Not sure what to search for? Jump in by vibe.</p>
-</div>
+{% block content_class %}site-page{% endblock %}
 
-<div class="category-grid">
-  {% for c in categories %}
-  <a class="category-tile" href="{% url 'skins:category_detail' c.slug %}" title="{{ c.label }}">
-    {% if c.cover %}
-      <img class="category-tile-img" loading="lazy" src="{{ c.cover }}" alt="{{ c.label }}">
-    {% else %}
-      <div class="category-tile-img category-tile-img--empty"></div>
-    {% endif %}
-    <div class="category-tile-meta">
-      <strong>{{ c.label }}</strong>
-      <span>{{ c.count }} skins</span>
+{% block content %}
+{# Every category as a tile shaped like the skin card: its hand-picked cover, name and count; the whole tile is one link. #}
+<div class="bv-main">
+  <div class="bv-page-header">
+    <div class="bv-page-header__text">
+      <h1>Categories</h1>
+      <p class="bv-muted">Not sure what to search for? Jump in by vibe.</p>
     </div>
-  </a>
-  {% endfor %}
+  </div>
+
+  <ul class="bv-skin-grid site-category-grid">
+    {% for c in categories %}
+      <li>
+        <a class="site-category-tile" href="{% url 'skins:category_detail' c.slug %}">
+          <span class="site-category-tile__stage">
+            {% if c.cover %}
+              <img class="bv-skin-art" src="{{ c.cover }}" alt="" loading="lazy" width="112" height="112">
+            {% else %}
+              <span class="bv-skin-art--missing">No cover yet</span>
+            {% endif %}
+          </span>
+          <span class="site-category-tile__body">
+            <span class="site-category-tile__name">{{ c.label }}</span>
+            <span class="bv-muted">{{ c.count|intcomma }} skin{{ c.count|pluralize }}</span>
+          </span>
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
 </div>
 {% endblock %}

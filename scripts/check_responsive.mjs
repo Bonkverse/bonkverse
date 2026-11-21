@@ -54,6 +54,7 @@ const PAGES = [
   ["/tools/map-decode/", "map-decode", false],
   ["/login/", "login", false],
   ["/staff/", "team", false],
+  ["/matchmaking/", "matchmaking", false],
   ["/player/ui-check-staff/", "profile", true], // your own profile: Upload and settings in the header
   ["/player/ui-check-staff/friends/", "profile-friends", false],
   ["/player/no-such-player-here/", "player-not-found", false],

@@ -1,18 +1,14 @@
-# skins/api.py
-from django.shortcuts import render
+"""/api/: the old placeholder page for the Bonkverse API.
+
+The public API and its keys are on the Developers page now, so /api/ sends
+people there. (Everything else under /api/ is the API itself.)
+"""
+
+from django.shortcuts import redirect
+
 from core.ratelimits import limit
-from django.views.decorators.csrf import csrf_exempt
 
 
-def add_cors_headers(response):
-    response["Access-Control-Allow-Origin"] = "*"
-    response["Access-Control-Allow-Methods"] = "POST, OPTIONS"
-    response["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-    return response
-
-
-@csrf_exempt
 @limit("browse")
 def index(request):
-    message = "This is the Bonkverse.io API!"
-    return render(request, "skins/apis/index.html", {"message": message})
+    return redirect("developers:developers")
