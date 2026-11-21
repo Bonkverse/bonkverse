@@ -106,5 +106,6 @@ def revoke_own_key(user, prefix: str) -> ApiKey:
     if api_key is None:
         raise PortalError("key_not_found")
     api_key.revoke()
-    logger.info("developer portal: key bvk_%s revoked by user=%s", api_key.prefix, user.pk)
+    # The prefix is the public part of a key, safe to log.
+    logger.info("developer portal: key bvk_%s revoked by user=%s", prefix, user.pk)
     return api_key
