@@ -65,6 +65,7 @@ const PAGES = [
   ["/terms/", "terms", false],
   ["/developers/keys/", "api-keys", true],
   ["/developers/terms/", "api-terms", false],
+  ["/developers/keys/uicheck0/", "api-key-usage", true], // seed_ui_checks' key and its usage
   ["/moderation/", "moderation", true], // staff only: --session of a staff account
 ];
 const SIZES = [

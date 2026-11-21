@@ -3,7 +3,8 @@
 scripts/check_responsive.mjs and scripts/check_contrast.mjs look at real
 pages, so the pages need something on them: skins with images (drawn here,
 no network), a reported skin, a category cover, players, Discord servers,
-and a staff account whose session the scripts use for signed-in pages.
+and a staff account whose session the scripts use for signed-in pages, with
+an API key (prefix "uicheck0") and a few weeks of its usage.
 CI runs this on an empty database (.github/workflows/ci.yml, job
 "browser"); on an empty database the first skin is /skins/detail/1, the
 page the scripts open.
@@ -14,19 +15,23 @@ account with a session anyone holding the file could use.
     python manage.py seed_ui_checks [--session-file path]
 """
 
+from datetime import timedelta
 from pathlib import Path
 
 import cairosvg
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.test import Client
+from django.utils import timezone
 
 from accounts.models import BonkUser
 from communities.models import DiscordServer, DiscordTag
 from players.models import BonkPlayer
+from public_api.models import ApiKey, ApiKeyUsageDay
 from skins.models import CategoryCover, Skin, SkinReport
 
 STAFF = "ui-check-staff"
+API_KEY_PREFIX = "uicheck0"  # /developers/keys/uicheck0/ in the check scripts
 SKINS = [
     # name, creator, upvotes, downvotes, themes (category keywords)
     ("Bongo Cat", "Isabelle26", 41, 2, ["cat", "animal", "cute"]),
@@ -116,6 +121,29 @@ class Command(BaseCommand):
                 },
             )
             server.tags.add(tag)
+
+        api_key, _ = ApiKey.objects.get_or_create(
+            prefix=API_KEY_PREFIX,
+            defaults={
+                "name": "League leaderboard bot",
+                "owner": staff,
+                # Not the hash of any key: nothing can call the API with it.
+                "key_hash": "0" * 64,
+            },
+        )
+        today = timezone.now().date()
+        for days_ago in range(0, 24, 2):
+            for endpoint, requests in (("player", 400 - 12 * days_ago), ("lookup_players", 20)):
+                ApiKeyUsageDay.objects.get_or_create(
+                    api_key=api_key,
+                    day=today - timedelta(days=days_ago),
+                    endpoint=endpoint,
+                    defaults={
+                        "requests": requests,
+                        "errors": days_ago % 3,
+                        "rate_limited": days_ago % 5,
+                    },
+                )
 
         if session_file:
             client = Client()

@@ -257,3 +257,8 @@ def keys_for(user):
     """The account's API keys for its developer portal list: active first,
     newest first."""
     return ApiKey.objects.filter(owner=user).order_by("-is_active", "-created_at")
+
+
+def own_key(user, prefix):
+    """One of the account's own keys (active or revoked) by its prefix, or None."""
+    return ApiKey.objects.filter(owner=user, prefix=prefix).first()

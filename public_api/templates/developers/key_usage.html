@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load static humanize %}
+
+{% block title %}{{ key.name }} · API keys · Bonkverse{% endblock %}
+{% block content_class %}site-page{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'public_api/css/developers.css' %}">
+{% endblock %}
+
+{% block content %}
+{% comment %}
+One of your API keys (public_api/views/portal.py key_usage): its per-minute
+limits and what's left of the current minute (auth.limits_now), then its
+last 30 days of requests (usage.summary). The day bars are plain HTML; each
+bar's height is a custom property (--h), the one inline style allowed.
+{% endcomment %}
+<div class="bv-main dev">
+  <div class="bv-page-header">
+    <div class="bv-page-header__text">
+      <a class="bv-back" href="{% url 'developers:developer_keys' %}">← Your API keys</a>
+      <h1>{{ key.name }}</h1>
+      <p class="dev-usage__meta">
+        <code>bvk_{{ key.prefix }}_…</code>
+        {% if key.tier == partner_tier %}<span class="bv-pill bv-pill--accent">Partner</span>{% else %}<span class="bv-pill">Standard</span>{% endif %}
+        {% if not key.is_active %}<span class="bv-pill">Revoked</span>{% endif %}
+        <span class="bv-muted">
+          Created {{ key.created_at|date:"M j, Y" }} ·
+          {% if key.last_used_at %}last used {{ key.last_used_at|timesince }} ago{% else %}never used{% endif %}
+        </span>
+      </p>
+    </div>
+  </div>
+
+  <div class="dev-stack">
+    {% if key.is_active %}
+    <section class="bv-card" aria-labelledby="limits-title">
+      <h2 class="dev-card__title" id="limits-title"><i data-lucide="gauge" aria-hidden="true"></i> Limits right now</h2>
+      <p class="bv-muted">
+        Each endpoint has its own budget for this key, counted per minute. When it runs out,
+        requests get 429 until the minute resets.
+      </p>
+      <div class="bv-table-wrap">
+        <table class="bv-table dev-limits">
+          <thead>
+            <tr>
+              <th scope="col">Endpoint</th>
+              <th scope="col" class="bv-num">Per minute</th>
+              <th scope="col" class="bv-num">Left this minute</th>
+              <th scope="col" class="bv-num dev-limits__reset">Resets in</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in limits %}
+            <tr>
+              <td><code>{{ row.label }}</code></td>
+              <td class="bv-num" data-label="Per minute">{{ row.limit|intcomma }}</td>
+              <td class="bv-num" data-label="Left now">
+                {% if row.left is None %}<span class="bv-muted">Unknown</span>
+                {% elif row.left == 0 %}<span class="dev-limits__out">0</span>
+                {% else %}{{ row.left|intcomma }}{% endif %}
+              </td>
+              <td class="bv-num dev-limits__reset" data-label="Resets in">{% if row.resets_in %}{{ row.resets_in }} s{% else %}<span class="bv-muted">–</span>{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="bv-hint">
+        As of when this page loaded. Every API reply also says what's left in its
+        <code>RateLimit-Remaining</code> and <code>RateLimit-Reset</code> headers.
+        {% if key.tier != partner_tier %}Need more for a league or a big bot? Ask on <a href="{{ BONKVERSE_DISCORD_URL }}" target="_blank" rel="noopener">Discord</a>.{% endif %}
+      </p>
+    </section>
+    {% else %}
+    <p class="bv-notice dev-notice">
+      <i data-lucide="ban" aria-hidden="true"></i>
+      <span>Revoked {{ key.revoked_at|date:"M j, Y" }}: requests with this key get 401. Its usage stays here for {{ usage.days }} days.</span>
+    </p>
+    {% endif %}
+
+    <section class="bv-card" aria-labelledby="usage-title">
+      <h2 class="dev-card__title" id="usage-title"><i data-lucide="chart-column" aria-hidden="true"></i> Last {{ usage.days }} days</h2>
+      {% if usage.totals.requests %}
+        <p class="dev-usage__totals">
+          <span><strong>{{ usage.totals.requests|intcomma }}</strong> request{{ usage.totals.requests|pluralize }}</span>
+          <span><strong>{{ usage.totals.rate_limited|intcomma }}</strong> rate limited</span>
+          <span><strong>{{ usage.totals.errors|intcomma }}</strong> error{{ usage.totals.errors|pluralize }}</span>
+        </p>
+
+        <figure class="dev-days">
+          <ol class="dev-days__bars" role="img"
+              aria-label="Requests per day from {{ usage.first|date:'M j' }} to {{ usage.last|date:'M j' }}. Busiest day: {{ usage.busiest|intcomma }}.">
+            {% for d in usage.daily %}
+              <li class="dev-days__bar{% if not d.requests %} dev-days__bar--none{% endif %}" style="--h: {{ d.height }}%" title="{{ d.day|date:'M j' }}: {{ d.requests|intcomma }}"></li>
+            {% endfor %}
+          </ol>
+          <figcaption class="dev-days__axis">
+            <span>{{ usage.first|date:"M j" }}</span>
+            <span>Busiest day: {{ usage.busiest|intcomma }}</span>
+            <span>{{ usage.last|date:"M j" }}</span>
+          </figcaption>
+        </figure>
+
+        <div class="bv-table-wrap">
+          <table class="bv-table dev-usage-table">
+            <thead>
+              <tr>
+                <th scope="col">Endpoint</th>
+                <th scope="col" class="bv-num">Requests</th>
+                <th scope="col" class="bv-num">Rate limited</th>
+                <th scope="col" class="bv-num">Errors</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in usage.endpoints %}
+              <tr>
+                <td><code>{{ row.label }}</code></td>
+                <td class="bv-num" data-label="Requests">{{ row.requests|intcomma }}</td>
+                <td class="bv-num" data-label="Rate limited">{{ row.rate_limited|intcomma }}</td>
+                <td class="bv-num" data-label="Errors">{{ row.errors|intcomma }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <p class="bv-hint">Days are in UTC. Errors are replies other than 429 that weren't a success, like an unknown player (404).</p>
+      {% else %}
+        <div class="bv-empty">
+          <i data-lucide="chart-column" aria-hidden="true"></i>
+          <p class="bv-empty__title">No requests in the last {{ usage.days }} days.</p>
+          {% if key.is_active %}<p>Once something calls the API with this key, its use shows here. Start with the <a href="{{ BONKVERSE_DOCS_URL }}/api/quickstart">quickstart</a>.</p>{% endif %}
+        </div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}
