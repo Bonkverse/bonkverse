@@ -1,4 +1,8 @@
-"""The staff report queue: /moderation/ (skins/moderation.py does the work)."""
+"""The report queue: /moderation/ (skins/moderation.py does the work).
+
+Open to anyone with skins.moderate_skins: the Moderator group
+(manage.py grant_moderator) and superusers.
+"""
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
@@ -6,13 +10,13 @@ from django.http import Http404
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
-from core.auth_guards import staff_required
+from core.auth_guards import permission_required
 from core.ratelimits import limit
 from skins import moderation
 from skins.models import Skin
 
 
-@staff_required
+@permission_required("skins.moderate_skins")
 @limit("browse")
 def queue(request):
     return render(
@@ -26,7 +30,7 @@ def queue(request):
 
 
 @require_POST
-@staff_required
+@permission_required("skins.moderate_skins")
 @limit("write")
 def decide(request, skin_id):
     decide_with = moderation.DECISIONS.get(request.POST.get("action", ""))

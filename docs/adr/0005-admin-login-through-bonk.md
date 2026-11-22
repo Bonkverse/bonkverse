@@ -16,5 +16,6 @@ and `PermissionsMixin`, so `/admin/` crashed for everyone.
 - One way to sign in.
 - Admin access depends on bonk.io's login being up.
 - Roles are `is_staff` (re-render, admin shell), `is_superuser` (everything),
-  and groups for scoped access (e.g. moderators).
+  and groups for scoped access: the "Moderator" group (`manage.py
+  grant_moderator`) holds `skins.moderate_skins` for `/moderation/`.
 - A future Bonkverse-styled staff dashboard reuses these roles.

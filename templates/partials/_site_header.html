@@ -67,7 +67,7 @@ menus open with static/ui/ui.js.
               <i data-lucide="chevron-down" aria-hidden="true"></i>
             </button>
             <div class="bv-menu bv-menu--end" id="bv-account" hidden>
-              {% if user.is_staff %}
+              {% if can_moderate %}
                 <a class="bv-menu__item" href="{% url 'skins:moderation' %}">Skin reports</a>
               {% endif %}
               {% for item in site_nav.account %}

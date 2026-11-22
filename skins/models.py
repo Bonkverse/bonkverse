@@ -225,6 +225,10 @@ class CategoryCover(models.Model):
         return f"{self.category}: {self.skin.name}"
 
 
+# Holds skins.moderate_skins; made by migration 0039, joined via grant_moderator.
+MODERATOR_GROUP = "Moderator"
+
+
 class ModerationDecision(models.Model):
     """What staff decided about a reported skin, and who decided it.
 
@@ -260,6 +264,9 @@ class ModerationDecision(models.Model):
 
     class Meta:
         ordering = ["-decided_at"]
+        # The /moderation/ queue. Given through the "Moderator" group
+        # (manage.py grant_moderator); superusers have it anyway.
+        permissions = [("moderate_skins", "Can use the skin report queue (/moderation/)")]
 
     def __str__(self):
         return f"{self.get_action_display()}: {self.skin_name}"
