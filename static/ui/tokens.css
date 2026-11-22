@@ -1,5 +1,5 @@
 /*
- * Bonkverse UI tokens (v0.1.5)
+ * Bonkverse UI tokens (v0.1.6)
  *
  * Every color, size and timing the Bonkverse sites share. Components use
  * these roles, never raw hex values, so a theme only has to change this file.
@@ -19,17 +19,17 @@
 [data-bv-theme="bonkverse"] {
   color-scheme: dark;
 
-  --bv-page: #192630;
-  --bv-card: #263845;           /* cards, menus, dialogs */
-  --bv-thumb: #1c2b36;          /* skin artwork stage */
+  --bv-page: #141e27;
+  --bv-card: #1f2e3a;           /* cards, menus, dialogs */
+  --bv-thumb: #17232d;          /* skin artwork stage */
   --bv-header: #2a4054;
-  --bv-outline: #405464;        /* decorative borders and separators */
+  --bv-outline: #304352;        /* decorative borders and separators */
   --bv-control: #83949e;        /* borders of things you can click or type in */
   --bv-text: #e7ecee;
   --bv-muted: #b3bec4;
   --bv-heading: #e7ecee;
   --bv-link: #8bd2c5;           /* links and the focus ring */
-  --bv-input: #1c2b36;
+  --bv-input: #17232d;
 
   --bv-action: #79554a;         /* the one main action on a screen (Wear, Create key) */
   --bv-action-hover: #855e52;
@@ -38,7 +38,7 @@
   --bv-action-border: #a37b69;
 
   --bv-hover: #34505f;          /* hover fill; bordered controls also darken their border */
-  --bv-selected: #2b5450;       /* a chosen vote, chip or tab (with a teal border) */
+  --bv-selected: #2b5450;       /* a chosen vote, chip or tab (fill plus a 1px teal border) */
   --bv-success: #293e3d;        /* success surface (text stays --bv-text) */
   --bv-gold: #e5bf68;           /* favorites only */
   --bv-danger: #ff8a80;
@@ -55,10 +55,18 @@
 
   --bv-search-action: transparent;
   --bv-search-action-hover: #263845;
-  --bv-divider: #405464;        /* between a card's artwork and its text */
+  --bv-divider: #304352;        /* between a card's artwork and its text */
 
   --bv-backdrop: rgb(8 12 16 / 72%);
   --bv-shadow: 0 12px 32px rgb(0 0 0 / 35%);
+
+  --bv-inset: #293b48;           /* things inside a card: friend tiles, chips, notices */
+  --bv-card-shadow: 0 1px 0 rgb(255 255 255 / 3%) inset, 0 8px 24px rgb(0 0 0 / 25%);
+  --bv-highlight: 0 0 0 1px #8bd2c5, 0 0 18px rgb(139 210 197 / 28%);
+  --bv-series-1: #8bd2c5;
+  --bv-series-2: #90b7ff;
+  --bv-series-3: #e5bf68;
+  --bv-series-4: #c79bff;
 }
 
 /* ── Bonkverse Light: cool page and thumbnails, a warmer card ─────────── */
@@ -69,7 +77,7 @@
   --bv-card: #efeee9;
   --bv-thumb: #c9d7df;
   --bv-header: #2a4054;
-  --bv-outline: #748792;
+  --bv-outline: #c3ced4;
   --bv-control: #5e707b;
   --bv-text: #2a4054;
   --bv-muted: #394c57;
@@ -83,8 +91,8 @@
   --bv-action-ink: #f5ede7;
   --bv-action-border: #79554a;
 
-  --bv-hover: #e0e4e3;          /* hover fill; bordered controls also darken their border */
-  --bv-selected: #bfdcd3;       /* a chosen vote, chip or tab (with a teal border) */
+  --bv-hover: #d8dfdd;          /* hover fill; bordered controls also darken their border */
+  --bv-selected: #bfdcd3;       /* a chosen vote, chip or tab (fill plus a 1px teal border) */
   --bv-success: #dce8df;
   --bv-gold: #705000;
   --bv-danger: #b3261e;
@@ -101,10 +109,18 @@
 
   --bv-search-action: #becdd5;
   --bv-search-action-hover: #b0c2cd;
-  --bv-divider: #a4b4be;
+  --bv-divider: #c3ced4;
 
   --bv-backdrop: rgb(25 38 48 / 55%);
   --bv-shadow: 0 12px 32px rgb(42 64 84 / 22%);
+
+  --bv-inset: #e4e8e5;
+  --bv-card-shadow: 0 1px 2px rgb(42 64 84 / 10%), 0 6px 18px rgb(42 64 84 / 8%);
+  --bv-highlight: 0 0 0 1px #15534c, 0 0 16px rgb(21 83 76 / 22%);
+  --bv-series-1: #15534c;
+  --bv-series-2: #2f5ba8;
+  --bv-series-3: #8a5a00;
+  --bv-series-4: #6b3fb3;
 }
 
 /* ── Bonkverse Dark: near-black and charcoal, same brown, teal and gold ── */
@@ -115,7 +131,7 @@
   --bv-card: #161719;
   --bv-thumb: #101113;
   --bv-header: #121315;
-  --bv-outline: #34373b;
+  --bv-outline: #26292d;
   --bv-control: #83949e;
   --bv-text: #e7ecee;
   --bv-muted: #b3bec4;
@@ -130,7 +146,7 @@
   --bv-action-border: #a37b69;
 
   --bv-hover: #272b2f;          /* hover fill; bordered controls also darken their border */
-  --bv-selected: #24433f;       /* a chosen vote, chip or tab (with a teal border) */
+  --bv-selected: #24433f;       /* a chosen vote, chip or tab (fill plus a 1px teal border) */
   --bv-success: #293e3d;
   --bv-gold: #e5bf68;
   --bv-danger: #ff8a80;
@@ -147,10 +163,18 @@
 
   --bv-search-action: transparent;
   --bv-search-action-hover: #161719;
-  --bv-divider: #34373b;
+  --bv-divider: #26292d;
 
   --bv-backdrop: rgb(0 0 0 / 75%);
   --bv-shadow: 0 12px 32px rgb(0 0 0 / 55%);
+
+  --bv-inset: #1f2124;
+  --bv-card-shadow: 0 1px 0 rgb(255 255 255 / 4%) inset, 0 8px 24px rgb(0 0 0 / 45%);
+  --bv-highlight: 0 0 0 1px #8bd2c5, 0 0 18px rgb(139 210 197 / 24%);
+  --bv-series-1: #8bd2c5;
+  --bv-series-2: #90b7ff;
+  --bv-series-3: #e5bf68;
+  --bv-series-4: #c79bff;
 }
 
 /* ── Everything that doesn't change with the theme ───────────────────────── */
