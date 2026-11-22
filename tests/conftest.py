@@ -76,7 +76,9 @@ def _rate_limit_windows_stand_still(monkeypatch):
 
     import django_ratelimit.core
 
-    monkeypatch.setattr(django_ratelimit.core, "time", types.SimpleNamespace(time=lambda: 1_800_000_000.0))
+    monkeypatch.setattr(
+        django_ratelimit.core, "time", types.SimpleNamespace(time=lambda: 1_800_000_000.0)
+    )
 
 
 @pytest.fixture(autouse=True)
