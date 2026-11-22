@@ -13,18 +13,21 @@
 //   chart.update({ series });   chart.setDomain([x0, x1]);   chart.reset();
 //   BVChart.bars(el, { bars: [{ label, value, highlight, tip }], height: 360 });
 //
+// Whole-number data (levels, counts) gets whole-number y ticks; pass
+// yInteger: false to allow steps below 1 anyway.
+//
 // Colors come from the series; everything else is styled by .bv-chart in
-// css/charts.css. No dependencies.
+// css/charts.css. Load core/js/bv-dates.js first.
 
 (function (window) {
   "use strict";
 
   const NS = "http://www.w3.org/2000/svg";
   const PAD = { top: 16, right: 16, bottom: 30, left: 56 };
-  const MONTHS = new Intl.DateTimeFormat(undefined, { month: "short", year: "numeric" });
-  const DAYS = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
-  const FULL = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" });
-  const YEARS = new Intl.DateTimeFormat(undefined, { year: "numeric" });
+  const MONTHS = window.BVDates.format({ month: "short", year: "numeric" });
+  const DAYS = window.BVDates.format({ month: "short", day: "numeric" });
+  const FULL = window.BVDates.format({ month: "short", day: "numeric", year: "numeric" });
+  const YEARS = window.BVDates.format({ year: "numeric" });
   const DAY = 86400000;
 
   function svg(tag, attrs, parent) {
@@ -46,12 +49,14 @@
     return Math.round(v).toLocaleString();
   };
 
-  // ~count "nice" ticks (1, 2, 2.5, 5 × 10^n) covering [lo, hi].
-  function niceTicks(lo, hi, count) {
+  // ~count "nice" ticks (1, 2, 2.5, 5 × 10^n) covering [lo, hi]. With
+  // `integer`, the step is a whole number, so ticks never land on 180.5.
+  function niceTicks(lo, hi, count, integer) {
     if (!(hi > lo)) return [lo];
     const raw = (hi - lo) / Math.max(1, count);
     const mag = Math.pow(10, Math.floor(Math.log10(raw)));
-    const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) || raw;
+    let step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) || raw;
+    if (integer) step = step < 1 ? 1 : step === 2.5 ? 5 : step;
     const out = [];
     for (let v = Math.ceil(lo / step) * step; v <= hi + step * 1e-9; v += step) out.push(+v.toFixed(10));
     return out;
@@ -75,6 +80,8 @@
     for (let t = Math.ceil(t0 / DAY) * DAY; t <= t1; t += step) out.push(t);
     return { ticks: out, fmt: (t) => DAYS.format(t) };
   }
+
+  const isWhole = (v) => Number.isInteger(v);
 
   // Value of a series at x: the last point at or before x (step), or the
   // straight line between neighbours.
@@ -202,7 +209,9 @@
     const padY = (hi - lo) * 0.06;
     lo = o.yFloor != null ? Math.max(o.yFloor, lo - padY) : lo - padY;
     hi += padY;
-    const yt = niceTicks(lo, hi, ih > 220 ? 6 : 4);
+    const yInt = o.yInteger != null ? o.yInteger
+      : series.every((s) => s.points.every(([, y]) => isWhole(y))) && (o.hlines || []).every((l) => isWhole(l.y));
+    const yt = niceTicks(lo, hi, ih > 220 ? 6 : 4, yInt);
     lo = Math.min(lo, yt[0]); hi = Math.max(hi, yt[yt.length - 1]);
     const X = (x) => pad.left + ((x - x0) / (x1 - x0)) * iw;
     const Y = (y) => pad.top + ih - ((y - lo) / (hi - lo)) * ih;
@@ -210,9 +219,13 @@
 
     const grid = svg("g", { class: "bv-chart__grid" }, this.svg);
     const yf = o.yFormat || compact;
+    let prevLabel = null;
     for (const v of yt) {
+      const label = yf(v);
+      if (label === prevLabel) continue;  // a formatter that rounds can repeat labels
+      prevLabel = label;
       svg("line", { x1: pad.left, x2: pad.left + iw, y1: Y(v), y2: Y(v) }, grid);
-      svg("text", { x: pad.left - 8, y: Y(v) + 4, "text-anchor": "end", class: "bv-chart__tick" }, grid).textContent = yf(v);
+      svg("text", { x: pad.left - 8, y: Y(v) + 4, "text-anchor": "end", class: "bv-chart__tick" }, grid).textContent = label;
     }
     const xt = o.xType === "time" ? timeTicks(x0, x1, Math.max(2, Math.floor(iw / 110))) : { ticks: niceTicks(x0, x1, Math.max(2, Math.floor(iw / 90))), fmt: o.xFormat || compact };
     const xf = o.xFormat || xt.fmt;
@@ -372,7 +385,7 @@
     const top = Math.max(...bars.map((b) => b.value), 1);
     const ticks = log
       ? [0, 1, 10, 100, 1000, 10000, 100000, 1000000].filter((v) => v <= top * 1.2)
-      : niceTicks(0, top, ih > 220 ? 5 : 4);
+      : niceTicks(0, top, ih > 220 ? 5 : 4, o.yInteger != null ? o.yInteger : bars.every((b) => isWhole(b.value)));
     const hi = Math.max(f(top), f(ticks[ticks.length - 1])) * 1.04;
     const Y = (v) => pad.top + ih - (f(v) / hi) * ih;
     const grid = svg("g", { class: "bv-chart__grid" }, this.svg);
@@ -424,5 +437,6 @@
     line: (el, opts) => new Line(el, opts),
     bars: (el, opts) => new Bars(el, opts),
     valueAt,
+    niceTicks,
   };
 })(window);

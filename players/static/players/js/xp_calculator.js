@@ -28,8 +28,8 @@
   const $ = (sel, el = root) => el.querySelector(sel);
   const $$ = (sel, el = root) => [...el.querySelectorAll(sel)];
   const num = (n) => Math.round(n).toLocaleString();
-  const fmtDay = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" });
-  const fmtMonth = new Intl.DateTimeFormat(undefined, { month: "short", year: "numeric" });
+  const fmtDay = BVDates.format({ month: "short", day: "numeric", year: "numeric" });
+  const fmtMonth = BVDates.format({ month: "short", year: "numeric" });
   const parseDay = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d).getTime(); };
   const today = new Date(new Date().toDateString()).getTime();
 
