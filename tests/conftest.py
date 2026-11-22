@@ -64,6 +64,22 @@ def mocked_http(_no_real_http):
 
 
 @pytest.fixture(autouse=True)
+def _rate_limit_windows_stand_still(monkeypatch):
+    """django-ratelimit uses fixed windows that end on the clock (every 10 s
+    for "2/10s"). A test that sends a quick burst could straddle a window's
+    end and see the count reset partway through, so in tests the limiter's
+    clock is pinned: a test's requests always land in one window.
+
+    Regression: tests/test_wear.py's burst test failed in CI on 2026-11-22
+    when its five requests crossed a 10-second window edge."""
+    import types
+
+    import django_ratelimit.core
+
+    monkeypatch.setattr(django_ratelimit.core, "time", types.SimpleNamespace(time=lambda: 1_800_000_000.0))
+
+
+@pytest.fixture(autouse=True)
 def _no_bonk_rate_limit_cooldown():
     """The bonk.io cooldown is process-wide; never let one test's 429 leak into the next."""
     from integrations.bonk_api import rate_limit_cooldowns
