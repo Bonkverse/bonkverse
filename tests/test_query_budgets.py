@@ -29,23 +29,25 @@ OWNER = "Budget Tester"
 # page: (logged-out budget, logged-in budget). None = login required.
 # Search's count includes 6 queries that set and reset its 3 s time limit
 # (docs/search.md).
+# Signed in includes 1 query (2026-11-22) for whether the account menu shows
+# "Skin reports" (skins/context_processors.py: the moderator role).
 BUDGETS = {
     # Home (2026-11-18 redesign): 2 skin rows, skin total and today, known
     # players (cached an hour); signed in adds session, user and the header avatar.
-    "/": (5, 8),
-    "/search/": (16, 20),
-    "/search/?q=Test": (14, 18),
-    "/search/?sort=favorites": (16, 20),
-    "/search/?sort=upvotes": (16, 20),
+    "/": (5, 9),
+    "/search/": (16, 21),
+    "/search/?q=Test": (14, 19),
+    "/search/?sort=favorites": (16, 21),
+    "/search/?sort=upvotes": (16, 21),
     # New and categories use the full skin card since 2026-11-09: one more
     # query for favorite counts, plus your votes and favorites when signed in.
-    "/new/?period=all": (4, 8),
-    "/category/minimalist/": (4, 8),
-    "/leaderboards/upvoted/": (2, 4),
-    "/leaderboards/favorited/": (2, 4),
-    "DETAIL": (3, 7),
+    "/new/?period=all": (4, 9),
+    "/category/minimalist/": (4, 9),
+    "/leaderboards/upvoted/": (2, 5),
+    "/leaderboards/favorited/": (2, 5),
+    "DETAIL": (3, 8),
     # Your own profile's Skins tab (owner cards); signed in as OWNER only.
-    "MY_SKINS": (None, 15),
+    "MY_SKINS": (None, 16),
 }
 
 

@@ -1,15 +1,19 @@
-"""Staff report queue (/moderation/, skins/moderation.py).
+"""Report queue (/moderation/, skins/moderation.py), for moderators.
 
 One page shows each reported skin with all its open reports; one button makes
 a decision and closes every open report on the skin; each decision is
 recorded (ModerationDecision) with what notifications will need later.
 """
 
+from io import StringIO
+
 import pytest
+from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
+from django.core.management import CommandError, call_command
 
 from skins import moderation
-from skins.models import CreatorSource, ModerationDecision, Skin, SkinReport
+from skins.models import MODERATOR_GROUP, CreatorSource, ModerationDecision, Skin, SkinReport
 from tests.factories import SkinFactory, SkinReportFactory, UserFactory
 
 pytestmark = pytest.mark.django_db
@@ -19,7 +23,10 @@ URL = "/moderation/"
 
 @pytest.fixture
 def staff(db):
-    return UserFactory(is_staff=True)
+    """A moderator: in the Moderator group, not is_staff."""
+    user = UserFactory()
+    user.groups.add(Group.objects.get(name=MODERATOR_GROUP))
+    return user
 
 
 @pytest.fixture
@@ -59,6 +66,56 @@ def test_others_dont_see_the_link(client):
     client.force_login(UserFactory())
 
     assert 'href="/moderation/"' not in client.get("/").content.decode()
+
+
+def test_staff_without_the_moderator_role_get_a_404(client):
+    """is_staff is the re-render/admin-shell role, not moderation."""
+    client.force_login(UserFactory(is_staff=True))
+
+    assert client.get(URL).status_code == 404
+    assert 'href="/moderation/"' not in client.get("/").content.decode()
+
+
+def test_superusers_can_moderate(client):
+    client.force_login(UserFactory(is_staff=True, is_superuser=True))
+
+    assert client.get(URL).status_code == 200
+
+
+class TestGrantModerator:
+    def test_adds_an_existing_account_to_the_group(self, client):
+        user = UserFactory(username="Mod One")
+        out = StringIO()
+
+        call_command("grant_moderator", "mod one", stdout=out)
+
+        assert "now a moderator" in out.getvalue()
+        user.refresh_from_db()
+        assert user.has_perm("skins.moderate_skins")
+        assert not user.is_staff
+        client.force_login(user)
+        assert client.get(URL).status_code == 200
+
+    def test_revoke_takes_the_queue_away(self, client):
+        user = UserFactory()
+        call_command("grant_moderator", user.username, stdout=StringIO())
+
+        call_command("grant_moderator", user.username, "--revoke", stdout=StringIO())
+
+        client.force_login(user)
+        assert client.get(URL).status_code == 404
+
+    def test_list(self):
+        call_command("grant_moderator", UserFactory(username="Zed").username, stdout=StringIO())
+        out = StringIO()
+
+        call_command("grant_moderator", "--list", stdout=out)
+
+        assert out.getvalue().strip() == "Zed"
+
+    def test_unknown_username_is_an_error(self):
+        with pytest.raises(CommandError, match="sign in to Bonkverse once"):
+            call_command("grant_moderator", "nobody-here")
 
 
 # ── The queue ────────────────────────────────────────────────────────

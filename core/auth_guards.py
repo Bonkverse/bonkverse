@@ -1,5 +1,5 @@
 # core/auth_guards.py
-# One auth contract for all JSON API endpoints (plus staff_required for staff pages). Returns machine-readable 401s
+# One auth contract for all JSON API endpoints (plus staff_required / permission_required for staff pages). Returns machine-readable 401s
 # the editor branches on: auth="bonkverse" → site sign-in, auth="bonk" → bonk token.
 from functools import wraps
 
@@ -48,3 +48,22 @@ def staff_required(view):
         return view(request, *args, **kwargs)
 
     return wrapped
+
+
+def permission_required(perm):
+    """Like staff_required, but for one permission (e.g. "skins.moderate_skins")
+    instead of is_staff, so a role like moderator doesn't need the admin shell.
+    Superusers pass. Signed out: login then back; without it: a plain 404."""
+
+    def decorator(view):
+        @wraps(view)
+        def wrapped(request, *args, **kwargs):
+            if not request.user.is_authenticated:
+                return redirect_to_login(request.get_full_path())
+            if not request.user.has_perm(perm):
+                raise Http404
+            return view(request, *args, **kwargs)
+
+        return wrapped
+
+    return decorator

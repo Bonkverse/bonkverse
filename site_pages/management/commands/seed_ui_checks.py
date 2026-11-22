@@ -20,6 +20,7 @@ from pathlib import Path
 
 import cairosvg
 from django.conf import settings
+from django.contrib.auth.models import Group
 from django.core.management.base import BaseCommand, CommandError
 from django.test import Client
 from django.utils import timezone
@@ -28,7 +29,7 @@ from accounts.models import BonkUser
 from communities.models import DiscordServer, DiscordTag
 from players.models import BonkPlayer
 from public_api.models import ApiKey, ApiKeyUsageDay
-from skins.models import CategoryCover, Skin, SkinReport
+from skins.models import MODERATOR_GROUP, CategoryCover, Skin, SkinReport
 
 STAFF = "ui-check-staff"
 API_KEY_PREFIX = "uicheck0"  # /developers/keys/uicheck0/ in the check scripts
@@ -76,6 +77,7 @@ class Command(BaseCommand):
         if not staff.is_staff:
             staff.is_staff = True
             staff.save(update_fields=["is_staff"])
+        staff.groups.add(Group.objects.get(name=MODERATOR_GROUP))  # the report queue
 
         skins = []
         for i, (name, creator, up, down, themes) in enumerate(SKINS):
