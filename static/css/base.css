@@ -5,6 +5,9 @@
 
 /* Chart and swatch colors are the package's --bv-series-1..4 (one set per theme). */
 
+/* Secondary text */
+.muted { color: var(--bv-muted); font-size: .9rem; }
+
 .content {
     padding-bottom: var(--bv-space-8);
 }

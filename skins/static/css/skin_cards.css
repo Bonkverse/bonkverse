@@ -51,7 +51,7 @@
 }
 .bv-skin-card.selected {
   border-color: var(--bv-link);
-  box-shadow: 0 0 0 1px var(--bv-link);
+  background: var(--bv-selected);
 }
 .bv-skin-card.selected .select-check {
   background: var(--bv-link);

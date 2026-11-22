@@ -140,7 +140,7 @@ modal) and `static/` (`ui/`, `core/js/`, `images/`, site-wide `css/` and
 - **Show and hide** with the `hidden` attribute (`base.css` makes it win
   over any `display` a class sets).
 - **Styles** go in a shared file when the rule is shared (`modal.css`,
-  `cards.css`), or in the page's file loaded from
+  `skin_cards.css`), or in the page's file loaded from
   `{% block extra_head %}`. The one inline style allowed is a value the
   template computes, passed as a CSS custom property:
   `style="--bar: 42%"` with `.bar-inner { width: var(--bar) }`.
