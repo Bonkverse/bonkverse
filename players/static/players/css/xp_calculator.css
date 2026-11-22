@@ -49,7 +49,7 @@
   min-height: 34px; padding: 0 12px; border-radius: 999px; border: 1px dashed var(--bv-control);
   background: transparent; color: var(--bv-muted); font: inherit; font-size: 0.85rem; cursor: pointer;
 }
-.xc .xc-quick__btn:hover { border-style: solid; border-color: var(--bv-link); color: var(--bv-link); }
+.xc .xc-quick__btn:hover { border-style: solid; border-color: var(--bv-text); background: var(--bv-hover); }
 .xc-pace { display: block; margin-top: 4px; }
 .xc-pace__row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
 .xc-pace output { font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -60,9 +60,9 @@
 .xc-etas { list-style: none; margin: 22px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .xc-etas li { display: flex; gap: 10px; align-items: baseline; line-height: 1.45; }
 .xc-etas__sw { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; transform: translateY(1px); background: var(--c); }
-.xc-sw--cap { --c: var(--site-series-1); }
-.xc-sw--pace { --c: var(--site-series-2); }
-.xc-sw--player { --c: var(--site-series-3); }
+.xc-sw--cap { --c: var(--bv-series-1); }
+.xc-sw--pace { --c: var(--bv-series-2); }
+.xc-sw--player { --c: var(--bv-series-3); }
 
 .xc-chartbar { display: flex; justify-content: space-between; align-items: center; gap: 12px 20px; flex-wrap: wrap; margin: 40px 0 12px; }
 .xc-chartbar__controls { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -76,7 +76,7 @@
   padding: 16px 16px 16px 0; margin: 0; border: 0; border-radius: 0; background: transparent;
   color: var(--bv-text); font: inherit; text-align: left; cursor: pointer;
 }
-.xc .xc-milestone:hover { box-shadow: inset 0 -2px 0 var(--bv-link); }
+.xc .xc-milestone:hover { background: var(--bv-hover); }
 .xc .xc-milestone:hover .xc-milestone__lvl { color: var(--bv-link); }
 .xc-milestone__lvl { font-size: 1.8rem; font-weight: 700; line-height: 1; }
 .xc-milestone__lvl::before { content: "Level "; font-size: 0.9rem; font-weight: 500; color: var(--bv-muted); }
@@ -135,7 +135,7 @@
 /* Each tab and the player strip sit on a card, like the profile's sections. */
 .xc-panel, .xc-player {
   padding: var(--bv-space-6); border-radius: var(--bv-radius);
-  background: var(--bv-card); border: 1px solid var(--bv-outline);
+  background: var(--bv-card); border: 1px solid transparent; box-shadow: var(--bv-card-shadow);
 }
 .xc-player { margin-bottom: var(--bv-space-4); padding: var(--bv-space-4) var(--bv-space-5); }
 .xc-foot { border-top: 0; }

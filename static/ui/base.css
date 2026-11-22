@@ -1,5 +1,5 @@
 /*
- * Bonkverse UI base (v0.1.5): font, page, type, links, focus.
+ * Bonkverse UI base (v0.1.6): font, page, type, links, focus.
  * Needs tokens.css first. Sites add components.css after this.
  */
 
@@ -111,7 +111,6 @@ pre {
   padding: 1px 5px;
   border-radius: var(--bv-radius-sm);
   background: var(--bv-thumb);
-  border: 1px solid var(--bv-outline);
 }
 
 hr {

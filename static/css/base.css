@@ -3,20 +3,7 @@
 
 /* Page, text and font come from Bonkverse/ui (static/ui/base.css). */
 
-/* Chart and swatch colors: one set per theme, so charts read on every page
-   color. Scripts pass these as var(--site-series-N). */
-:root, [data-bv-theme="bonkverse"], [data-bv-theme="dark"] {
-    --site-series-1: #8bd2c5;
-    --site-series-2: #90b7ff;
-    --site-series-3: #e5bf68;
-    --site-series-4: #c79bff;
-}
-[data-bv-theme="light"] {
-    --site-series-1: #15534c;
-    --site-series-2: #2f5ba8;
-    --site-series-3: #8a5a00;
-    --site-series-4: #6b3fb3;
-}
+/* Chart and swatch colors are the package's --bv-series-1..4 (one set per theme). */
 
 .content {
     padding-bottom: var(--bv-space-8);

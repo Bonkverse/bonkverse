@@ -51,7 +51,7 @@
   const chart = BVChart.line(chartEl, {
     xType: "time", height: 420, zoom: true, yFloor: 1,
     label: "Level over time",
-    series: [{ name: "Level", color: "var(--site-series-1)", points, step: true, area: true, extend: true, gaps: gapMs }],
+    series: [{ name: "Level", color: "var(--bv-series-1)", points, step: true, area: true, extend: true, gaps: gapMs }],
     xDomain: [first, last],
     yFormat: (v) => `${Math.round(v)}`,
     tip: (t) => {
@@ -60,7 +60,7 @@
       const up = ups.find((u) => u.t === day.getTime());
       const rows = inGap(t)
         ? [{ label: "No replays", value: "level unknown" }]
-        : [{ label: "Level", value: lv == null ? "—" : String(lv), color: "var(--site-series-1)" }];
+        : [{ label: "Level", value: lv == null ? "—" : String(lv), color: "var(--bv-series-1)" }];
       const n = games.get(day.getTime());
       if (n) rows.push({ label: "Replays that day", value: n.toLocaleString() });
       if (up) rows.push({ label: "Levelled up to", value: String(up.level) });

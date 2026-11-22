@@ -148,7 +148,7 @@
   background: var(--bv-thumb);
 }
 .site-growth__chart polyline {
-  stroke: var(--site-series-1);
+  stroke: var(--bv-series-1);
   stroke-width: 2.5;
   stroke-linejoin: round;
 }
