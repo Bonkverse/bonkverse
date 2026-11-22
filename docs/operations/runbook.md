@@ -273,6 +273,21 @@ python manage.py grant_admin "<bonk.io username>" --revoke # back to staff only
 Staff (`is_staff`) can re-render skins and open `/admin/`, but see no models
 without permissions. Superusers see everything.
 
+## Giving someone the skin report queue (moderator)
+
+Same first step (they sign in once), then:
+
+```
+python manage.py grant_moderator "<bonk.io username>"          # add to Moderator group
+python manage.py grant_moderator "<bonk.io username>" --revoke # remove
+python manage.py grant_moderator --list                        # who has it
+```
+
+Moderators get `/moderation/` ("Skin reports" in the account menu) and
+nothing else: not `is_staff`, so no re-render and no `/admin/`. The page needs
+the `skins.moderate_skins` permission, which the "Moderator" group holds
+(migration `skins/0039`); superusers have it anyway.
+
 ## Someone is scraping or flooding
 
 1. Cloudflare → Analytics: confirm the IP and paths.
@@ -290,7 +305,7 @@ app's name; most tables still start with `skins_` (ADR 0019).
 | Area | App | Admin | Commands |
 |---|---|---|---|
 | Site accounts, bonk.io links and tokens, login, event log | `accounts` | `/admin/accounts/bonkuser/` (old `/admin/skins/bonkuser/` links redirect) | `grant_admin`, `reencrypt_bonk_tokens`, `analyze_events` |
-| Skins, votes, images, search | `skins` | `/admin/skins/skin/` | `rerender_skins`, `audit_skin_codes`, `audit_vote_counts`, `audit_rate_limits`, `import_bonxbot_skins`, `init_pg_extensions`, `populate_skins`, `populate_all` |
+| Skins, votes, images, search, report queue | `skins` | `/admin/skins/skin/` | `grant_moderator`, `rerender_skins`, `audit_skin_codes`, `audit_vote_counts`, `audit_rate_limits`, `import_bonxbot_skins`, `init_pg_extensions`, `populate_skins`, `populate_all` |
 | Players, friends, replay sync, profile privacy | `players` | `/admin/players/profilevisibility/` | `sync_replays`, `populate_bonkplayers`, `populate_friendships`, `populate_flashfriends` |
 | API keys | `public_api` | `/admin/public_api/` | `create_api_key`, `revoke_api_key` |
 | Discord directory | `communities` | none | `populate_discord` |

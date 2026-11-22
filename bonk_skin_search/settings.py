@@ -327,6 +327,7 @@ TEMPLATES = [
                 "core.context_processors.site_nav",
                 "players.context_processors.viewer_avatar",
                 "players.context_processors.friend_sync",
+                "skins.context_processors.moderation",
             ],
         },
     },
