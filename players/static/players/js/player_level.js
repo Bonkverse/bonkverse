@@ -24,9 +24,9 @@
 
   const DAY = 86400000;
   const parse = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d).getTime(); };
-  const fmt = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" });
-  const fmtTime = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
-  const fmtMonth = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" });
+  const fmt = BVDates.format({ month: "short", day: "numeric", year: "numeric" });
+  const fmtTime = BVDates.format({ month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+  const fmtMonth = BVDates.format({ month: "long", year: "numeric" });
   const $ = (sel) => document.querySelector(sel);
 
   // Highest level so far, one point per day with replays.

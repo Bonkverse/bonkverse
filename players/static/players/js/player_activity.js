@@ -24,10 +24,10 @@
   const fromYmd = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
   const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
   const monday = (d) => addDays(d, -((d.getDay() + 6) % 7));
-  const fmtDay = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
-  const fmtLong = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "short", day: "numeric" });
-  const fmtShort = new Intl.DateTimeFormat(undefined, { weekday: "short" });
-  const fmtHour = new Intl.DateTimeFormat(undefined, { hour: "numeric" });
+  const fmtDay = BVDates.format({ month: "short", day: "numeric" });
+  const fmtLong = BVDates.format({ weekday: "long", month: "short", day: "numeric" });
+  const fmtShort = BVDates.format({ weekday: "short" });
+  const fmtHour = BVDates.format({ hour: "numeric" });
 
   // ── Counts in the viewer's time zone ──────────────────────────
   const perDay = new Map();      // local "YYYY-MM-DD" -> replays
