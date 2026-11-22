@@ -3,7 +3,9 @@
 // hard to see (WCAG 2.2 AA, measured on the page as rendered):
 //   - text below 4.5:1 against what's actually behind it (3:1 if large),
 //   - a button, field, chip or tag whose edge is below 3:1 against what's
-//     around it (its border or its fill has to stand out),
+//     around it (its border or its fill has to stand out). Read-only pills
+//     (.bv-pill that isn't a link or button) are labels: their text is the
+//     cue, as WCAG 1.4.11 covers controls, so only their text is checked,
 //   - a chart bar below 3:1 against its track or the card,
 //   - hover that changes nothing you can see, or leaves text below 4.5:1,
 //   - a selected item (aria-pressed, aria-current, .active) that looks the
@@ -160,6 +162,8 @@ function audit({ CONTROLS, BARS, SELECTED }) {
     if (!visible(el) || disabled(el) || el.closest("svg")) continue;
     // The search action sits inside the search field: the field's border is its edge.
     if (el.closest(".bv-search")) continue;
+    // Read-only pills are labels (Bonkverse/ui v0.1.6 draws them without a border).
+    if (el.matches(".bv-pill") && !el.matches("a, button, [role=button]")) continue;
     const s = getComputedStyle(el);
     const fill = parse(s.backgroundColor);
     const around = behind(el, false);

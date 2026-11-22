@@ -338,7 +338,7 @@ def room_split(rooms):
             "label": ROOM_LABELS[k],
             "games": int(rooms.get(k) or 0),
             "share": _pct(int(rooms.get(k) or 0), total),
-            "color": f"var(--site-series-{i + 1})",
+            "color": f"var(--bv-series-{i + 1})",
         }
         for i, k in enumerate(ROOM_ORDER)
         if int(rooms.get(k) or 0)
