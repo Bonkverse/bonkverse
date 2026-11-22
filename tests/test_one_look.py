@@ -117,15 +117,11 @@ def test_the_rules_see_the_sites_files():
 # a range thumb), or .bv-highlight, the one thing per view worth attention.
 TEAL_EDGE = re.compile(r"\b(border[\w-]*|outline[\w-]*|box-shadow)\s*:[^;}]*var\(--bv-link\)")
 TEAL_ALLOWED = re.compile(
-    r":focus|:checked|\[aria-(?:pressed|current|selected)|\[open\]|bv-highlight"
+    r":focus|:checked|\[aria-(?:pressed|current|selected)|\[open\]|\.(?:is-)?selected\b|bv-highlight"
     r"|slider-thumb|range-thumb|chartnote__dash"
 )
 # Pages still to move to the borderless look, one PR per group.
 TEAL_PENDING = {
-    "skins/static/css/skin_cards.css",
-    "skins/static/css/cards.css",
-    "skins/static/css/skin_owner.css",
-    "skins/static/css/categories.css",
     "static/css/pagination.css",
     "static/css/modal.css",
     "static/css/errors.css",

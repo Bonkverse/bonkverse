@@ -29,15 +29,16 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  border: 1px solid var(--bv-outline);
+  border: 1px solid transparent;
   border-radius: var(--bv-radius);
   background: var(--bv-card);
+  box-shadow: var(--bv-card-shadow);
   color: var(--bv-text);
   text-decoration: none;
 }
 
 .site-category-tile:hover {
-  border-color: var(--bv-link);
+  background: var(--bv-hover);
 }
 
 .site-category-tile:hover .site-category-tile__name {
