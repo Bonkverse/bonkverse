@@ -1,5 +1,5 @@
 /*
- * Bonkverse UI base (v0.1.4): font, page, type, links, focus.
+ * Bonkverse UI base (v0.1.5): font, page, type, links, focus.
  * Needs tokens.css first. Sites add components.css after this.
  */
 
@@ -48,6 +48,8 @@ body {
   background: var(--bv-page);
   color: var(--bv-text);
   font-family: var(--bv-font);
+  /* ss01: Jost's Futura-style single-story "a" (the fonts keep this feature) */
+  font-feature-settings: "ss01" 1;
   font-size: var(--bv-text-md);
   line-height: var(--bv-leading-md);
   font-weight: 400;
@@ -102,6 +104,7 @@ code,
 kbd,
 pre {
   font-family: var(--bv-mono);
+  font-feature-settings: normal;
   font-size: 0.9em;
 }
 :not(pre) > code {
