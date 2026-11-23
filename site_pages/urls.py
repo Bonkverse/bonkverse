@@ -13,5 +13,6 @@ urlpatterns = [
     path("privacy/", pages.privacy, name="privacy"),
     path("terms/", pages.terms, name="terms"),
     path("tools/map-decode/", tools.map_decode_page, name="map_decode_page"),
+    path("ui/", pages.ui_gallery, name="ui_gallery"),
     path("api/tools/map-decode/", tools.api_map_decode, name="api_map_decode"),
 ]

@@ -1,0 +1,771 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2a4054">
+  <title>Bonkverse UI gallery</title>
+  <meta name="description" content="Every shared Bonkverse component in the three themes: Bonkverse, Bonkverse Light and Bonkverse Dark.">
+  <link rel="icon" href="img/logo.png">
+  <!-- 1. Theme first, before any CSS, so there's no flash -->
+  <script src="theme.js"></script>
+  <!-- 2. The package -->
+  <link rel="preload" href="fonts/jost-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/jost-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="base.css">
+  <link rel="stylesheet" href="components.css">
+  <link rel="stylesheet" href="seasons.css">
+  <script src="ui.js" defer></script>
+  <!-- 3. Gallery-only layout (not part of the package) -->
+  <style>
+    .g-section { padding-block: var(--bv-space-8); border-top: 1px solid var(--bv-outline); }
+    .g-section > h2 { margin-bottom: var(--bv-space-1); }
+    .g-section > .g-intro { color: var(--bv-muted); max-width: 70ch; margin-bottom: var(--bv-space-5); }
+    .g-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--bv-space-3); }
+    .g-row + .g-row { margin-top: var(--bv-space-4); }
+    .g-label { width: 100%; color: var(--bv-muted); font-size: var(--bv-text-xs); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+    .g-grid-2 { display: grid; gap: var(--bv-space-6); grid-template-columns: minmax(0, 1fr); }
+    @media (min-width: 900px) { .g-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+    .g-themes { display: grid; gap: var(--bv-space-4); grid-template-columns: minmax(0, 1fr); }
+    @media (min-width: 900px) { .g-themes { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .g-theme { border: 1px solid var(--bv-outline); border-radius: var(--bv-radius); overflow: hidden; }
+    .g-theme__bar { display: flex; justify-content: space-between; align-items: center; padding: 0 var(--bv-space-4); min-height: 44px; background: var(--bv-header); color: var(--bv-header-title); font-weight: 700; font-size: var(--bv-text-sm); }
+    .g-theme__bar span { color: var(--bv-header-meta); font-weight: 500; font-size: var(--bv-text-xs); }
+    .g-theme__body { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--bv-space-3); padding: var(--bv-space-4); }
+    .g-theme__body h3 { color: var(--bv-heading); }
+
+    .g-swatches { display: grid; gap: var(--bv-space-2); grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+    .g-swatch { display: grid; grid-template-columns: 36px 1fr; gap: var(--bv-space-2); align-items: center; padding: var(--bv-space-2); border: 1px solid var(--bv-outline); border-radius: var(--bv-radius); background: var(--bv-card); font-size: var(--bv-text-xs); line-height: 1.3; }
+    .g-swatch i { width: 36px; height: 36px; border-radius: var(--bv-radius-sm); border: 1px solid var(--bv-outline); }
+    .g-swatch code { border: 0; padding: 0; background: none; color: var(--bv-muted); }
+
+    .g-type > * + * { margin-top: var(--bv-space-3); }
+    .g-type__meta { color: var(--bv-muted); font-size: var(--bv-text-xs); font-family: var(--bv-mono); }
+
+    .g-markup { margin-top: var(--bv-space-3); font-size: var(--bv-text-sm); }
+    .g-markup summary { display: inline-flex; align-items: center; min-height: 44px; color: var(--bv-link); font-weight: 600; cursor: pointer; }
+    .g-markup pre { margin: 0; padding: var(--bv-space-4); max-height: 360px; overflow: auto; border: 1px solid var(--bv-outline); border-radius: var(--bv-radius); background: var(--bv-thumb); color: var(--bv-text); font-size: 12px; line-height: 1.55; white-space: pre; }
+    .g-demo-controls { display: flex; flex-wrap: wrap; gap: var(--bv-space-3); align-items: center; margin-bottom: var(--bv-space-4); }
+  </style>
+</head>
+<body class="bv-app">
+  <!-- Icons: simple outlined shapes, 24 × 24, stroke = currentColor -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4L2.8 9.5l6.4-.8z" stroke-width="2" stroke-linejoin="round"/></symbol>
+      <symbol id="i-palette" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.65-.75 1.65-1.69 0-.44-.18-.84-.44-1.13-.29-.29-.44-.65-.44-1.13a1.64 1.64 0 0 1 1.67-1.67h2c3.05 0 5.55-2.5 5.55-5.55C21.97 6.01 17.46 2 12 2z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/></g></symbol>
+      <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6.5 18.5c1.3-2.2 3.2-3.3 5.5-3.3s4.2 1.1 5.5 3.3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+      <symbol id="i-maximize" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+      <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+      <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+      <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="19" cy="12" r="1.8" fill="currentColor"/></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+      <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v6M12 7.5v.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l9.5 17h-19z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v4.5M12 17.5v.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 16l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+      <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4m0 0h11l-2 4 2 4H5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.5-4.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.5 4.5L20 16m0 4v-4h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    </defs>
+  </svg>
+
+  <a class="bv-skip-link" href="#main">Skip to content</a>
+
+  <!-- ═══ Shared header (items from nav.json) ═══ -->
+  <header class="bv-header">
+    <div class="bv-header__inner">
+      <a class="bv-header__brand" href="https://bonkverse.io/">
+        <img src="img/logo.png" alt="" width="30" height="30">
+        <span>Bonkverse</span>
+      </a>
+      <button class="bv-btn bv-btn--icon bv-header__menu-btn" type="button"
+              aria-expanded="false" aria-controls="bv-nav" aria-label="Menu" data-bv-toggle>
+        <svg aria-hidden="true"><use href="#i-menu"/></svg>
+      </button>
+      <nav class="bv-header__nav" id="bv-nav" aria-label="Bonkverse">
+        <ul class="bv-header__links">
+          <li><a class="bv-header__link" href="https://bonkverse.io/search/" aria-current="page">Skins</a></li>
+          <li><a class="bv-header__link" href="https://replays.bonkverse.io/">Replays</a></li>
+          <li><a class="bv-header__link" href="https://bonkverse.io/players/">Players</a></li>
+          <li>
+            <button class="bv-header__link" type="button" aria-expanded="false" aria-controls="tools-menu" data-bv-toggle>
+              Tools <svg class="bv-chevron" aria-hidden="true"><use href="#i-chevron"/></svg>
+            </button>
+            <div class="bv-menu" id="tools-menu" hidden>
+              <a class="bv-menu__item" href="https://editor.bonkverse.io/">Skin editor</a>
+              <a class="bv-menu__item" href="https://bonkverse.io/tools/xp/">XP and level calculator</a>
+              <a class="bv-menu__item" href="https://bonkverse.io/tools/map-decode/">Map decoder</a>
+            </div>
+          </li>
+          <li><a class="bv-header__link" href="https://bonkverse.io/developers/">Developers</a></li>
+        </ul>
+        <div class="bv-header__end">
+          <div class="bv-dropdown bv-appearance">
+            <button class="bv-header__link" type="button" aria-expanded="false" aria-controls="bv-appearance" data-bv-toggle>
+              <svg aria-hidden="true"><use href="#i-palette"/></svg><span class="bv-appearance__label bv-visually-hidden">Appearance</span>
+            </button>
+            <div class="bv-menu bv-menu--end bv-appearance__menu" id="bv-appearance" hidden>
+              <label class="bv-appearance__field">
+                <span>Theme</span>
+                <select class="bv-input bv-select" data-bv-theme-picker>
+                  <option value="bonkverse">Bonkverse</option>
+                  <option value="light">Bonkverse Light</option>
+                  <option value="dark">Bonkverse Dark</option>
+                </select>
+              </label>
+              <label class="bv-season-toggle"><input type="checkbox" data-bv-season-toggle> <span>Seasonal theme</span></label>
+            </div>
+          </div>
+          <!-- Signed out, this is a plain <a class="bv-header__link" href="/login/">Log in</a> -->
+          <div class="bv-dropdown bv-header__account">
+            <a class="bv-header__link" href="https://bonkverse.io/my-profile/"><svg aria-hidden="true"><use href="#i-user"/></svg>nova_rider</a>
+            <button class="bv-header__link" type="button" aria-label="Account menu" aria-expanded="false" aria-controls="account-menu" data-bv-toggle>
+              <svg class="bv-chevron" aria-hidden="true"><use href="#i-chevron"/></svg>
+            </button>
+            <div class="bv-menu bv-menu--end" id="account-menu" hidden>
+              <a class="bv-menu__item" href="https://bonkverse.io/my-profile/">My profile</a>
+              <a class="bv-menu__item" href="https://bonkverse.io/settings/profile/">Settings</a>
+              <a class="bv-menu__item" href="https://bonkverse.io/developers/keys/">API keys</a>
+              <div class="bv-menu__divider"></div>
+              <form method="post" action="https://bonkverse.io/logout/"><button class="bv-menu__item" type="submit">Log out</button></form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main class="bv-main" id="main">
+    <!-- ═══ Page header ═══ -->
+    <div class="bv-page-header">
+      <div class="bv-page-header__text">
+        <span class="bv-eyebrow">Bonkverse UI · v0.1.7</span>
+        <h1>Component gallery</h1>
+        <p class="bv-lead">Every shared piece of the Bonkverse sites. Switch the theme from the palette button in the header to check each one in Bonkverse, Light and Dark.</p>
+      </div>
+      <div class="bv-page-header__actions">
+        <a class="bv-btn" href="https://github.com/Bonkverse/ui">GitHub</a>
+        <a class="bv-btn bv-btn--ghost" href="https://github.com/Bonkverse/ui/blob/main/CHANGELOG.md">Changelog</a>
+      </div>
+    </div>
+
+    <!-- ═══ Three themes ═══ -->
+    <section class="g-section" aria-labelledby="s-themes">
+      <h2 id="s-themes">Three themes, one component</h2>
+      <p class="g-intro">The same search card in each theme. These panels set <code>data-bv-theme</code> on themselves, so they don't follow the picker.</p>
+      <div class="g-themes">
+        <div class="g-theme bv-theme-scope" data-bv-theme="bonkverse"></div>
+        <div class="g-theme bv-theme-scope" data-bv-theme="light"></div>
+        <div class="g-theme bv-theme-scope" data-bv-theme="dark"></div>
+      </div>
+      <template id="theme-panel">
+        <div class="g-theme__bar">Bonkverse <span data-name></span></div>
+        <div class="g-theme__body">
+          <h3>Skin search</h3>
+          <form class="bv-search" role="search" onsubmit="return false">
+            <input type="search" value="comet" aria-label="Search skins">
+            <button type="submit">Search</button>
+          </form>
+          <p class="bv-small bv-muted">Results for “comet”</p>
+          <article class="bv-skin-card">
+            <div class="bv-skin-card__stage">
+              <button class="bv-skin-card__art" type="button" aria-label="Enlarge Midnight Comet" data-bv-dialog-open="zoom">
+                <img src="img/samples/comet.svg" alt="" width="112" height="112">
+                <span class="bv-enlarge" aria-hidden="true">Enlarge</span>
+              </button>
+              <button class="bv-fav bv-skin-card__fav" type="button" aria-pressed="false" aria-label="Favorite Midnight Comet">
+                <svg aria-hidden="true"><use href="#i-star"/></svg><span class="bv-fav__count">12</span>
+              </button>
+            </div>
+            <div class="bv-skin-card__body">
+              <h3 class="bv-skin-card__title">Midnight Comet</h3>
+              <p class="bv-creator">by <a href="#">nova_rider</a></p>
+              <div class="bv-skin-card__footer">
+                <a class="bv-details-link" href="#details">Skin details <span aria-hidden="true">›</span></a>
+                <button class="bv-btn bv-btn--primary bv-wear" type="button">Wear</button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </template>
+    </section>
+
+    <!-- ═══ Colors ═══ -->
+    <section class="g-section" aria-labelledby="s-colors">
+      <h2 id="s-colors">Colors</h2>
+      <p class="g-intro">The current theme's tokens. Components use these names, never raw colors. <code>node scripts/contrast.mjs</code> checks every text and border pair in all three themes on each release.</p>
+      <div class="g-swatches" id="swatches"></div>
+    </section>
+
+    <!-- ═══ Type ═══ -->
+    <section class="g-section" aria-labelledby="s-type">
+      <h2 id="s-type">Type</h2>
+      <p class="g-intro">Jost 400, 500, 600 and 700. Titles and names wrap instead of cutting off.</p>
+      <div class="g-type">
+        <div><p class="g-type__meta">Page title · 30/36 · 700</p><p style="font-size:30px;line-height:36px;font-weight:700;color:var(--bv-heading)">Top skins</p></div>
+        <div><p class="g-type__meta">Detail and section title · 22/29 · 700</p><p style="font-size:22px;line-height:29px;font-weight:700;color:var(--bv-heading)">Copper Planet</p></div>
+        <div><p class="g-type__meta">Card title · 17/22 · 700</p><p style="font-size:17px;line-height:22px;font-weight:700">Midnight Comet</p></div>
+        <div><p class="g-type__meta">Body · 15/21 · 400</p><p>Search more than a million skins by name or creator, then wear one on bonk.io in a tap.</p></div>
+        <div><p class="g-type__meta">Actions · 14 · 600</p><p style="font-size:14px;font-weight:600">Skin details · Copy link · Wear</p></div>
+        <div><p class="g-type__meta">Metadata · 13 · 400–500</p><p class="bv-creator">by nova_rider · uploaded 3 days ago · 1,204 views</p></div>
+      </div>
+    </section>
+
+    <!-- ═══ Buttons ═══ -->
+    <section class="g-section" aria-labelledby="s-buttons">
+      <h2 id="s-buttons">Buttons</h2>
+      <p class="g-intro">Every button is at least 44 px tall. Brown is the one main action on a screen or card. Hover, press (Tab to see focus) and the states below.</p>
+      <div class="g-example" data-g-code>
+        <div class="g-row">
+          <span class="g-label">Kinds</span>
+          <button class="bv-btn bv-btn--primary" type="button">Wear</button>
+          <button class="bv-btn" type="button">Secondary</button>
+          <button class="bv-btn bv-btn--ghost" type="button">Copy link</button>
+          <button class="bv-btn bv-btn--danger" type="button">Delete</button>
+          <button class="bv-btn bv-btn--danger-outline" type="button">Report</button>
+          <button class="bv-btn bv-btn--icon" type="button" aria-label="More actions"><svg aria-hidden="true"><use href="#i-more"/></svg></button>
+          <a class="bv-btn" href="#s-buttons"><svg aria-hidden="true"><use href="#i-external"/></svg>Link as button</a>
+        </div>
+        <div class="g-row">
+          <span class="g-label">States</span>
+          <button class="bv-btn" type="button" aria-pressed="true">Selected</button>
+          <button class="bv-btn bv-btn--primary" type="button" disabled>Disabled</button>
+          <button class="bv-btn" type="button" disabled>Disabled</button>
+          <button class="bv-btn bv-btn--danger" type="button" disabled>Disabled</button>
+        </div>
+        <div class="g-row">
+          <span class="g-label">Wear: ready, pending, success, recoverable error</span>
+          <button class="bv-btn bv-btn--primary bv-wear" type="button">Wear</button>
+          <button class="bv-btn bv-btn--primary bv-wear" type="button" aria-busy="true" aria-disabled="true">Applying…</button>
+          <button class="bv-btn bv-btn--primary bv-wear" type="button" data-state="success">✓ Applied</button>
+          <button class="bv-btn bv-btn--primary bv-wear" type="button" data-state="error">Retry</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ Skin cards ═══ -->
+    <section class="g-section" aria-labelledby="s-cards">
+      <h2 id="s-cards">Skin cards</h2>
+      <p class="g-intro">Search is for fast decisions: artwork, name and creator together, Favorite and Wear one tap away. One column on phones, then 2, 3 and 4 at 600, 900 and 1,200 px. Tap the stars and Wear to see the states.</p>
+      <div class="g-demo-controls">
+        <label class="bv-check"><input type="checkbox" id="fail-wear"> <span>Make the next Wear fail</span></label>
+      </div>
+      <ul class="bv-skin-grid" id="card-grid">
+        <li>
+          <article class="bv-skin-card" data-g-code>
+            <div class="bv-skin-card__stage">
+              <button class="bv-skin-card__art" type="button" aria-label="Enlarge Copper Planet" data-bv-dialog-open="zoom">
+                <img src="img/samples/planet.svg" alt="" width="112" height="112">
+                <span class="bv-enlarge" aria-hidden="true">Enlarge</span>
+              </button>
+              <button class="bv-fav bv-skin-card__fav" type="button" aria-pressed="false" aria-label="Favorite Copper Planet">
+                <svg aria-hidden="true"><use href="#i-star"/></svg><span class="bv-fav__count">0</span>
+              </button>
+            </div>
+            <div class="bv-skin-card__body">
+              <h3 class="bv-skin-card__title">Copper Planet</h3>
+              <p class="bv-creator">by <a href="#">ringmaker</a></p>
+              <div class="bv-skin-card__footer">
+                <a class="bv-details-link" href="#details">Skin details <span aria-hidden="true">›</span></a>
+                <button class="bv-btn bv-btn--primary bv-wear" type="button">Wear</button>
+              </div>
+              <p class="bv-status" role="status"></p>
+            </div>
+          </article>
+        </li>
+        <li>
+          <article class="bv-skin-card">
+            <div class="bv-skin-card__stage">
+              <button class="bv-skin-card__art" type="button" aria-label="Enlarge Checkmate" data-bv-dialog-open="zoom">
+                <img src="img/samples/checker.svg" alt="" width="112" height="112">
+                <span class="bv-enlarge" aria-hidden="true">Enlarge</span>
+              </button>
+              <button class="bv-fav bv-skin-card__fav" type="button" aria-pressed="true" aria-label="Favorite Checkmate">
+                <svg aria-hidden="true"><use href="#i-star"/></svg><span class="bv-fav__count">87</span>
+              </button>
+            </div>
+            <div class="bv-skin-card__body">
+              <h3 class="bv-skin-card__title">Checkmate</h3>
+              <p class="bv-creator">by <a href="#">gambit</a></p>
+              <div class="bv-skin-card__footer">
+                <a class="bv-details-link" href="#details">Skin details <span aria-hidden="true">›</span></a>
+                <button class="bv-btn bv-btn--primary bv-wear" type="button">Wear</button>
+              </div>
+              <p class="bv-status" role="status"></p>
+            </div>
+          </article>
+        </li>
+        <li>
+          <article class="bv-skin-card">
+            <div class="bv-skin-card__stage">
+              <button class="bv-skin-card__art" type="button" aria-label="Enlarge The Extremely Long Skin Name That Has To Wrap Onto Two Lines" data-bv-dialog-open="zoom">
+                <img src="img/samples/leaf.svg" alt="" width="112" height="112">
+                <span class="bv-enlarge" aria-hidden="true">Enlarge</span>
+              </button>
+              <span class="bv-fav bv-skin-card__fav" title="Log in to favorite">
+                <svg aria-hidden="true"><use href="#i-star"/></svg><span class="bv-fav__count">1,204</span>
+              </span>
+            </div>
+            <div class="bv-skin-card__body">
+              <h3 class="bv-skin-card__title">The Extremely Long Skin Name That Has To Wrap Onto Two Lines</h3>
+              <p class="bv-creator">by <a href="#">averyveryverylongcreatorname_2026</a></p>
+              <div class="bv-skin-card__footer">
+                <a class="bv-details-link" href="#details">Skin details <span aria-hidden="true">›</span></a>
+                <a class="bv-btn bv-btn--primary bv-wear" href="#">Log in to wear</a>
+              </div>
+            </div>
+          </article>
+        </li>
+        <li>
+          <article class="bv-skin-card">
+            <div class="bv-skin-card__stage">
+              <div class="bv-skin-art--missing">No image</div>
+              <button class="bv-fav bv-skin-card__fav" type="button" aria-pressed="false" aria-label="Favorite Broken Art">
+                <svg aria-hidden="true"><use href="#i-star"/></svg><span class="bv-fav__count">3</span>
+              </button>
+            </div>
+            <div class="bv-skin-card__body">
+              <h3 class="bv-skin-card__title">Broken Art</h3>
+              <p class="bv-creator">by <a href="#">pixelpusher</a></p>
+              <div class="bv-skin-card__footer">
+                <a class="bv-details-link" href="#details">Skin details <span aria-hidden="true">›</span></a>
+                <button class="bv-btn bv-btn--primary bv-wear" type="button">Wear</button>
+              </div>
+              <p class="bv-status" role="status"></p>
+            </div>
+          </article>
+        </li>
+        <li aria-hidden="true">
+          <div class="bv-skin-card bv-skin-card--loading">
+            <div class="bv-skin-card__stage"><span class="bv-skeleton bv-skeleton--circle"></span></div>
+            <div class="bv-skin-card__body">
+              <span class="bv-skeleton bv-skeleton--line" style="width:70%;height:16px"></span>
+              <span class="bv-skeleton bv-skeleton--line" style="width:40%"></span>
+              <div class="bv-skin-card__footer">
+                <span class="bv-skeleton" style="width:90px;height:20px"></span>
+                <span class="bv-skeleton" style="width:104px;height:44px;border-radius:var(--bv-radius)"></span>
+              </div>
+            </div>
+          </div>
+        </li>
+      </ul>
+      <p class="bv-small bv-muted" style="margin-top:var(--bv-space-3)">Cards: ready, favorited, signed out with a long name, missing artwork, loading.</p>
+    </section>
+
+    <!-- ═══ Skin details ═══ -->
+    <section class="g-section" aria-labelledby="s-details" id="details">
+      <h2 id="s-details">Skin details</h2>
+      <p class="g-intro">Details is for deeper actions. The art sits on the page with no box behind it, votes sit next to Wear, and sharing and tools go in a compact second row. Splits into two columns from 900 px.</p>
+      <div class="bv-skin-detail" data-g-code>
+        <a class="bv-back" href="#s-cards">← Search results</a>
+        <button class="bv-skin-detail__art" type="button" aria-label="Enlarge Midnight Comet" data-bv-dialog-open="zoom">
+          <img class="bv-skin-art" src="img/samples/comet.svg" alt="" width="144" height="144">
+          <span class="bv-enlarge" aria-hidden="true">Enlarge</span>
+        </button>
+        <div class="bv-skin-detail__content">
+          <div>
+            <h3 class="bv-skin-detail__title">Midnight Comet</h3>
+            <p class="bv-creator">by <a href="#">nova_rider</a></p>
+          </div>
+          <div class="bv-skin-detail__actions">
+            <div class="bv-votes" role="group" aria-label="Vote">
+              <button class="bv-btn bv-vote" type="button" aria-pressed="false" data-vote="up" aria-label="Upvote">
+                <svg aria-hidden="true"><use href="#i-up"/></svg><span>24</span>
+              </button>
+              <button class="bv-btn bv-vote" type="button" aria-pressed="false" data-vote="down" aria-label="Downvote">
+                <svg aria-hidden="true"><use href="#i-down"/></svg><span>2</span>
+              </button>
+            </div>
+            <button class="bv-btn bv-btn--primary bv-wear" type="button">Wear</button>
+          </div>
+          <p class="bv-status" role="status"></p>
+          <div class="bv-skin-detail__tools">
+            <button class="bv-btn bv-btn--ghost" type="button" data-bv-copy-text="https://bonkverse.io/skins/123/" data-bv-copied-label="Link copied">
+              <svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy link</span>
+            </button>
+            <a class="bv-btn bv-btn--ghost" href="#"><svg aria-hidden="true"><use href="#i-pencil"/></svg>Skin editor</a>
+            <a class="bv-btn bv-btn--ghost" href="#"><svg aria-hidden="true"><use href="#i-external"/></svg>Bonkleagues</a>
+            <button class="bv-btn bv-btn--ghost" type="button"><svg aria-hidden="true"><use href="#i-refresh"/></svg>Re-render</button>
+            <button class="bv-btn bv-btn--danger-outline" type="button" data-bv-dialog-open="report"><svg aria-hidden="true"><use href="#i-flag"/></svg>Report</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ Forms ═══ -->
+    <section class="g-section" aria-labelledby="s-forms">
+      <h2 id="s-forms">Inputs</h2>
+      <p class="g-intro">Labels sit above fields, hints under the label, errors under the field. Inputs use 16 px text so phones don't zoom in.</p>
+      <div class="g-grid-2" data-g-code>
+        <form class="bv-card bv-form" onsubmit="return false">
+          <div class="bv-field">
+            <label class="bv-label" for="f-name">Key name</label>
+            <span class="bv-hint" id="f-name-hint">What it's for, like your site or bot. Only you see it.</span>
+            <input class="bv-input" id="f-name" aria-describedby="f-name-hint" placeholder="My leaderboard site">
+          </div>
+          <div class="bv-field">
+            <label class="bv-label" for="f-bad">Bonkleagues link</label>
+            <input class="bv-input" id="f-bad" value="https://example.com/skin" aria-invalid="true" aria-describedby="f-bad-err">
+            <span class="bv-error" id="f-bad-err">That isn't a Bonkleagues skin link. It should start with https://bonkleagues.io/s/</span>
+          </div>
+          <div class="bv-field">
+            <label class="bv-label" for="f-sort">Sort by</label>
+            <select class="bv-select" id="f-sort"><option>Most upvoted</option><option>Most favorited</option><option>Newest</option></select>
+          </div>
+          <label class="bv-check"><input type="checkbox" checked> <span>I agree to the <a href="#">API terms</a>.</span></label>
+          <button class="bv-btn bv-btn--primary" type="submit">Create key</button>
+        </form>
+        <div class="bv-stack" style="align-content:start">
+          <div class="bv-field">
+            <label class="bv-label" for="f-search">Search</label>
+            <form class="bv-search" role="search" onsubmit="return false">
+              <input type="search" id="f-search" placeholder="Skin name or creator" autocomplete="off">
+              <button type="submit">Search</button>
+            </form>
+          </div>
+          <div class="bv-field">
+            <label class="bv-label" for="f-desc">Report reason</label>
+            <textarea class="bv-textarea" id="f-desc" placeholder="What's wrong with this skin?"></textarea>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ Tabs, chips, pills ═══ -->
+    <section class="g-section" aria-labelledby="s-tabs">
+      <h2 id="s-tabs">Tabs, chips and pills</h2>
+      <p class="g-intro">Tabs move between the skin pages (from <code>nav.json</code>'s <code>skinTabs</code>). Chips filter what's on the page. Pills label things and can't be pressed.</p>
+      <nav class="bv-tabs" aria-label="Skins" data-g-code>
+        <a class="bv-tab" href="#s-tabs" aria-current="page">Search</a>
+        <a class="bv-tab" href="#s-tabs">New</a>
+        <a class="bv-tab" href="#s-tabs">Categories</a>
+        <a class="bv-tab" href="#s-tabs">Top skins</a>
+        <a class="bv-tab" href="#s-tabs">Upload</a>
+      </nav>
+      <div class="g-row">
+        <div class="bv-chips" role="group" aria-label="Filter">
+          <button class="bv-chip" type="button" aria-pressed="true">Favorites</button>
+          <button class="bv-chip" type="button" aria-pressed="false">This week</button>
+          <button class="bv-chip" type="button" aria-pressed="false">Has animation</button>
+          <button class="bv-chip" type="button" aria-pressed="false" disabled>Unavailable</button>
+        </div>
+        <span class="bv-pill">Staff</span>
+        <span class="bv-pill bv-pill--accent">Partner</span>
+      </div>
+    </section>
+
+    <!-- ═══ Table ═══ -->
+    <section class="g-section" aria-labelledby="s-table">
+      <h2 id="s-table">Tables</h2>
+      <p class="g-intro">Numbers line up on the right. The table scrolls inside its box on small screens instead of the page.</p>
+      <div class="bv-table-wrap" data-g-code>
+        <table class="bv-table">
+          <thead><tr><th scope="col">#</th><th scope="col">Skin</th><th scope="col">Creator</th><th scope="col" class="bv-num">Upvotes</th><th scope="col" class="bv-num">Favorites</th></tr></thead>
+          <tbody>
+            <tr><td class="bv-table__rank">1</td><td><a href="#">Checkmate</a></td><td class="bv-muted">gambit</td><td class="bv-num">4,812</td><td class="bv-num">1,207</td></tr>
+            <tr><td class="bv-table__rank">2</td><td><a href="#">Midnight Comet</a></td><td class="bv-muted">nova_rider</td><td class="bv-num">3,990</td><td class="bv-num">944</td></tr>
+            <tr><td class="bv-table__rank">3</td><td><a href="#">Copper Planet</a></td><td class="bv-muted">ringmaker</td><td class="bv-num">2,105</td><td class="bv-num">388</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <nav class="bv-pagination" aria-label="Pages">
+        <a class="bv-btn" href="#s-table" aria-disabled="true">‹ Previous</a>
+        <span class="bv-pagination__status">Page 1 of 42</span>
+        <a class="bv-btn" href="#s-table">Next ›</a>
+      </nav>
+    </section>
+
+    <!-- ═══ Feedback ═══ -->
+    <section class="g-section" aria-labelledby="s-feedback">
+      <h2 id="s-feedback">Notices and toasts</h2>
+      <p class="g-intro">Put feedback next to the action that caused it. Toasts are for things with no place on the page; errors stay until dismissed.</p>
+      <div class="bv-stack" style="gap:var(--bv-space-3)">
+        <div class="bv-notice" data-g-code><svg aria-hidden="true"><use href="#i-info"/></svg><span>Keys made here allow 60 requests a minute. Need more? Ask on Discord.</span></div>
+        <div class="bv-notice bv-notice--success"><svg aria-hidden="true"><use href="#i-check"/></svg><span>Applied. Midnight Comet is now in your active slot.</span></div>
+        <div class="bv-notice bv-notice--danger" role="alert"><svg aria-hidden="true"><use href="#i-alert"/></svg><span>Couldn't reach bonk.io. Your skin wasn't changed. Try again in a minute.</span></div>
+      </div>
+      <div class="g-row" style="margin-top:var(--bv-space-4)">
+        <button class="bv-btn" type="button" onclick="BonkverseUI.toast('Link copied', 'success')">Show a success toast</button>
+        <button class="bv-btn" type="button" onclick="BonkverseUI.toast('Couldn’t save your vote. Check your connection and try again.', 'error')">Show an error toast</button>
+      </div>
+    </section>
+
+    <!-- ═══ Highlight ═══ -->
+    <section class="g-section" aria-labelledby="s-highlight">
+      <h2 id="s-highlight">Highlight</h2>
+      <p class="g-intro">Cards have no border: the step from page to card, plus a soft shadow, is the edge, and things inside a card use the inset fill. A teal ring and glow, <code>.bv-highlight</code>, marks the one thing on a screen worth the user's attention: the week's most active player, your own row, something new, something to do. At most one per view. Selection, hover and labels never use it.</p>
+      <div class="g-row" style="align-items:stretch">
+        <div class="bv-card" style="flex:1 1 240px"><strong>A plain card</strong><p class="g-intro" style="margin:var(--bv-space-2) 0 0">No border, a shadow and a step in color.</p></div>
+        <div class="bv-card bv-highlight" data-g-code style="flex:1 1 240px"><strong>Most active this week</strong><p class="g-intro" style="margin:var(--bv-space-2) 0 0">The one highlighted thing on this screen.</p></div>
+      </div>
+    </section>
+
+    <!-- ═══ Seasons ═══ -->
+    <section class="g-section" aria-labelledby="s-seasons">
+      <h2 id="s-seasons">Seasons</h2>
+      <p class="g-intro">With <code>seasons.css</code> loaded, <code>theme.js</code> turns on Halloween in October, Christmas from December 1 to 30 and New Year from December 31 to January 7, on top of whichever theme someone picked. Each season changes the surfaces, the accent, the header and the main action, adds a badge to the logo and one light header animation (none with reduce motion). A <strong>Seasonal theme</strong> switch appears next to the theme picker while a season is on the calendar.</p>
+      <div class="g-row">
+        <span class="g-label">Preview this whole page</span>
+        <a class="bv-btn" href="?bv-season=halloween#s-seasons">Halloween</a>
+        <a class="bv-btn" href="?bv-season=christmas#s-seasons">Christmas</a>
+        <a class="bv-btn" href="?bv-season=newyear#s-seasons">New Year</a>
+        <a class="bv-btn bv-btn--ghost" href="?bv-season=none#s-seasons">No season</a>
+      </div>
+      <div class="g-row">
+        <span class="g-label">Seasonal text</span>
+        <p data-bv-season-text="halloween" data-g-code>🎃 Spooky skins are out for October.</p>
+        <p data-bv-season-text="christmas">Happy holidays from Bonkverse.</p>
+        <p data-bv-season-text="newyear">Happy New Year from Bonkverse!</p>
+        <p class="bv-muted">(Shows only in its season: preview one above.)</p>
+      </div>
+      <div class="g-themes g-seasons" style="margin-top:var(--bv-space-6)">
+        <div class="g-theme bv-theme-scope" data-bv-theme="bonkverse" data-bv-season="halloween"></div>
+        <div class="g-theme bv-theme-scope" data-bv-theme="light" data-bv-season="halloween"></div>
+        <div class="g-theme bv-theme-scope" data-bv-theme="dark" data-bv-season="halloween"></div>
+        <div class="g-theme bv-theme-scope" data-bv-theme="bonkverse" data-bv-season="christmas"></div>
+        <div class="g-theme bv-theme-scope" data-bv-theme="light" data-bv-season="christmas"></div>
+        <div class="g-theme bv-theme-scope" data-bv-theme="dark" data-bv-season="christmas"></div>
+        <div class="g-theme bv-theme-scope" data-bv-theme="bonkverse" data-bv-season="newyear"></div>
+        <div class="g-theme bv-theme-scope" data-bv-theme="light" data-bv-season="newyear"></div>
+        <div class="g-theme bv-theme-scope" data-bv-theme="dark" data-bv-season="newyear"></div>
+      </div>
+    </section>
+
+    <!-- ═══ Dialogs ═══ -->
+    <section class="g-section" aria-labelledby="s-dialogs">
+      <h2 id="s-dialogs">Dialogs</h2>
+      <p class="g-intro">Native <code>&lt;dialog&gt;</code>: focus stays inside, Escape or the backdrop closes it, and focus goes back to the button that opened it.</p>
+      <div class="g-row">
+        <button class="bv-btn bv-btn--danger-outline" type="button" data-bv-dialog-open="confirm">Revoke key…</button>
+        <button class="bv-btn" type="button" data-bv-dialog-open="zoom">Enlarge a skin</button>
+      </div>
+    </section>
+
+    <!-- ═══ Empty and loading ═══ -->
+    <section class="g-section" aria-labelledby="s-states">
+      <h2 id="s-states">Empty, loading and error</h2>
+      <p class="g-intro">Say what happened and what to do next. "No results" and "couldn't load" are different messages.</p>
+      <div class="g-grid-2">
+        <div class="bv-empty">
+          <svg aria-hidden="true"><use href="#i-search"/></svg>
+          <h3 class="bv-empty__title">No skins match “zzzq”</h3>
+          <p>Check the spelling, or search by creator instead.</p>
+          <a class="bv-btn" href="#">Browse new skins</a>
+        </div>
+        <div class="bv-empty">
+          <svg aria-hidden="true" style="color:var(--bv-danger)"><use href="#i-alert"/></svg>
+          <h3 class="bv-empty__title">Search didn't load</h3>
+          <p>Something went wrong on our side. Your search is still in the box.</p>
+          <button class="bv-btn bv-btn--primary" type="button">Retry</button>
+        </div>
+      </div>
+      <div class="g-row" style="margin-top:var(--bv-space-5)">
+        <span class="bv-loader" role="status"><span class="bv-loader__ring" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>Loading replays…</span>
+      </div>
+      <div class="bv-code" style="margin-top:var(--bv-space-5)" data-g-code>
+        <div class="bv-tabs" role="tablist" aria-label="Language" data-bv-tabs="code">
+          <button class="bv-tab" type="button" role="tab" aria-selected="true" aria-controls="code-curl">curl</button>
+          <button class="bv-tab" type="button" role="tab" aria-selected="false" aria-controls="code-js" tabindex="-1">JavaScript</button>
+        </div>
+        <div id="code-curl" role="tabpanel">
+          <div class="bv-code__bar"><span>Terminal</span><button class="bv-btn bv-btn--ghost" type="button" data-bv-copy="code-curl-text"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
+          <pre id="code-curl-text">curl https://bonkverse.io/api/v1/players/nova_rider/ \
+  -H "Authorization: Bearer $BONKVERSE_API_KEY"</pre>
+        </div>
+        <div id="code-js" role="tabpanel" hidden>
+          <div class="bv-code__bar"><span>Node 18+ or a browser</span><button class="bv-btn bv-btn--ghost" type="button" data-bv-copy="code-js-text"><svg aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button></div>
+          <pre id="code-js-text">const res = await fetch("https://bonkverse.io/api/v1/players/nova_rider/", {
+  headers: { Authorization: `Bearer ${process.env.BONKVERSE_API_KEY}` },
+});
+console.log(await res.json());</pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ═══ Shared footer (from nav.json) ═══ -->
+  <footer class="bv-footer">
+    <div class="bv-footer__inner">
+      <div>
+        <h2>Community</h2>
+        <ul>
+          <li><a href="https://discord.gg/2Zx7Cwhr4Z">Discord</a></li>
+          <li><a href="https://bonkverse.io/serverlist/">Discord servers</a></li>
+          <li><a href="https://bonkverse.io/submit/">Submit a server</a></li>
+          <li><a href="https://bonkverse.io/social-stats/">Community stats</a></li>
+          <li><a href="https://www.buymeacoffee.com/misterurias">Support Bonkverse</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Bonkverse</h2>
+        <ul>
+          <li><a href="https://bonkverse.io/staff/">Our team</a></li>
+          <li><a href="https://docs.bonkverse.io/">Docs</a></li>
+          <li><a href="https://github.com/Bonkverse">GitHub</a></li>
+          <li><a href="https://bonkverse.io/privacy/">Privacy</a></li>
+          <li><a href="https://bonkverse.io/terms/">Terms</a></li>
+        </ul>
+      </div>
+      <p class="bv-footer__note">Bonkverse is a fan project and is not affiliated with bonk.io.</p>
+    </div>
+  </footer>
+
+  <!-- Dialogs -->
+  <dialog class="bv-dialog bv-dialog--zoom" id="zoom" aria-labelledby="zoom-title">
+    <div class="bv-dialog__header">
+      <h2 class="bv-dialog__title" id="zoom-title">Midnight Comet</h2>
+      <div class="bv-dialog__tools">
+        <button class="bv-btn bv-btn--ghost" type="button" aria-pressed="false" data-bv-zoom-full><svg aria-hidden="true"><use href="#i-maximize"/></svg><span>Full size</span></button>
+        <button class="bv-btn bv-btn--ghost bv-btn--icon" type="button" aria-label="Close" data-bv-dialog-close><svg aria-hidden="true"><use href="#i-x"/></svg></button>
+      </div>
+    </div>
+    <div class="bv-dialog__body">
+      <img src="img/samples/comet.svg" alt="Midnight Comet, enlarged" width="264" height="264">
+    </div>
+  </dialog>
+
+  <dialog class="bv-dialog" id="confirm" aria-labelledby="confirm-title">
+    <div class="bv-dialog__header">
+      <h2 class="bv-dialog__title" id="confirm-title">Revoke “Comp leaderboard”?</h2>
+      <button class="bv-btn bv-btn--ghost bv-btn--icon" type="button" aria-label="Close" data-bv-dialog-close><svg aria-hidden="true"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="bv-dialog__body">
+      <p class="bv-muted">Anything using this key stops working right away. You can't undo this.</p>
+      <div class="bv-dialog__actions">
+        <button class="bv-btn" type="button" data-bv-dialog-close>Keep key</button>
+        <button class="bv-btn bv-btn--danger" type="button" data-bv-dialog-close>Revoke key</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="bv-dialog" id="report" aria-labelledby="report-title">
+    <div class="bv-dialog__header">
+      <h2 class="bv-dialog__title" id="report-title">Report this skin</h2>
+      <button class="bv-btn bv-btn--ghost bv-btn--icon" type="button" aria-label="Close" data-bv-dialog-close><svg aria-hidden="true"><use href="#i-x"/></svg></button>
+    </div>
+    <form class="bv-dialog__body" method="dialog">
+      <div class="bv-field">
+        <label class="bv-label" for="r-why">What's wrong?</label>
+        <select class="bv-select" id="r-why"><option>Offensive or hateful</option><option>Sexual content</option><option>Stolen from another creator</option><option>Something else</option></select>
+      </div>
+      <div class="bv-dialog__actions">
+        <button class="bv-btn" type="button" data-bv-dialog-close>Cancel</button>
+        <button class="bv-btn bv-btn--danger" type="submit">Send report</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Gallery demo behavior. Sites have their own; this only shows the states. -->
+  <script>
+  (function () {
+    // Theme comparison panels
+    var tpl = document.getElementById("theme-panel");
+    var names = { bonkverse: "", light: "Light", dark: "Dark" };
+    var seasonNames = { halloween: "Halloween", christmas: "Christmas", newyear: "New Year" };
+    document.querySelectorAll(".g-theme").forEach(function (panel) {
+      panel.appendChild(tpl.content.cloneNode(true));
+      var name = names[panel.dataset.bvTheme] || "Default";
+      if (panel.dataset.bvSeason) name = seasonNames[panel.dataset.bvSeason] + (name ? " · " + name : "");
+      panel.querySelector("[data-name]").textContent = name;
+    });
+
+    // Swatches for the current theme
+    var TOKENS = ["page", "card", "thumb", "header", "outline", "control", "text", "muted", "heading", "link",
+      "input", "action", "action-hover", "action-ink", "action-border", "selected", "success", "gold",
+      "danger", "danger-surface", "header-title", "header-link", "divider"];
+    function drawSwatches() {
+      var style = getComputedStyle(document.documentElement);
+      var html = TOKENS.map(function (t) {
+        var v = style.getPropertyValue("--bv-" + t).trim();
+        return '<div class="g-swatch"><i style="background:' + v + '"></i><span>' + t + "<br><code>" + v + "</code></span></div>";
+      }).join("");
+      document.getElementById("swatches").innerHTML = html;
+    }
+    drawSwatches();
+    document.addEventListener("bv:themechange", drawSwatches);
+
+    // Favorite: toggle and update the count
+    document.addEventListener("click", function (e) {
+      var fav = e.target.closest("button.bv-fav");
+      if (!fav) return;
+      var on = fav.getAttribute("aria-pressed") !== "true";
+      fav.setAttribute("aria-pressed", on ? "true" : "false");
+      var count = fav.querySelector(".bv-fav__count");
+      var n = parseInt(count.textContent.replace(/,/g, ""), 10) + (on ? 1 : -1);
+      count.textContent = n.toLocaleString("en-US");
+    });
+
+    // Votes: one at a time, click again to undo
+    document.addEventListener("click", function (e) {
+      var vote = e.target.closest(".bv-vote");
+      if (!vote) return;
+      vote.closest(".bv-votes").querySelectorAll(".bv-vote").forEach(function (b) {
+        var pressed = b.getAttribute("aria-pressed") === "true";
+        var next = b === vote ? !pressed : false;
+        if (pressed !== next) {
+          var span = b.querySelector("span");
+          span.textContent = parseInt(span.textContent, 10) + (next ? 1 : -1);
+        }
+        b.setAttribute("aria-pressed", next ? "true" : "false");
+      });
+    });
+
+    // Wear: Applying… → ✓ Applied (2.8 s) or Retry, with status below
+    var failNext = document.getElementById("fail-wear");
+    document.addEventListener("click", function (e) {
+      var wear = e.target.closest("button.bv-wear");
+      if (!wear || wear.closest(".g-example") || wear.getAttribute("aria-busy") === "true") return;
+      var scope = wear.closest(".bv-skin-card, .bv-skin-detail");
+      var status = scope && scope.querySelector(".bv-status");
+      var name = scope && scope.querySelector(".bv-skin-card__title, .bv-skin-detail__title");
+      wear.setAttribute("aria-busy", "true");
+      wear.removeAttribute("data-state");
+      wear.textContent = "Applying…";
+      if (status) { status.className = "bv-status"; status.textContent = ""; }
+      setTimeout(function () {
+        wear.removeAttribute("aria-busy");
+        if (failNext && failNext.checked) {
+          failNext.checked = false;
+          wear.setAttribute("data-state", "error");
+          wear.textContent = "Retry";
+          if (status) { status.className = "bv-status bv-status--error"; status.textContent = "Couldn't reach bonk.io. Your skin wasn't changed."; }
+          return;
+        }
+        wear.setAttribute("data-state", "success");
+        wear.textContent = "✓ Applied";
+        if (status) { status.className = "bv-status bv-status--success"; status.textContent = (name ? name.textContent : "Skin") + " is in your active slot."; }
+        setTimeout(function () {
+          wear.removeAttribute("data-state");
+          wear.textContent = "Wear";
+        }, 2800);
+      }, 900);
+    });
+
+    // "Markup" disclosure under examples, from the live HTML
+    function pretty(el) {
+      var html = el.outerHTML.replace(/ data-g-code(="")?/, "");
+      var lines = html.split("\n");
+      var indent = Math.min.apply(null, lines.slice(1).filter(function (l) { return l.trim(); })
+        .map(function (l) { return l.match(/^ */)[0].length; }).concat([99]));
+      return lines.map(function (l, i) { return i ? l.slice(Math.max(0, indent - 2)) : l; }).join("\n");
+    }
+    document.querySelectorAll("[data-g-code]").forEach(function (el) {
+      var details = document.createElement("details");
+      details.className = "g-markup";
+      details.innerHTML = "<summary>Markup</summary><pre></pre>";
+      details.querySelector("pre").textContent = pretty(el);
+      var after = el.closest("li") ? el.closest("ul") : el;
+      if (after.nextElementSibling && after.nextElementSibling.classList.contains("g-markup")) return;
+      after.insertAdjacentElement("afterend", details);
+    });
+  })();
+  </script>
+</body>
+</html>

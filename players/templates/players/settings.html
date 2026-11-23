@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Profile settings · Bonkverse{% endblock %}
+{% block title %}Settings · Bonkverse{% endblock %}
 {% block content_class %}site-page{% endblock %}
 
 {% block extra_head %}
@@ -10,25 +10,49 @@
 
 {% block content %}
 {% comment %}
-Which profile sections other people can see. Each switch saves as it's
+Appearance (theme, seasonal themes), then which profile sections other
+people can see. Each switch saves as it's
 flipped (players/js/profile_settings.js) and says "Saved" beside it; the
 Save button is only for browsers without scripts.
 {% endcomment %}
 <div class="bv-main pv pv--narrow">
   <div class="bv-page-header">
     <div class="bv-page-header__text">
-      <h1>Profile settings</h1>
-      <p class="bv-muted">Choose what other people see on your public profile. You always see everything on your own.</p>
+      <h1>Settings</h1>
+      <p class="bv-muted">How Bonkverse looks for you, and what other people see on your public profile.</p>
     </div>
     <div class="bv-page-header__actions">
       <a class="bv-btn" href="{% url 'players:player_profile' user.username %}">View my profile</a>
     </div>
   </div>
 
+  {# Appearance: the same controls as the header's palette menu; theme.js applies them and keeps every copy in step, accounts/appearance.py saves them to the account. #}
+  <section class="bv-card pv-settings" aria-labelledby="appearance-title">
+    <h2 class="pv-card__title" id="appearance-title">Appearance</h2>
+    <label class="bv-field">
+      <span class="bv-label">Theme</span>
+      <select class="bv-input bv-select" data-bv-theme-picker>
+        <option value="bonkverse">Bonkverse</option>
+        <option value="light">Bonkverse Light</option>
+        <option value="dark">Bonkverse Dark</option>
+      </select>
+    </label>
+    <label class="pv-switch">
+      <span class="pv-switch__text">
+        <span class="pv-switch__label">Seasonal themes</span>
+        <span class="pv-muted pv-small">Halloween in October, Christmas in December and New Year in early January, on top of your theme.</span>
+      </span>
+      <input type="checkbox" role="switch" data-bv-season-toggle>
+      <span class="pv-switch__track" aria-hidden="true"></span>
+    </label>
+    <p class="pv-fine">Saved to your account, so they follow you to your other devices and to Bonkverse Replays and Docs.</p>
+  </section>
+
   <form method="post" class="bv-card pv-settings" data-profile-settings>
     {% csrf_token %}
     <fieldset>
-      <legend class="pv-card__title">Public sections</legend>
+      <legend class="pv-card__title">Public profile</legend>
+      <p class="bv-muted pv-small">You always see everything on your own profile.</p>
       {% for s in sections %}
         <label class="pv-switch">
           <span class="pv-switch__text">

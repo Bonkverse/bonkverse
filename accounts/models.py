@@ -50,6 +50,22 @@ class BonkUser(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(auto_now_add=True)
     is_staff = models.BooleanField(default=False)
 
+    # Appearance, saved to the account so it follows them to other devices
+    # (accounts/appearance.py). Blank until they first pick something.
+    THEMES = ["bonkverse", "light", "dark"]
+    theme = models.CharField(
+        max_length=12,
+        blank=True,
+        choices=[(t, t) for t in THEMES],
+        help_text="Bonkverse/ui theme; blank means the site default.",
+    )
+    seasonal = models.BooleanField(default=True, help_text="Show seasonal themes in season.")
+    appearance_at = models.BigIntegerField(
+        null=True,
+        blank=True,
+        help_text="When they last chose (ms since 1970, the bv-appearance-at cookie).",
+    )
+
     objects = BonkUserManager()
 
     USERNAME_FIELD = "username"

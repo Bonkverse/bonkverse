@@ -308,6 +308,10 @@
     "name": "players:xp_calculator_player"
   },
   {
+    "route": "ui/",
+    "name": "site_pages:ui_gallery"
+  },
+  {
     "route": "upload/",
     "name": "skins:upload_skin"
   }

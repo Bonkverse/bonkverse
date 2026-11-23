@@ -19,6 +19,7 @@ from core.token_crypto import bonk_session
 from core.ratelimits import limit
 from players import selectors as player_selectors
 
+from . import appearance
 from .forms import LoginForm
 from .login_attempts import attempt_login
 from .login_messages import login_failure_message
@@ -84,6 +85,7 @@ def me(request):
                 "id": request.user.id,
                 "username": request.user.username,
                 "avatar": request.build_absolute_uri(thumbnail) if thumbnail else None,
+                "appearance": appearance.for_api(request.user),
             },
             "permissions": {
                 "publish_skins": True,

@@ -42,14 +42,23 @@ menus open with static/ui/ui.js.
       </ul>
 
       <div class="bv-header__end">
-        <label class="bv-theme-picker">
-          <span>Theme</span>
-          <select data-bv-theme-picker>
-            <option value="bonkverse">Bonkverse</option>
-            <option value="light">Bonkverse Light</option>
-            <option value="dark">Bonkverse Dark</option>
-          </select>
-        </label>
+        {# Appearance: the theme and, in season, the seasonal switch. theme.js saves them for every Bonkverse site; signed in, accounts/appearance.py also saves them to the account. #}
+        <div class="bv-dropdown bv-appearance">
+          <button class="bv-header__link" type="button" aria-expanded="false" aria-controls="bv-appearance" data-bv-toggle>
+            <i data-lucide="palette" aria-hidden="true"></i><span class="bv-appearance__label bv-visually-hidden">Appearance</span>
+          </button>
+          <div class="bv-menu bv-menu--end bv-appearance__menu" id="bv-appearance" hidden>
+            <label class="bv-appearance__field">
+              <span>Theme</span>
+              <select class="bv-input bv-select" data-bv-theme-picker>
+                <option value="bonkverse">Bonkverse</option>
+                <option value="light">Bonkverse Light</option>
+                <option value="dark">Bonkverse Dark</option>
+              </select>
+            </label>
+            <label class="bv-season-toggle"><input type="checkbox" data-bv-season-toggle> <span>Seasonal theme</span></label>
+          </div>
+        </div>
 
         {% if user.is_authenticated %}
           <div class="bv-dropdown bv-header__account">

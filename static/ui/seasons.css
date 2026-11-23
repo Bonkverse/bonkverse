@@ -1,0 +1,408 @@
+/*
+ * Bonkverse seasonal themes (v0.1.7)
+ *
+ * Load after tokens.css and components.css. theme.js turns a season on by
+ * the date (the visitor's own clock) unless they've switched seasons off:
+ *
+ *   Halloween   October
+ *   Christmas   December 1–30
+ *   New Year    December 31 – January 7
+ *
+ * A season sits on top of the chosen theme: Bonkverse, Light and Dark each
+ * get their own version, so someone on Light still gets a light page.
+ * It changes surfaces, the accent (links, focus, selection, highlight), the
+ * header and the main action; favorites stay gold and errors stay red.
+ * Then a few small touches: a badge on the logo, one light header animation
+ * (none with "reduce motion"), and greetings sites can show only in season.
+ *
+ * Attributes theme.js sets on <html>:
+ *   data-bv-season       the season showing now ("halloween" | "christmas" |
+ *                        "newyear"); missing when none is, or it's switched off
+ *   data-bv-season-now   the season on the calendar, even when switched off
+ *                        (so the on/off switch knows to show)
+ *
+ * Markup sites can use:
+ *   <label class="bv-season-toggle">               the on/off switch, shown
+ *     <input type="checkbox" data-bv-season-toggle>   only while a season is
+ *     <span>Seasonal theme</span>                      on the calendar; it
+ *   </label>                                           sits in the header's
+ *                                                       Appearance menu
+ *   (A settings page can show its own data-bv-season-toggle all year, with
+ *   any markup: theme.js keeps every one of them in step.)
+ *   <p data-bv-season-text="christmas">…</p>      shown only in that season
+ *
+ * scripts/contrast.mjs checks every season in every theme.
+ */
+
+/* ── Halloween: dusk purple, pumpkin orange ──────────────────────────────── */
+[data-bv-season="halloween"] {
+  --bv-page: #17131c;
+  --bv-card: #241c2b;
+  --bv-thumb: #1b1521;
+  --bv-input: #1b1521;
+  --bv-inset: #30263a;
+  --bv-header: #2c1d33;
+  --bv-outline: #3a2e45;
+  --bv-divider: #3a2e45;
+  --bv-hover: #3d3048;
+  --bv-search-action-hover: #3d3048;
+  --bv-muted: #c4b8cc;
+  --bv-header-meta: #c4b8cc;
+  --bv-link: #ffad5c;
+  --bv-header-link: #ffad5c;
+  --bv-selected: #4a3320;
+  --bv-action: #a84b17;
+  --bv-action-hover: #b5551f;
+  --bv-action-pressed: #8f3f12;
+  --bv-action-ink: #fff7ee;
+  --bv-action-border: #d27a3d;
+  --bv-highlight: 0 0 0 1px #ffad5c, 0 0 18px rgb(255 173 92 / 26%);
+  --bv-series-1: #ffad5c;
+  --bv-series-4: #c79bff;
+}
+[data-bv-season="halloween"][data-bv-theme="light"] {
+  --bv-page: #ece3d6;
+  --bv-card: #faf6ef;
+  --bv-thumb: #e8dccb;
+  --bv-input: #fffaf2;
+  --bv-inset: #f1e8dc;
+  --bv-header: #3b2547;
+  --bv-outline: #ddd0bf;
+  --bv-divider: #ddd0bf;
+  --bv-control: #6e5f74;
+  --bv-hover: #efe4d6;
+  --bv-search-action: #e8dccb;
+  --bv-search-action-hover: #e0d1bd;
+  --bv-text: #2d2233;
+  --bv-muted: #4f4057;
+  --bv-heading: #8a3a0b;
+  --bv-link: #8a3a0b;
+  --bv-header-title: #ffffff;
+  --bv-header-meta: #d8cbe0;
+  --bv-header-link: #ffc58a;
+  --bv-selected: #f4d5b8;
+  --bv-action: #9a4310;
+  --bv-action-hover: #86390c;
+  --bv-action-pressed: #74320b;
+  --bv-action-ink: #fff7ee;
+  --bv-action-border: #9a4310;
+  --bv-highlight: 0 0 0 1px #8a3a0b, 0 0 16px rgb(138 58 11 / 22%);
+  --bv-series-1: #8a3a0b;
+  --bv-series-4: #6b3fb3;
+}
+[data-bv-season="halloween"][data-bv-theme="dark"] {
+  --bv-page: #0a0809;
+  --bv-card: #18131a;
+  --bv-thumb: #120e14;
+  --bv-input: #120e14;
+  --bv-inset: #221b25;
+  --bv-header: #1a1220;
+  --bv-outline: #2c2430;
+  --bv-divider: #2c2430;
+  --bv-hover: #2c2230;
+  --bv-search-action-hover: #2c2230;
+  --bv-muted: #c4b8cc;
+  --bv-header-meta: #c4b8cc;
+  --bv-link: #ffad5c;
+  --bv-header-link: #ffad5c;
+  --bv-selected: #3d2614;
+  --bv-action: #a84b17;
+  --bv-action-hover: #b5551f;
+  --bv-action-pressed: #8f3f12;
+  --bv-action-ink: #fff7ee;
+  --bv-action-border: #d27a3d;
+  --bv-highlight: 0 0 0 1px #ffad5c, 0 0 18px rgb(255 173 92 / 22%);
+  --bv-series-1: #ffad5c;
+  --bv-series-4: #c79bff;
+}
+
+/* ── Christmas: pine green, berry red header, frost accents ──────────────── */
+[data-bv-season="christmas"] {
+  --bv-page: #0f1d1a;
+  --bv-card: #18302b;
+  --bv-thumb: #132622;
+  --bv-input: #132622;
+  --bv-inset: #213d37;
+  --bv-header: #6b1f26;
+  --bv-outline: #2a463f;
+  --bv-divider: #2a463f;
+  --bv-hover: #2a4a42;
+  --bv-search-action-hover: #2a4a42;
+  --bv-muted: #b9cbc4;
+  --bv-header-meta: #f0d4d6;
+  --bv-link: #9fe0b9;
+  --bv-header-link: #ffd8d8;
+  --bv-selected: #24493e;
+  --bv-action: #a32630;
+  --bv-action-hover: #b22d38;
+  --bv-action-pressed: #8c1f28;
+  --bv-action-ink: #ffffff;
+  --bv-action-border: #d0545d;
+  --bv-highlight: 0 0 0 1px #9fe0b9, 0 0 18px rgb(159 224 185 / 26%);
+  --bv-series-1: #9fe0b9;
+  --bv-series-4: #ff9e9e;
+}
+[data-bv-season="christmas"][data-bv-theme="light"] {
+  --bv-page: #e6ede7;
+  --bv-card: #fbfbf7;
+  --bv-thumb: #dde7df;
+  --bv-input: #ffffff;
+  --bv-inset: #eef3ee;
+  --bv-header: #6b1f26;
+  --bv-outline: #d3ddd4;
+  --bv-divider: #d3ddd4;
+  --bv-control: #5a6e65;
+  --bv-hover: #e3ebe4;
+  --bv-search-action: #dde7df;
+  --bv-search-action-hover: #d0ddd3;
+  --bv-text: #1f3a32;
+  --bv-muted: #3c544b;
+  --bv-heading: #8e1f2a;
+  --bv-link: #1d5a3f;
+  --bv-header-title: #ffffff;
+  --bv-header-meta: #f0d4d6;
+  --bv-header-link: #ffd8d8;
+  --bv-selected: #cfe6d6;
+  --bv-action: #a32630;
+  --bv-action-hover: #8c1f28;
+  --bv-action-pressed: #771a22;
+  --bv-action-ink: #ffffff;
+  --bv-action-border: #a32630;
+  --bv-highlight: 0 0 0 1px #1d5a3f, 0 0 16px rgb(29 90 63 / 22%);
+  --bv-series-1: #1d5a3f;
+  --bv-series-4: #a32630;
+}
+[data-bv-season="christmas"][data-bv-theme="dark"] {
+  --bv-page: #070c0b;
+  --bv-card: #121a18;
+  --bv-thumb: #0d1311;
+  --bv-input: #0d1311;
+  --bv-inset: #1b2522;
+  --bv-header: #3a1216;
+  --bv-outline: #22302b;
+  --bv-divider: #22302b;
+  --bv-hover: #22302b;
+  --bv-search-action-hover: #22302b;
+  --bv-muted: #b9cbc4;
+  --bv-header-meta: #e6c8ca;
+  --bv-link: #9fe0b9;
+  --bv-header-link: #ffd8d8;
+  --bv-selected: #1e3a30;
+  --bv-action: #a32630;
+  --bv-action-hover: #b22d38;
+  --bv-action-pressed: #8c1f28;
+  --bv-action-ink: #ffffff;
+  --bv-action-border: #d0545d;
+  --bv-highlight: 0 0 0 1px #9fe0b9, 0 0 18px rgb(159 224 185 / 22%);
+  --bv-series-1: #9fe0b9;
+  --bv-series-4: #ff9e9e;
+}
+
+/* ── New Year: midnight navy, champagne and violet ───────────────────────── */
+[data-bv-season="newyear"] {
+  --bv-page: #0e1324;
+  --bv-card: #1a2138;
+  --bv-thumb: #121831;
+  --bv-input: #121831;
+  --bv-inset: #242c47;
+  --bv-header: #1c1f3d;
+  --bv-outline: #2c3554;
+  --bv-divider: #2c3554;
+  --bv-hover: #2d3757;
+  --bv-search-action-hover: #2d3757;
+  --bv-muted: #bcc2d8;
+  --bv-header-meta: #bcc2d8;
+  --bv-link: #f4d58d;
+  --bv-header-link: #f4d58d;
+  --bv-selected: #3a3522;
+  --bv-action: #5a46b0;
+  --bv-action-hover: #6552bd;
+  --bv-action-pressed: #4c3a99;
+  --bv-action-ink: #ffffff;
+  --bv-action-border: #8a78dc;
+  --bv-highlight: 0 0 0 1px #f4d58d, 0 0 18px rgb(244 213 141 / 26%);
+  --bv-series-1: #f4d58d;
+  --bv-series-4: #b9a8ff;
+}
+[data-bv-season="newyear"][data-bv-theme="light"] {
+  --bv-page: #e3e6f1;
+  --bv-card: #fbfbfd;
+  --bv-thumb: #dde1ee;
+  --bv-input: #ffffff;
+  --bv-inset: #eef0f7;
+  --bv-header: #1c1f3d;
+  --bv-outline: #d2d6e6;
+  --bv-divider: #d2d6e6;
+  --bv-control: #5d6385;
+  --bv-hover: #e6e8f3;
+  --bv-search-action: #dde1ee;
+  --bv-search-action-hover: #d0d5e8;
+  --bv-text: #1c1f3d;
+  --bv-muted: #3d4466;
+  --bv-heading: #4a3a9a;
+  --bv-link: #4a3a9a;
+  --bv-header-title: #ffffff;
+  --bv-header-meta: #c9cde3;
+  --bv-header-link: #f4d58d;
+  --bv-selected: #ddd6f5;
+  --bv-action: #5a46b0;
+  --bv-action-hover: #4c3a99;
+  --bv-action-pressed: #3f3082;
+  --bv-action-ink: #ffffff;
+  --bv-action-border: #5a46b0;
+  --bv-highlight: 0 0 0 1px #4a3a9a, 0 0 16px rgb(74 58 154 / 22%);
+  --bv-series-1: #4a3a9a;
+  --bv-series-4: #8a5a00;
+}
+[data-bv-season="newyear"][data-bv-theme="dark"] {
+  --bv-page: #07080e;
+  --bv-card: #13151f;
+  --bv-thumb: #0d0f17;
+  --bv-input: #0d0f17;
+  --bv-inset: #1c1f2c;
+  --bv-header: #11132a;
+  --bv-outline: #23273a;
+  --bv-divider: #23273a;
+  --bv-hover: #23273a;
+  --bv-search-action-hover: #23273a;
+  --bv-muted: #bcc2d8;
+  --bv-header-meta: #bcc2d8;
+  --bv-link: #f4d58d;
+  --bv-header-link: #f4d58d;
+  --bv-selected: #3a3522;
+  --bv-action: #5a46b0;
+  --bv-action-hover: #6552bd;
+  --bv-action-pressed: #4c3a99;
+  --bv-action-ink: #ffffff;
+  --bv-action-border: #8a78dc;
+  --bv-highlight: 0 0 0 1px #f4d58d, 0 0 18px rgb(244 213 141 / 22%);
+  --bv-series-1: #f4d58d;
+  --bv-series-4: #b9a8ff;
+}
+
+/* ── The on/off switch and seasonal text ─────────────────────────────────── */
+.bv-season-toggle,
+[data-bv-season-text] {
+  display: none;
+}
+[data-bv-season-now] .bv-season-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--bv-space-2);
+  min-height: var(--bv-target);
+  color: var(--bv-text);
+  font-size: var(--bv-text-sm);
+  cursor: pointer;
+}
+.bv-season-toggle input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  color: var(--bv-text);
+  accent-color: var(--bv-link);
+}
+[data-bv-season="halloween"] [data-bv-season-text="halloween"],
+[data-bv-season="christmas"] [data-bv-season-text="christmas"],
+[data-bv-season="newyear"] [data-bv-season-text="newyear"] {
+  display: revert;
+}
+
+/* ── A badge on the logo ─────────────────────────────────────────────────── */
+/* .navbar and .navbar__brand are Docusaurus's header (docs.bonkverse.io),
+   which keeps its own markup. */
+[data-bv-season] :is(.bv-header__brand, .navbar__brand) {
+  position: relative;
+}
+[data-bv-season] :is(.bv-header__brand, .navbar__brand)::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 20px;
+  width: 16px;
+  height: 16px;
+  background: center / contain no-repeat;
+  pointer-events: none;
+}
+/* Pumpkin */
+[data-bv-season="halloween"] :is(.bv-header__brand, .navbar__brand)::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 3.2c-.2-1-.7-1.8-1.5-2.2l.6-.8c1 .5 1.6 1.5 1.8 2.8z' fill='%234f7a3a'/%3E%3Cellipse cx='5.3' cy='9.4' rx='3.6' ry='5' fill='%23e3731f'/%3E%3Cellipse cx='10.7' cy='9.4' rx='3.6' ry='5' fill='%23e3731f'/%3E%3Cellipse cx='8' cy='9.4' rx='3.4' ry='5.3' fill='%23f28c2b'/%3E%3Cpath d='M5.6 8.4l1.2-1 .6 1.3zm4.8 0l-1.2-1-.6 1.3zM5.2 11.2c1.6 1.2 4 1.2 5.6 0l-.9.2-.6.6-.6-.6-.9.2-.6.6-.6-.6z' fill='%232c1d33'/%3E%3C/svg%3E");
+}
+/* Ornament */
+[data-bv-season="christmas"] :is(.bv-header__brand, .navbar__brand)::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='6.2' y='1' width='3.6' height='2.6' rx='.6' fill='%23e5bf68'/%3E%3Ccircle cx='8' cy='9.6' r='5.8' fill='%23d6303c'/%3E%3Cpath d='M2.6 8.6c3.4 1 7.4 1 10.8 0' stroke='%23ffffff' stroke-width='1.1' fill='none'/%3E%3Ccircle cx='5.6' cy='6.8' r='1.1' fill='%23ffffff' opacity='.55'/%3E%3C/svg%3E");
+}
+/* Star */
+[data-bv-season="newyear"] :is(.bv-header__brand, .navbar__brand)::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 .8l1.9 4.6 4.9.4-3.8 3.2 1.2 4.8L8 11.2l-4.2 2.6L5 9 1.2 5.8l4.9-.4z' fill='%23f4d58d' stroke='%23a3882f' stroke-width='.6'/%3E%3C/svg%3E");
+}
+
+/* ── One light header animation per season ───────────────────────────────── */
+/* Drawn in a layer behind the header's contents and clipped to the header,
+   so menus that drop below it are never covered. */
+[data-bv-season] :is(.bv-header > *, .navbar:not(.navbar-sidebar--show) > .navbar__inner) {
+  position: relative;
+  z-index: 1;
+}
+[data-bv-season] :is(.bv-header, .navbar)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-repeat: no-repeat;
+}
+
+/* Halloween: one bat flaps across the header a few seconds after load. */
+[data-bv-season="halloween"] :is(.bv-header, .navbar)::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 16'%3E%3Cpath d='M16 5c1 0 1.6.8 1.8 1.6C19 4 22 2 26 2.4c-1.6 1-2.2 2.4-2 3.8 1.6-.6 3.4-.4 5 .8-2.2.2-3.6 1.4-4.2 3-1.6-.8-3.6-.6-5 .8-.8-1.2-2.2-1.6-3.8-1.6s-3 .4-3.8 1.6c-1.4-1.4-3.4-1.6-5-.8-.6-1.6-2-2.8-4.2-3 1.6-1.2 3.4-1.4 5-.8.2-1.4-.4-2.8-2-3.8C10 2 13 4 14.2 6.6 14.4 5.8 15 5 16 5z' fill='%23120c16' opacity='.85'/%3E%3C/svg%3E");
+  background-size: 34px 17px;
+  background-position: -60px 70%;
+  animation: bv-season-bat 9s var(--bv-ease-out) 2.5s 1 both;
+}
+@keyframes bv-season-bat {
+  0%   { background-position: -60px 70%; }
+  35%  { background-position: 38% 20%; }
+  70%  { background-position: 72% 60%; }
+  100% { background-position: calc(100% + 60px) 15%; }
+}
+
+/* Christmas: light snow drifting through the header. */
+[data-bv-season="christmas"] :is(.bv-header, .navbar)::before {
+  background-image:
+    radial-gradient(1.6px 1.6px at 20px 30px, rgb(255 255 255 / 70%) 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 90px 10px, rgb(255 255 255 / 55%) 50%, transparent 51%),
+    radial-gradient(2px 2px at 150px 45px, rgb(255 255 255 / 60%) 50%, transparent 51%),
+    radial-gradient(1.4px 1.4px at 230px 20px, rgb(255 255 255 / 50%) 50%, transparent 51%);
+  background-size: 260px 60px;
+  background-repeat: repeat;
+  animation: bv-season-snow 14s linear infinite;
+}
+@keyframes bv-season-snow {
+  from { background-position: 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position: 30px 60px, -20px 60px, 15px 60px, -10px 60px; }
+}
+
+/* New Year: confetti falls through the header once, then it's gone. */
+[data-bv-season="newyear"] :is(.bv-header, .navbar)::before {
+  background-image:
+    linear-gradient(35deg, #f4d58d 50%, transparent 50%),
+    linear-gradient(120deg, #b9a8ff 50%, transparent 50%),
+    linear-gradient(60deg, #ff9eb5 50%, transparent 50%),
+    linear-gradient(150deg, #9fe0d9 50%, transparent 50%),
+    linear-gradient(80deg, #f4d58d 50%, transparent 50%);
+  background-size: 7px 4px, 6px 4px, 7px 3px, 5px 4px, 6px 3px;
+  background-position: 12% -10px, 31% -16px, 54% -8px, 73% -14px, 90% -10px;
+  animation: bv-season-confetti 3.2s ease-in 1s 1 both;
+}
+@keyframes bv-season-confetti {
+  to {
+    background-position: 14% 70px, 29% 76px, 57% 66px, 70% 74px, 93% 68px;
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-bv-season] :is(.bv-header, .navbar)::before {
+    animation: none;
+    background-image: none;
+  }
+}

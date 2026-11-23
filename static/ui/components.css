@@ -1,5 +1,5 @@
 /*
- * Bonkverse UI components (v0.1.6)
+ * Bonkverse UI components (v0.1.7)
  * Needs tokens.css and base.css first. Every class starts with bv-.
  * index.html shows each one in all three themes with its markup.
  *
@@ -176,6 +176,46 @@
   color: var(--bv-text);
 }
 
+/* Appearance: one header button (a palette) whose menu holds the theme
+   choice and, in season, the seasonal switch (seasons.css). Replaces the
+   separate .bv-theme-picker in the header, which still works elsewhere.
+
+   <div class="bv-dropdown bv-appearance">
+     <button class="bv-header__link" type="button" aria-expanded="false"
+             aria-controls="bv-appearance" data-bv-toggle>
+       <svg …palette…/><span class="bv-appearance__label bv-visually-hidden">Appearance</span>
+     </button>
+     <div class="bv-menu bv-menu--end bv-appearance__menu" id="bv-appearance" hidden>
+       <label class="bv-appearance__field"><span>Theme</span>
+         <select class="bv-input bv-select" data-bv-theme-picker>…</select></label>
+       <label class="bv-season-toggle"><input type="checkbox" data-bv-season-toggle>
+         <span>Seasonal theme</span></label>
+     </div>
+   </div> */
+.bv-appearance > .bv-header__link {
+  min-width: var(--bv-target);
+  justify-content: center;
+}
+.bv-appearance__menu {
+  display: grid;
+  gap: var(--bv-space-2);
+  min-width: 240px;
+  padding: var(--bv-space-3);
+}
+.bv-appearance__menu[hidden] {
+  display: none;
+}
+.bv-appearance__field {
+  display: grid;
+  gap: var(--bv-space-1);
+  color: var(--bv-muted);
+  font-size: var(--bv-text-xs);
+  font-weight: 600;
+}
+.bv-appearance__field .bv-select {
+  width: 100%;
+}
+
 /* Phones and small tablets: the links fold into the Menu button */
 @media (max-width: 899px) {
   .bv-header__inner {
@@ -221,8 +261,18 @@
   .bv-header__end .bv-dropdown {
     display: contents; /* its menu wraps onto a full-width line below */
   }
-  .bv-header__account > .bv-header__link {
+  .bv-header__account > .bv-header__link,
+  .bv-appearance > .bv-header__link {
     width: auto;
+  }
+  /* In the phone menu the palette button says what it is */
+  .bv-appearance__label.bv-visually-hidden {
+    position: static !important;
+    width: auto;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
   }
   .bv-header__end .bv-menu {
     flex-basis: 100%;

@@ -10,9 +10,8 @@ shared package, checked on the source.
 - Every page is built on bv- components: nothing is left on the old
   site-legacy styles.
 
-Exempt: static/ui/ (the package itself, synced by scripts/sync_ui.py) and
-static/css/halloween.css, a seasonal theme whose future is an open question
-in the revised RFC-0002.
+Exempt: static/ui/ (the package itself, synced by scripts/sync_ui.py, which
+also holds the seasonal themes in seasons.css).
 """
 
 import re
@@ -22,7 +21,7 @@ import pytest
 
 REPO = Path(__file__).resolve().parent.parent
 PACKAGE = REPO / "static" / "ui"
-EXEMPT = {REPO / "static" / "css" / "halloween.css"}
+EXEMPT: set[Path] = set()
 
 STATIC_ROOTS = [REPO / "static", *sorted(REPO.glob("*/static"))]
 TEMPLATE_ROOTS = [REPO / "templates", *sorted(REPO.glob("*/templates"))]
@@ -139,3 +138,23 @@ def test_teal_outlines_only_mean_focus_selection_or_highlight(path):
         "a teal border means focus, selection or .bv-highlight; "
         f"use a fill (--bv-inset, --bv-hover) instead: {found}"
     )
+
+
+# ── Seasons (Bonkverse/ui seasons.css, owner 2026-11-23) ─────────────────────
+
+
+@pytest.mark.django_db
+def test_every_page_loads_the_seasons_and_offers_the_switch(client):
+    html = client.get("/").content.decode()
+    assert "ui/seasons.css" in html
+    assert "data-bv-season-toggle" in html
+    for season in ("halloween", "christmas", "newyear"):
+        assert f'data-bv-season-text="{season}"' in html  # the home page's greetings
+
+
+@pytest.mark.django_db
+def test_ui_gallery_is_at_bonkverse_io_ui(client):
+    response = client.get("/ui/")
+    assert response.status_code == 302
+    assert response["Location"] == "/static/ui/index.html"
+    assert (PACKAGE / "index.html").exists()

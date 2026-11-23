@@ -30,6 +30,13 @@
 .home-hero .bv-lead {
   margin: var(--bv-space-3) 0 0;
 }
+
+/* A one-line greeting in season (data-bv-season-text, seasons.css) */
+.home-hero__season {
+  margin-top: var(--bv-space-2);
+  color: var(--bv-link);
+  font-weight: 600;
+}
 .home-search {
   margin-top: var(--bv-space-5);
 }
