@@ -1,10 +1,10 @@
 {
   "package": "Bonkverse/ui",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "note": "Copied by scripts/sync_ui.py. Don't edit these files; change Bonkverse/ui and sync a new release.",
   "files": {
-    "base.css": "eeaf225f7151e5ec4aa3a5485ea051c7257c3447f982ed012536b37e697b4208",
-    "components.css": "c3983bce4b984fef4857c21108071310ba31a1e36be1a2a3036d21ebc24013eb",
+    "base.css": "a719092d782621c9229e47a33a9acd04de1f9cfc9106f347230ec0ec587602b5",
+    "components.css": "9837bf427864b5ced6802ca55ec1f59b046a62d9ea52589c16af1539614d8cdb",
     "fonts/OFL.txt": "536533cad95838e13777663c4109b802aa662ef1ef285337f0c7f51d35682fdc",
     "fonts/jost-latin-400-normal.woff2": "1cbc4d4e9893ec7bdb58916b103cd85fda6bf0a3769612a72ee2de63e9e727ae",
     "fonts/jost-latin-500-normal.woff2": "ac309711998c2193c86a54ca3340c80f64738c592359d0a7137bee3b4474a4be",
@@ -19,11 +19,11 @@
     "img/samples/comet.svg": "7379029359d4a0dea6df2a19a27689f629c5c1fb4e9ef8ce1f85c488311df2e6",
     "img/samples/leaf.svg": "8ff0bf1f08da4c8922c2290aac6b9c632659b21059e4fe69a164bed1795ac355",
     "img/samples/planet.svg": "5a436ec131f492e9ea75e7238bb0ea7e3c614421969e2466b0c9c035be8e104a",
-    "index.html": "6b7c0a98082fdb3ff2767eaba0564bee27b2d8c61a339f6ca06061e025265191",
-    "nav.json": "c0a7ebb72e4f8f60aa340249867a536b789042468712aef2e4dc7638f6133bdc",
-    "seasons.css": "ed13d16e376c8faf20aceaef13e90d951d28d68e8da16bc2d9291631203d757b",
-    "theme.js": "41b6486f477c09f5c3de4a86e57a7f2c2ff6988f28892f7443affc4d7a01c2bb",
-    "tokens.css": "f2ce7aedafbb935d46c274289a2482a15a05a07e9536462da7942994a5fe3f28",
-    "ui.js": "49d9c56db1dfff987c708388a60d9cf14f016f51cbfc3ef62bae829d657e2ddd"
+    "index.html": "8e2de5e1e453902809198e927f8ebe87272636a2c13bab2b541e3ded6bf9ef81",
+    "nav.json": "6c709336ff61fa2930800edef440599631e4a58851b907163d6d426a30f48407",
+    "seasons.css": "8dd9e9886128a8678424afad99a82f7336ce112933a1e73dc2f616a4da7311da",
+    "theme.js": "80b798dc284869184e7e255a2b055673b6a26f4eaeca19d5fc1e007189b921a6",
+    "tokens.css": "c707d144d1ed0d84723998e7c892796054e936cbdd2528f255561b11a6552cce",
+    "ui.js": "9d440628c0d27d06914bd2a3d9cf836664b0fd325dab058a998087288272821f"
   }
 }
