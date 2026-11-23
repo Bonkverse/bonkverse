@@ -178,3 +178,32 @@ def test_stats_reads_other_apps_only_through_selectors():
                 if top != "stats" and rest == "models" and top in apps:
                     found.append(f"{path.name}: {node.module}")
     assert found == []
+
+
+# ── Your own row (ADR 0021: the page's one highlight) ─────────────────────
+
+
+def test_your_best_ranked_skin_is_the_one_highlight(client):
+    me = UserFactory(username="Maker")
+    SkinFactory(name="Mine low", creator="maker", upvotes=2)
+    SkinFactory(name="Someone else", creator="Other", upvotes=8)
+    best = SkinFactory(name="Mine high", creator="Maker", upvotes=5)
+    client.force_login(me)
+
+    response = client.get(reverse("stats:leaderboards_upvoted"))
+
+    assert response.context["own_skin_id"] == best.id
+    html = response.text
+    assert html.count("bv-highlight") == 1
+    assert html.count("Your top skin") == 1
+
+
+def test_no_highlight_when_signed_out_or_not_on_the_board(client):
+    SkinFactory(name="Theirs", creator="Other", upvotes=3)
+
+    assert "bv-highlight" not in client.get(reverse("stats:leaderboards_upvoted")).text
+
+    client.force_login(UserFactory(username="Nobody"))
+    response = client.get(reverse("stats:leaderboards_upvoted"))
+    assert response.context["own_skin_id"] is None
+    assert "bv-highlight" not in response.text

@@ -46,6 +46,11 @@ def _random_sample(size: int):
     return Skin.objects.filter(id__in=ids)
 
 
+def _new_skin_id(request) -> int | None:
+    value = request.GET.get("new", "")
+    return int(value) if value.isdigit() else None
+
+
 @limit("search")
 def search_skins(request):
     query = request.GET.get("q", "").strip()
@@ -136,5 +141,7 @@ def search_skins(request):
             "base_qs": base_qs,
             "elided_range": elided_page_range(page_obj),
             "search_error": search_error,
+            # The skin just uploaded (upload's redirect): the page's highlight.
+            "new_skin_id": _new_skin_id(request),
         },
     )

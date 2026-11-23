@@ -94,7 +94,12 @@ def upload_skin(request):
 
     messages.success(request, _success_message(choice))
     log_event(request.user, "skin_uploaded", skin=result.skin, source="bonkleagues")
-    return redirect(reverse("skins:search_skins") + "?" + urlencode({"q": result.skin.name}))
+    # new=: search highlights the skin just uploaded (ADR 0021).
+    return redirect(
+        reverse("skins:search_skins")
+        + "?"
+        + urlencode({"q": result.skin.name, "new": result.skin.id})
+    )
 
 
 def _form_problem(skin_name: str, link: str) -> str | None:

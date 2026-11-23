@@ -23,7 +23,7 @@ with static/ui/ui.js; the page's own script handles Edit and Delete.
 {% endcomment %}
 {% load bv_links %}
 {% with mode=mode|default:'search' image=skin.image_url|default:'/static/images/default_skin.png' creator_url=skin.creator|profile_url %}
-<article class="bv-skin-card" data-skin-card
+<article class="bv-skin-card{% if new_skin_id and skin.id == new_skin_id %} bv-highlight{% endif %}" data-skin-card
          data-id="{{ skin.id }}"
          data-wear-url="{% url 'skins:wear_skin' skin.id %}">
 
@@ -87,6 +87,7 @@ with static/ui/ui.js; the page's own script handles Edit and Delete.
   </div>
 
   <div class="bv-skin-card__body">
+    {% if new_skin_id and skin.id == new_skin_id %}<span class="bv-pill bv-pill--accent">Just uploaded</span>{% endif %}
     <h3 class="bv-skin-card__title">{{ skin.name }}</h3>
     {% if skin.creator %}
       <p class="bv-creator">by {% if creator_url %}<a href="{{ creator_url }}">{{ skin.creator }}</a>{% else %}{{ skin.creator }}{% endif %}</p>

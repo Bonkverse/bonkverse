@@ -126,3 +126,8 @@ a.bv-chip[aria-current="page"]::before {
 .site-form-card {
   max-width: none;
 }
+
+/* "Just uploaded" (the search page's highlight, ADR 0021) sits above the name. */
+.bv-skin-card__body > .bv-pill {
+  width: fit-content;
+}
