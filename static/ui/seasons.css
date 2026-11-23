@@ -305,10 +305,12 @@
 }
 
 /* ── A badge on the logo ─────────────────────────────────────────────────── */
-[data-bv-season] .bv-header__brand {
+/* .navbar and .navbar__brand are Docusaurus's header (docs.bonkverse.io),
+   which keeps its own markup. */
+[data-bv-season] :is(.bv-header__brand, .navbar__brand) {
   position: relative;
 }
-[data-bv-season] .bv-header__brand::after {
+[data-bv-season] :is(.bv-header__brand, .navbar__brand)::after {
   content: "";
   position: absolute;
   top: 4px;
@@ -319,26 +321,26 @@
   pointer-events: none;
 }
 /* Pumpkin */
-[data-bv-season="halloween"] .bv-header__brand::after {
+[data-bv-season="halloween"] :is(.bv-header__brand, .navbar__brand)::after {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 3.2c-.2-1-.7-1.8-1.5-2.2l.6-.8c1 .5 1.6 1.5 1.8 2.8z' fill='%234f7a3a'/%3E%3Cellipse cx='5.3' cy='9.4' rx='3.6' ry='5' fill='%23e3731f'/%3E%3Cellipse cx='10.7' cy='9.4' rx='3.6' ry='5' fill='%23e3731f'/%3E%3Cellipse cx='8' cy='9.4' rx='3.4' ry='5.3' fill='%23f28c2b'/%3E%3Cpath d='M5.6 8.4l1.2-1 .6 1.3zm4.8 0l-1.2-1-.6 1.3zM5.2 11.2c1.6 1.2 4 1.2 5.6 0l-.9.2-.6.6-.6-.6-.9.2-.6.6-.6-.6z' fill='%232c1d33'/%3E%3C/svg%3E");
 }
 /* Ornament */
-[data-bv-season="christmas"] .bv-header__brand::after {
+[data-bv-season="christmas"] :is(.bv-header__brand, .navbar__brand)::after {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='6.2' y='1' width='3.6' height='2.6' rx='.6' fill='%23e5bf68'/%3E%3Ccircle cx='8' cy='9.6' r='5.8' fill='%23d6303c'/%3E%3Cpath d='M2.6 8.6c3.4 1 7.4 1 10.8 0' stroke='%23ffffff' stroke-width='1.1' fill='none'/%3E%3Ccircle cx='5.6' cy='6.8' r='1.1' fill='%23ffffff' opacity='.55'/%3E%3C/svg%3E");
 }
 /* Star */
-[data-bv-season="newyear"] .bv-header__brand::after {
+[data-bv-season="newyear"] :is(.bv-header__brand, .navbar__brand)::after {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 .8l1.9 4.6 4.9.4-3.8 3.2 1.2 4.8L8 11.2l-4.2 2.6L5 9 1.2 5.8l4.9-.4z' fill='%23f4d58d' stroke='%23a3882f' stroke-width='.6'/%3E%3C/svg%3E");
 }
 
 /* ── One light header animation per season ───────────────────────────────── */
 /* Drawn in a layer behind the header's contents and clipped to the header,
    so menus that drop below it are never covered. */
-[data-bv-season] .bv-header > * {
+[data-bv-season] :is(.bv-header > *, .navbar:not(.navbar-sidebar--show) > .navbar__inner) {
   position: relative;
   z-index: 1;
 }
-[data-bv-season] .bv-header::before {
+[data-bv-season] :is(.bv-header, .navbar)::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -347,7 +349,7 @@
 }
 
 /* Halloween: one bat flaps across the header a few seconds after load. */
-[data-bv-season="halloween"] .bv-header::before {
+[data-bv-season="halloween"] :is(.bv-header, .navbar)::before {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 16'%3E%3Cpath d='M16 5c1 0 1.6.8 1.8 1.6C19 4 22 2 26 2.4c-1.6 1-2.2 2.4-2 3.8 1.6-.6 3.4-.4 5 .8-2.2.2-3.6 1.4-4.2 3-1.6-.8-3.6-.6-5 .8-.8-1.2-2.2-1.6-3.8-1.6s-3 .4-3.8 1.6c-1.4-1.4-3.4-1.6-5-.8-.6-1.6-2-2.8-4.2-3 1.6-1.2 3.4-1.4 5-.8.2-1.4-.4-2.8-2-3.8C10 2 13 4 14.2 6.6 14.4 5.8 15 5 16 5z' fill='%23120c16' opacity='.85'/%3E%3C/svg%3E");
   background-size: 34px 17px;
   background-position: -60px 70%;
@@ -361,7 +363,7 @@
 }
 
 /* Christmas: light snow drifting through the header. */
-[data-bv-season="christmas"] .bv-header::before {
+[data-bv-season="christmas"] :is(.bv-header, .navbar)::before {
   background-image:
     radial-gradient(1.6px 1.6px at 20px 30px, rgb(255 255 255 / 70%) 50%, transparent 51%),
     radial-gradient(1.2px 1.2px at 90px 10px, rgb(255 255 255 / 55%) 50%, transparent 51%),
@@ -377,7 +379,7 @@
 }
 
 /* New Year: confetti falls through the header once, then it's gone. */
-[data-bv-season="newyear"] .bv-header::before {
+[data-bv-season="newyear"] :is(.bv-header, .navbar)::before {
   background-image:
     linear-gradient(35deg, #f4d58d 50%, transparent 50%),
     linear-gradient(120deg, #b9a8ff 50%, transparent 50%),
@@ -396,7 +398,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-bv-season] .bv-header::before {
+  [data-bv-season] :is(.bv-header, .navbar)::before {
     animation: none;
     background-image: none;
   }
