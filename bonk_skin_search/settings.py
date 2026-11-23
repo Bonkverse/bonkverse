@@ -299,6 +299,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # A signed-in player's theme follows them across devices (accounts/appearance.py)
+    "accounts.appearance.AppearanceMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # Turns Ratelimited from views still on the old @ratelimit decorator into

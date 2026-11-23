@@ -24,8 +24,11 @@
  * Markup sites can use:
  *   <label class="bv-season-toggle">               the on/off switch, shown
  *     <input type="checkbox" data-bv-season-toggle>   only while a season is
- *     <span>Seasonal theme</span>                      on the calendar
- *   </label>
+ *     <span>Seasonal theme</span>                      on the calendar; it
+ *   </label>                                           sits in the header's
+ *                                                       Appearance menu
+ *   (A settings page can show its own data-bv-season-toggle all year, with
+ *   any markup: theme.js keeps every one of them in step.)
  *   <p data-bv-season-text="christmas">…</p>      shown only in that season
  *
  * scripts/contrast.mjs checks every season in every theme.
@@ -283,20 +286,20 @@
   display: none;
 }
 [data-bv-season-now] .bv-season-toggle {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: var(--bv-space-2);
   min-height: var(--bv-target);
-  color: var(--bv-header-meta);
-  font-size: var(--bv-text-xs);
+  color: var(--bv-text);
+  font-size: var(--bv-text-sm);
   cursor: pointer;
 }
 .bv-season-toggle input {
   width: 18px;
   height: 18px;
   margin: 0;
-  color: var(--bv-header-title);
-  accent-color: var(--bv-header-link);
+  color: var(--bv-text);
+  accent-color: var(--bv-link);
 }
 [data-bv-season="halloween"] [data-bv-season-text="halloween"],
 [data-bv-season="christmas"] [data-bv-season-text="christmas"],

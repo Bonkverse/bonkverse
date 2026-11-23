@@ -55,6 +55,7 @@
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>
       <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4L2.8 9.5l6.4-.8z" stroke-width="2" stroke-linejoin="round"/></symbol>
+      <symbol id="i-palette" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.65-.75 1.65-1.69 0-.44-.18-.84-.44-1.13-.29-.29-.44-.65-.44-1.13a1.64 1.64 0 0 1 1.67-1.67h2c3.05 0 5.55-2.5 5.55-5.55C21.97 6.01 17.46 2 12 2z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/></g></symbol>
       <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
       <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6.5 18.5c1.3-2.2 3.2-3.3 5.5-3.3s4.2 1.1 5.5 3.3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
       <symbol id="i-maximize" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
@@ -106,15 +107,22 @@
           <li><a class="bv-header__link" href="https://bonkverse.io/developers/">Developers</a></li>
         </ul>
         <div class="bv-header__end">
-          <label class="bv-theme-picker">
-            <span>Theme</span>
-            <select data-bv-theme-picker>
-              <option value="bonkverse">Bonkverse</option>
-              <option value="light">Bonkverse Light</option>
-              <option value="dark">Bonkverse Dark</option>
-            </select>
-          </label>
-          <label class="bv-season-toggle"><input type="checkbox" data-bv-season-toggle checked> <span>Seasonal theme</span></label>
+          <div class="bv-dropdown bv-appearance">
+            <button class="bv-header__link" type="button" aria-expanded="false" aria-controls="bv-appearance" data-bv-toggle>
+              <svg aria-hidden="true"><use href="#i-palette"/></svg><span class="bv-appearance__label bv-visually-hidden">Appearance</span>
+            </button>
+            <div class="bv-menu bv-menu--end bv-appearance__menu" id="bv-appearance" hidden>
+              <label class="bv-appearance__field">
+                <span>Theme</span>
+                <select class="bv-input bv-select" data-bv-theme-picker>
+                  <option value="bonkverse">Bonkverse</option>
+                  <option value="light">Bonkverse Light</option>
+                  <option value="dark">Bonkverse Dark</option>
+                </select>
+              </label>
+              <label class="bv-season-toggle"><input type="checkbox" data-bv-season-toggle> <span>Seasonal theme</span></label>
+            </div>
+          </div>
           <!-- Signed out, this is a plain <a class="bv-header__link" href="/login/">Log in</a> -->
           <div class="bv-dropdown bv-header__account">
             <a class="bv-header__link" href="https://bonkverse.io/my-profile/"><svg aria-hidden="true"><use href="#i-user"/></svg>nova_rider</a>
@@ -140,7 +148,7 @@
       <div class="bv-page-header__text">
         <span class="bv-eyebrow">Bonkverse UI · v0.1.7</span>
         <h1>Component gallery</h1>
-        <p class="bv-lead">Every shared piece of the Bonkverse sites. Switch the theme in the header to check each one in Bonkverse, Light and Dark.</p>
+        <p class="bv-lead">Every shared piece of the Bonkverse sites. Switch the theme from the palette button in the header to check each one in Bonkverse, Light and Dark.</p>
       </div>
       <div class="bv-page-header__actions">
         <a class="bv-btn" href="https://github.com/Bonkverse/ui">GitHub</a>

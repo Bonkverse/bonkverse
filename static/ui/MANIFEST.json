@@ -4,7 +4,7 @@
   "note": "Copied by scripts/sync_ui.py. Don't edit these files; change Bonkverse/ui and sync a new release.",
   "files": {
     "base.css": "eeaf225f7151e5ec4aa3a5485ea051c7257c3447f982ed012536b37e697b4208",
-    "components.css": "f92c553c335ff38f388867ba1832fccb929934e3fe32b1d1ecd44b35f5158542",
+    "components.css": "c3983bce4b984fef4857c21108071310ba31a1e36be1a2a3036d21ebc24013eb",
     "fonts/OFL.txt": "536533cad95838e13777663c4109b802aa662ef1ef285337f0c7f51d35682fdc",
     "fonts/jost-latin-400-normal.woff2": "1cbc4d4e9893ec7bdb58916b103cd85fda6bf0a3769612a72ee2de63e9e727ae",
     "fonts/jost-latin-500-normal.woff2": "ac309711998c2193c86a54ca3340c80f64738c592359d0a7137bee3b4474a4be",
@@ -19,10 +19,10 @@
     "img/samples/comet.svg": "7379029359d4a0dea6df2a19a27689f629c5c1fb4e9ef8ce1f85c488311df2e6",
     "img/samples/leaf.svg": "8ff0bf1f08da4c8922c2290aac6b9c632659b21059e4fe69a164bed1795ac355",
     "img/samples/planet.svg": "5a436ec131f492e9ea75e7238bb0ea7e3c614421969e2466b0c9c035be8e104a",
-    "index.html": "f19064a6daade0a19cc47ceed15979199f513c28a82e6d488fdbfbceca09e5bc",
+    "index.html": "6b7c0a98082fdb3ff2767eaba0564bee27b2d8c61a339f6ca06061e025265191",
     "nav.json": "c0a7ebb72e4f8f60aa340249867a536b789042468712aef2e4dc7638f6133bdc",
-    "seasons.css": "4d467b4e645c4760ef91a929ad0dbc20e3cc78dc1292083736181adda4c1e4dd",
-    "theme.js": "3aabae09c1727f193ea3627aa9f868e67d6b0f253ef297d92fdd2e2f46b60ede",
+    "seasons.css": "ed13d16e376c8faf20aceaef13e90d951d28d68e8da16bc2d9291631203d757b",
+    "theme.js": "41b6486f477c09f5c3de4a86e57a7f2c2ff6988f28892f7443affc4d7a01c2bb",
     "tokens.css": "f2ce7aedafbb935d46c274289a2482a15a05a07e9536462da7942994a5fe3f28",
     "ui.js": "49d9c56db1dfff987c708388a60d9cf14f016f51cbfc3ef62bae829d657e2ddd"
   }

@@ -27,6 +27,10 @@
  * data-bv-season to the same unless they've switched seasons off. That
  * choice ("bv-season=off") is saved the same way as the theme. Any
  * <input type="checkbox" data-bv-season-toggle> becomes the switch.
+ *
+ * Each choice the visitor makes also stamps "bv-appearance-at" (milliseconds
+ * since 1970) next to it, so a site that saves the choice to their account
+ * can tell a newer choice from an old one left on another device.
  * ?bv-season=halloween|christmas|newyear|none in the address previews a
  * season (or none) on that page without saving anything.
  *
@@ -74,8 +78,13 @@
     try { localStorage.setItem(key, value); } catch (e) { /* cookie is enough */ }
   }
 
+  function stamp() {
+    store("bv-appearance-at", String(Date.now()));
+  }
+
   function save(theme) {
     store(KEY, theme);
+    stamp();
   }
 
   // ── Seasons ──────────────────────────────────────────────────────────────
@@ -133,6 +142,7 @@
 
   function setSeasonal(on) {
     store(SEASON_KEY, on ? "on" : "off");
+    stamp();
     var showing = applySeason();
     syncToggles();
     document.dispatchEvent(new CustomEvent("bv:seasonchange", { detail: { season: showing } }));
