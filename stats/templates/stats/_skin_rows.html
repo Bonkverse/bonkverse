@@ -2,18 +2,20 @@
 {% comment %}
 Rows for a skin board (design review: the skin row): rank, the skin, its name
 and creator, and one number. `rows` are skins with their count as `value`
-(skins.selectors.top_skins); `board.column` says what it counts.
+(skins.selectors.top_skins); `board.column` says what it counts. The
+signed-in player's best-ranked skin (`own_skin_id`) is the page's highlight.
 {% endcomment %}
 <ol class="site-top-skins">
   {% for skin in rows %}
     {% with creator_url=skin.creator|profile_url %}
-    <li class="site-top-skin">
+    <li class="site-top-skin{% if skin.id == own_skin_id %} site-top-skin--own bv-highlight{% endif %}">
       <span class="site-top-skin__rank">{{ forloop.counter }}</span>
       <a class="site-top-skin__art" href="{{ skin.get_absolute_url }}" tabindex="-1" aria-hidden="true">
         <img src="{{ skin.image_url|default:'/static/images/default_skin.png' }}" alt="" width="48" height="48" loading="lazy">
       </a>
       <span class="site-top-skin__text">
         <a class="site-top-skin__name" href="{{ skin.get_absolute_url }}">{{ skin.name }}</a>
+        {% if skin.id == own_skin_id %}<span class="bv-pill bv-pill--accent">Your top skin</span>{% endif %}
         {% if skin.creator %}
           <span class="bv-creator">by {% if creator_url %}<a href="{{ creator_url }}">{{ skin.creator }}</a>{% else %}{{ skin.creator }}{% endif %}</span>
         {% endif %}

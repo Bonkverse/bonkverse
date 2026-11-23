@@ -13,9 +13,10 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  border: 1px solid var(--bv-outline);
+  border: 1px solid transparent;
   border-radius: var(--bv-radius);
   background: var(--bv-card);
+  box-shadow: var(--bv-card-shadow);
 }
 .site-top-skin {
   display: grid;
@@ -26,6 +27,15 @@
 }
 .site-top-skin + .site-top-skin {
   border-top: 1px solid var(--bv-divider);
+}
+/* Your top skin (.bv-highlight): its ring needs its own corners. */
+.site-top-skin--own {
+  position: relative;
+  border-radius: var(--bv-radius);
+}
+.site-top-skin--own,
+.site-top-skin--own + .site-top-skin {
+  border-top-color: transparent;
 }
 .site-top-skin__rank {
   color: var(--bv-muted);
@@ -95,4 +105,7 @@
   .site-top-skin__art img {
     transition: none;
   }
+}
+.site-top-skin__text .bv-pill {
+  width: fit-content;
 }

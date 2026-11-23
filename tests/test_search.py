@@ -156,3 +156,25 @@ def test_time_limit_is_undone_after_a_cancelled_query():
 
     with connection.cursor() as cursor:
         cursor.execute("SELECT pg_sleep(0.1)")  # would be cancelled if it leaked
+
+
+# ── The skin just uploaded (ADR 0021: something new is the highlight) ──────
+
+
+@pytest.mark.django_db
+def test_search_highlights_the_skin_just_uploaded(client):
+    new = SkinFactory(name="Fresh Paint")
+    SkinFactory(name="Fresh Air")
+
+    html = client.get(f"/search/?q=Fresh&new={new.id}").text
+
+    assert html.count("bv-highlight") == 1
+    assert html.count("Just uploaded") == 1
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("new", ["", "abc", "999999"])
+def test_search_without_a_matching_new_skin_highlights_nothing(client, new):
+    SkinFactory(name="Fresh Paint")
+
+    assert "bv-highlight" not in client.get(f"/search/?q=Fresh&new={new}").text

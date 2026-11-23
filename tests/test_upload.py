@@ -63,7 +63,7 @@ def test_creates_skin_with_files_and_redirects_to_search(user_client, mocked_htt
 
     skin = Skin.objects.get()
     assert response.status_code == 302
-    assert response["Location"] == "/search/?q=Fire+Dragon"
+    assert response["Location"] == f"/search/?q=Fire+Dragon&new={skin.id}"
     assert skin.creator == " Spaced  Uploader"  # never trimmed
     assert (skin.name, skin.link, skin.skin_code) == ("Fire Dragon", LINK, "CODE123")
     assert (tmp_path / f"skins/{skin.id}.svg").read_text() == SVG
