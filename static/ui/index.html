@@ -123,18 +123,20 @@
               <label class="bv-season-toggle"><input type="checkbox" data-bv-season-toggle> <span>Seasonal theme</span></label>
             </div>
           </div>
-          <!-- Signed out, this is a plain <a class="bv-header__link" href="/login/">Log in</a> -->
+          <!-- A sample account: these links go nowhere, so the gallery never opens the
+               viewer's own profile, settings or keys, or logs them out.
+               On the sites, signed out, this is a plain <a class="bv-header__link" href="/login/">Log in</a> -->
           <div class="bv-dropdown bv-header__account">
-            <a class="bv-header__link" href="https://bonkverse.io/my-profile/"><svg aria-hidden="true"><use href="#i-user"/></svg>nova_rider</a>
+            <a class="bv-header__link" href="#" data-g-sample><svg aria-hidden="true"><use href="#i-user"/></svg>nova_rider</a>
             <button class="bv-header__link" type="button" aria-label="Account menu" aria-expanded="false" aria-controls="account-menu" data-bv-toggle>
               <svg class="bv-chevron" aria-hidden="true"><use href="#i-chevron"/></svg>
             </button>
             <div class="bv-menu bv-menu--end" id="account-menu" hidden>
-              <a class="bv-menu__item" href="https://bonkverse.io/my-profile/">My profile</a>
-              <a class="bv-menu__item" href="https://bonkverse.io/settings/profile/">Settings</a>
-              <a class="bv-menu__item" href="https://bonkverse.io/developers/keys/">API keys</a>
+              <a class="bv-menu__item" href="#" data-g-sample>My profile</a>
+              <a class="bv-menu__item" href="#" data-g-sample>Settings</a>
+              <a class="bv-menu__item" href="#" data-g-sample>API keys</a>
               <div class="bv-menu__divider"></div>
-              <form method="post" action="https://bonkverse.io/logout/"><button class="bv-menu__item" type="submit">Log out</button></form>
+              <button class="bv-menu__item" type="button" data-g-sample>Log out</button>
             </div>
           </div>
         </div>
@@ -146,7 +148,7 @@
     <!-- ═══ Page header ═══ -->
     <div class="bv-page-header">
       <div class="bv-page-header__text">
-        <span class="bv-eyebrow">Bonkverse UI · v0.1.7</span>
+        <span class="bv-eyebrow">Bonkverse UI · v0.1.8</span>
         <h1>Component gallery</h1>
         <p class="bv-lead">Every shared piece of the Bonkverse sites. Switch the theme from the palette button in the header to check each one in Bonkverse, Light and Dark.</p>
       </div>
@@ -746,6 +748,11 @@ console.log(await res.json());</pre>
           wear.textContent = "Wear";
         }, 2800);
       }, 900);
+    });
+
+    // The sample account in the header goes nowhere (not even to the top of the page)
+    document.addEventListener("click", function (e) {
+      if (e.target.closest("[data-g-sample]")) e.preventDefault();
     });
 
     // "Markup" disclosure under examples, from the live HTML
