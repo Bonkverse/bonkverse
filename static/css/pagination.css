@@ -37,10 +37,9 @@
   background: var(--bv-hover);
 }
 
-.site-pagination .page-btn.active {
+.site-pagination .page-btn[aria-current="page"] {
   background: var(--bv-selected);
   border-color: var(--bv-link);
-  box-shadow: inset 0 0 0 1px var(--bv-link);
   color: var(--bv-text);
   font-weight: 700;
   cursor: default;

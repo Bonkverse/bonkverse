@@ -25,7 +25,7 @@
 /* Modal box */
 .modal-box {
     background: var(--bv-card);
-    border: 1px solid var(--bv-outline);
+    border: 1px solid transparent;
     border-radius: 14px;
     padding: 28px 28px 24px;
     width: 90%;
@@ -135,7 +135,7 @@
     width: 100%;
     box-sizing: border-box;
     background: var(--bv-input);
-    border: 1px solid var(--bv-outline);
+    border: 1px solid var(--bv-control);
     border-radius: 8px;
     color: var(--bv-text);
     font-family: var(--bv-font);

@@ -45,22 +45,24 @@
   display: grid;
   gap: var(--bv-space-2);
   padding: var(--bv-space-4);
-  border: 1px solid var(--bv-outline);
+  border: 1px solid transparent;
   border-radius: var(--bv-radius);
   background: var(--bv-card);
+  box-shadow: var(--bv-card-shadow);
 }
 .legal-card p { margin: 0; color: var(--bv-muted); font-size: var(--bv-text-sm); line-height: 1.55; }
 .legal-card__head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--bv-space-2); }
 .legal-card__title { font-weight: 700; }
 
-/* Tags: a word with an outline, colored by meaning; the word carries it. */
+/* Tags: a word on a fill, colored by meaning; the word carries it. */
 .legal-tag {
   display: inline-flex;
   align-items: center;
   min-height: 22px;
   padding: 0 var(--bv-space-2);
-  border: 1px solid var(--bv-link);
+  border: 1px solid transparent;
   border-radius: var(--bv-radius-pill);
+  background: var(--bv-inset);
   color: var(--bv-text);
   font-size: 12px;
   font-weight: 700;
@@ -69,7 +71,7 @@
 }
 .legal-tag--allowed, .legal-tag--ext { background: var(--bv-selected); }
 .legal-tag--prohibited { border-color: var(--bv-danger-border); background: var(--bv-danger-surface); color: var(--bv-danger); }
-.legal-tag--note { border-color: var(--bv-control); }
+.legal-tag--note { background: var(--bv-hover); }
 
 .legal__contact { display: flex; flex-wrap: wrap; align-items: center; gap: var(--bv-space-2); min-height: var(--bv-target); }
 .legal__contact span { color: var(--bv-muted); }
@@ -81,5 +83,5 @@
 }
 @media (max-width: 999px) {
   /* On phones the contents list sits at the top, like a short index. */
-  .legal__toc { padding: var(--bv-space-4); border: 1px solid var(--bv-outline); border-radius: var(--bv-radius); background: var(--bv-card); }
+  .legal__toc { padding: var(--bv-space-4); border: 1px solid transparent; border-radius: var(--bv-radius); background: var(--bv-card); box-shadow: var(--bv-card-shadow); }
 }

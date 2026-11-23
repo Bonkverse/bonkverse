@@ -42,14 +42,15 @@
   align-items: center;
   gap: var(--bv-space-1);
   padding: var(--bv-space-5) var(--bv-space-3);
-  border: 1px solid var(--bv-outline);
+  border: 1px solid transparent;
   border-radius: var(--bv-radius);
   background: var(--bv-card);
+  box-shadow: var(--bv-card-shadow);
   color: var(--bv-text);
   text-decoration: none;
-  transition: border-color var(--bv-fade) ease-out;
+  transition: background-color var(--bv-fade) ease-out;
 }
-.error-page__door:hover { border-color: var(--bv-link); background: var(--bv-hover); color: var(--bv-text); text-decoration: none; }
+.error-page__door:hover { background: var(--bv-hover); color: var(--bv-text); text-decoration: none; }
 .error-page__door svg.lucide { width: 28px; height: 28px; color: var(--bv-link); }
 .error-page__door-name { font-size: var(--bv-text-lg); font-weight: 700; }
 
