@@ -53,7 +53,9 @@ const BVPagination = (function () {
       const btn = document.createElement(isActive ? 'span' : 'button');
       btn.className = 'page-btn' + (isActive ? ' active' : '');
       btn.textContent = num;
-      if (!isActive) {
+      if (isActive) {
+        btn.setAttribute('aria-current', 'page');
+      } else {
         btn.type = 'button';
         btn.addEventListener('click', () => onNavigate(num));
       }

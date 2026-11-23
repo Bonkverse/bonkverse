@@ -21,7 +21,7 @@ Usage:
     {% if num == page_obj.paginator.ELLIPSIS %}
       <span class="page-ellipsis">…</span>
     {% elif num == page_obj.number %}
-      <span class="page-btn active">{{ num }}</span>
+      <span class="page-btn active" aria-current="page">{{ num }}</span>
     {% else %}
       <a class="page-btn" href="?{% if base_qs %}{{ base_qs }}&{% endif %}page={{ num }}">{{ num }}</a>
     {% endif %}

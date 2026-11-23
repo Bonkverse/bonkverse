@@ -120,16 +120,6 @@ TEAL_ALLOWED = re.compile(
     r":focus|:checked|\[aria-(?:pressed|current|selected)|\[open\]|\.(?:is-)?selected\b|bv-highlight"
     r"|slider-thumb|range-thumb|chartnote__dash"
 )
-# Pages still to move to the borderless look, one PR per group.
-TEAL_PENDING = {
-    "static/css/pagination.css",
-    "static/css/modal.css",
-    "static/css/errors.css",
-    "site_pages/static/site_pages/css/home.css",
-    "site_pages/static/site_pages/css/team.css",
-    "site_pages/static/site_pages/css/legal.css",
-    "public_api/static/public_api/css/developers.css",
-}
 
 
 def _rules(text):
@@ -137,7 +127,7 @@ def _rules(text):
     return re.findall(r"([^{}]+)\{([^{}]*)\}", _comment_free(text))
 
 
-@pytest.mark.parametrize("path", [p for p in STYLESHEETS if _id(p) not in TEAL_PENDING], ids=_id)
+@pytest.mark.parametrize("path", STYLESHEETS, ids=_id)
 def test_teal_outlines_only_mean_focus_selection_or_highlight(path):
     found = [
         f"{selector.strip()}: {match.group(0).strip()}"
@@ -149,9 +139,3 @@ def test_teal_outlines_only_mean_focus_selection_or_highlight(path):
         "a teal border means focus, selection or .bv-highlight; "
         f"use a fill (--bv-inset, --bv-hover) instead: {found}"
     )
-
-
-def test_pending_teal_files_still_exist():
-    """Keeps TEAL_PENDING honest: drop a file from it once its page is done."""
-    for name in TEAL_PENDING:
-        assert (REPO / name).exists(), name

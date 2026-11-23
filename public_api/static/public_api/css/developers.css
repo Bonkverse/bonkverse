@@ -169,8 +169,8 @@
 /* The Revoke dialog sits in a right-aligned cell; its text reads left. */
 .dev-keys .bv-dialog { text-align: left; white-space: normal; }
 
-/* The new key, shown once */
-.dev-reveal { border-color: var(--bv-link); }
+/* The new key, shown once: something to do (copy it now), so it's the
+   page's one highlight (Bonkverse/ui .bv-highlight). */
 .dev-reveal__row { display: flex; flex-wrap: wrap; gap: var(--bv-space-2); }
 .dev-reveal__key { flex: 1 1 280px; min-width: 0; font-family: var(--bv-mono); }
 
