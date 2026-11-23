@@ -50,6 +50,8 @@ menus open with static/ui/ui.js.
             <option value="dark">Bonkverse Dark</option>
           </select>
         </label>
+        {# Shown only while a season is on (seasons.css); theme.js saves the choice for every Bonkverse site. #}
+        <label class="bv-season-toggle"><input type="checkbox" data-bv-season-toggle> <span>Seasonal theme</span></label>
 
         {% if user.is_authenticated %}
           <div class="bv-dropdown bv-header__account">

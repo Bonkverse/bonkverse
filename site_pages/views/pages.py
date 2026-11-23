@@ -4,7 +4,8 @@ Owns: what these pages show. Does not own: the home page's data
 (`site_pages.selectors.home`).
 """
 
-from django.shortcuts import render
+from django.conf import settings
+from django.shortcuts import redirect, render
 
 from core.ratelimits import limit
 from site_pages import selectors
@@ -59,3 +60,11 @@ def terms(request):
 @limit("browse")
 def staff_page(request):
     return render(request, "site_pages/staff.html", {"staff_members": STAFF_MEMBERS})
+
+
+@limit("browse")
+def ui_gallery(request):
+    """/ui/: the Bonkverse/ui component gallery, synced with the package
+    (scripts/sync_ui.py). Its unhashed static path, because the gallery
+    loads its own files by relative URL."""
+    return redirect(f"{settings.STATIC_URL}ui/index.html")

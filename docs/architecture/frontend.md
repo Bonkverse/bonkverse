@@ -11,7 +11,7 @@ Every page extends the frame, `templates/base.html`, which loads, in order:
 
 | Where | What | Gives the page |
 |---|---|---|
-| `<head>` | `ui/theme.js`, then `ui/tokens.css`, `ui/base.css`, `ui/components.css`; `ui/ui.js` (deferred) | the Bonkverse/ui look: three themes, Jost, `bv-` components, menus and dialogs ([below](#the-bonkverseui-package)) |
+| `<head>` | `ui/theme.js`, then `ui/tokens.css`, `ui/base.css`, `ui/components.css`, `ui/seasons.css`; `ui/ui.js` (deferred) | the Bonkverse/ui look: three themes, the seasonal themes (Halloween, Christmas, New Year, with a switch in the header), Jost, `bv-` components, menus and dialogs ([below](#the-bonkverseui-package)). The package's gallery is at `/ui/` |
 | `<head>` | `css/*.css` (base, forms, cards, skin_cards, modal, …) | the site's own styles for pages not yet on `bv-` components |
 | `<head>` | `{% block extra_head %}` | the page's own stylesheet, if it has one |
 | `<head>` | Lucide (pinned version, unpkg), `js/scripts.js`, `js/pagination.js` | icons, `.notification` fade-out, `BVPagination` |

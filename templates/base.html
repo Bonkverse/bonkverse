@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="{% static 'ui/tokens.css' %}">
     <link rel="stylesheet" href="{% static 'ui/base.css' %}">
     <link rel="stylesheet" href="{% static 'ui/components.css' %}">
+    {# Halloween, Christmas and New Year on top of the chosen theme; theme.js picks the season by date. #}
+    <link rel="stylesheet" href="{% static 'ui/seasons.css' %}">
     <script src="{% static 'ui/ui.js' %}" defer></script>
     {# The site's own styles, until each page moves onto bv- components #}
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
@@ -21,11 +23,6 @@
     <link rel="stylesheet" href="{% static 'css/modal.css' %}">
     <link rel="stylesheet" href="{% static 'css/responsive.css' %}">
     {% block extra_head %}{% endblock %}
-
-    {% now "m" as current_month %}
-    {% if current_month == "10" %}
-      <link rel="stylesheet" href="{% static 'css/halloween.css' %}">
-    {% endif %}
 
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@1.60.0/dist/umd/lucide.min.js"></script>

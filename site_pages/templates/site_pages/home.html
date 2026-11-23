@@ -24,6 +24,10 @@ site_pages/selectors.py. The replay countdown ticks in site_pages/js/home.js.
         {{ skin_counts.total|intcomma }} skins made by players{% if skin_counts.today %} · {{ skin_counts.today|intcomma }} new today{% endif %}.
         Profiles for {{ player_count|intcomma }} players, built from their games.
       </p>
+      {# One greeting per season; seasons.css shows only the current one. #}
+      <p class="home-hero__season" data-bv-season-text="halloween">Happy Halloween! Find a <a href="{% url 'skins:search_skins' %}?q=halloween">spooky skin</a> for October.</p>
+      <p class="home-hero__season" data-bv-season-text="christmas">Happy holidays from Bonkverse! Find a <a href="{% url 'skins:search_skins' %}?q=christmas">festive skin</a> for December.</p>
+      <p class="home-hero__season" data-bv-season-text="newyear">Happy New Year from Bonkverse! Here's to another year of bonking.</p>
       <form class="home-search" method="get" action="{% url 'skins:search_skins' %}" role="search">
         <div class="bv-search">
           <input type="search" name="q" placeholder="Skin name or creator" aria-label="Search skins" autocomplete="off">

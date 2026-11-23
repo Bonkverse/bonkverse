@@ -1,5 +1,5 @@
 /*
- * Bonkverse UI behavior (v0.1.6)
+ * Bonkverse UI behavior (v0.1.7)
  *
  * Load with defer:  <script src="/static/ui/ui.js" defer></script>
  * Works on markup that's on the page now or added later (event delegation).

@@ -29,17 +29,20 @@ from pathlib import Path
 
 REPO = "Bonkverse/ui"
 DEST = Path(__file__).resolve().parent.parent / "static" / "ui"
-# What the site needs from the package; the gallery, scripts and samples stay behind.
+# What the site needs from the package, plus the gallery (index.html and its
+# sample skins), which bonkverse.io/ui/ shows. The repo's scripts stay behind.
 FILES = [
     "tokens.css",
     "base.css",
     "components.css",
+    "seasons.css",
     "theme.js",
     "ui.js",
     "nav.json",
     "img/logo.png",
+    "index.html",
 ]
-DIRS = ["fonts"]
+DIRS = ["fonts", "img/samples"]
 
 
 def _wanted(rel: str) -> bool:
