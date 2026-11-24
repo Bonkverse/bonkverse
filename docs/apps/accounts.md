@@ -17,12 +17,20 @@ Names are in the `accounts` namespace (`app_name` in `accounts/urls.py`): `{% ur
 ## Public entry points for other apps
 
 `accounts/services.py`:
-- `attempt_login(request, username, password, via=...)`: tries the bonk.io login, holding a try first when this account or visitor has used up its wrong passwords. Every attempt is logged with pseudonyms, never names or IPs.
+- `attempt_login(request, username, password, via=...)`: tries the bonk.io login unless a guard on the shared login budget turns it away first (holds, the site-wide wrong-password budget, per-minute caps, one at a time). Every attempt is logged with pseudonyms, never names or IPs.
 - `login_failure_message(error, retry_after)`: the sentence for a turned-down login.
 - `log_event(user, event_type, skin=None, **metadata)`: the event log (logins, wears, votes, uploads, friend syncs…); never raises. `manage.py analyze_events` reports on it.
-- `sign_in(request, result)`: stores the bonk.io session, logs in the site account, links it to the BonkPlayer (recording the skin the player wears, `players.services.record_worn_skin`), stores Flash friends and queues the friend sync on the worker (`players.services`).
+- `sign_in(request, result)`: stores the bonk.io session, logs in the site account, links it to the BonkPlayer (token, its expiry and the active slot; recording the skin the player wears, `players.services.record_worn_skin`), stores Flash friends and queues the friend sync on the worker (`players.services`): from the login answer's own friend list when it has one, else from `friends.php`. Each login logs which (`login answer carried friends` / `carried no friend list`).
+- `refresh_link(user, result)`: after the wear popup's login, stores the new token, its expiry and the active slot on the player's existing link. Never creates one.
 
-The wear popup (`/api/bonk/login/`, in `skins`) uses the first two to refresh the bonk.io token of a player who is already signed in.
+The wear popup (`/api/bonk/login/`, in `skins`) uses `attempt_login`, `login_failure_message` and `refresh_link` to refresh the bonk.io token of a player who is already signed in.
+
+## How long sign-ins last
+
+Two lifetimes, kept apart (RFC-0003 phase 2):
+
+- **The Bonkverse sign-in** (the Django session): 90 days from the last visit (`SESSION_COOKIE_AGE`). `sessions.SessionRenewalMiddleware` re-saves a signed-in player's session at most once a day, and a login counts as that day's renewal. Browsing, favorites, votes, settings and API keys need nothing more.
+- **The bonk.io connection**: the token bonk.io issued at the latest login, about a day. Its own `exp` (`core/bonk/tokens.py`) sets when it stops being used, in the session (`core/bonk/session.py`) and on `BonkAccountLink.token_expires_at`; an expired one is never sent to bonk.io. Settings show it ("bonk.io connection", `players/views.py`).
 
 ## How a login works
 
@@ -40,7 +48,8 @@ accounts/
   services.py           # what other apps call
   login_attempts.py     # attempt_login + the wrong-password limit
   login_messages.py     # what a turned-down login says
-  sign_in.py            # what a successful login does
+  sign_in.py            # what a successful login does; refresh_link for the wear popup
+  sessions.py           # 90-day sign-ins, renewed at most once a day
   forms.py              # LoginForm (username and password never stripped)
   models.py             # BonkUser (AUTH_USER_MODEL), BonkAccountLink, UserEvent
   admin.py              # site accounts in /admin/
@@ -56,7 +65,7 @@ accounts/
 |---|---|---|
 | `BonkUser` | `skins_bonkuser` (+ `skins_bonkuser_groups`, `skins_bonkuser_user_permissions`) | The site account: `AUTH_USER_MODEL`, a bonk.io username, no usable password (sign-in is through bonk.io). Admin: `/admin/accounts/bonkuser/` |
 | `UserEvent` | `skins_userevent` | The event log: one row per thing a person (or the site for them) did. Written only by `log_event`. Moved from `skins` in 5.6c, no data moved (`accounts.0003`, `skins.0035`) |
-| `BonkAccountLink` | `skins_bonkaccountlink` | A site account ↔ a `players.BonkPlayer`, with the bonk.io session token from the latest login, encrypted (`encrypt_token()` / `bonk_token()`, [ADR 0016](../adr/0016-bonk-tokens-encrypted-at-rest.md)) |
+| `BonkAccountLink` | `skins_bonkaccountlink` | A site account ↔ a `players.BonkPlayer`, with the bonk.io session token from the latest login, encrypted (`encrypt_token()` / `bonk_token()`, [ADR 0016](../adr/0016-bonk-tokens-encrypted-at-rest.md)), when it stops being usable (`token_expires_at`, from the token's `exp`; `bonk_token()` returns None after it) and the account's active slot (`active_slot`) |
 
 It moved here from `skins/` in step 5.5 without moving data (migrations `accounts.0001` and `skins.0033`, both state-only). It keeps its table, and its constraint and index names (they come from the table name). Since 5.5b the token is encrypted with `BONK_TOKEN_KEYS` (`core/token_crypto.py`); `manage.py reencrypt_bonk_tokens` re-encrypts every stored copy after a key change.
 
