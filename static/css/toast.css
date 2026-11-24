@@ -90,18 +90,34 @@
   flex: 1;
 }
 
+/* Errors and warnings stay until this is pressed (toast.js), so it's a real
+   button: 32 px to hit, visible focus. */
 .site-toast-close {
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: -6px -8px -6px 0;
   background: none;
   border: none;
+  border-radius: 6px;
   color: var(--site-toast-text);
-  opacity: 0.6;
-  font-size: 16px;
+  opacity: 0.7;
+  font-size: 20px;
   line-height: 1;
   cursor: pointer;
-  padding: 0 0 0 4px;
+  padding: 0;
 }
 
-.site-toast-close:hover {
+.site-toast-close:hover,
+.site-toast-close:focus-visible {
   opacity: 1;
+  background: rgba(127, 127, 127, 0.18);
+}
+
+.site-toast-close:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
 }
