@@ -19,7 +19,7 @@ from core.token_crypto import bonk_session
 from core.ratelimits import limit
 from players import selectors as player_selectors
 
-from . import appearance
+from . import appearance, bot_check
 from .forms import LoginForm
 from .login_attempts import attempt_login
 from .login_messages import login_failure_message
@@ -29,11 +29,11 @@ from .sign_in import sign_in
 @limit("login", method="POST")
 def login_view(request):
     if request.method != "POST":
-        return render(request, "accounts/login.html", {"form": LoginForm()})
+        return _render_login(request, LoginForm())
 
     form = LoginForm(request.POST)
     if not form.is_valid():
-        return render(request, "accounts/login.html", {"form": form})
+        return _render_login(request, form)
 
     attempt = attempt_login(
         request, form.cleaned_data["username"], form.cleaned_data["password"], via="page"
@@ -46,7 +46,7 @@ def login_view(request):
         )
         # The page keeps the Login button off until the wait ends, so players
         # don't resubmit into it (6 tries in a minute on 2026-11-09).
-        return render(request, "accounts/login.html", {"form": form, "retry_after": retry_after})
+        return _render_login(request, form, retry_after=retry_after)
 
     sign_in(request, attempt.result)
     messages.success(request, "Logged in successfully!")
@@ -55,6 +55,20 @@ def login_view(request):
     if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
         return redirect(next_url)
     return redirect("players:player_profile", request.user.username)
+
+
+def _render_login(request, form, *, retry_after=None):
+    """The login page, with the "not a bot" check when this visitor's next
+    try needs it (bot_check.py)."""
+    return render(
+        request,
+        "accounts/login.html",
+        {
+            "form": form,
+            "retry_after": retry_after,
+            "turnstile_site_key": bot_check.site_key_if_wanted(request),
+        },
+    )
 
 
 @require_POST

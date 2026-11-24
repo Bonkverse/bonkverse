@@ -20,6 +20,9 @@
         <label class="modal-label" for="bonk-password">Bonk.io Password</label>
         <input class="modal-input" id="bonk-password" name="bonk_password" type="password" required>
 
+        {# The "not a bot" check goes here when the server asks for it (bot_check in the reply; core/js/bv-wear.js). #}
+        <div id="bonk-login-bot-check"></div>
+
         <p class="modal-feedback" id="bonk-login-msg"></p>
       </form>
     </div>

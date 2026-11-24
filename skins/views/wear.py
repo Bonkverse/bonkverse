@@ -61,7 +61,12 @@ from integrations.bonk_api import (
     rate_limit_cooldowns,
 )
 
-from accounts.services import attempt_login, login_failure_message, refresh_link
+from accounts.services import (
+    attempt_login,
+    bot_check_site_key,
+    login_failure_message,
+    refresh_link,
+)
 from core.auth_guards import api_login_required, bonk_token_required
 from players.services import WornSkinSource, forget_user_skin, record_worn_skin
 
@@ -219,6 +224,11 @@ def bonk_login_for_wear(request):
         }
         if retry_after:
             body["retry_after"] = retry_after
+        # The next try must pass the "not a bot" check: the popup shows it
+        # (core/js/bv-wear.js).
+        site_key = bot_check_site_key(request)
+        if site_key:
+            body["bot_check"] = site_key
         return JsonResponse(body, status=401)
 
     result = attempt.result
