@@ -160,6 +160,19 @@ a.bv-chip[aria-current="page"]::before {
   color: var(--bv-text);
   text-decoration: none;
 }
+.site-chooser__form {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+button.site-chooser__pick {
+  width: 100%;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
 .site-chooser__pick:hover {
   background: var(--bv-hover);
   text-decoration: none;

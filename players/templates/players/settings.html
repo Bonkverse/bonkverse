@@ -130,6 +130,27 @@ Save button is only for browsers without scripts.
         <p class="pv-fine">None yet. Sign in to your main account on a browser to switch to all your accounts there without their passwords.</p>
       {% endif %}
     {% endif %}
+    {# Where this account signs back in with one click from "Choose an account" (accounts/devices.py, ADR 0025). #}
+    <h3 class="pv-subtitle">One-click sign-in</h3>
+    {% if one_click_browsers %}
+      <p class="pv-fine">After signing out, {{ request.user.username }} signs back in on these browsers with one click, until the date shown. Then it asks for your password or a friend request again.</p>
+      <ul class="pv-account-list">
+        {% for browser in one_click_browsers %}
+          <li class="pv-account-row">
+            <span class="pv-account-row__name">
+              <strong>{{ browser.label }}</strong>{% if browser.this_browser %} <span class="bv-hint">· this browser</span>{% endif %}
+              <span class="bv-hint">· until {{ browser.until|date:"M j, Y" }}</span>
+            </span>
+            <form method="post" action="{% url 'accounts:remove_one_click_browser' %}">
+              {% csrf_token %}<input type="hidden" name="browser" value="{{ browser.id }}">
+              <button type="submit" class="bv-btn">Remove</button>
+            </form>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="pv-fine">None. Signing in with your password or a friend request lets that browser sign you back in with one click for a while.</p>
+    {% endif %}
     <div class="pv-actions">
       <a class="bv-btn bv-btn--primary" href="{% url 'accounts:login' %}?add=1&amp;next={{ request.path|urlencode }}">Add bonk.io account</a>
     </div>

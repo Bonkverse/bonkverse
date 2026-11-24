@@ -105,3 +105,12 @@ def forget_all(request) -> None:
     if hasattr(request, "bv_known"):
         request.bv_known = []
         request.bv_known_changed = True
+
+
+def way_in(request, username: str) -> str | None:
+    """How `username` last signed in on this browser, or None."""
+    key = username.casefold()
+    for entry in getattr(request, "bv_known", []):
+        if entry["u"].casefold() == key:
+            return entry["via"]
+    return None

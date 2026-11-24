@@ -197,6 +197,10 @@ TURNSTILE_SECRET_KEY = os.getenv("TURNSTILE_SECRET_KEY", "")
 # phase 6). The same account BonxBot uses for /link. Friend-request linking
 # is off until both are set (on the web service for the name, and on the
 # worker, which reads the requests).
+# "Choose an account" signs an account back in with one click, without
+# bonk.io, for this many days after it last proved itself on that browser
+# (password or friend request). accounts/devices.py, ADR 0025.
+ONE_CLICK_SIGN_IN_DAYS = int(os.getenv("ONE_CLICK_SIGN_IN_DAYS", "30"))
 BONK_BOT_USERNAME = os.getenv("BONK_BOT_USERNAME", "")
 BONK_BOT_PASSWORD = os.getenv("BONK_BOT_PASSWORD", "")
 

@@ -35,7 +35,7 @@ from players.services import (
 )
 
 from players.models import BonkPlayer
-from . import bonk_tokens, groups, known_accounts
+from . import bonk_tokens, devices, groups, known_accounts
 from .events import log_event
 from .models import BonkUser
 from .models import BonkAccountLink
@@ -77,8 +77,10 @@ def sign_in(
         log_event(user, "user_logged_in", added=True)
     else:
         log_event(user, "user_logged_in")
-    # The login page's account chooser offers it next time, by password.
+    # The login page's account chooser offers it next time, by password, and
+    # signs it back in with one click for a while (ADR 0025).
     known_accounts.remember(request, user.username, known_accounts.PASSWORD)
+    devices.remember_sign_in(request, user)
 
     # After login(): changing the user flushes the session.
     bonk = bonk_session(request)
@@ -132,12 +134,33 @@ def sign_in_by_friend_request(request, *, bonk_id: int, bonk_name: str, add: boo
     login(request, user)
     groups.after_login(request, previous, previous_lists, add=add)
     log_event(user, "user_logged_in", via="friend_request", added=add)
-    # The login page's account chooser offers it next time, by friend request.
+    # The login page's account chooser offers it next time, by friend request,
+    # and signs it back in with one click for a while (ADR 0025).
     known_accounts.remember(request, user.username, known_accounts.FRIEND_REQUEST)
+    devices.remember_sign_in(request, user)
 
     bonk = bonk_session(request)
     bonk.store_identity(username.value, bonk_id)
     return user
+
+
+def sign_in_with_one_click(request, user: BonkUser) -> None:
+    """Sign the browser back in as `user` from "Choose an account", with no
+    password and no bonk.io call (ADR 0025). The caller has checked
+    `devices.one_click_ids`.
+
+    Same as the other sign-ins otherwise: a main unlocks its group here
+    (groups.after_login). It doesn't restart the one-click window: after
+    ONE_CLICK_SIGN_IN_DAYS the account proves itself again.
+    """
+    previous = request.user if request.user.is_authenticated else None
+    previous_lists = groups.browser_lists(request)
+    login(request, user)
+    groups.after_login(request, previous, previous_lists, add=False)
+    log_event(user, "user_logged_in", via="one_click")
+    way = known_accounts.way_in(request, user.username) or known_accounts.PASSWORD
+    known_accounts.remember(request, user.username, way)
+    groups.point_bonk_identity(request, user)
 
 
 def link_by_friend_request(user: BonkUser, *, bonk_id: int, bonk_name: str) -> BonkAccountLink:
