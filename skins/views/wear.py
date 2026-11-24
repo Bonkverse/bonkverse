@@ -13,7 +13,8 @@ JSON contract the frontend relies on (tests/test_wear.py):
 - 401 without auth          -> the bonk.io credentials were wrong
 - any other failure         -> no modal; show `message` (a sentence):
     422 avatar_too_big   the skin is over bonk.io's size limit
-    503 rate_limited     bonk.io is limiting skin changes from Bonkverse
+    503 rate_limited     bonk.io is limiting skin changes from Bonkverse, or
+                         its login pause is on (which stops wears too)
                          (+ retry_after seconds and a Retry-After header, and
                          the wait in `message`)
     429 wear_in_progress this account already has a wear waiting on bonk.io
@@ -88,6 +89,11 @@ _WEAR_FAILURES = {
     BonkError.UNAVAILABLE: (502, "bonk.io isn't responding. Try again in a minute."),
 }
 _UNKNOWN_FAILURE = (502, "bonk.io didn't accept this skin.")
+# While bonk.io's login pause is on, no wear is sent either: bonk.io restarts
+# its block on any request during it (integrations/bonk_api.py, _Cooldowns).
+_LOGIN_PAUSE_MESSAGE = (
+    "bonk.io has paused Bonkverse for everyone, so this isn't your fault. Try again in {wait}."
+)
 
 # Both wear endpoints share one per-account counter.
 _WEAR_GROUP = "skins.wear"
@@ -144,6 +150,8 @@ def _update_failed_response(request, result: BonkAvatarUpdateResult) -> JsonResp
         # How long every worker will keep answering this without asking bonk.io,
         # so the page can wait instead of retrying into the pause.
         retry_after = retry_after_for(AVATAR_UPDATE_SCRIPT)
+        if rate_limit_cooldowns.login_paused():
+            message = _LOGIN_PAUSE_MESSAGE
         message = message.format(wait=describe_wait(retry_after))
         # Expected, and integrations/bonk_api.py already logged it as a
         # WARNING; don't also log "ERROR Service Unavailable" (or send it to
@@ -177,7 +185,6 @@ def _wear(request, skin_code: str) -> tuple[AvatarSlot, JsonResponse | None]:
     if not result.ok:
         # integrations/bonk_api.py logs bonk.io's refusal code.
         return slot, _update_failed_response(request, result)
-    bonk.store_token(token)  # sliding TTL
     if slot == bonk.active_slot:
         # Only the active slot is what the player wears in game. A failure
         # here must not turn a skin bonk.io applied into an error reply.

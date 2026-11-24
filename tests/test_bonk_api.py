@@ -372,6 +372,41 @@ class TestLoginPause:
 
         assert bonk.call_count == 1
 
+    def test_the_login_pause_stops_wears_and_friend_reads_too(self, mocked_http):
+        """2026-11-10 00:59: the first login after a pause was refused again;
+        the only Bonkverse calls during it were two wears, which fits bonk.io
+        restarting its block on any request (RFC-0003 Part 1, item 6)."""
+        now = [1000.0]
+        cooldowns = _Cooldowns(clock=lambda: now[0])
+        api = BonkApi(BASE, cooldowns=cooldowns)
+        mocked_http.post(LOGIN, json={"r": "fail", "e": "ratelimited"})
+        avatar = mocked_http.post(AVATAR, json=load_bonk_fixture("avatar_update_success"))
+        friends = mocked_http.post(FRIENDS, json={"r": "success", "friends": [], "requests": []})
+        api.login("TestPlayer", "pw")
+
+        wear = api.update_avatar("tok", AvatarSlot(1), "CODE")
+        read = api.get_friends("tok")
+
+        assert wear.error == read.error == BonkError.RATE_LIMITED
+        assert avatar.call_count == friends.call_count == 0
+        assert cooldowns.remaining(AVATAR_UPDATE_SCRIPT) == LOGIN_RATE_LIMIT_PAUSE
+        assert cooldowns.login_paused() is True
+
+        now[0] += LOGIN_RATE_LIMIT_PAUSE + 1
+        assert api.update_avatar("tok", AvatarSlot(1), "CODE").ok is True
+        assert cooldowns.login_paused() is False
+
+    def test_a_wear_pause_does_not_stop_logins(self, mocked_http):
+        """bonk.io limits each script on its own (2026-11-09)."""
+        now = [1000.0]
+        cooldowns = _Cooldowns(clock=lambda: now[0])
+        api = BonkApi(BASE, cooldowns=cooldowns)
+        mocked_http.post(AVATAR, json={"r": "fail", "e": "ratelimited"})
+        mocked_http.post(LOGIN, json=load_bonk_fixture("login_success"))
+        api.update_avatar("tok", AvatarSlot(1), "CODE")
+
+        assert api.login("TestPlayer", "pw").ok is True
+
     def test_other_scripts_keep_the_doubling_pause(self):
         assert backoff_seconds(1, LOGIN_SCRIPT) == backoff_seconds(5, LOGIN_SCRIPT) == 1020
         assert backoff_seconds(1, AVATAR_UPDATE_SCRIPT) == 120

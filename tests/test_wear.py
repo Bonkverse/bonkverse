@@ -18,7 +18,7 @@ from core import token_crypto
 import requests
 
 from accounts.models import UserEvent
-from tests.conftest import load_bonk_fixture
+from tests.conftest import load_bonk_fixture, make_bonk_token
 from tests.factories import SkinFactory
 
 BONK_LOGIN_URL = "https://bonk2.io/scripts/login_legacy.php"
@@ -104,12 +104,35 @@ class TestWearSkin:
 
         assert UserEvent.objects.filter(event_type="skin_worn", skin=skin).exists()
 
-    def test_success_slides_token_expiry_forward(self, bonk_session_client, skin, bonk_accepts):
+    def test_a_wear_does_not_stretch_the_token_past_its_expiry(
+        self, bonk_session_client, skin, bonk_accepts
+    ):
+        """bonk.io tokens last about a day; a wear used to push our copy 14
+        days out, so the next wear a day later spent a call to find out."""
         before = bonk_session_client.session["bonk_token_expires"]
 
         bonk_session_client.post(_wear_url(skin.id))
 
-        assert bonk_session_client.session["bonk_token_expires"] > before
+        assert bonk_session_client.session["bonk_token_expires"] == before
+
+    def test_an_expired_token_asks_to_reconnect_without_calling_bonk(
+        self, logged_in_client, skin, mocked_http
+    ):
+        """RFC-0003 Part 1, item 7: a token past its own `exp` goes straight to
+        the bonk.io login, without spending an avatar_update.php call."""
+        bonk = mocked_http.post(BONK_AVATAR_UPDATE_URL, json={"r": "success"})
+        session = logged_in_client.session
+        # Our stored expiry is far off (the old 14-day rule); the token's own
+        # `exp` passed an hour ago.
+        session["bonk_token"] = token_crypto.encrypt(make_bonk_token(exp=time.time() - 3600))
+        session["bonk_token_expires"] = time.time() + 13 * 24 * 3600
+        session.save()
+
+        response = logged_in_client.post(_wear_url(skin.id))
+
+        assert response.status_code == 401
+        assert response.json()["auth"] == "bonk"
+        assert bonk.call_count == 0
 
     def test_explicit_slot_wins_over_active_slot(self, bonk_session_client, skin, bonk_accepts):
         response = bonk_session_client.post(_wear_url(skin.id), {"slot": "5"})
@@ -370,6 +393,28 @@ class TestRateLimitedWearMessages:
             "Try again in about 2 minutes."
         )
         assert body["retry_after"] == 120
+
+    def test_during_the_login_pause_wears_wait_and_say_why(
+        self, bonk_session_client, skin, mocked_http
+    ):
+        """RFC-0003 Part 1, items 6 and 8: bonk.io restarts its login block on
+        any request, so wears wait with logins, and the player hears that the
+        pause is for everyone."""
+        from integrations.bonk_api import LOGIN_SCRIPT, rate_limit_cooldowns
+
+        bonk = mocked_http.post(BONK_AVATAR_UPDATE_URL, json={"r": "success"})
+        rate_limit_cooldowns.for_script(LOGIN_SCRIPT).start(600)
+
+        response = bonk_session_client.post(_wear_url(skin.id))
+
+        assert bonk.call_count == 0
+        assert response.status_code == 503
+        body = response.json()
+        assert body["retry_after"] == 600
+        assert body["message"] == (
+            "bonk.io has paused Bonkverse for everyone, so this isn't your fault. "
+            "Try again in about 10 minutes."
+        )
 
     def test_rate_limited_wear_is_not_logged_as_a_server_error(
         self, bonk_session_client, skin, mocked_http, caplog
