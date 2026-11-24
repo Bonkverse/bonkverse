@@ -202,7 +202,8 @@ def _me_body(request) -> dict:
     person's bonk.io accounts for the shared header's switcher (RFC-0003
     phase 5): every account in the group, which is in use, which is the
     main, which are signed in on this browser (only those can be switched to
-    without a password), and which Wear can act as."""
+    without a password), which Wear can act as, and each one's picture (its
+    worn skin, as the header shows it; null when there's none)."""
     thumbnail = player_selectors.user_skin_avatars(request.user).get("thumbnail")
     return {
         "authenticated": True,
@@ -212,11 +213,31 @@ def _me_body(request) -> dict:
             "avatar": request.build_absolute_uri(thumbnail) if thumbnail else None,
             "appearance": appearance.for_api(request.user),
         },
-        "accounts": groups.accounts_for(request),
+        "accounts": _with_avatars(request, groups.accounts_for(request)),
         "permissions": {
             "publish_skins": True,
         },
     }
+
+
+def _with_avatars(request, rows: list[dict]) -> list[dict]:
+    """Each account row with `avatar`: an absolute URL of its worn-skin
+    thumbnail (cached per account), so the other sites' switchers can show
+    it as bonkverse.io's header does. One account: no extra queries."""
+    if len(rows) < 2:
+        own = rows[0] if rows else None
+        if own is not None:
+            thumbnail = player_selectors.user_skin_avatars(request.user).get("thumbnail")
+            own["avatar"] = request.build_absolute_uri(thumbnail) if thumbnail else None
+        return rows
+    by_id = {account.pk: account for account in groups.members(request.user)}
+    for row in rows:
+        account = by_id.get(row["id"])
+        thumbnail = (
+            player_selectors.user_skin_avatars(account).get("thumbnail") if account else None
+        )
+        row["avatar"] = request.build_absolute_uri(thumbnail) if thumbnail else None
+    return rows
 
 
 # The header on Bonkverse's other sites switches through this. They can't
