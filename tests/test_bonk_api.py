@@ -540,3 +540,35 @@ class TestSharedCooldown:
 
         assert second.bonk_error is None
         assert len(mocked_http.calls) == 1
+
+
+def test_a_fresh_process_sees_a_pause_another_process_stored():
+    """2026-11-24: a worker restarted by a deploy asked "is bonk.io paused?"
+    before calling bonk.io, and was told no while the web service had paused
+    every call. The process-wide cooldowns connect to Django's cache on first
+    use, not only in get_client()."""
+    from django.core.cache import cache
+
+    from integrations.bonk_api import FRIENDS_SCRIPT, LOGIN_SCRIPT
+
+    web = _Cooldowns(store=cache)
+    web.for_script(LOGIN_SCRIPT).start(600)
+    worker = _Cooldowns(django_cache=True)  # nothing connected it yet
+    try:
+        assert worker.login_paused()
+        assert 590 <= worker.remaining(FRIENDS_SCRIPT) <= 600
+    finally:
+        web.reset()
+
+
+def test_without_django_cache_a_cooldowns_stays_in_process():
+    from django.core.cache import cache
+
+    from integrations.bonk_api import LOGIN_SCRIPT
+
+    web = _Cooldowns(store=cache)
+    web.for_script(LOGIN_SCRIPT).start(600)
+    try:
+        assert not _Cooldowns().login_paused()
+    finally:
+        web.reset()
