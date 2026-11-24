@@ -11,6 +11,7 @@ urlpatterns = [
     path("login/", views.login_view, name="login"),
     path("api/me/", views.me, name="api_me"),
     path("logout/", views.logout_view, name="logout"),
+    path("login/forget/", views.forget_known_account, name="forget_known_account"),
     # Sign in or add an account with a friend request (RFC-0003 phase 6).
     path("login/friend/", views.friend_request_login, name="friend_request_login"),
     path("login/friend/<int:claim_id>/", views.friend_request_wait, name="friend_request_wait"),

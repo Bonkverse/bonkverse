@@ -25,7 +25,7 @@ from django.views.decorators.http import require_POST
 from core.ratelimits import limit
 from players import selectors as player_selectors
 
-from . import appearance, bot_account, bot_check, groups, link_claims
+from . import appearance, bot_account, bot_check, groups, known_accounts, link_claims
 from .forms import LoginForm
 from .login_attempts import attempt_login
 from .login_messages import login_failure_message
@@ -46,6 +46,14 @@ def login_view(request):
         request.GET.get("add"),
     )
     if request.method != "POST":
+        chooser = _account_chooser(request)
+        if chooser:
+            # Signed out, with accounts used here before: "Choose an account".
+            return render(
+                request,
+                "accounts/choose_account.html",
+                {"choices": chooser, "next": request.GET.get("next", "")},
+            )
         initial = {"username": request.GET.get("username", "")[:100]}
         return _render_login(request, LoginForm(initial=initial), adding=adding)
 
@@ -123,6 +131,38 @@ def logout_view(request):
         return redirect("site_pages:home")
     messages.success(request, f"Signed out of {leaving}. You're now using {now.username}.")
     return redirect(_back(request))
+
+
+def _account_chooser(request) -> list[dict]:
+    """The login page's "Choose an account" (accounts/known_accounts.py): the
+    accounts used on this browser, each with its picture and the way it last
+    signed in, or [] to show the plain form (signed in, a name given, or
+    "Use another account")."""
+    if request.user.is_authenticated or request.GET.get("username") or request.GET.get("other"):
+        return []
+    known = known_accounts.accounts(request)
+    if not known:
+        return []
+    codes = player_selectors.worn_skin_codes([a["username"] for a in known])
+    for account in known:
+        code = codes.get(account["username"].lower())
+        account["thumbnail"] = (
+            player_selectors.skin_avatar_url(account["username"], code) if code else None
+        )
+    return known
+
+
+@require_POST
+@limit("write")
+def forget_known_account(request):
+    """The chooser's Remove: take one account off this browser's list."""
+    known_accounts.forget(request, (request.POST.get("username") or "")[:64])
+    return redirect(reverse("accounts:login") + _next_query(request))
+
+
+def _next_query(request) -> str:
+    next_url = _safe_next(request)
+    return f"?next={next_url}" if next_url else ""
 
 
 @limit("login", method="POST")

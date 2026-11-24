@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Log in · Bonkverse{% endblock %}
+{% block content_class %}site-page{% endblock %}
+
+{% block content %}
+{% comment %}The login page when signed out with accounts used on this browser before
+(accounts/known_accounts.py). Choosing one still needs its password or a friend
+request: each opens the way it last signed in, with the name filled in.{% endcomment %}
+<div class="bv-main site-narrow">
+  <div class="bv-page-header">
+    <div class="bv-page-header__text">
+      <h1>Choose an account</h1>
+      <p class="bv-muted">Accounts used on this browser. You'll confirm it's you.</p>
+    </div>
+  </div>
+
+  <div class="bv-card site-form-card">
+    <ul class="site-chooser">
+      {% for account in choices %}
+        <li class="site-chooser__row">
+          <a class="site-chooser__pick"
+             href="{% if account.via == 'friend' %}{% url 'accounts:friend_request_login' %}{% else %}{% url 'accounts:login' %}{% endif %}?username={{ account.username|urlencode }}{% if next %}&amp;next={{ next|urlencode }}{% endif %}">
+            {% if account.thumbnail %}
+              <span class="bv-nav-avatar bv-skin-avatar site-chooser__avatar" style="--skin: url('{{ account.thumbnail }}')" aria-hidden="true"><i data-lucide="circle-user"></i></span>
+            {% else %}
+              <i class="site-chooser__avatar" data-lucide="circle-user" aria-hidden="true"></i>
+            {% endif %}
+            <span class="site-chooser__text">
+              <strong>{{ account.username }}</strong>
+              <span class="bv-hint">{% if account.via == 'friend' %}With a friend request{% else %}With your password{% endif %}</span>
+            </span>
+          </a>
+          <form method="post" action="{% url 'accounts:forget_known_account' %}">
+            {% csrf_token %}
+            <input type="hidden" name="username" value="{{ account.username }}">
+            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+            <button type="submit" class="bv-btn bv-btn--ghost site-chooser__remove" aria-label="Remove {{ account.username }} from this browser" title="Remove from this browser">
+              <i data-lucide="x" aria-hidden="true"></i>
+            </button>
+          </form>
+        </li>
+      {% endfor %}
+      <li class="site-chooser__row">
+        <a class="site-chooser__pick" href="{% url 'accounts:login' %}?other=1{% if next %}&amp;next={{ next|urlencode }}{% endif %}">
+          <i class="site-chooser__avatar" data-lucide="user-plus" aria-hidden="true"></i>
+          <span class="site-chooser__text"><strong>Use another account</strong></span>
+        </a>
+      </li>
+    </ul>
+  </div>
+  <p class="bv-muted site-form-alt">On a shared computer? Remove your account here, or tick “Also forget this device” when you sign out.</p>
+</div>
+{% endblock %}
