@@ -121,6 +121,10 @@ The codes mean ([bonk/api.md](../bonk/api.md), [ADR 0008](../adr/0008-bonk-refus
   `bonk login waiting for the site budget`, `bonk login busy` and `bonk login
   held` lines are Bonkverse's own guards turning logins away before bonk.io
   sees them (`BONK_LOGIN_*` settings, [bonk/login-rate-limit.md](../bonk/login-rate-limit.md#what-bonkverse-does-about-it)).
+  `bonk login needs the bot check` lines are logins turned away for a missing
+  or rejected Turnstile answer; `bot check skipped: Cloudflare couldn't be
+  asked` means the check let logins through because Cloudflare didn't answer
+  (an ERROR `turnstile secret rejected` means `TURNSTILE_SECRET_KEY` is wrong).
   A `ratelimited` with `no recent wrong passwords` before it points at a burst
   of correct logins or another service sharing the IP; tighten
   `BONK_LOGIN_SITE_PER_MINUTE` if the logins came from Bonkverse.

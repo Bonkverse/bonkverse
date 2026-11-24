@@ -48,6 +48,7 @@ accounts/
   services.py           # what other apps call
   login_attempts.py     # attempt_login + the wrong-password limit
   login_messages.py     # what a turned-down login says
+  bot_check.py          # when a login needs the Turnstile "not a bot" check, and checking it
   sign_in.py            # what a successful login does; refresh_link for the wear popup
   sessions.py           # 90-day sign-ins, renewed at most once a day
   forms.py              # LoginForm (username and password never stripped)
