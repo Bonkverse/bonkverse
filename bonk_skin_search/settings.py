@@ -186,6 +186,12 @@ BONK_LOGIN_LIMITS = {
     }.items()
 }
 
+# Cloudflare Turnstile, the "not a bot" check on bonk.io login forms
+# (accounts/bot_check.py, RFC-0003 Part 1 item 10). The site key is public
+# (it's in the page). The check is off until TURNSTILE_SECRET_KEY is set.
+TURNSTILE_SITE_KEY = os.getenv("TURNSTILE_SITE_KEY", "0x4AAAAAAGP08z9bSQTcL_Xu")
+TURNSTILE_SECRET_KEY = os.getenv("TURNSTILE_SECRET_KEY", "")
+
 CLOUDFLARE_ZONE_ID = os.getenv("CLOUDFLARE_ZONE_ID", "")
 CLOUDFLARE_CACHE_API_TOKEN = os.getenv("CLOUDFLARE_CACHE_API_TOKEN", "")
 

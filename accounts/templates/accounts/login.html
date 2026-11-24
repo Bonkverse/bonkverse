@@ -28,6 +28,10 @@
         {% for error in field.errors %}<span class="bv-error">{{ error }}</span>{% endfor %}
       </div>
     {% endfor %}
+    {% if turnstile_site_key %}
+      {# The "not a bot" check (accounts/bot_check.py), shown only after a failed try or when the site is busy. Fills cf-turnstile-response in this form. #}
+      <div class="cf-turnstile bv-field" data-sitekey="{{ turnstile_site_key }}" data-theme="auto"></div>
+    {% endif %}
     {% if retry_after %}
       {% comment %}The login has to wait (bonk.io's pause, or too many wrong passwords): the
          button stays off until the wait ends (accounts/js/login.js; accounts/views.py).{% endcomment %}
@@ -42,4 +46,5 @@
 
 {% block extra_scripts %}
   <script src="{% static 'accounts/js/login.js' %}" defer></script>
+  {% if turnstile_site_key %}<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>{% endif %}
 {% endblock %}
