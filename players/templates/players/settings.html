@@ -48,6 +48,56 @@ Save button is only for browsers without scripts.
     <p class="pv-fine">Saved to your account, so they follow you to your other devices and to Bonkverse Replays and Docs.</p>
   </section>
 
+  {# The person's bonk.io accounts (RFC-0003 phase 5, accounts/groups.py): switch, sign in, make main, remove, add. #}
+  <section class="bv-card pv-settings" id="accounts" aria-labelledby="accounts-title">
+    <h2 class="pv-card__title" id="accounts-title">Your bonk.io accounts</h2>
+    {% if group_accounts|length > 1 %}
+      <p class="pv-fine">Switch between these from the account menu without a password once each is signed in on this browser. Each keeps its own profile, favorites, votes and uploads; appearance is shared. Only you see that they're grouped.</p>
+    {% else %}
+      <p class="pv-fine">Play as more than one bonk.io account? Add the others to switch between them from the account menu without a password. Each keeps its own profile, favorites, votes and uploads.</p>
+    {% endif %}
+    <ul class="pv-account-list">
+      {% for account in group_accounts %}
+        <li class="pv-account-row">
+          <span class="pv-account-row__name">
+            <strong>{{ account.username }}</strong>
+            {% if account.active %}<span class="bv-hint">· in use</span>{% endif %}
+            {% if account.main and group_accounts|length > 1 %}<span class="bv-hint">· main</span>{% endif %}
+            {% if not account.signed_in %}<span class="bv-hint">· not signed in here</span>{% elif not account.connected %}<span class="bv-hint">· not connected for Wear</span>{% endif %}
+          </span>
+          {% if group_accounts|length > 1 %}
+            <span class="pv-actions">
+              {% if not account.active %}
+                {% if account.signed_in %}
+                  <form method="post" action="{% url 'accounts:switch_account' %}">
+                    {% csrf_token %}<input type="hidden" name="account" value="{{ account.id }}">
+                    <input type="hidden" name="next" value="{{ request.path }}#accounts">
+                    <button type="submit" class="bv-btn">Switch</button>
+                  </form>
+                {% else %}
+                  <a class="bv-btn" href="{% url 'accounts:login' %}?add=1&amp;username={{ account.username|urlencode }}&amp;next={{ request.path|urlencode }}">Sign in</a>
+                {% endif %}
+              {% endif %}
+              {% if not account.main %}
+                <form method="post" action="{% url 'accounts:make_main_account' %}">
+                  {% csrf_token %}<input type="hidden" name="account" value="{{ account.id }}">
+                  <button type="submit" class="bv-btn">Make main</button>
+                </form>
+              {% endif %}
+              <form method="post" action="{% url 'accounts:remove_account' %}">
+                {% csrf_token %}<input type="hidden" name="account" value="{{ account.id }}">
+                <button type="submit" class="bv-btn">Remove</button>
+              </form>
+            </span>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+    <div class="pv-actions">
+      <a class="bv-btn bv-btn--primary" href="{% url 'accounts:login' %}?add=1&amp;next={{ request.path|urlencode }}">Add bonk.io account</a>
+    </div>
+  </section>
+
   {# This browser's bonk.io connection, from the account link through the token broker (players/views.py _bonk_connection). Times are written in UTC and shown in the viewer's own time zone by profile_settings.js. #}
   <section class="bv-card pv-settings" aria-labelledby="bonk-connection-title">
     <h2 class="pv-card__title" id="bonk-connection-title">bonk.io connection</h2>

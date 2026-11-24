@@ -97,6 +97,15 @@ too, revoke them on bonk.io:
 `reencrypt_bonk_tokens --run`: it removes the tokens no key opens. Players log
 in again the next time they wear a skin; nothing else is lost.
 
+## Grouping accounts linked before groups (once, after RFC-0003 phase 5 PR 1)
+
+Before groups, one site account could hold links to several bonk.io
+accounts. `group_linked_accounts` gives each its own site account in one
+group ([ADR 0023](../adr/0023-account-groups-of-site-accounts.md)). After the
+deploy, `railway ssh` into `bonkverse`:
+1. `python manage.py group_linked_accounts`: a dry run, counts only.
+2. The same with `--run`. Running it again should report 0 links moved.
+
 ## Rotating the Redis password
 
 Railway's **Regenerate** button (Redis → Database → Config) is the supported way.

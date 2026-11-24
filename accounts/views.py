@@ -1,6 +1,8 @@
-"""The /login/ and /logout/ pages and /api/me/.
+"""The /login/ and /logout/ pages, /api/me/, and switching accounts.
 
-Owns: the login, logout and who-am-I views.
+Owns: the login, logout and who-am-I views, and the actions on a person's
+bonk.io accounts (switch, add, remove, make main; the rules are in
+groups.py).
 Does not own: the sentences shown when a login is turned down
 (login_messages.py), trying the bonk.io login and the limit on wrong
 passwords (login_attempts.py), what a successful login does (sign_in.py:
@@ -8,18 +10,22 @@ site account, account link, Flash friends, queueing the friend sync), or
 talking to bonk.io (integrations/bonk_api.py).
 """
 
+import json
+
+from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import logout
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from core.token_crypto import bonk_session
 from core.ratelimits import limit
 from players import selectors as player_selectors
 
-from . import appearance, bot_check
+from . import appearance, bot_check, groups
 from .forms import LoginForm
 from .login_attempts import attempt_login
 from .login_messages import login_failure_message
@@ -28,12 +34,24 @@ from .sign_in import sign_in
 
 @limit("login", method="POST")
 def login_view(request):
+    """Log in with a bonk.io account.
+
+    `?add=1` while signed in is "Add account" (RFC-0003 phase 5): the account
+    logged in to joins the signed-in account's group and both stay signed in
+    on this browser. `?username=` fills in the name (the account menu's
+    "Sign in" for a group account not signed in here).
+    """
+    adding = request.user.is_authenticated and "1" in (
+        request.POST.get("add"),
+        request.GET.get("add"),
+    )
     if request.method != "POST":
-        return _render_login(request, LoginForm())
+        initial = {"username": request.GET.get("username", "")[:100]}
+        return _render_login(request, LoginForm(initial=initial), adding=adding)
 
     form = LoginForm(request.POST)
     if not form.is_valid():
-        return _render_login(request, form)
+        return _render_login(request, form, adding=adding)
 
     remember = form.cleaned_data["remember"]
     attempt = attempt_login(
@@ -51,10 +69,13 @@ def login_view(request):
         )
         # The page keeps the Login button off until the wait ends, so players
         # don't resubmit into it (6 tries in a minute on 2026-11-09).
-        return _render_login(request, form, retry_after=retry_after)
+        return _render_login(request, form, retry_after=retry_after, adding=adding)
 
-    sign_in(request, attempt.result, remember=remember)
-    messages.success(request, "Logged in successfully!")
+    user = sign_in(request, attempt.result, remember=remember, add=adding)
+    if adding:
+        messages.success(request, f"Added {user.username}. You're now using it.")
+    else:
+        messages.success(request, "Logged in successfully!")
 
     next_url = request.POST.get("next") or request.GET.get("next")
     if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
@@ -62,7 +83,7 @@ def login_view(request):
     return redirect("players:player_profile", request.user.username)
 
 
-def _render_login(request, form, *, retry_after=None):
+def _render_login(request, form, *, retry_after=None, adding=False):
     """The login page, with the "not a bot" check when this visitor's next
     try needs it (bot_check.py)."""
     return render(
@@ -71,6 +92,7 @@ def _render_login(request, form, *, retry_after=None):
         {
             "form": form,
             "retry_after": retry_after,
+            "adding": adding,
             "turnstile_site_key": bot_check.site_key_if_wanted(request),
         },
     )
@@ -80,11 +102,87 @@ def _render_login(request, form, *, retry_after=None):
 @limit("write")
 def logout_view(request):
     """POST only (the header's Log out is a form), so another site can't
-    sign people out with a link or an <img>."""
-    bonk_session(request).clear()
-    logout(request)
-    messages.success(request, "Logged out!")
-    return redirect("site_pages:home")
+    sign people out with a link or an <img>.
+
+    `scope=this` signs out of the account in use only and switches to
+    another one still signed in on this browser; anything else signs out of
+    every account here.
+    """
+    if not request.user.is_authenticated:
+        return redirect("site_pages:home")
+    leaving = request.user.username
+    now = groups.sign_out(request, everywhere_here=request.POST.get("scope") != "this")
+    if now is None:
+        messages.success(request, "Logged out!")
+        return redirect("site_pages:home")
+    messages.success(request, f"Signed out of {leaving}. You're now using {now.username}.")
+    return redirect(_back(request))
+
+
+@login_required
+@require_POST
+@limit("write")
+def switch_account(request):
+    """The account menu's switch: use another account signed in here."""
+    try:
+        user = groups.switch(request, _account_id(request.POST.get("account")))
+    except groups.NotAllowed as refusal:
+        messages.error(request, refusal.message)
+    else:
+        messages.success(request, f"You're now using {user.username}.")
+    return redirect(_back(request))
+
+
+@login_required
+@require_POST
+@limit("write")
+def remove_account(request):
+    """Settings: take an account out of the group (it keeps its own history)."""
+    account_id = _account_id(request.POST.get("account"))
+    name = next(
+        (row["username"] for row in groups.accounts_for(request) if row["id"] == account_id), ""
+    )
+    try:
+        groups.remove(request, account_id)
+    except groups.NotAllowed as refusal:
+        messages.error(request, refusal.message)
+    else:
+        messages.success(
+            request,
+            f"Removed {name} from your accounts. Its favorites, votes and uploads stay with it.",
+        )
+    return redirect(_back(request))
+
+
+@login_required
+@require_POST
+@limit("write")
+def make_main_account(request):
+    """Settings: make another account the group's main."""
+    account_id = _account_id(request.POST.get("account"))
+    try:
+        groups.make_main(request, account_id)
+    except groups.NotAllowed as refusal:
+        messages.error(request, refusal.message)
+    else:
+        messages.success(request, "Main account changed.")
+    return redirect(_back(request))
+
+
+def _account_id(value) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _back(request) -> str:
+    """Where an account action returns to: `next` on this site, else the
+    accounts list in settings."""
+    next_url = request.POST.get("next")
+    if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        return next_url
+    return reverse("players:profile_settings") + "#accounts"
 
 
 @limit("browse")
@@ -96,18 +194,64 @@ def me(request):
     if not request.user.is_authenticated:
         return JsonResponse({"authenticated": False}, status=401)
 
+    return JsonResponse(_me_body(request))
+
+
+def _me_body(request) -> dict:
+    """/api/me/'s answer for a signed-in visitor. `accounts` lists the
+    person's bonk.io accounts for the shared header's switcher (RFC-0003
+    phase 5): every account in the group, which is in use, which is the
+    main, which are signed in on this browser (only those can be switched to
+    without a password), and which Wear can act as."""
     thumbnail = player_selectors.user_skin_avatars(request.user).get("thumbnail")
-    return JsonResponse(
-        {
-            "authenticated": True,
-            "user": {
-                "id": request.user.id,
-                "username": request.user.username,
-                "avatar": request.build_absolute_uri(thumbnail) if thumbnail else None,
-                "appearance": appearance.for_api(request.user),
-            },
-            "permissions": {
-                "publish_skins": True,
-            },
-        }
-    )
+    return {
+        "authenticated": True,
+        "user": {
+            "id": request.user.id,
+            "username": request.user.username,
+            "avatar": request.build_absolute_uri(thumbnail) if thumbnail else None,
+            "appearance": appearance.for_api(request.user),
+        },
+        "accounts": groups.accounts_for(request),
+        "permissions": {
+            "publish_skins": True,
+        },
+    }
+
+
+# The header on Bonkverse's other sites switches through this. They can't
+# send bonkverse.io's CSRF token (it's host-only), so instead: a JSON body
+# and a custom header, which a browser only sends cross-origin after a CORS
+# preflight that only our own origins pass (CORS_ALLOWED_ORIGINS), and the
+# Origin checked again here.
+SWITCH_HEADER = "X-Bonkverse-Switch"
+
+
+@csrf_exempt
+@require_POST
+@limit("write")
+def api_switch_account(request):
+    """POST {"account": id} with the X-Bonkverse-Switch header: use another
+    account signed in on this browser. Answers like /api/me/."""
+    if not request.headers.get(SWITCH_HEADER):
+        return JsonResponse({"ok": False, "error": "missing_header"}, status=400)
+    origin = request.headers.get("Origin")
+    if origin and origin not in _own_origins(request):
+        return JsonResponse({"ok": False, "error": "bad_origin"}, status=403)
+    if not request.user.is_authenticated:
+        return JsonResponse({"authenticated": False}, status=401)
+    try:
+        body = json.loads(request.body or b"{}")
+    except ValueError:
+        body = {}
+    try:
+        groups.switch(request, _account_id(body.get("account")))
+    except groups.NotAllowed as refusal:
+        return JsonResponse(
+            {"ok": False, "error": "not_allowed", "message": refusal.message}, status=403
+        )
+    return JsonResponse({"ok": True, **_me_body(request)})
+
+
+def _own_origins(request) -> set[str]:
+    return set(settings.CORS_ALLOWED_ORIGINS) | {f"{request.scheme}://{request.get_host()}"}

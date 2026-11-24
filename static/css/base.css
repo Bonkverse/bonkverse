@@ -79,3 +79,26 @@
   display: inline-flex; align-items: center; justify-content: center;
   width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
 }
+
+/* The header's account switcher (templates/partials/_site_header.html,
+   RFC-0003 phase 5). */
+.bv-account-menu__label {
+  padding: var(--bv-space-2) var(--bv-space-3) var(--bv-space-1);
+}
+.bv-account-row {
+  display: flex;
+  align-items: center;
+  gap: var(--bv-space-2);
+  width: 100%;
+}
+.bv-account-row__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: start;
+}
+.bv-account-row__badge {
+  flex: none;
+}

@@ -16,7 +16,7 @@ import pytest
 from django.utils import timezone
 
 from accounts import sessions
-from accounts.models import BonkAccountLink
+from accounts.models import BonkAccountLink, BonkUser
 from core.bonk.session import EXPIRY_MARGIN_SECONDS
 from players.models import BonkPlayer
 from tests.conftest import connect_bonk, load_bonk_fixture, make_bonk_token
@@ -95,34 +95,65 @@ class TestExpiredLinkToken:
 
 
 class TestWearLoginConnectsTheAccount:
-    def test_updates_the_users_own_link(self, logged_in_client, user, mocked_http):
+    @pytest.fixture
+    def test_player_client(self, client):
+        """Signed in as the site account of the bonk.io account the popup
+        logs in to (the fixture's TestPlayer)."""
+        user = UserFactory(username="TestPlayer")
+        client.force_login(user)
+        client.user = user
+        return client
+
+    def test_updates_the_users_own_link(self, test_player_client, mocked_http):
         player = BonkPlayer.objects.create(bonk_id=1234567, username="TestPlayer")
         link = BonkAccountLink.objects.create(
-            user=user, bonk_player=player, token_encrypted=BonkAccountLink.encrypt_token("old")
+            user=test_player_client.user,
+            bonk_player=player,
+            token_encrypted=BonkAccountLink.encrypt_token("old"),
         )
         exp = time.time() + 86400
         mocked_http.post(BONK_LOGIN_URL, json=_login_answer(exp, slot=5))
 
-        response = logged_in_client.post(
+        response = test_player_client.post(
             WEAR_LOGIN_URL, {"bonk_username": "TestPlayer", "bonk_password": "pw"}
         )
 
         assert response.status_code == 200
+        assert "switched_to" not in response.json()
         link.refresh_from_db()
         assert link.bonk_token() == make_bonk_token(exp=exp)
         assert link.active_slot == 5
         assert link.token_expires_at is not None
 
-    def test_links_an_account_the_user_proved_they_own(self, logged_in_client, user, mocked_http):
+    def test_links_the_users_own_account_when_it_had_no_link(self, test_player_client, mocked_http):
         """Wear reads tokens from the link (the token broker), so the popup's
         login links the account it logged in to."""
         mocked_http.post(BONK_LOGIN_URL, json=_login_answer(time.time() + 86400))
 
-        logged_in_client.post(
+        test_player_client.post(
             WEAR_LOGIN_URL, {"bonk_username": "TestPlayer", "bonk_password": "pw"}
         )
 
-        assert BonkAccountLink.objects.filter(user=user, bonk_player__bonk_id=1234567).exists()
+        assert BonkAccountLink.objects.filter(
+            user=test_player_client.user, bonk_player__bonk_id=1234567
+        ).exists()
+
+    def test_another_account_joins_the_group_and_is_used(self, logged_in_client, user, mocked_http):
+        """Never linked to the wrong site account: TestPlayer gets its own,
+        joins the user's accounts, and is the one the Wear goes to."""
+        mocked_http.post(BONK_LOGIN_URL, json=_login_answer(time.time() + 86400))
+
+        response = logged_in_client.post(
+            WEAR_LOGIN_URL, {"bonk_username": "TestPlayer", "bonk_password": "pw"}
+        )
+
+        assert response.json()["switched_to"] == "TestPlayer"
+        assert not BonkAccountLink.objects.filter(user=user).exists()
+        other = BonkUser.objects.get(username="TestPlayer")
+        assert BonkAccountLink.objects.filter(user=other, bonk_player__bonk_id=1234567).exists()
+        user.refresh_from_db()
+        assert other.account_group_id == user.account_group_id is not None
+        assert logged_in_client.get("/api/me/").json()["user"]["username"] == "TestPlayer"
 
 
 class TestNinetyDaySignIn:

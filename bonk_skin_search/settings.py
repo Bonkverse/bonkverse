@@ -265,6 +265,8 @@ CORS_ALLOW_HEADERS = [
     "user-agent",
     "x-csrftoken",
     "x-requested-with",
+    # The other sites' account switcher (accounts.views.api_switch_account).
+    "x-bonkverse-switch",
 ]
 
 if IS_PROD:
@@ -366,6 +368,7 @@ TEMPLATES = [
                 "core.context_processors.editor_urls",
                 "core.context_processors.site_nav",
                 "players.context_processors.viewer_avatar",
+                "accounts.context_processors.viewer_accounts",
                 "players.context_processors.friend_sync",
                 "skins.context_processors.moderation",
             ],

@@ -1,20 +1,26 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Log in · Bonkverse{% endblock %}
+{% block title %}{% if adding %}Add a bonk.io account{% else %}Log in{% endif %} · Bonkverse{% endblock %}
 {% block content_class %}site-page{% endblock %}
 
 {% block content %}
 <div class="bv-main site-narrow">
   <div class="bv-page-header">
     <div class="bv-page-header__text">
-      <h1>Log in</h1>
-      <p class="bv-muted">Use your bonk.io account. Your password goes to bonk.io to check it; Bonkverse never stores it.</p>
+      {% if adding %}
+        <h1>Add a bonk.io account</h1>
+        <p class="bv-muted">Log in to another bonk.io account you play as. It joins {{ user.username }}'s accounts, so you can switch between them from the account menu without a password. Each keeps its own profile, favorites, votes and uploads. Your password goes to bonk.io to check it; Bonkverse never stores it.</p>
+      {% else %}
+        <h1>Log in</h1>
+        <p class="bv-muted">Use your bonk.io account. Your password goes to bonk.io to check it; Bonkverse never stores it.</p>
+      {% endif %}
     </div>
   </div>
 
   <form method="post" class="bv-card bv-form site-form-card">
     {% csrf_token %}
+    {% if adding %}<input type="hidden" name="add" value="1">{% endif %}
     {% if form.non_field_errors %}
       <div class="bv-notice bv-notice--danger" role="alert">
         <i data-lucide="triangle-alert" aria-hidden="true"></i>
@@ -45,7 +51,7 @@
       <button type="submit" class="bv-btn bv-btn--primary" id="login-submit" disabled data-retry-after="{{ retry_after }}">Log in (wait {{ retry_after }}s)</button>
       <p class="bv-hint" id="login-wait-until" hidden></p>
     {% else %}
-      <button type="submit" class="bv-btn bv-btn--primary" id="login-submit">Log in</button>
+      <button type="submit" class="bv-btn bv-btn--primary" id="login-submit">{% if adding %}Add account{% else %}Log in{% endif %}</button>
     {% endif %}
   </form>
 </div>

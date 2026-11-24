@@ -642,3 +642,20 @@ a.pv-friend:hover { background: var(--bv-hover); color: var(--bv-text); text-dec
   margin-top: var(--bv-space-3);
 }
 .pv-actions form { margin: 0; }
+
+/* Settings: the person's bonk.io accounts (RFC-0003 phase 5). */
+.pv-account-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.pv-account-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bv-space-2);
+  padding: var(--bv-space-2) 0;
+  border-bottom: 1px solid var(--bv-divider);
+}
+.pv-account-row .pv-actions { margin-top: 0; }
