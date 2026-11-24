@@ -16,3 +16,7 @@ class LoginForm(forms.Form):
         strip=False,
         widget=forms.PasswordInput(attrs={"class": "bv-input", "autocomplete": "current-password"}),
     )
+    # "Keep me connected for Wear": ask bonk.io for a remember-me token
+    # (RFC-0003 Part 2). Ticked by default; the page says what it stores.
+    # Rendered by hand in login.html, so the field loop skips it.
+    remember = forms.BooleanField(required=False, initial=True)

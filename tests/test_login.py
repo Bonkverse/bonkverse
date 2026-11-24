@@ -9,7 +9,6 @@ import logging
 
 import pytest
 
-from core import token_crypto
 import requests
 from django.urls import reverse
 
@@ -49,15 +48,17 @@ class TestSuccessfulLogin:
         assert client.session["_auth_user_id"] == str(user.pk)
         assert UserEvent.objects.filter(user=user, event_type="user_logged_in").exists()
 
-    def test_stores_bonk_session_from_response(self, client):
+    def test_stores_which_bonk_account_this_browser_acts_as(self, client):
         _post_login(client)
 
         session = client.session
-        assert token_crypto.decrypt(session["bonk_token"]) == "SCRUBBED-TEST-TOKEN-abc123"
         assert session["bonk_username"] == "TestPlayer"
         assert session["bonk_user_id"] == 1234567
         assert session["bonk_active_slot"] == 2
-        assert session["bonk_token_expires"] > 0
+        # The token lives on the account link only (RFC-0003 Part 2).
+        assert "bonk_token" not in session
+        link = BonkAccountLink.objects.get(bonk_player__bonk_id=1234567)
+        assert link.bonk_token() == "SCRUBBED-TEST-TOKEN-abc123"
 
     def test_never_stores_password_in_session(self, client):
         _post_login(client, password="hunter2")

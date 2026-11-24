@@ -35,8 +35,13 @@ def login_view(request):
     if not form.is_valid():
         return _render_login(request, form)
 
+    remember = form.cleaned_data["remember"]
     attempt = attempt_login(
-        request, form.cleaned_data["username"], form.cleaned_data["password"], via="page"
+        request,
+        form.cleaned_data["username"],
+        form.cleaned_data["password"],
+        via="page",
+        remember=remember,
     )
     if not attempt.ok:
         retry_after = attempt.retry_after
@@ -48,7 +53,7 @@ def login_view(request):
         # don't resubmit into it (6 tries in a minute on 2026-11-09).
         return _render_login(request, form, retry_after=retry_after)
 
-    sign_in(request, attempt.result)
+    sign_in(request, attempt.result, remember=remember)
     messages.success(request, "Logged in successfully!")
 
     next_url = request.POST.get("next") or request.GET.get("next")

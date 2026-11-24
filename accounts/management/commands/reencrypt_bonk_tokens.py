@@ -4,7 +4,8 @@ Run it after every key rotation (docs/operations/runbook.md, "bonk.io token
 keys"). Dry run by default; `--run` writes. (It first ran on 2026-11-14 to
 encrypt the tokens stored before ADR 0016.)
 
-What it does, for account links and for unexpired site sessions:
+What it does, for account links (session and remember-me tokens) and for
+unexpired site sessions:
 - already encrypted with the newest key: left alone;
 - readable with an older key: encrypted with the newest key;
 - unreadable (no listed key opens it): with `--run`, removed. A token no key
@@ -37,8 +38,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, run=False, **options):
         mode = "" if run else " (dry run: nothing written; add --run)"
-        links = self._links(run)
+        links = self._links(run, "token_encrypted")
         self.stdout.write(f"account links{mode}: " + _summary(links))
+        remember = self._links(run, "remember_token_encrypted")
+        self.stdout.write(f"remember-me tokens{mode}: " + _summary(remember))
         sessions = self._sessions(run)
         if sessions is None:
             self.stdout.write(
@@ -47,23 +50,24 @@ class Command(BaseCommand):
         else:
             self.stdout.write(f"site sessions{mode}: " + _summary(sessions))
 
-    def _links(self, run: bool) -> dict:
+    def _links(self, run: bool, field: str) -> dict:
+        """Re-encrypt one encrypted column of every account link. Decrypts
+        the stored value directly: an expired token is still re-encrypted
+        (bonk_token() would read it as None)."""
         counts = _counter()
-        rows = BonkAccountLink.objects.exclude(token_encrypted__isnull=True).exclude(
-            token_encrypted=""
-        )
-        for link in rows.only("pk", "token_encrypted").iterator(chunk_size=500):
-            stored = link.token_encrypted
+        rows = BonkAccountLink.objects.exclude(**{f"{field}__isnull": True}).exclude(**{field: ""})
+        for pk, stored in rows.values_list("pk", field).iterator(chunk_size=500):
             if token_crypto.is_current(stored):
                 counts["current"] += 1
                 continue
-            token = link.bonk_token()
+            token = token_crypto.decrypt(stored)
             new = token_crypto.encrypt(token) if token is not None else None
             counts["redone" if token is not None else "unreadable"] += 1
             if run:
-                written = BonkAccountLink.objects.filter(pk=link.pk, token_encrypted=stored).update(
-                    token_encrypted=new
-                )
+                changes = {field: new}
+                if new is None and field == "remember_token_encrypted":
+                    changes["remember_status"] = BonkAccountLink.REMEMBER_NONE
+                written = BonkAccountLink.objects.filter(pk=pk, **{field: stored}).update(**changes)
                 counts["changed meanwhile"] += 1 - written
         return counts
 

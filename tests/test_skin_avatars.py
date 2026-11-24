@@ -7,7 +7,6 @@ from datetime import timedelta
 
 import pytest
 
-from core import token_crypto
 from django.core.cache import cache
 from django.urls import reverse
 from django.utils import timezone
@@ -18,6 +17,7 @@ from players.services import record_worn_skin
 from skins import skin_media
 from accounts.models import BonkAccountLink
 from skins.services import code_digest, code_image
+from tests.conftest import connect_bonk
 from tests.factories import SKIN_CODE, BonkPlayerFactory, UserFactory
 from tests.test_player_search_friends import friend_data
 from tests.test_players import REPLAYS, mock_player
@@ -292,16 +292,7 @@ class TestViewerAvatar:
             "https://bonk2.io/scripts/avatar_update.php",
             json={"r": "success"},
         )
-        session = client.session
-        session.update(
-            {
-                "bonk_token": token_crypto.encrypt("t"),
-                "bonk_token_expires": 9e12,
-                "bonk_active_slot": 2,
-                "bonk_user_id": player.bonk_id,
-            }
-        )
-        session.save()
+        connect_bonk(client, user, player=player, token="t", slot=2)
 
         client.post("/api/skins/wear-code/", {"skin_code": OTHER_SKIN_CODE})
         html = client.get("/").content.decode()
