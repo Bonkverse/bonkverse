@@ -75,6 +75,36 @@ class AccountGroup(models.Model):
         return f"group {self.pk} (main: {self.main_id})"
 
 
+class TrustedDevice(models.Model):
+    """A browser where a group's main account signed in (RFC-0003 phase 5,
+    accounts/devices.py).
+
+    Signing in to the main there makes every account in the group one-click
+    switchable in that browser. The record lets the owner see those browsers
+    and remove one (which ends the switching there), and expires 90 days
+    after it was last used. Only a hash of the browser's device cookie is
+    stored.
+    """
+
+    group = models.ForeignKey(
+        "accounts.AccountGroup", on_delete=models.CASCADE, related_name="trusted_devices"
+    )
+    device_hash = models.CharField(max_length=64)
+    # A rough name for the settings list ("Chrome on Windows"), from the
+    # User-Agent when it was trusted.
+    label = models.CharField(max_length=80, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used_at = models.DateTimeField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["group", "device_hash"], name="one_trust_per_device")
+        ]
+
+    def __str__(self):
+        return f"{self.label or 'device'} for group {self.group_id}"
+
+
 class BonkUser(AbstractBaseUser, PermissionsMixin):
     """A Bonkverse site account, identified by its bonk.io username.
 

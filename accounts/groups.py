@@ -13,10 +13,14 @@ of them at a time (`request.user`, the "active account"), and that account
 decides Wear, upload credit, votes, favorites and the header everywhere.
 
 Switching needs no password, but only between accounts signed in on this
-browser (`signed_in_ids`, kept in the session). The group's other accounts
-are listed with "Sign in". That is the new-device guard in its simplest
-form; trusted devices (phase 5, PR 3) will let any account unlock the group
-on a device the group used before.
+browser (`signed_in_ids`). An account is signed in here when:
+- someone typed its password on this browser (SIGNED_IN_KEY), or
+- the group's main signed in on this browser, which unlocks every account in
+  the group (UNLOCKED_KEY) while the browser stays trusted (devices.py: 90
+  days from last use, and removable from Settings).
+Signing in to any other account opens only that account: only the main
+unlocks the group, every time (RFC-0003 phase 5 decisions, PR 3; ADR 0023).
+The group's other accounts are listed with "Sign in".
 
 A plain login while signed in replaces the session, as before: only "Add
 account" groups accounts, so logging in to a friend's account on your
@@ -35,15 +39,19 @@ from core.token_crypto import bonk_session
 
 from core.bonk.levels import level_for_xp
 
+from . import devices
 from .events import log_event
 from .models import AccountGroup, BonkAccountLink, BonkUser
 from .signals import account_joined_group
 
 logger = logging.getLogger(__name__)
 
-# Site account ids signed in on this browser, oldest first. Survives the
-# session flush Django does when login() changes the user.
+# Site account ids signed in on this browser with their own password, oldest
+# first. Survives the session flush Django does when login() changes the user.
 SIGNED_IN_KEY = "bv_signed_in"
+# Site account ids the group's main unlocked on this browser (only usable
+# while devices.is_trusted says the browser is still trusted).
+UNLOCKED_KEY = "bv_unlocked"
 
 
 class NotAllowed(Exception):
@@ -110,15 +118,62 @@ def same_group(a: BonkUser, b: BonkUser) -> bool:
     )
 
 
+def _password_ids(request) -> list[int]:
+    return [i for i in request.session.get(SIGNED_IN_KEY, []) if isinstance(i, int)]
+
+
+def _unlocked_ids(request) -> list[int]:
+    """The accounts the main unlocked here, while this browser is trusted for
+    the active account's group; else []."""
+    ids = [i for i in request.session.get(UNLOCKED_KEY, []) if isinstance(i, int)]
+    if not ids or request.user.account_group_id is None:
+        return []
+    if not devices.is_trusted(request, request.user.account_group_id):
+        return []
+    return ids
+
+
 def signed_in_ids(request) -> list[int]:
-    """Ids of the accounts signed in on this browser, the active one included.
-    Sessions from before groups have no list: just the active account."""
+    """Ids of the accounts signed in on this browser, the active one included:
+    those signed in with their own password, then those the main unlocked
+    (while the browser is trusted). Sessions from before groups have no
+    list: just the active account. Worked out once per request."""
     if not request.user.is_authenticated:
         return []
-    ids = [i for i in request.session.get(SIGNED_IN_KEY, []) if isinstance(i, int)]
+    cached = getattr(request, "_bv_signed_in", None)
+    if cached is not None:
+        return list(cached)
+    ids = _password_ids(request)
+    ids += [i for i in _unlocked_ids(request) if i not in ids]
     if request.user.pk not in ids:
         ids.append(request.user.pk)
-    return ids
+    request._bv_signed_in = ids
+    return list(ids)
+
+
+def _forget_cache(request) -> None:
+    if hasattr(request, "_bv_signed_in"):
+        del request._bv_signed_in
+
+
+def browser_lists(request) -> tuple[list[int], list[int]]:
+    """(password ids, unlocked ids) as stored for this browser, to carry
+    across login()'s session flush. The unlocked list stays separate so a
+    removed or expired trust still ends it. A session from before groups
+    counts its active account as signed in with its password."""
+    if not request.user.is_authenticated:
+        return [], []
+    password = _password_ids(request)
+    unlocked = [i for i in request.session.get(UNLOCKED_KEY, []) if isinstance(i, int)]
+    if request.user.pk not in password and request.user.pk not in unlocked:
+        password.append(request.user.pk)
+    return password, unlocked
+
+
+def _store(request, password: list[int], unlocked: list[int]) -> None:
+    request.session[SIGNED_IN_KEY] = password
+    request.session[UNLOCKED_KEY] = [i for i in unlocked if i not in password]
+    _forget_cache(request)
 
 
 def accounts_for(request) -> list[dict]:
@@ -156,14 +211,23 @@ def _connected_for_wear(account: BonkUser) -> bool:
 # ── Signing in, switching, signing out ───────────────────────────────
 
 
-def after_login(request, previous: BonkUser | None, previous_ids: list[int], *, add: bool):
-    """Call right after login() put `request.user` in this browser.
+def after_login(
+    request,
+    previous: BonkUser | None,
+    previous_lists: tuple[list[int], list[int]],
+    *,
+    add: bool,
+):
+    """Call right after login() put `request.user` in this browser (signed in
+    with its password).
 
-    `previous` and `previous_ids` are who was signed in before (login() may
-    have flushed the session). With `add` ("Add account"), the new account
-    joins `previous`'s group and the browser keeps every account it had; a
-    plain login keeps them only when the new account is already in the same
-    group, and otherwise starts over with just the new one.
+    `previous` and `previous_lists` (from `browser_lists`, taken before
+    login() may have flushed the session) are who was signed in before. With
+    `add` ("Add account"), the new account joins `previous`'s group and the
+    browser keeps every account it had; a plain login keeps them only when
+    the new account is already in the same group, and otherwise starts over.
+    If the new account is its group's main, this browser becomes trusted and
+    every account in the group is unlocked here.
     """
     user = request.user
     if add and previous is not None and previous.pk != user.pk:
@@ -171,8 +235,13 @@ def after_login(request, previous: BonkUser | None, previous_ids: list[int], *, 
         user.refresh_from_db()
         previous.refresh_from_db()
     keep = previous is not None and same_group(previous, user)
-    ids = [i for i in previous_ids if i != user.pk] if keep else []
-    request.session[SIGNED_IN_KEY] = ids + [user.pk]
+    password, unlocked = previous_lists if keep else ([], [])
+    password = [i for i in password if i != user.pk] + [user.pk]
+    if user.account_group_id is not None and is_main(user):
+        # Only the main unlocks the group, and only on this browser.
+        devices.trust(request, user.account_group)
+        unlocked = member_ids(user)
+    _store(request, password, unlocked)
 
 
 def switch(request, target_id: int) -> BonkUser:
@@ -187,23 +256,29 @@ def switch(request, target_id: int) -> BonkUser:
         raise NotAllowed("That account isn't one of yours.")
     if target.pk == current.pk:
         return current
-    ids = signed_in_ids(request)
-    if target.pk not in ids:
+    if target.pk not in signed_in_ids(request):
         raise NotAllowed(f"Sign in to {target.username} on this browser first.")
-    _become(request, target, ids)
+    _become(request, target, browser_lists(request))
     log_event(target, "account_switched", from_user_id=current.pk)
     return target
 
 
-def sign_out(request, *, everywhere_here: bool) -> BonkUser | None:
+def sign_out(request, *, everywhere_here: bool, forget_device: bool = False) -> BonkUser | None:
     """Sign out of the active account, or of every account on this browser.
 
     Signing out of one account switches to the most recent other account
-    still signed in here. Returns the account now active, or None.
+    still signed in here. `forget_device` (with everywhere_here: "Also forget
+    this device") stops trusting this browser for the group. Returns the
+    account now active, or None.
     """
-    ids = signed_in_ids(request)
     current = request.user
-    remaining = [i for i in ids if i != current.pk]
+    if forget_device and everywhere_here and current.account_group_id is not None:
+        devices.forget_this(request, current.account_group_id)
+    available = signed_in_ids(request)
+    password, unlocked = browser_lists(request)
+    password = [i for i in password if i != current.pk]
+    unlocked = [i for i in unlocked if i != current.pk]
+    remaining = [i for i in available if i != current.pk]
     candidates = []
     if not everywhere_here and remaining and current.account_group_id is not None:
         candidates = list(
@@ -216,15 +291,23 @@ def sign_out(request, *, everywhere_here: bool) -> BonkUser | None:
     # The most recently signed-in of the others still here.
     order = {pk: n for n, pk in enumerate(remaining)}
     target = max(candidates, key=lambda account: order[account.pk])
-    _become(request, target, remaining)
+    _become(request, target, (password, unlocked))
     return target
 
 
-def _become(request, target: BonkUser, ids: list[int]) -> None:
-    """Log the browser in as `target` (already proven: signed in here) and
-    point the bonk.io identity at its most recently used link."""
+def _become(request, target: BonkUser, lists: tuple[list[int], list[int]]) -> None:
+    """Log the browser in as `target` (already proven: signed in here), keep
+    which accounts are signed in here and how, and point the bonk.io
+    identity at its most recently used link."""
     login(request, target)
-    request.session[SIGNED_IN_KEY] = [i for i in ids if i != target.pk] + [target.pk]
+    password, unlocked = lists
+    # Most recently used last, in whichever list it's in: signing out of one
+    # account goes back to the one used before it.
+    if target.pk in password:
+        password = [i for i in password if i != target.pk] + [target.pk]
+    elif target.pk in unlocked:
+        unlocked = [i for i in unlocked if i != target.pk] + [target.pk]
+    _store(request, password, unlocked)
     bonk = bonk_session(request)
     link = (
         BonkAccountLink.objects.select_related("bonk_player")
@@ -237,6 +320,28 @@ def _become(request, target: BonkUser, ids: list[int]) -> None:
     if link is not None:
         bonk.store_identity(link.bonk_player.username, link.bonk_player.bonk_id)
         bonk.store_active_slot(link.active_slot)
+
+
+class UnlockedAccountMiddleware:
+    """If the browser is using an account the main unlocked, and this browser
+    is no longer trusted for the group (removed in Settings, or unused for
+    90 days), sign out of that account here (switching to another still
+    signed in, if any)."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        user = getattr(request, "user", None)
+        if user is not None and user.is_authenticated:
+            password, unlocked = browser_lists(request)
+            unlocked_only = user.pk in unlocked and user.pk not in password
+            if unlocked_only and not (
+                user.account_group_id is not None
+                and devices.is_trusted(request, user.account_group_id)
+            ):
+                sign_out(request, everywhere_here=False)
+        return self.get_response(request)
 
 
 # ── Membership ───────────────────────────────────────────────────────
@@ -307,11 +412,15 @@ def remove(request, account_id: int) -> None:
     log_event(current, "account_group_left", account_id=account.pk, group_id=group.pk)
     if account.pk == current.pk:
         # Leaving the group: this browser stays signed in as it, alone.
-        request.session[SIGNED_IN_KEY] = [current.pk]
-        current.refresh_from_db()
+        _store(request, [current.pk], [])
     else:
-        request.session[SIGNED_IN_KEY] = [i for i in signed_in_ids(request) if i != account.pk]
-        current.refresh_from_db()
+        password, unlocked = browser_lists(request)
+        _store(
+            request,
+            [i for i in password if i != account.pk],
+            [i for i in unlocked if i != account.pk],
+        )
+    current.refresh_from_db()
 
 
 def make_main(request, account_id: int) -> None:
@@ -373,3 +482,27 @@ def shown_alongside(user: BonkUser) -> list[str]:
     if user.account_group_id is None or not user.account_group.show_on_profiles:
         return []
     return [account.username for account in members(user) if account.pk != user.pk]
+
+
+def trusted_browsers(request) -> list[dict]:
+    """Settings: the group's trusted browsers (where its main signed in in
+    the last 90 days), or [] for an account with no group."""
+    if request.user.account_group_id is None:
+        return []
+    return devices.listed(request, request.user.account_group_id)
+
+
+def remove_browser(request, device_id: int) -> None:
+    """Settings: stop trusting one of the group's browsers. The accounts the
+    main unlocked there are signed out there on its next visit. Needs the
+    main signed in on this browser.
+
+    Raises:
+        NotAllowed
+    """
+    if request.user.account_group_id is None or not main_signed_in_here(request):
+        raise NotAllowed("Sign in to your main account on this browser first.")
+    if not devices.remove(request.user.account_group_id, device_id):
+        raise NotAllowed("That browser isn't on the list.")
+    _forget_cache(request)
+    log_event(request.user, "trusted_device_removed", group_id=request.user.account_group_id)

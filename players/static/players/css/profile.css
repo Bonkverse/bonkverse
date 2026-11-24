@@ -668,3 +668,9 @@ a.pv-friend:hover { background: var(--bv-hover); color: var(--bv-text); text-dec
 .pv-also-setting {
   margin-top: var(--bv-space-3);
 }
+
+/* Settings: "Trusted browsers" under the accounts list. */
+.pv-subtitle {
+  margin: var(--bv-space-4) 0 var(--bv-space-1);
+  font-size: var(--bv-text-sm);
+}

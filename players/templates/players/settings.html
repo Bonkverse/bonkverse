@@ -52,7 +52,7 @@ Save button is only for browsers without scripts.
   <section class="bv-card pv-settings" id="accounts" aria-labelledby="accounts-title">
     <h2 class="pv-card__title" id="accounts-title">Your bonk.io accounts</h2>
     {% if group_accounts|length > 1 %}
-      <p class="pv-fine">Switch between these from the account menu without a password once each is signed in on this browser. Each keeps its own profile, favorites and uploads. They share one vote per skin, your appearance and your API keys.</p>
+      <p class="pv-fine">Switch between these from the account menu without a password once each is signed in on this browser; signing in to your main account signs in all of them. Each keeps its own profile, favorites and uploads. They share one vote per skin, your appearance and your API keys.</p>
     {% else %}
       <p class="pv-fine">Play as more than one bonk.io account? Add the others to switch between them from the account menu without a password. Each keeps its own profile, favorites, votes and uploads.</p>
     {% endif %}
@@ -106,6 +106,29 @@ Save button is only for browsers without scripts.
           <button type="submit" class="bv-btn">Show on my profiles</button>
         {% endif %}
       </form>
+    {% endif %}
+    {% if group_accounts|length > 1 %}
+      {# Where the main signed in: those browsers can switch to every account without a password (accounts/devices.py). #}
+      <h3 class="pv-subtitle">Trusted browsers</h3>
+      {% if trusted_browsers %}
+        <p class="pv-fine">Signing in to your main account on a browser lets it switch to all your accounts. Remove one you don't use any more; it forgets itself after 90 days unused.</p>
+        <ul class="pv-account-list">
+          {% for browser in trusted_browsers %}
+            <li class="pv-account-row">
+              <span class="pv-account-row__name">
+                <strong>{{ browser.label }}</strong>{% if browser.this_browser %} <span class="bv-hint">· this browser</span>{% endif %}
+                <span class="bv-hint">· trusted {{ browser.since|date:"M j, Y" }} · last used {% with ago=browser.last_used|timesince %}{% if ago == "0 minutes" %}just now{% else %}{{ ago }} ago{% endif %}{% endwith %}</span>
+              </span>
+              <form method="post" action="{% url 'accounts:remove_trusted_browser' %}">
+                {% csrf_token %}<input type="hidden" name="device" value="{{ browser.id }}">
+                <button type="submit" class="bv-btn">Remove</button>
+              </form>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="pv-fine">None yet. Sign in to your main account on a browser to switch to all your accounts there without their passwords.</p>
+      {% endif %}
     {% endif %}
     <div class="pv-actions">
       <a class="bv-btn bv-btn--primary" href="{% url 'accounts:login' %}?add=1&amp;next={{ request.path|urlencode }}">Add bonk.io account</a>

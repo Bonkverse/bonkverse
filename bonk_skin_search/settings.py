@@ -341,6 +341,11 @@ MIDDLEWARE = [
     "accounts.appearance.AppearanceMiddleware",
     # Signing in lasts 90 days from the last visit (accounts/sessions.py).
     "accounts.sessions.SessionRenewalMiddleware",
+    # Tells browsers apart for trusted devices (accounts/devices.py), and
+    # signs out of an account the main unlocked once the browser isn't
+    # trusted any more (accounts/groups.py).
+    "accounts.devices.DeviceCookieMiddleware",
+    "accounts.groups.UnlockedAccountMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # Turns Ratelimited from views still on the old @ratelimit decorator into

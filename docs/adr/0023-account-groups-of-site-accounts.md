@@ -31,10 +31,21 @@ were possible:
   the other sites) follows with no change. The session's bonk.io identity is
   reset to the new account's latest link.
 - **Switching only between accounts signed in on this browser.** The session
-  keeps their ids (`groups.SIGNED_IN_KEY`) across Django's session flush. The
-  group's other accounts show "Sign in" (a password login). This is the
-  new-device guard in its strictest form until trusted devices (phase 5,
-  PR 3) relax it.
+  keeps their ids across Django's session flush, in two lists: accounts
+  signed in with their own password (`groups.SIGNED_IN_KEY`), and accounts
+  the main unlocked (`groups.UNLOCKED_KEY`). The group's other accounts show
+  "Sign in" (a password login).
+- **Only the main unlocks (PR 3, 2026-11-24).** A password sign-in to the
+  group's main unlocks every account in the group on that browser and trusts
+  the browser (`accounts/devices.py`: `TrustedDevice`, a signed random
+  `bv_device` cookie, only its SHA-256 stored). A sign-in to any other
+  account opens only that account, on every browser, every time (the
+  owner's choice over "any account unlocks on a trusted device"). Unlocked
+  accounts are usable while the browser stays trusted: 90 days from last
+  use, removable in Settings ("Trusted browsers", main signed in here), and
+  forgotten on "Sign out of all accounts" with "Also forget this device".
+  When trust ends, `UnlockedAccountMiddleware` signs the browser out of an
+  unlocked account it's using.
 - **Only "Add account" groups.** That's `/login/?add=1`, or a Wear popup login
   with a different account. A plain login while signed in replaces the
   session as before, so logging in to a friend's account on your browser
@@ -60,10 +71,9 @@ were possible:
   per-account table, its backfill, and the move of every username rule would
   touch most of the site. Removing an account would mean splitting rows out.
   With shape 2 removal changes one field.
-- *Switching to any account in the group without signing in here*: what
-  trusted devices will allow on a device the group used before. Without them,
-  anyone who learns one account's password (shared, sold) could open all of
-  the group's accounts on a new browser.
+- *Any account unlocks the group on a trusted device* (the rev. 2 plan):
+  someone who learns one alt's password (shared, sold) could open all of the
+  group's accounts on a browser the owner used. Only the main unlocks.
 - *Grouping on any login while signed in* (as some sites do): one login to a
   friend's account would join it to your group.
 
