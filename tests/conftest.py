@@ -6,6 +6,7 @@ Does not own: model factories (see tests/factories.py) or recorded bonk.io
 payloads (see tests/fixtures/bonk/).
 """
 
+import base64
 import json
 import time
 from pathlib import Path
@@ -140,6 +141,21 @@ def logged_in_client(client, user):
 def staff_client(client, staff_user):
     client.force_login(staff_user)
     return client
+
+
+def make_bonk_token(*, exp: float, **fields) -> str:
+    """A made-up bonk.io session token (a JWT) with the given `exp`.
+
+    The signature is junk: Bonkverse only reads the payload, and bonk.io is
+    mocked in tests.
+    """
+
+    def part(data: dict) -> str:
+        raw = json.dumps(data, separators=(",", ":")).encode()
+        return base64.urlsafe_b64encode(raw).rstrip(b"=").decode()
+
+    payload = {"uid": 1, "un": "TestPlayer", "g": "b", **fields, "exp": int(exp)}
+    return f"{part({'alg': 'HS256', 'typ': 'JWT'})}.{part(payload)}.not-a-real-signature"
 
 
 @pytest.fixture
