@@ -5,3 +5,6 @@
 # Bonkverse/ui copies (scripts/sync_ui.py) are stored as plain files: tests
 # check their hashes, and the deploy needs no LFS fetch.
 static/ui/**/*.png -filter -diff -merge binary
+
+# Small site icons are plain files too: the deploy needs no LFS fetch for them.
+static/images/apple-touch-icon.png -filter -diff -merge binary
