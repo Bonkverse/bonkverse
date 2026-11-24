@@ -216,6 +216,19 @@ def one_click_ids(request, user_ids) -> set[int]:
     )
 
 
+def proven_here_ids(request) -> list[int]:
+    """Accounts that proved themselves on this browser within the one-click
+    window, most recent proof first."""
+    device_hash = _device_hash(request, create=False)
+    if device_hash is None:
+        return []
+    return list(
+        RememberedSignIn.objects.filter(device_hash=device_hash, proven_at__gte=_one_click_cutoff())
+        .order_by("-proven_at")
+        .values_list("user_id", flat=True)
+    )
+
+
 def forget_sign_ins_here(request, user_id: int | None = None) -> None:
     """End one-click sign-in on this browser: for one account, or (None)
     for every account."""

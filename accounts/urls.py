@@ -27,6 +27,7 @@ urlpatterns = [
     path("accounts/main/", views.make_main_account, name="make_main_account"),
     path("accounts/show-on-profiles/", views.show_on_profiles_view, name="show_on_profiles"),
     path("accounts/browsers/remove/", views.remove_trusted_browser, name="remove_trusted_browser"),
+    path("accounts/add-used-here/", views.add_used_here, name="add_used_here"),
     path(
         "accounts/one-click/remove/",
         views.remove_one_click_browser,

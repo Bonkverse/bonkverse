@@ -388,6 +388,7 @@ TEMPLATES = [
                 "core.context_processors.site_nav",
                 "players.context_processors.viewer_avatar",
                 "accounts.context_processors.viewer_accounts",
+                "accounts.context_processors.used_here_offer",
                 "players.context_processors.friend_sync",
                 "skins.context_processors.moderation",
             ],

@@ -130,6 +130,9 @@ Save button is only for browsers without scripts.
         <p class="pv-fine">None yet. Sign in to your main account on a browser to switch to all your accounts there without their passwords.</p>
       {% endif %}
     {% endif %}
+    {% if used_here %}
+      {% with back=request.path|add:"#accounts" %}{% include "accounts/_used_here.html" %}{% endwith %}
+    {% endif %}
     {# Where this account signs back in with one click from "Choose an account" (accounts/devices.py, ADR 0025). #}
     <h3 class="pv-subtitle">One-click sign-in</h3>
     {% if one_click_browsers %}

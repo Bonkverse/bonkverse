@@ -261,6 +261,17 @@ def after_login(
     _store(request, password, unlocked)
 
 
+def add_signed_in_here(request, account_ids: list[int]) -> None:
+    """Count `account_ids` (just proven or added from this browser) as signed
+    in here, behind the account in use."""
+    password, unlocked = browser_lists(request)
+    current = request.user.pk
+    added = [pk for pk in account_ids if pk not in password and pk != current]
+    password = [pk for pk in password if pk != current] + added + [current]
+    _store(request, password, unlocked)
+    _forget_cache(request)
+
+
 def switch(request, target_id: int) -> BonkUser:
     """Make another account signed in on this browser the active one.
 

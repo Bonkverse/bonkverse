@@ -12,6 +12,10 @@
     "name": null
   },
   {
+    "route": "accounts/add-used-here/",
+    "name": "accounts:add_used_here"
+  },
+  {
     "route": "accounts/browsers/remove/",
     "name": "accounts:remove_trusted_browser"
   },
