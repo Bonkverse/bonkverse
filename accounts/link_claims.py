@@ -29,6 +29,7 @@ are both refused when the request arrives: there's no telling whose it was.
 from __future__ import annotations
 
 import logging
+import math
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from datetime import timezone as dt_timezone
@@ -37,7 +38,7 @@ from zoneinfo import ZoneInfo
 from django.db import transaction
 from django.utils import timezone
 
-from integrations.bonk_api import BonkError, get_client
+from integrations.bonk_api import FRIENDS_SCRIPT, BonkError, get_client, rate_limit_cooldowns
 
 from . import bot_account
 from .events import log_event
@@ -48,6 +49,10 @@ logger = logging.getLogger(__name__)
 
 CLAIM_MINUTES = 10
 CLOCK_SLACK = timedelta(seconds=60)
+# While bonk.io pauses Bonkverse's calls, nothing can read the bot's
+# requests, so pending claims are kept until this long after the pause ends
+# (a claim never runs out while it couldn't be checked).
+PAUSE_GRACE = timedelta(minutes=5)
 NAME_MAX_LENGTH = 64
 # Claims for one name per hour, so nobody can keep a name busy.
 CLAIMS_PER_NAME_PER_HOUR = 4
@@ -86,6 +91,26 @@ def name_problem(name: str) -> str | None:
 # ── Starting and finishing (in the browser) ──────────────────────────
 
 
+def checks_paused_for() -> int:
+    """Seconds until the bot's requests can be read again: bonk.io is
+    pausing Bonkverse's calls (a login pause stops every script,
+    integrations/bonk_api.py). 0 when they can be read now."""
+    return math.ceil(rate_limit_cooldowns.remaining(FRIENDS_SCRIPT))
+
+
+def _hold_through_pause(now: datetime, paused: int) -> None:
+    """Keep every pending claim until PAUSE_GRACE after the pause ends."""
+    until = now + timedelta(seconds=paused) + PAUSE_GRACE
+    LinkClaim.objects.filter(status=LinkClaim.PENDING, expires_at__lt=until).update(
+        expires_at=until
+    )
+
+
+def _wait_text(seconds: int) -> str:
+    minutes = max(1, math.ceil(seconds / 60))
+    return f"about {minutes} minute{'s' if minutes != 1 else ''}"
+
+
 def start(request, name: str, *, add: bool) -> LinkClaim:
     """Start a claim for `name` from this browser. With `add`, the account
     joins the signed-in person's accounts when proven; otherwise the browser
@@ -106,6 +131,14 @@ def start(request, name: str, *, add: bool) -> LinkClaim:
     ).count()
     if recent >= CLAIMS_PER_NAME_PER_HOUR:
         raise ClaimProblem("Too many tries for that name. Wait a while and try again.")
+    paused = checks_paused_for()
+    if paused:
+        # A request sent now couldn't be read until the pause ends, and
+        # BonxBot (same bot account) deletes requests older than 11 minutes.
+        raise ClaimProblem(
+            "bonk.io is pausing Bonkverse's requests for "
+            f"{_wait_text(paused)}. Try again then. It isn't anything you did."
+        )
     adding = add and request.user.is_authenticated
     claim = LinkClaim.objects.create(
         name=name,
@@ -134,13 +167,21 @@ def status(request, claim_id: int) -> dict:
     if claim is None:
         raise ClaimProblem("That link request isn't from this browser.")
     now = timezone.now()
+    paused = checks_paused_for() if claim.status == LinkClaim.PENDING else 0
+    if paused:
+        _hold_through_pause(now, paused)
+        claim.refresh_from_db(fields=["expires_at", "status"])
     if claim.status == LinkClaim.PENDING and claim.expires_at <= now:
         LinkClaim.objects.filter(pk=claim.pk, status=LinkClaim.PENDING).update(
             status=LinkClaim.EXPIRED
         )
         claim.status = LinkClaim.EXPIRED
     if claim.status == LinkClaim.PENDING:
-        return {"status": "pending", "seconds_left": int((claim.expires_at - now).total_seconds())}
+        state = {"status": "pending", "seconds_left": int((claim.expires_at - now).total_seconds())}
+        if paused:
+            # The waiting page says checks resume in `paused` seconds.
+            state["paused"] = paused
+        return state
     if claim.status == LinkClaim.EXPIRED:
         return {
             "status": "expired",
@@ -240,6 +281,12 @@ def match(claims: list[LinkClaim], requests: list[Request], now: datetime):
 def check_pending() -> dict:
     """One pass of the worker's check. Returns counts for the log."""
     now = timezone.now()
+    paused = checks_paused_for()
+    if paused:
+        # Nothing can be read: hold the claims instead of letting them run out.
+        _hold_through_pause(now, paused)
+        pending = LinkClaim.objects.filter(status=LinkClaim.PENDING).count()
+        return {"pending": pending, "expired": 0, "skipped": "paused"}
     expired = LinkClaim.objects.filter(status=LinkClaim.PENDING, expires_at__lte=now).update(
         status=LinkClaim.EXPIRED
     )
@@ -257,7 +304,9 @@ def check_pending() -> dict:
         token = bot_account.token()
         friends = client.get_friends(token) if token else friends
     if not friends.ok:
-        # RATE_LIMITED includes the login pause (nothing was sent).
+        if friends.error == BonkError.RATE_LIMITED:
+            # bonk.io just started a pause: hold the claims through it.
+            _hold_through_pause(timezone.now(), checks_paused_for())
         return {"pending": len(claims), "expired": expired, "skipped": friends.error}
 
     requests = [
