@@ -54,6 +54,14 @@ def from_cookies(request, user) -> bool:
         user.seasonal = season == "on"
     user.appearance_at = at
     user.save(update_fields=["theme", "seasonal", "appearance_at"])
+    if user.account_group_id is not None:
+        # Appearance is shared across a person's bonk.io accounts (RFC-0003
+        # phase 5), so switching never changes the theme.
+        from .models import BonkUser
+
+        BonkUser.objects.filter(account_group_id=user.account_group_id).exclude(pk=user.pk).update(
+            theme=user.theme, seasonal=user.seasonal, appearance_at=at
+        )
     return True
 
 

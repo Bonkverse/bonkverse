@@ -19,7 +19,7 @@ import requests
 
 from accounts.models import BonkAccountLink, UserEvent
 from tests.conftest import connect_bonk, load_bonk_fixture, make_bonk_token
-from tests.factories import SkinFactory
+from tests.factories import UserFactory, SkinFactory
 
 BONK_LOGIN_URL = "https://bonk2.io/scripts/login_legacy.php"
 BONK_AVATAR_UPDATE_URL = "https://bonk2.io/scripts/avatar_update.php"
@@ -299,7 +299,9 @@ class TestBonkLoginForWear:
 
         assert response.json()["error"] == "network_error"
 
-    def test_success_saves_token_and_active_slot(self, logged_in_client, mocked_http):
+    def test_success_saves_token_and_active_slot(self, client, mocked_http):
+        logged_in_client = client
+        logged_in_client.force_login(UserFactory(username="TestPlayer"))
         call = mocked_http.post(BONK_LOGIN_URL, json=load_bonk_fixture("login_success"))
 
         response = logged_in_client.post(

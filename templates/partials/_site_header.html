@@ -76,16 +76,57 @@ menus open with static/ui/ui.js.
               <i data-lucide="chevron-down" aria-hidden="true"></i>
             </button>
             <div class="bv-menu bv-menu--end" id="bv-account" hidden>
+              {% comment %}The person's other bonk.io accounts (RFC-0003 phase 5, accounts/groups.py):
+                 one click to switch to those signed in on this browser, "Sign in" for the rest.{% endcomment %}
+              {% if viewer_accounts %}
+                <div class="bv-hint bv-account-menu__label">Switch account</div>
+                {% for account in viewer_accounts %}
+                  {% if account.signed_in %}
+                    <form method="post" action="{% url 'accounts:switch_account' %}">
+                      {% csrf_token %}
+                      <input type="hidden" name="account" value="{{ account.id }}">
+                      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                      <button class="bv-menu__item bv-account-row" type="submit">
+                        {% include "partials/_account_avatar.html" %}
+                        <span class="bv-account-row__name">{{ account.username }}</span>
+                        {% if not account.connected %}<span class="bv-hint bv-account-row__badge" title="Wear will ask for this account's bonk.io password">Not connected</span>{% endif %}
+                      </button>
+                    </form>
+                  {% else %}
+                    <a class="bv-menu__item bv-account-row" href="{% url 'accounts:login' %}?add=1&amp;username={{ account.username|urlencode }}&amp;next={{ request.path|urlencode }}">
+                      {% include "partials/_account_avatar.html" %}
+                      <span class="bv-account-row__name">{{ account.username }}</span>
+                      <span class="bv-hint bv-account-row__badge">Sign in</span>
+                    </a>
+                  {% endif %}
+                {% endfor %}
+                <div class="bv-menu__divider"></div>
+              {% endif %}
+              <a class="bv-menu__item" href="{% url 'accounts:login' %}?add=1&amp;next={{ request.path|urlencode }}"><i data-lucide="user-plus" aria-hidden="true"></i> Add bonk.io account</a>
+              <div class="bv-menu__divider"></div>
               {% if can_moderate %}
                 <a class="bv-menu__item" href="{% url 'skins:moderation' %}">Skin reports</a>
               {% endif %}
               {% for item in site_nav.account %}
                 {% if item.method == "post" %}
                   <div class="bv-menu__divider"></div>
-                  <form method="post" action="{{ item.href }}">
-                    {% csrf_token %}
-                    <button class="bv-menu__item" type="submit">{{ item.label }}</button>
-                  </form>
+                  {% if viewer_accounts %}
+                    {# Several accounts on this browser: sign out of the one in use, or of all. #}
+                    <form method="post" action="{{ item.href }}">
+                      {% csrf_token %}
+                      <input type="hidden" name="scope" value="this">
+                      <button class="bv-menu__item" type="submit">Sign out of {{ user.username }}</button>
+                    </form>
+                    <form method="post" action="{{ item.href }}">
+                      {% csrf_token %}
+                      <button class="bv-menu__item" type="submit">Sign out of all accounts</button>
+                    </form>
+                  {% else %}
+                    <form method="post" action="{{ item.href }}">
+                      {% csrf_token %}
+                      <button class="bv-menu__item" type="submit">{{ item.label }}</button>
+                    </form>
+                  {% endif %}
                 {% else %}
                   <a class="bv-menu__item" href="{{ item.href }}">{{ item.label }}</a>
                 {% endif %}

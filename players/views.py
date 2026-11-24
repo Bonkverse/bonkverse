@@ -10,7 +10,7 @@ from django.urls import reverse
 
 from core.bonk import dbid, levels
 from core.ratelimits import limit
-from accounts.services import active_link, bonk_connection, disconnect_bonk
+from accounts.services import account_rows, active_link, bonk_connection, disconnect_bonk
 from skins.services import code_image
 
 from . import selectors, services
@@ -219,7 +219,11 @@ def profile_settings(request):
     return render(
         request,
         "players/settings.html",
-        {"sections": sections, "bonk_connection": _bonk_connection(request)},
+        {
+            "sections": sections,
+            "bonk_connection": _bonk_connection(request),
+            "group_accounts": account_rows(request),
+        },
     )
 
 

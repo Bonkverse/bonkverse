@@ -46,16 +46,57 @@ class BonkUserManager(BaseUserManager):
         return self.create_user(username, **extra_fields)
 
 
+class AccountGroup(models.Model):
+    """The bonk.io accounts one person plays as (RFC-0003 phase 5, ADR 0023).
+
+    Each bonk.io account keeps its own site account (BonkUser) with its own
+    profile, favorites, votes and uploads; the group only ties them together
+    so the person can switch between them without a password and share one
+    appearance. A site account belongs to at most one group. Groups are made
+    by "Add account" (accounts/groups.py) and never hold a single member: the
+    last two splitting up deletes the group.
+    """
+
+    # The account the group started from, or the one its owner picked.
+    # Never null while the group has members (groups.py keeps it set).
+    main = models.ForeignKey(
+        "accounts.BonkUser",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"group {self.pk} (main: {self.main_id})"
+
+
 class BonkUser(AbstractBaseUser, PermissionsMixin):
     """A Bonkverse site account, identified by its bonk.io username.
 
+    One per bonk.io account. A person with several bonk.io accounts has
+    several site accounts in one AccountGroup.
+
     PermissionsMixin adds is_superuser, groups and user_permissions, which the
-    Django admin needs (has_perm / has_module_perms).
+    Django admin needs (has_perm / has_module_perms). Those "groups" are
+    Django's permission groups, unrelated to `account_group`.
     """
 
     username = models.CharField(max_length=100, unique=True)
     date_joined = models.DateTimeField(auto_now_add=True)
     is_staff = models.BooleanField(default=False)
+
+    # The person's other bonk.io accounts (accounts/groups.py). Null for most
+    # players: one account, no group.
+    account_group = models.ForeignKey(
+        AccountGroup,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="members",
+    )
+    joined_group_at = models.DateTimeField(null=True, blank=True)
 
     # Appearance, saved to the account so it follows them to other devices
     # (accounts/appearance.py). Blank until they first pick something.

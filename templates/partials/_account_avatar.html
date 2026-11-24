@@ -1,0 +1,6 @@
+{# One account's avatar in the account switcher: its worn skin, else the generic icon. Expects `account` with an optional `thumbnail`. #}
+{% if account.thumbnail %}
+  <span class="bv-nav-avatar bv-skin-avatar" style="--skin: url('{{ account.thumbnail }}')" aria-hidden="true"><i data-lucide="circle-user"></i></span>
+{% else %}
+  <i data-lucide="circle-user" aria-hidden="true"></i>
+{% endif %}

@@ -10,9 +10,24 @@ Names are in the `accounts` namespace (`app_name` in `accounts/urls.py`): `{% ur
 
 | Path | Name | What |
 |---|---|---|
-| `/login/` | `login` | Login page (GET) and bonk.io login (POST, `login` rate tier) |
-| `/logout/` | `logout` | POST only, so another site can't sign people out with a link |
-| `/api/me/` | `api_me` | Who is signed in (the skin editor uses it); 401 when nobody is |
+| `/login/` | `login` | Login page (GET) and bonk.io login (POST, `login` rate tier). `?add=1` while signed in: "Add account" (`?username=` fills the name) |
+| `/logout/` | `logout` | POST only, so another site can't sign people out with a link. `scope=this`: only the account in use, switching to another signed in here |
+| `/api/me/` | `api_me` | Who is signed in (the skin editor and the other sites' headers use it), with `accounts`: the person's bonk.io accounts for the switcher; 401 when nobody is |
+| `/api/me/switch/` | `api_switch_account` | The other sites' switcher: POST JSON `{"account": id}` with the `X-Bonkverse-Switch` header, from an origin in `CORS_ALLOWED_ORIGINS`. Answers like `/api/me/` |
+| `/accounts/switch/` | `switch_account` | POST `account`: use another account signed in on this browser |
+| `/accounts/remove/` | `remove_account` | POST `account`: take it out of the group (it keeps its own history) |
+| `/accounts/main/` | `make_main_account` | POST `account`: make it the group's main |
+
+## A person's bonk.io accounts (groups)
+
+RFC-0003 phase 5, [ADR 0023](../adr/0023-account-groups-of-site-accounts.md), `accounts/groups.py`. Each bonk.io account is its own site account (`BonkUser`), with its own profile, favorites, votes, uploads and privacy. An `AccountGroup` ties a person's accounts together:
+
+- **The account in use** is `request.user`. It decides Wear (its link's tokens), upload credit, votes, favorites, and the header on every Bonkverse site (they share the session cookie).
+- **Switching** needs no password, but only between accounts signed in on this browser (`groups.SIGNED_IN_KEY` in the session). The group's other accounts show "Sign in". Trusted devices (a later PR) will let any account unlock the group on a device the group used before.
+- **Adding:** "Add account" (`/login/?add=1`) or a Wear popup login with another account joins the group and keeps both signed in. A plain login while signed in replaces the session, so logging in to a friend's account never groups it. An account in another group moves (the password proves who controls it now).
+- **Removing:** the account itself, or the main when it's signed in here. Its history goes with it. Two becoming one deletes the group; the main leaving hands main to the next account.
+- **Shared:** appearance (`appearance.from_cookies` writes it to every account in the group; a new account takes the group's).
+- `manage.py group_linked_accounts` (dry run; `--run`) converts site accounts that hold links to several bonk.io accounts, from before groups: each link moves to its own account's site account, all in one group, main = the most recently connected.
 
 ## Public entry points for other apps
 
@@ -64,6 +79,8 @@ accounts/
   bot_check.py          # when a login needs the Turnstile "not a bot" check, and checking it
   sign_in.py            # what a successful login does; connect_from_wear for the wear popup
   bonk_tokens.py        # the token broker: stored bonk.io tokens, refreshed with remember-me
+  groups.py             # a person's bonk.io accounts: add, switch, sign out, remove, main
+  context_processors.py # viewer_accounts: the header's account switcher
   sessions.py           # 90-day sign-ins, renewed at most once a day
   forms.py              # LoginForm (username and password never stripped)
   models.py             # BonkUser (AUTH_USER_MODEL), BonkAccountLink, UserEvent
@@ -72,7 +89,8 @@ accounts/
   static/accounts/js/login.js   # keeps Login off until a wait ends; one submit per click
   events.py             # log_event: the event log (UserEvent)
   management/commands/grant_admin.py, reencrypt_bonk_tokens.py,
-                        # revoke_bonk_remember_tokens.py, analyze_events.py
+                        # revoke_bonk_remember_tokens.py, group_linked_accounts.py,
+                        # analyze_events.py
 ```
 
 ## Models
@@ -80,6 +98,7 @@ accounts/
 | Model | Table | What |
 |---|---|---|
 | `BonkUser` | `skins_bonkuser` (+ `skins_bonkuser_groups`, `skins_bonkuser_user_permissions`) | The site account: `AUTH_USER_MODEL`, a bonk.io username, no usable password (sign-in is through bonk.io). Admin: `/admin/accounts/bonkuser/` |
+| `AccountGroup` | `accounts_accountgroup` | A person's bonk.io accounts: `main`, and `BonkUser.account_group` / `joined_group_at` on each member. Never one member (groups.py deletes it) |
 | `UserEvent` | `skins_userevent` | The event log: one row per thing a person (or the site for them) did. Written only by `log_event`. Moved from `skins` in 5.6c, no data moved (`accounts.0003`, `skins.0035`) |
 | `BonkAccountLink` | `skins_bonkaccountlink` | A site account ↔ a `players.BonkPlayer`, with the bonk.io session token from the latest login, encrypted (`encrypt_token()` / `bonk_token()`, [ADR 0016](../adr/0016-bonk-tokens-encrypted-at-rest.md)), when it stops being usable (`token_expires_at`, from the token's `exp`; `bonk_token()` returns None after it) the account's active slot (`active_slot`), and with "Keep me connected" bonk.io's remember-me token, encrypted the same way (`remember_token_encrypted`, `remember_token()`; `remember_status`: none, active or revoked; `last_refreshed_at`) |
 

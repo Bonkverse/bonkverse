@@ -74,6 +74,7 @@ from accounts.services import (
     bot_check_site_key,
     connect_from_wear,
     login_failure_message,
+    sign_in,
     usable_bonk_token,
 )
 from core.auth_guards import api_login_required
@@ -264,6 +265,10 @@ def _wear(request, skin_code: str) -> tuple[AvatarSlot | None, JsonResponse | No
 def bonk_login_for_wear(request):
     """The Wear popup's bonk.io login: connect (or reconnect) an account.
 
+    Logging in to a different bonk.io account than the one in use adds it to
+    the player's accounts and switches to it (`switched_to` in the reply), so
+    the Wear goes to the account they just typed the password for.
+
     With "Keep me connected for Wear" ticked (`bonk_remember`), the link keeps
     a remember-me token and the popup shouldn't be needed again on this
     account until bonk.io revokes it.
@@ -295,6 +300,17 @@ def bonk_login_for_wear(request):
         return JsonResponse(body, status=401)
 
     result = attempt.result
+    active_slot = result.active_slot.number if result.active_slot else None
+
+    if result.username.value.casefold() != request.user.username.casefold():
+        # Another of the player's bonk.io accounts: the password proves it's
+        # theirs, so it joins their group and becomes the account in use, as
+        # "Add account" does (RFC-0003 phase 5). Never linked to this site
+        # account: each bonk.io account is its own site account.
+        sign_in(request, result, remember=remember, add=True)
+        return JsonResponse(
+            {"ok": True, "active_slot": active_slot, "switched_to": request.user.username}
+        )
 
     bonk = bonk_session(request)
     # The account this browser now acts as; its tokens live on the link.
@@ -309,7 +325,6 @@ def bonk_login_for_wear(request):
             forget_user_skin(request.user)
     except Exception:
         logger.exception("could not record the worn skin after a wear login")
-    active_slot = result.active_slot.number if result.active_slot else None
     return JsonResponse({"ok": True, "active_slot": active_slot})
 
 

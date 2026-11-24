@@ -150,7 +150,15 @@
       if (res.json.bot_check) showBotCheck(res.json.bot_check);
       return;
     }
-    setMsg("✅ Logged in!", "success");
+    if (res.json.switched_to) {
+      // Another of their bonk.io accounts: it's now the one in use.
+      setMsg("✅ Logged in. Now using " + res.json.switched_to + ".", "success");
+      document.querySelectorAll(".bv-header__account-name").forEach(function (name) {
+        name.textContent = res.json.switched_to;
+      });
+    } else {
+      setMsg("✅ Logged in!", "success");
+    }
     var done = pendingSuccess;
     setTimeout(function () {
       closeLogin();

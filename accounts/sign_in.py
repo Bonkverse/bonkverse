@@ -35,7 +35,7 @@ from players.services import (
 )
 
 from players.models import BonkPlayer
-from . import bonk_tokens
+from . import bonk_tokens, groups
 from .events import log_event
 from .models import BonkUser
 from .models import BonkAccountLink
@@ -43,8 +43,15 @@ from .models import BonkAccountLink
 logger = logging.getLogger(__name__)
 
 
-def sign_in(request, result: BonkLoginResult, *, remember: bool = False) -> BonkUser:
+def sign_in(
+    request, result: BonkLoginResult, *, remember: bool = False, add: bool = False
+) -> BonkUser:
     """Sign the visitor in after bonk.io accepted their login.
+
+    With `add` ("Add account", RFC-0003 phase 5), the account joins the group
+    of the account signed in before and both stay signed in on this browser
+    (groups.after_login); without it, a login while signed in replaces the
+    session unless the two are already in one group.
 
     Steps, in order: note which bonk.io account this browser acts as (name,
     id, active slot), log in the site account (created on first login), link
@@ -60,14 +67,22 @@ def sign_in(request, result: BonkLoginResult, *, remember: bool = False) -> Bonk
     Returns:
         The site account now logged in.
     """
+    previous = request.user if request.user.is_authenticated else None
+    previous_ids = groups.signed_in_ids(request)
+
+    user = site_account_for(result.username)
+    login(request, user)
+    groups.after_login(request, previous, previous_ids, add=add)
+    if add:
+        log_event(user, "user_logged_in", added=True)
+    else:
+        log_event(user, "user_logged_in")
+
+    # After login(): changing the user flushes the session.
     bonk = bonk_session(request)
     bonk.store_identity(result.username.value, result.bonk_id)
     # Remember the active slot so wear works immediately without the modal.
     bonk.store_active_slot(result.active_slot)
-
-    user = site_account_for(result.username)
-    login(request, user)
-    log_event(user, "user_logged_in")
 
     link = None
     if result.bonk_id is not None:

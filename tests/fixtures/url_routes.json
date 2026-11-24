@@ -12,6 +12,18 @@
     "name": null
   },
   {
+    "route": "accounts/main/",
+    "name": "accounts:make_main_account"
+  },
+  {
+    "route": "accounts/remove/",
+    "name": "accounts:remove_account"
+  },
+  {
+    "route": "accounts/switch/",
+    "name": "accounts:switch_account"
+  },
+  {
     "route": "api/",
     "name": "skins:api_index"
   },
@@ -70,6 +82,10 @@
   {
     "route": "api/me/",
     "name": "accounts:api_me"
+  },
+  {
+    "route": "api/me/switch/",
+    "name": "accounts:api_switch_account"
   },
   {
     "route": "api/players/search/",
