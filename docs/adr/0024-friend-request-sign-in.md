@@ -42,6 +42,13 @@ the account to a bot bonk.io account, which only its owner can do.
 - *Friend request only for adding accounts*: keeps passwords as the only
   sign-in, but the main reason to offer it is players who won't type one.
 
+- **A bonk.io pause holds claims instead of expiring them** (added
+  2026-11-24). A login pause stops every bonk.io call, the bot's request
+  check included, so a claim could run out unchecked. Pending claims are
+  kept until 5 minutes after the pause ends, the waiting page says when
+  checking resumes (and to resend the request if it's gone: BonxBot deletes
+  requests older than 11 minutes), and no new claim starts during a pause.
+
 **Consequences.**
 - Anyone who can send a friend request from an account can sign in as it,
   the same trust bonk.io itself gives that session. Someone signed in to a

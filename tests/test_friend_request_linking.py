@@ -17,6 +17,7 @@ from django.utils import timezone
 
 from accounts import bot_account, groups, link_claims
 from accounts.models import BonkAccountLink, BonkUser, LinkClaim, TrustedDevice
+from integrations.bonk_api import LOGIN_SCRIPT, rate_limit_cooldowns
 from skins.votes import why_cant_vote
 from tests.conftest import load_bonk_fixture, make_bonk_token
 from tests.factories import UserFactory
@@ -358,3 +359,75 @@ class TestBotSession:
 
         assert cache.get("bonk_bot:remember") != "r" * 77
         assert cache.get("bonk_bot:token") != answer["token"]
+
+
+class TestDuringABonkPause:
+    """bonk.io pausing Bonkverse's calls (integrations/bonk_api.py) stops the
+    worker reading the bot's requests. Claims wait it out instead of running
+    out, and the waiting page says why (2026-11-24: a claim expired while a
+    login pause blocked every check)."""
+
+    @pytest.fixture
+    def paused(self):
+        rate_limit_cooldowns.for_script(LOGIN_SCRIPT).start(600)
+        return 600
+
+    def test_cannot_start_a_claim_during_a_pause(self, client, paused):
+        response = client.post("/login/friend/", {"username": "AltOne"}, follow=True)
+
+        assert not LinkClaim.objects.exists()
+        assert "pausing" in response.content.decode()
+
+    def test_the_worker_holds_claims_through_a_pause(self, client, mocked_http, bot_signed_in):
+        claim = _start(client)
+        rate_limit_cooldowns.for_script(LOGIN_SCRIPT).start(600)
+        LinkClaim.objects.update(expires_at=timezone.now() - timedelta(seconds=1))
+
+        counts = link_claims.check_pending()
+
+        claim.refresh_from_db()
+        assert counts["skipped"] == "paused" and counts["pending"] == 1
+        assert claim.status == "pending"
+        assert claim.expires_at >= timezone.now() + timedelta(seconds=600) + timedelta(minutes=4)
+        assert len(mocked_http.calls) == 0
+
+    def test_the_waiting_page_says_when_checks_resume(self, client):
+        claim = _start(client)
+        rate_limit_cooldowns.for_script(LOGIN_SCRIPT).start(300)
+        LinkClaim.objects.update(expires_at=timezone.now() + timedelta(seconds=30))
+
+        state = _status(client, claim)
+        page = client.get(f"/login/friend/{claim.pk}/").content.decode()
+
+        assert state["status"] == "pending"
+        assert 295 <= state["paused"] <= 300
+        assert state["seconds_left"] > 300
+        assert "checking resumes" in page and 'data-paused="' in page
+
+    def test_a_request_sent_before_the_pause_still_proves_it(
+        self, client, mocked_http, bot_signed_in
+    ):
+        claim = _start(client)
+        sent = timezone.now()
+        # The pause ran past the claim's first 10 minutes, then ended.
+        LinkClaim.objects.update(
+            started_at=sent - timedelta(minutes=20),
+            expires_at=timezone.now() + timedelta(minutes=4),
+        )
+        mocked_http.post(FRIENDS_URL, json=_friends_answer((555, "AltOne", sent)))
+        mocked_http.post(FRIENDS_URL, json={"r": "success"})
+
+        link_claims.check_pending()
+
+        claim.refresh_from_db()
+        assert claim.status == "proven"
+
+    def test_a_pause_that_starts_mid_check_holds_them_too(self, client, mocked_http, bot_signed_in):
+        claim = _start(client)
+        mocked_http.post(FRIENDS_URL, json={"r": "fail", "e": "ratelimited"})
+
+        counts = link_claims.check_pending()
+
+        claim.refresh_from_db()
+        assert counts["skipped"] == "rate_limited"
+        assert claim.expires_at > timezone.now() + timedelta(minutes=5)
