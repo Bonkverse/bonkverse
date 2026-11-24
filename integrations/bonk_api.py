@@ -234,11 +234,19 @@ class _Cooldown:
 
 
 class _Cooldowns:
-    """The cooldown for each bonk.io script, sharing one clock and store."""
+    """The cooldown for each bonk.io script, sharing one clock and store.
 
-    def __init__(self, clock=time.time, store=None):
+    With `django_cache` (the process-wide `rate_limit_cooldowns`), the first
+    read or write connects to Django's cache (Redis in production), so a
+    pause another process heard applies here before this process has called
+    bonk.io itself. Before 2026-11-24 only `get_client()` connected it, so a
+    fresh worker asking "is bonk.io paused?" first was told no.
+    """
+
+    def __init__(self, clock=time.time, store=None, *, django_cache: bool = False):
         self._clock = clock
         self._store = store
+        self._django_cache = django_cache
         self._lock = threading.Lock()
         self._by_script: dict[str, _Cooldown] = {}
         for script in (
@@ -257,7 +265,23 @@ class _Cooldowns:
             for cooldown in self._by_script.values():
                 cooldown.use_store(store)
 
+    def _connect_django_cache(self) -> None:
+        """Use Django's cache as the store, once, when asked to and none is set."""
+        if self._store is not None or not self._django_cache:
+            return
+        try:
+            from django.conf import settings
+
+            if not settings.configured:
+                return
+            from django.core.cache import cache
+        except Exception:  # no Django here: this process's copy still applies
+            return
+        self.use_store(cache)
+
     def for_script(self, script: str) -> _Cooldown:
+        # Outside the lock: use_store takes it too.
+        self._connect_django_cache()
         with self._lock:
             if script not in self._by_script:
                 self._by_script[script] = _Cooldown(script, self._clock, self._store)
@@ -286,7 +310,7 @@ class _Cooldowns:
             cooldown.reset()
 
 
-rate_limit_cooldowns = _Cooldowns()
+rate_limit_cooldowns = _Cooldowns(django_cache=True)
 
 
 @dataclass(frozen=True)
