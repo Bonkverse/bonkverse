@@ -11,9 +11,15 @@ import time
 from collections.abc import MutableMapping
 
 from core.bonk.slots import AvatarSlot
+from core.bonk.tokens import token_expiry
 
-# bonk.io tokens are kept this long; every successful wear pushes expiry forward.
+# The longest we keep a bonk.io token. A token carries its own expiry (`exp`,
+# about 24 hours after login, core/bonk/tokens.py), and that wins whenever it
+# is earlier. This cap only applies to a token whose `exp` can't be read.
 TOKEN_TTL_SECONDS = 14 * 24 * 60 * 60
+# A token counts as expired this long before its `exp`, so a wear never sends
+# bonk.io a token that runs out on the way (RFC-0003 Part 1, item 7).
+EXPIRY_MARGIN_SECONDS = 60
 
 # Session keys. Unchanged from before this module so existing sessions keep working.
 TOKEN = "bonk_token"
@@ -47,13 +53,22 @@ class BonkSession:
 
     @property
     def token(self) -> str | None:
-        """The bonk.io token, or None when missing, expired or unreadable."""
+        """The bonk.io token, or None when missing, expired or unreadable.
+
+        Expired means past our stored expiry or past the token's own `exp`
+        (less EXPIRY_MARGIN_SECONDS). Sessions saved before tokens' `exp` was
+        read carry a 14-day expiry, so `exp` is checked here too.
+        """
         stored = self._store.get(TOKEN)
         if not stored or self.is_expired:
             return None
-        if self._decrypt is None:
-            return stored
-        return self._decrypt(stored)
+        token = stored if self._decrypt is None else self._decrypt(stored)
+        if token is None:
+            return None
+        exp = token_expiry(token)
+        if exp is not None and self._clock() >= exp - EXPIRY_MARGIN_SECONDS:
+            return None
+        return token
 
     @property
     def is_expired(self) -> bool:
@@ -65,9 +80,14 @@ class BonkSession:
         return round(self._store.get(TOKEN_EXPIRES, 0) - self._clock())
 
     def store_token(self, token: str) -> None:
-        """Keep `token` for TOKEN_TTL_SECONDS from now. Also used to slide expiry."""
+        """Keep `token` until its own `exp` (less the margin), or for
+        TOKEN_TTL_SECONDS when the token's `exp` can't be read."""
+        expires = self._clock() + TOKEN_TTL_SECONDS
+        exp = token_expiry(token)
+        if exp is not None:
+            expires = min(expires, exp - EXPIRY_MARGIN_SECONDS)
         self._store[TOKEN] = self._encrypt(token) if self._encrypt else token
-        self._store[TOKEN_EXPIRES] = self._clock() + TOKEN_TTL_SECONDS
+        self._store[TOKEN_EXPIRES] = expires
         self._touch()
 
     @property

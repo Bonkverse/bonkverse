@@ -161,6 +161,31 @@ BONK_CONNECT_TIMEOUT = float(os.getenv("BONK_CONNECT_TIMEOUT", "4"))
 BONK_READ_TIMEOUT = float(os.getenv("BONK_READ_TIMEOUT", "8"))
 SYNC_FRIENDS_ON_LOGIN = os.getenv("SYNC_FRIENDS_ON_LOGIN", "1").lower() in ("1", "true", "yes")
 
+# Bonkverse's guards on password logins to bonk.io (accounts/login_attempts.py,
+# RFC-0003 Part 1). Every login leaves from the server's one IP, and bonk.io
+# blocks that IP for everyone after about 3 wrong passwords or a fast burst
+# (docs/bonk/login-rate-limit.md). Override any with BONK_LOGIN_<NAME>.
+BONK_LOGIN_LIMITS = {
+    name: int(os.getenv(f"BONK_LOGIN_{name.upper()}", default))
+    for name, default in {
+        # Password logins sent to bonk.io per minute, whole site. Stops bursts,
+        # including bots rotating IPs (2026-11-10: 17 logins in 100 s).
+        "site_per_minute": "4",
+        # ...and per bonk.io account.
+        "account_per_minute": "1",
+        # Wrong passwords site-wide in 15 minutes before new logins wait for
+        # the oldest to age out, instead of spending bonk.io's third.
+        "site_wrong_passwords": "2",
+        # Wrong passwords per visitor (across accounts) and per account from
+        # one visitor before that visitor is held.
+        "visitor_wrong_passwords": "2",
+        "account_wrong_passwords": "2",
+        # Unknown usernames per visitor. bonk.io doesn't count these, so the
+        # allowance is looser; it only stops guessing names through Bonkverse.
+        "visitor_unknown_usernames": "5",
+    }.items()
+}
+
 CLOUDFLARE_ZONE_ID = os.getenv("CLOUDFLARE_ZONE_ID", "")
 CLOUDFLARE_CACHE_API_TOKEN = os.getenv("CLOUDFLARE_CACHE_API_TOKEN", "")
 

@@ -242,8 +242,22 @@ class _Cooldowns:
             return self._by_script[script]
 
     def remaining(self, script: str) -> float:
-        """Seconds until `script` may be called again (0 if it may now)."""
-        return self.for_script(script).remaining()
+        """Seconds until `script` may be called again (0 if it may now).
+
+        A login pause stops every script, not just login_legacy.php: bonk.io
+        restarts its login block on any request from the IP during it
+        (2026-11-10, the 00:59 re-trip after two wears; RFC-0003 Part 1, item
+        6). So this is the longer of the script's own pause and the login
+        pause.
+        """
+        own = self.for_script(script).remaining()
+        if script == LOGIN_SCRIPT:
+            return own
+        return max(own, self.for_script(LOGIN_SCRIPT).remaining())
+
+    def login_paused(self) -> bool:
+        """Whether bonk.io's login pause is on (every script waits for it)."""
+        return self.for_script(LOGIN_SCRIPT).active()
 
     def reset(self) -> None:
         for cooldown in list(self._by_script.values()):
@@ -473,7 +487,8 @@ class BonkApi:
                 isn't a JSON object.
         """
         cooldown = self._cooldowns.for_script(script)
-        remaining = cooldown.remaining()
+        # The script's own pause, or the login pause, which stops every script.
+        remaining = self._cooldowns.remaining(script)
         if remaining > 0:
             logger.info(
                 "bonk.io %s paused for another %ss; answered rate_limited without calling it",

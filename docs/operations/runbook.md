@@ -109,13 +109,21 @@ Railway → bonkverse → Logs, filter
 The codes mean ([bonk/api.md](../bonk/api.md), [ADR 0008](../adr/0008-bonk-refusals.md)):
 
 - `bonk_error=ratelimited` / `pausing <script> calls for <s>s`: bonk.io is
-  limiting the server's IP for that script (logins and wears are paused
-  separately). Everyone is affected; Bonkverse pauses its own calls to that
-  script, starting at 2 minutes and doubling with each limit in a row up to
-  30 (`(<n> in a row)` in the line). `answered rate_limited without calling
-  it` lines are requests turned away during the pause. Nothing to deploy. Note the time and whether
+  limiting the server's IP for that script. Everyone is affected. A login
+  limit pauses everything for 17 minutes (wears and friend reads too, since
+  any request restarts bonk.io's block); a wear or friend-read limit pauses
+  only that script, starting at 2 minutes and doubling with each limit in a
+  row up to 30. `answered rate_limited without calling it` lines are requests
+  turned away during the pause. Nothing to deploy. Note the time and whether
   a bonk.io login from your own connection works meanwhile (that tells us the
-  limit is on our IP). Bursts usually clear within an hour or two.
+  limit is on our IP).
+- Login limits that keep coming back: look for what came before each one.
+  `bonk login waiting for the site budget`, `bonk login busy` and `bonk login
+  held` lines are Bonkverse's own guards turning logins away before bonk.io
+  sees them (`BONK_LOGIN_*` settings, [bonk/login-rate-limit.md](../bonk/login-rate-limit.md#what-bonkverse-does-about-it)).
+  A `ratelimited` with `no recent wrong passwords` before it points at a burst
+  of correct logins or another service sharing the IP; tighten
+  `BONK_LOGIN_SITE_PER_MINUTE` if the logins came from Bonkverse.
 - `bonk_error=avatar_too_big`: one skin is over bonk.io's size limit. Players
   get a message; nothing is broken.
 - `bonk_error=token`: an expired bonk.io token; the player is asked to log in
