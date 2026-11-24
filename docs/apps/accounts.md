@@ -17,6 +17,9 @@ Names are in the `accounts` namespace (`app_name` in `accounts/urls.py`): `{% ur
 | `/accounts/switch/` | `switch_account` | POST `account`: use another account signed in on this browser |
 | `/accounts/remove/` | `remove_account` | POST `account`: take it out of the group (it keeps its own history) |
 | `/accounts/main/` | `make_main_account` | POST `account`: make it the group's main |
+| `/login/friend/` | `friend_request_login` | Sign in (or `?add=1` add an account) with a friend request: GET the name form, POST start a claim (`login` rate tier) |
+| `/login/friend/<id>/` | `friend_request_wait` | The waiting page; this browser's claims only |
+| `/login/friend/<id>/status/` | `friend_request_status` | POST, polled: pending / done (signs in or adds) / expired / refused |
 | `/accounts/browsers/remove/` | `remove_trusted_browser` | POST `device`: stop trusting one of the group's browsers (main signed in here) |
 | `/accounts/show-on-profiles/` | `show_on_profiles` | POST `show=1/0`: "Also plays as…" on the group's profiles (main signed in here) |
 
@@ -26,6 +29,7 @@ RFC-0003 phase 5, [ADR 0023](../adr/0023-account-groups-of-site-accounts.md), `a
 
 - **The account in use** is `request.user`. It decides Wear (its link's tokens), upload credit, votes, favorites, and the header on every Bonkverse site (they share the session cookie).
 - **Switching** needs no password, but only between accounts signed in on this browser: with their own password (`groups.SIGNED_IN_KEY`), or unlocked by the main (`groups.UNLOCKED_KEY`). The group's other accounts show "Sign in".
+- **Friend-request sign-in (phase 6):** `/login/friend/` (`?add=1` to add an account): the person names a bonk.io account and sends a friend request from it to the bot's account (`bot_account.py`, `BONK_BOT_USERNAME`) within 10 minutes. `link_claims.py`: `LinkClaim` (pending → proven → done, or expired/refused); the worker (`tasks.check_link_claims`, every 30 s) reads the bot's requests only while a claim is pending, with BonxBot's matching rules (same bot account until phase 7); the browser that started the claim finishes it once (`sign_in.sign_in_by_friend_request`: a link without tokens; a main unlocks its group). Such an account can't vote until one password login (`BonkAccountLink.password_proven_at`, `groups.voting_standing`).
 - **Only the main unlocks:** a password sign-in to the main unlocks every account in the group on that browser and trusts it (`devices.py`: `TrustedDevice`, cookie `bv_device`, hash only; 90 days from last use). Other accounts open only themselves. Settings lists "Trusted browsers" with Remove (main signed in here); "Sign out of all accounts" has "Also forget this device"; `groups.UnlockedAccountMiddleware` signs out of an unlocked account once its browser isn't trusted.
 - **Adding:** "Add account" (`/login/?add=1`) or a Wear popup login with another account joins the group and keeps both signed in. A plain login while signed in replaces the session, so logging in to a friend's account never groups it. An account in another group moves (the password proves who controls it now).
 - **Removing:** the account itself, or the main when it's signed in here. Its history goes with it. Two becoming one deletes the group; the main leaving hands main to the next account.
@@ -86,6 +90,9 @@ accounts/
   bonk_tokens.py        # the token broker: stored bonk.io tokens, refreshed with remember-me
   groups.py             # a person's bonk.io accounts: add, switch, sign out, remove, main
   devices.py            # trusted browsers: the device cookie and TrustedDevice
+  link_claims.py        # friend-request sign-in: claims, matching, finishing
+  bot_account.py        # the bot's bonk.io session (remember-me, encrypted in the cache)
+  tasks.py              # check_link_claims
   context_processors.py # viewer_accounts: the header's account switcher
   sessions.py           # 90-day sign-ins, renewed at most once a day
   forms.py              # LoginForm (username and password never stripped)
@@ -105,6 +112,7 @@ accounts/
 |---|---|---|
 | `BonkUser` | `skins_bonkuser` (+ `skins_bonkuser_groups`, `skins_bonkuser_user_permissions`) | The site account: `AUTH_USER_MODEL`, a bonk.io username, no usable password (sign-in is through bonk.io). Admin: `/admin/accounts/bonkuser/` |
 | `AccountGroup` | `accounts_accountgroup` | A person's bonk.io accounts: `main`, `show_on_profiles` ("Also plays as…"), and `BonkUser.account_group` / `joined_group_at` on each member. Never one member (groups.py deletes it) |
+| `LinkClaim` | `accounts_linkclaim` | A friend-request claim: `name`/`name_key`, `purpose` (sign_in/add), `requested_by`, `status`, `started_at`/`expires_at`, `bonk_id`/`bonk_name` when proven |
 | `TrustedDevice` | `accounts_trusteddevice` | A browser where the group's main signed in: `group`, `device_hash` (SHA-256 of the `bv_device` cookie), `label`, `created_at`, `last_used_at` |
 | `UserEvent` | `skins_userevent` | The event log: one row per thing a person (or the site for them) did. Written only by `log_event`. Moved from `skins` in 5.6c, no data moved (`accounts.0003`, `skins.0035`) |
 | `BonkAccountLink` | `skins_bonkaccountlink` | A site account ↔ a `players.BonkPlayer`, with the bonk.io session token from the latest login, encrypted (`encrypt_token()` / `bonk_token()`, [ADR 0016](../adr/0016-bonk-tokens-encrypted-at-rest.md)), when it stops being usable (`token_expires_at`, from the token's `exp`; `bonk_token()` returns None after it) the account's active slot (`active_slot`), and with "Keep me connected" bonk.io's remember-me token, encrypted the same way (`remember_token_encrypted`, `remember_token()`; `remember_status`: none, active or revoked; `last_refreshed_at`) |

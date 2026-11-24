@@ -192,6 +192,14 @@ BONK_LOGIN_LIMITS = {
 TURNSTILE_SITE_KEY = os.getenv("TURNSTILE_SITE_KEY", "0x4AAAAAAGP08z9bSQTcL_Xu")
 TURNSTILE_SECRET_KEY = os.getenv("TURNSTILE_SECRET_KEY", "")
 
+# The bot's bonk.io account people send friend requests to, to sign in or
+# add an account without a password (accounts/link_claims.py, RFC-0003
+# phase 6). The same account BonxBot uses for /link. Friend-request linking
+# is off until both are set (on the web service for the name, and on the
+# worker, which reads the requests).
+BONK_BOT_USERNAME = os.getenv("BONK_BOT_USERNAME", "")
+BONK_BOT_PASSWORD = os.getenv("BONK_BOT_PASSWORD", "")
+
 CLOUDFLARE_ZONE_ID = os.getenv("CLOUDFLARE_ZONE_ID", "")
 CLOUDFLARE_CACHE_API_TOKEN = os.getenv("CLOUDFLARE_CACHE_API_TOKEN", "")
 
@@ -607,6 +615,12 @@ CELERY_BEAT_SCHEDULE = {
     "prune-api-usage": {
         "task": "public_api.tasks.prune_api_usage",
         "schedule": 24 * 60 * 60,
+    },
+    # Friend-request linking (accounts/link_claims.py): reads the bot's
+    # requests only while a claim is pending; otherwise one database query.
+    "check-link-claims": {
+        "task": "accounts.tasks.check_link_claims",
+        "schedule": 30,
     },
 }
 

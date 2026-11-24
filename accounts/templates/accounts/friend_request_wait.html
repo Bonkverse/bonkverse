@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Send the friend request · Bonkverse{% endblock %}
+{% block content_class %}site-page{% endblock %}
+
+{% block content %}
+{# Waiting for the friend request; accounts/js/friend_request.js checks every few seconds (accounts/link_claims.py). #}
+<div class="bv-main site-narrow">
+  <div class="bv-page-header">
+    <div class="bv-page-header__text">
+      <h1>Send the friend request</h1>
+    </div>
+  </div>
+
+  <div class="bv-card site-form-card" data-friend-claim
+       data-status-url="{% url 'accounts:friend_request_status' claim_id %}{% if next %}?next={{ next|urlencode }}{% endif %}"
+       data-seconds-left="{{ state.seconds_left|default:0 }}">
+    {% if state.status == "pending" %}
+      <ol class="site-steps">
+        <li>Open bonk.io and sign in as <strong>{{ name }}</strong>.</li>
+        <li>Send a friend request to <strong>{{ bot_name }}</strong>.</li>
+        <li>Keep this page open. It checks every few seconds.</li>
+      </ol>
+      <p class="bv-status" role="status" aria-live="polite" data-claim-message>Waiting for the friend request · <span data-claim-countdown>10:00</span> left</p>
+      <p class="bv-hint">Bonkverse deletes the request once it's seen; it won't add you as a friend.</p>
+    {% else %}
+      <p class="bv-status" role="status" data-claim-message>{{ state.message }}</p>
+    {% endif %}
+    <div class="pv-actions">
+      <a class="bv-btn" href="{% url 'accounts:friend_request_login' %}">Start over</a>
+      {# Without scripts: check by reloading. #}
+      <noscript><a class="bv-btn" href="">Check now</a></noscript>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="{% static 'accounts/js/friend_request.js' %}" defer></script>
+{% endblock %}

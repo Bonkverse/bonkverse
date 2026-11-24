@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if adding %}Add a bonk.io account{% else %}Log in{% endif %} with a friend request · Bonkverse{% endblock %}
+{% block content_class %}site-page{% endblock %}
+
+{% block content %}
+{# Sign in, or add an account, without a password (accounts/link_claims.py, RFC-0003 phase 6). #}
+<div class="bv-main site-narrow">
+  <div class="bv-page-header">
+    <div class="bv-page-header__text">
+      <h1>{% if adding %}Add a bonk.io account{% else %}Log in{% endif %} with a friend request</h1>
+      <p class="bv-muted">No password: you prove the account is yours by sending a friend request from it in bonk.io. {% if adding %}It joins {{ user.username }}'s accounts.{% endif %}</p>
+    </div>
+  </div>
+
+  {% if available %}
+    <form method="post" class="bv-card bv-form site-form-card">
+      {% csrf_token %}
+      {% if adding %}<input type="hidden" name="add" value="1">{% endif %}
+      {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+      <div class="bv-field">
+        <label class="bv-label" for="fr-username">bonk.io username</label>
+        <input class="bv-input" id="fr-username" name="username" value="{{ username }}" maxlength="64" autocomplete="username" required autofocus>
+      </div>
+      <ol class="site-steps">
+        <li>Press Continue.</li>
+        <li>In bonk.io, signed in as that account, send a friend request to <strong>{{ bot_name }}</strong> within 10 minutes.</li>
+        <li>This page notices it within half a minute and {% if adding %}adds the account{% else %}signs you in{% endif %}.</li>
+      </ol>
+      <button type="submit" class="bv-btn bv-btn--primary">Continue</button>
+    </form>
+  {% else %}
+    <p class="bv-notice">Signing in with a friend request isn't available right now. <a href="{% url 'accounts:login' %}">Log in with your password</a>.</p>
+  {% endif %}
+
+  <p class="bv-muted site-form-alt">
+    Wear needs your bonk.io password once, later. To vote, log in with your password once so Bonkverse can see your level.
+    <a href="{% url 'accounts:login' %}{% if adding %}?add=1{% endif %}">Use your password instead</a>.
+  </p>
+</div>
+{% endblock %}

@@ -54,6 +54,14 @@
       <button type="submit" class="bv-btn bv-btn--primary" id="login-submit">{% if adding %}Add account{% else %}Log in{% endif %}</button>
     {% endif %}
   </form>
+  {% if friend_requests %}
+    {# Passwordless: prove the account with a friend request to the bot account (RFC-0003 phase 6). #}
+    <p class="bv-muted site-form-alt">
+      Rather not type your password?
+      <a href="{% url 'accounts:friend_request_login' %}?{% if adding %}add=1&amp;{% endif %}next={{ request.GET.next|default:''|urlencode }}">{% if adding %}Add it{% else %}Log in{% endif %} with a friend request instead</a>.
+      Wear asks for the password once, later.
+    </p>
+  {% endif %}
 </div>
 {% endblock %}
 
