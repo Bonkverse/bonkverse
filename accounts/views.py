@@ -11,10 +11,12 @@ talking to bonk.io (integrations/bonk_api.py).
 """
 
 import json
+from urllib.parse import urlencode
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -25,11 +27,21 @@ from django.views.decorators.http import require_POST
 from core.ratelimits import limit
 from players import selectors as player_selectors
 
-from . import appearance, bot_account, bot_check, groups, known_accounts, link_claims
+from . import (
+    appearance,
+    bot_account,
+    bot_check,
+    devices,
+    groups,
+    known_accounts,
+    link_claims,
+    used_here,
+)
 from .forms import LoginForm
 from .login_attempts import attempt_login
 from .login_messages import login_failure_message
-from .sign_in import sign_in
+from .models import BonkUser
+from .sign_in import sign_in, sign_in_with_one_click
 
 
 @limit("login", method="POST")
@@ -101,6 +113,8 @@ def _render_login(request, form, *, retry_after=None, adding=False):
             "form": form,
             "retry_after": retry_after,
             "adding": adding,
+            # "Used on this browser": add without proving again (used_here.py).
+            "used_here": used_here.rows(request) if adding else [],
             "friend_requests": bot_account.configured(),
             "turnstile_site_key": bot_check.site_key_if_wanted(request),
         },
@@ -143,20 +157,66 @@ def _account_chooser(request) -> list[dict]:
     known = known_accounts.accounts(request)
     if not known:
         return []
-    codes = player_selectors.worn_skin_codes([a["username"] for a in known])
+    names = [a["username"] for a in known]
+    codes = player_selectors.worn_skin_codes(names)
+    ids = _site_ids(names)
+    one_click = devices.one_click_ids(request, ids.values())
     for account in known:
         code = codes.get(account["username"].lower())
         account["thumbnail"] = (
             player_selectors.skin_avatar_url(account["username"], code) if code else None
         )
+        # Proved itself here recently: one click signs it in (ADR 0025).
+        account["one_click"] = ids.get(account["username"].casefold()) in one_click
     return known
+
+
+def _site_ids(names: list[str]) -> dict[str, int]:
+    """Site account ids by casefolded name, for the chooser's names (at most
+    known_accounts.MAX_ACCOUNTS)."""
+    match = Q()
+    for name in names:
+        match |= Q(username__iexact=name)
+    found: dict[str, int] = {}
+    for pk, username in BonkUser.objects.filter(match).order_by("pk").values_list("pk", "username"):
+        found.setdefault(username.casefold(), pk)
+    return found
+
+
+@require_POST
+@limit("write")
+def one_click_sign_in(request):
+    """The chooser's one click: sign an account back in on a browser where
+    it proved itself within ONE_CLICK_SIGN_IN_DAYS, with no bonk.io call
+    (ADR 0025). Past that, it goes to the way it last signed in."""
+    name = (request.POST.get("username") or "")[:64]
+    user = BonkUser.objects.filter(username__iexact=name).order_by("pk").first() if name else None
+    if user is None or user.pk not in devices.one_click_ids(request, [user.pk]):
+        way = known_accounts.way_in(request, name)
+        target = (
+            "accounts:friend_request_login"
+            if way == known_accounts.FRIEND_REQUEST
+            else "accounts:login"
+        )
+        query = {"username": name}
+        if _safe_next(request):
+            query["next"] = _safe_next(request)
+        return redirect(f"{reverse(target)}?{urlencode(query)}")
+    sign_in_with_one_click(request, user)
+    messages.success(request, f"Welcome back, {user.username}.")
+    return redirect(_safe_next(request) or reverse("players:player_profile", args=[user.username]))
 
 
 @require_POST
 @limit("write")
 def forget_known_account(request):
-    """The chooser's Remove: take one account off this browser's list."""
-    known_accounts.forget(request, (request.POST.get("username") or "")[:64])
+    """The chooser's Remove: take one account off this browser's list and
+    end its one-click sign-in here."""
+    name = (request.POST.get("username") or "")[:64]
+    known_accounts.forget(request, name)
+    user = BonkUser.objects.filter(username__iexact=name).first() if name else None
+    if user is not None:
+        devices.forget_sign_ins_here(request, user.pk)
     return redirect(reverse("accounts:login") + _next_query(request))
 
 
@@ -324,6 +384,39 @@ def remove_trusted_browser(request):
         messages.error(request, refusal.message)
     else:
         messages.success(request, "That browser is no longer trusted.")
+    return redirect(_back(request))
+
+
+@login_required
+@require_POST
+@limit("write")
+def remove_one_click_browser(request):
+    """Settings: stop one-click sign-in for the account in use on one
+    browser (ADR 0025)."""
+    if devices.remove_remembered(request.user, _account_id(request.POST.get("browser"))):
+        messages.success(request, "That browser will ask you to sign in again.")
+    else:
+        messages.error(request, "That browser isn't on the list.")
+    return redirect(_back(request))
+
+
+@login_required
+@require_POST
+@limit("write")
+def add_used_here(request):
+    """Add the ticked accounts used on this browser to your accounts, after
+    "These accounts are mine" (used_here.py, ADR 0025)."""
+    if request.POST.get("confirm") != "on":
+        messages.error(request, "Tick \u201cThese accounts are mine\u201d to add them.")
+        return redirect(_back(request))
+    ids = [_account_id(value) for value in request.POST.getlist("account")]
+    try:
+        added = used_here.add(request, ids)
+    except groups.NotAllowed as refusal:
+        messages.error(request, refusal.message)
+    else:
+        names = ", ".join(account.username for account in added)
+        messages.success(request, f"Added {names}. Switch between them from the account menu.")
     return redirect(_back(request))
 
 

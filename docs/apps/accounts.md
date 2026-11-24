@@ -11,7 +11,10 @@ Names are in the `accounts` namespace (`app_name` in `accounts/urls.py`): `{% ur
 | Path | Name | What |
 |---|---|---|
 | `/login/` | `login` | Login page (GET) and bonk.io login (POST, `login` rate tier). Signed out with accounts used here before: "Choose an account" (`?other=1` skips it). `?username=` fills the name; `?add=1` while signed in: "Add account" |
-| `/login/forget/` | `forget_known_account` | POST `username`: take it off this browser's "Choose an account" |
+| `/login/forget/` | `forget_known_account` | POST `username`: take it off this browser's "Choose an account" and end its one-click sign-in here |
+| `/login/choose/` | `one_click_sign_in` | POST `username`: one-click sign-in from "Choose an account" (ADR 0025); otherwise redirects to the way it last signed in |
+| `/accounts/add-used-here/` | `add_used_here` | POST `account` (repeated) + `confirm=on`: add accounts proven on this browser (one-click window, no group) to your group (`used_here.py`, ADR 0025) |
+| `/accounts/one-click/remove/` | `remove_one_click_browser` | POST `browser`: Settings, end one-click sign-in for the account in use on that browser |
 | `/logout/` | `logout` | POST only, so another site can't sign people out with a link. `scope=this`: only the account in use, switching to another signed in here; `forget=on` (with all): stop trusting this browser |
 | `/api/me/` | `api_me` | Who is signed in (the skin editor and the other sites' headers use it), with `accounts`: the person's bonk.io accounts for the switcher, each with its worn-skin `avatar`; 401 when nobody is |
 | `/api/me/switch/` | `api_switch_account` | The other sites' switcher: POST JSON `{"account": id}` with the `X-Bonkverse-Switch` header, from an origin in `CORS_ALLOWED_ORIGINS`. Answers like `/api/me/` |
@@ -78,9 +81,12 @@ Wear asks again with `force_refresh=True` once if bonk.io refuses a token before
 
 ## Choose an account
 
-After signing out, the login page lists the accounts that signed in on this browser, newest first, like Google's chooser (`known_accounts.py`). Each opens the way it last signed in, password or friend request, with the name filled in; choosing one never skips the proof. The list lives only in the browser: a signed HttpOnly `bv_known` cookie of names, the way in and when, at most 8 and each dropped after 90 days unused. Remove takes one off; "Also forget this device" on sign-out clears it.
+After signing out, the login page lists the accounts that signed in on this browser, newest first, like Google's chooser (`known_accounts.py`: a signed HttpOnly `bv_known` cookie of names, the way in and when, at most 8, each dropped after 90 days unused; nothing stored on our side).
 
-Log lines from step 1 still use the logger name **`skins.login`** (its name before the move), so Railway searches like `@logger:skins.login` find old and new lines.
+- **One click** (ADR 0025): an account that proved itself on this browser (password or friend request) in the last `ONE_CLICK_SIGN_IN_DAYS` (30) signs straight back in, with no bonk.io call (`devices.remember_sign_in` / `one_click_ids`, `RememberedSignIn`, `sign_in.sign_in_with_one_click`). One-click sign-ins don't extend the window.
+- **After that**, it opens the way it last signed in, password or friend request, with the name filled in.
+- **Used on this browser** (`used_here.py`): signed in, accounts proven here within the window and in no group can join your group after you tick them and confirm they're yours, with no password. Offered on "Add a bonk.io account", in Settings, and once after a sign-in (`used_here_offer` context processor, session flag `bv_offer_used_here`).
+- Remove takes one off (and ends its one-click here); "Also forget this device" on sign-out clears the list and every one-click here; Settings → "One-click sign-in" lists the account's browsers with Remove.
 
 ## Files
 
@@ -94,8 +100,9 @@ accounts/
   sign_in.py            # what a successful login does; connect_from_wear for the wear popup
   bonk_tokens.py        # the token broker: stored bonk.io tokens, refreshed with remember-me
   groups.py             # a person's bonk.io accounts: add, switch, sign out, remove, main
-  devices.py            # trusted browsers: the device cookie and TrustedDevice
+  devices.py            # the device cookie; TrustedDevice (group) and RememberedSignIn (one click)
   known_accounts.py     # "Choose an account": the bv_known cookie
+  used_here.py          # add accounts used on this browser to your group
   link_claims.py        # friend-request sign-in: claims, matching, finishing
   bot_account.py        # the bot's bonk.io session (remember-me, encrypted in the cache)
   tasks.py              # check_link_claims
@@ -104,7 +111,7 @@ accounts/
   forms.py              # LoginForm (username and password never stripped)
   models.py             # BonkUser (AUTH_USER_MODEL), BonkAccountLink, UserEvent
   admin.py              # site accounts in /admin/
-  templates/accounts/login.html, choose_account.html
+  templates/accounts/login.html, choose_account.html, _chooser_identity.html, _used_here.html, _used_here_offer.html
   static/accounts/js/login.js   # keeps Login off until a wait ends; one submit per click
   events.py             # log_event: the event log (UserEvent)
   management/commands/grant_admin.py, reencrypt_bonk_tokens.py,

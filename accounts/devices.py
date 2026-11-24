@@ -1,10 +1,18 @@
-"""Trusted browsers for a group of bonk.io accounts (RFC-0003 phase 5).
+"""Browsers Bonkverse recognizes (RFC-0003 phase 5, ADR 0025).
 
-Owns: the device cookie that tells one browser from another, and the
-TrustedDevice records: made when a group's main account signs in on a
-browser, listed and removed in Settings, forgotten on "Sign out of all
-accounts" when the person ticks "Also forget this device", and expired 90
-days after their last use.
+Owns: the device cookie that tells one browser from another, and two kinds
+of record keyed by it:
+
+- TrustedDevice: made when a group's main account signs in on a browser, so
+  the group's accounts switch there without passwords. Expires 90 days
+  after its last use.
+- RememberedSignIn: made when any account proves itself on a browser
+  (password or friend request), so "Choose an account" signs it back in
+  with one click, without bonk.io, for ONE_CLICK_SIGN_IN_DAYS after that
+  proof.
+
+Both are listed and removed in Settings, and forgotten on "Sign out of all
+accounts" when the person ticks "Also forget this device".
 Does not own: which accounts a browser may switch to (groups.py reads
 `is_trusted` for that).
 
@@ -21,9 +29,10 @@ import re
 import secrets
 from datetime import timedelta
 
+from django.conf import settings
 from django.utils import timezone
 
-from .models import TrustedDevice
+from .models import RememberedSignIn, TrustedDevice
 
 COOKIE = "bv_device"
 COOKIE_SALT = "accounts.devices"
@@ -171,3 +180,87 @@ def listed(request, group_id: int) -> list[dict]:
 def remove(group_id: int, device_id: int) -> bool:
     """Stop trusting one of the group's browsers. Returns whether it existed."""
     return bool(TrustedDevice.objects.filter(group_id=group_id, pk=device_id).delete()[0])
+
+
+# ── One-click sign-in (ADR 0025) ─────────────────────────────────────
+
+
+def _one_click_cutoff():
+    return timezone.now() - timedelta(days=settings.ONE_CLICK_SIGN_IN_DAYS)
+
+
+def remember_sign_in(request, user) -> None:
+    """`user` just proved itself on this browser (password or friend
+    request): start (or restart) its one-click window here."""
+    RememberedSignIn.objects.update_or_create(
+        user=user,
+        device_hash=_device_hash(request, create=True),
+        defaults={
+            "proven_at": timezone.now(),
+            "label": label_for(request.headers.get("User-Agent", ""))[:80],
+        },
+    )
+
+
+def one_click_ids(request, user_ids) -> set[int]:
+    """Which of `user_ids` this browser may sign in with one click."""
+    device_hash = _device_hash(request, create=False)
+    if device_hash is None:
+        return set()
+    return set(
+        RememberedSignIn.objects.filter(
+            user_id__in=list(user_ids),
+            device_hash=device_hash,
+            proven_at__gte=_one_click_cutoff(),
+        ).values_list("user_id", flat=True)
+    )
+
+
+def proven_here_ids(request) -> list[int]:
+    """Accounts that proved themselves on this browser within the one-click
+    window, most recent proof first."""
+    device_hash = _device_hash(request, create=False)
+    if device_hash is None:
+        return []
+    return list(
+        RememberedSignIn.objects.filter(device_hash=device_hash, proven_at__gte=_one_click_cutoff())
+        .order_by("-proven_at")
+        .values_list("user_id", flat=True)
+    )
+
+
+def forget_sign_ins_here(request, user_id: int | None = None) -> None:
+    """End one-click sign-in on this browser: for one account, or (None)
+    for every account."""
+    device_hash = _device_hash(request, create=False)
+    if device_hash is None:
+        return
+    remembered = RememberedSignIn.objects.filter(device_hash=device_hash)
+    if user_id is not None:
+        remembered = remembered.filter(user_id=user_id)
+    remembered.delete()
+
+
+def remembered_browsers(request, user) -> list[dict]:
+    """Settings: the browsers where `user` can sign in with one click, newest
+    proof first: id, label, proven, until, and whether it's this browser."""
+    here = _device_hash(request, create=False)
+    days = timedelta(days=settings.ONE_CLICK_SIGN_IN_DAYS)
+    return [
+        {
+            "id": row.pk,
+            "label": row.label or "A browser",
+            "proven": row.proven_at,
+            "until": row.proven_at + days,
+            "this_browser": row.device_hash == here,
+        }
+        for row in RememberedSignIn.objects.filter(
+            user=user, proven_at__gte=_one_click_cutoff()
+        ).order_by("-proven_at")
+    ]
+
+
+def remove_remembered(user, row_id: int) -> bool:
+    """Stop one-click sign-in for `user` on one browser. Returns whether it
+    existed."""
+    return bool(RememberedSignIn.objects.filter(user=user, pk=row_id).delete()[0])

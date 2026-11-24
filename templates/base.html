@@ -56,6 +56,9 @@
     </ul>
     {% endif %}
 
+    {# Not on a page that already lists them (Add account, Settings). #}
+    {% if used_here_offer and not used_here %}{% include 'accounts/_used_here_offer.html' %}{% endif %}
+
     {% if site_nav.show_skin_tabs %}
       <div class="site-skin-tabs-wrap">{% include 'partials/_skin_tabs.html' %}</div>
     {% endif %}

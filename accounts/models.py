@@ -105,6 +105,35 @@ class TrustedDevice(models.Model):
         return f"{self.label or 'device'} for group {self.group_id}"
 
 
+class RememberedSignIn(models.Model):
+    """A browser where one bonk.io account proved it was its owner (password
+    or friend request), so the login page's "Choose an account" signs it
+    back in with one click, without bonk.io (accounts/devices.py).
+
+    One click works for ONE_CLICK_SIGN_IN_DAYS after the last proof; a
+    one-click sign-in doesn't extend it, so after that the account proves
+    itself again. Only a hash of the browser's device cookie is stored.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="remembered_sign_ins"
+    )
+    device_hash = models.CharField(max_length=64)
+    label = models.CharField(max_length=80, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    proven_at = models.DateTimeField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "device_hash"], name="one_remembered_sign_in_per_device"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.label or 'device'} for user {self.user_id}"
+
+
 class BonkUser(AbstractBaseUser, PermissionsMixin):
     """A Bonkverse site account, identified by its bonk.io username.
 

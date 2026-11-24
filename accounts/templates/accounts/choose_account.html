@@ -6,13 +6,14 @@
 
 {% block content %}
 {% comment %}The login page when signed out with accounts used on this browser before
-(accounts/known_accounts.py). Choosing one still needs its password or a friend
-request: each opens the way it last signed in, with the name filled in.{% endcomment %}
+(accounts/known_accounts.py). An account that proved itself here in the last ONE_CLICK_SIGN_IN_DAYS
+signs straight back in (POST, no bonk.io call, ADR 0025); the others open the
+way they last signed in, with the name filled in.{% endcomment %}
 <div class="bv-main site-narrow">
   <div class="bv-page-header">
     <div class="bv-page-header__text">
       <h1>Choose an account</h1>
-      <p class="bv-muted">Accounts used on this browser. You'll confirm it's you.</p>
+      <p class="bv-muted">Accounts used on this browser.</p>
     </div>
   </div>
 
@@ -20,18 +21,25 @@ request: each opens the way it last signed in, with the name filled in.{% endcom
     <ul class="site-chooser">
       {% for account in choices %}
         <li class="site-chooser__row">
-          <a class="site-chooser__pick"
-             href="{% if account.via == 'friend' %}{% url 'accounts:friend_request_login' %}{% else %}{% url 'accounts:login' %}{% endif %}?username={{ account.username|urlencode }}{% if next %}&amp;next={{ next|urlencode }}{% endif %}">
-            {% if account.thumbnail %}
-              <span class="bv-nav-avatar bv-skin-avatar site-chooser__avatar" style="--skin: url('{{ account.thumbnail }}')" aria-hidden="true"><i data-lucide="circle-user"></i></span>
-            {% else %}
-              <i class="site-chooser__avatar" data-lucide="circle-user" aria-hidden="true"></i>
-            {% endif %}
-            <span class="site-chooser__text">
-              <strong>{{ account.username }}</strong>
-              <span class="bv-hint">{% if account.via == 'friend' %}With a friend request{% else %}With your password{% endif %}</span>
-            </span>
-          </a>
+          {% if account.one_click %}
+            <form method="post" action="{% url 'accounts:one_click_sign_in' %}" class="site-chooser__form">
+              {% csrf_token %}
+              <input type="hidden" name="username" value="{{ account.username }}">
+              {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+              <button type="submit" class="site-chooser__pick">
+                {% include "accounts/_chooser_identity.html" with hint="Signs straight in" %}
+              </button>
+            </form>
+          {% else %}
+            <a class="site-chooser__pick"
+               href="{% if account.via == 'friend' %}{% url 'accounts:friend_request_login' %}{% else %}{% url 'accounts:login' %}{% endif %}?username={{ account.username|urlencode }}{% if next %}&amp;next={{ next|urlencode }}{% endif %}">
+              {% if account.via == 'friend' %}
+                {% include "accounts/_chooser_identity.html" with hint="With a friend request" %}
+              {% else %}
+                {% include "accounts/_chooser_identity.html" with hint="With your password" %}
+              {% endif %}
+            </a>
+          {% endif %}
           <form method="post" action="{% url 'accounts:forget_known_account' %}">
             {% csrf_token %}
             <input type="hidden" name="username" value="{{ account.username }}">

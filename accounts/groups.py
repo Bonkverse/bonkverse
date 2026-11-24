@@ -261,6 +261,17 @@ def after_login(
     _store(request, password, unlocked)
 
 
+def add_signed_in_here(request, account_ids: list[int]) -> None:
+    """Count `account_ids` (just proven or added from this browser) as signed
+    in here, behind the account in use."""
+    password, unlocked = browser_lists(request)
+    current = request.user.pk
+    added = [pk for pk in account_ids if pk not in password and pk != current]
+    password = [pk for pk in password if pk != current] + added + [current]
+    _store(request, password, unlocked)
+    _forget_cache(request)
+
+
 def switch(request, target_id: int) -> BonkUser:
     """Make another account signed in on this browser the active one.
 
@@ -285,13 +296,15 @@ def sign_out(request, *, everywhere_here: bool, forget_device: bool = False) -> 
 
     Signing out of one account switches to the most recent other account
     still signed in here. `forget_device` (with everywhere_here: "Also forget
-    this device") stops trusting this browser for the group. Returns the
+    this device") stops trusting this browser for the group, ends one-click
+    sign-in here and empties "Choose an account". Returns the
     account now active, or None.
     """
     current = request.user
     if forget_device and everywhere_here:
         # A shared computer: no trust, and no names left on the login page.
         known_accounts.forget_all(request)
+        devices.forget_sign_ins_here(request)
         if current.account_group_id is not None:
             devices.forget_this(request, current.account_group_id)
     available = signed_in_ids(request)
@@ -328,14 +341,20 @@ def _become(request, target: BonkUser, lists: tuple[list[int], list[int]]) -> No
     elif target.pk in unlocked:
         unlocked = [i for i in unlocked if i != target.pk] + [target.pk]
     _store(request, password, unlocked)
+    point_bonk_identity(request, target)
+
+
+def point_bonk_identity(request, user: BonkUser) -> None:
+    """Point this browser's bonk.io identity (for Wear) at `user`'s most
+    recently used link. Nothing of the previous account's identity carries
+    over."""
     bonk = bonk_session(request)
     link = (
         BonkAccountLink.objects.select_related("bonk_player")
-        .filter(user=target, active=True)
+        .filter(user=user, active=True)
         .order_by("-updated_at")
         .first()
     )
-    # Nothing of the previous account's bonk.io identity may carry over.
     bonk.clear()
     if link is not None:
         bonk.store_identity(link.bonk_player.username, link.bonk_player.bonk_id)
@@ -526,3 +545,9 @@ def remove_browser(request, device_id: int) -> None:
         raise NotAllowed("That browser isn't on the list.")
     _forget_cache(request)
     log_event(request.user, "trusted_device_removed", group_id=request.user.account_group_id)
+
+
+def one_click_browsers(request) -> list[dict]:
+    """Settings: where the account in use signs in with one click
+    (devices.remembered_browsers, ADR 0025)."""
+    return devices.remembered_browsers(request, request.user)

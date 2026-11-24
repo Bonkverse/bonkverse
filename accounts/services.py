@@ -37,7 +37,7 @@ from .groups import bonk_level, main_signed_in_here, shown_alongside, voting_sta
 from .groups import member_ids as group_member_ids
 from .signals import account_joined_group
 from .groups import show_on_profiles as set_group_shown_on_profiles
-from .groups import trusted_browsers
+from .groups import one_click_browsers, trusted_browsers
 from .events import log_event
 from .login_attempts import attempt_login
 from .login_messages import login_failure_message
@@ -49,6 +49,7 @@ from .bonk_tokens import connection as bonk_connection
 from .bonk_tokens import disconnect as disconnect_bonk
 from .bonk_tokens import usable_token as usable_bonk_token
 from .sign_in import connect_from_wear, sign_in, site_account_for
+from .used_here import rows as used_here_rows
 
 __all__ = [
     "attempt_login",
@@ -70,6 +71,8 @@ __all__ = [
     "set_group_shown_on_profiles",
     "shown_alongside",
     "trusted_browsers",
+    "one_click_browsers",
+    "used_here_rows",
     "connect_from_wear",
     "disconnect_bonk",
     "usable_bonk_token",
