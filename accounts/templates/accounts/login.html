@@ -18,6 +18,13 @@
     </div>
   </div>
 
+  {% if used_here %}
+    <div class="bv-card site-form-card">
+      {% with back=request.GET.next|default:"" %}{% include "accounts/_used_here.html" %}{% endwith %}
+    </div>
+    <p class="bv-muted site-form-alt">Or prove another account below.</p>
+  {% endif %}
+
   <form method="post" class="bv-card bv-form site-form-card">
     {% csrf_token %}
     {% if adding %}<input type="hidden" name="add" value="1">{% endif %}

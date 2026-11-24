@@ -1,19 +1,22 @@
-"""The login page's "Choose an account" (accounts/known_accounts.py).
+"""The login page's "Choose an account" (accounts/known_accounts.py) and
+one-click sign-in (accounts/devices.py, ADR 0025).
 
 Accounts that signed in on this browser stay listed after signing out, like
-Google's chooser. Choosing one still needs proof: it opens the way it last
-signed in (password or friend request) with the name filled in.
+Google's chooser. One that proved itself here (password or friend request)
+in the last ONE_CLICK_SIGN_IN_DAYS signs straight back in, with no bonk.io
+call; after that it opens the way it last signed in, name filled in.
 """
 
 import json
 import time
+from datetime import timedelta
 
 import pytest
 from django.http import HttpResponse
 from django.utils import timezone
 
 from accounts import known_accounts
-from accounts.models import LinkClaim
+from accounts.models import LinkClaim, RememberedSignIn
 from tests.conftest import load_bonk_fixture
 from tests.factories import UserFactory
 
@@ -48,6 +51,15 @@ def _page(client, url="/login/"):
     return client.get(url).content.decode()
 
 
+def _age_proofs(days):
+    """Move every one-click proof `days` into the past."""
+    RememberedSignIn.objects.update(proven_at=timezone.now() - timedelta(days=days))
+
+
+def _expire_one_click():
+    _age_proofs(31)
+
+
 class TestTheChooser:
     def test_a_new_browser_gets_the_plain_form(self, client):
         page = _page(client)
@@ -58,6 +70,7 @@ class TestTheChooser:
     def test_after_signing_out_the_account_is_offered(self, client, mocked_http):
         _password_login(client, mocked_http)
         client.post("/logout/")
+        _expire_one_click()
 
         page = _page(client)
 
@@ -68,6 +81,7 @@ class TestTheChooser:
     def test_a_friend_request_account_opens_the_friend_request_way(self, client):
         _friend_login(client)
         client.post("/logout/")
+        _expire_one_click()
 
         page = _page(client)
 
@@ -79,6 +93,7 @@ class TestTheChooser:
         client.post("/logout/")
         _password_login(client, mocked_http)
         client.post("/logout/")
+        _expire_one_click()
 
         page = _page(client)
 
@@ -114,6 +129,113 @@ class TestTheChooser:
         _password_login(client, mocked_http)
 
         assert "Choose an account" not in _page(client)
+
+
+class TestOneClick:
+    def test_a_recent_sign_in_signs_straight_back_in(self, client, mocked_http):
+        _password_login(client, mocked_http)
+        client.post("/logout/")
+        calls = len(mocked_http.calls)
+
+        page = _page(client)
+        response = client.post("/login/choose/", {"username": "TestPlayer"})
+
+        assert "Signs straight in" in page and 'action="/login/choose/"' in page
+        assert response.status_code == 302
+        assert client.get("/api/me/").json()["user"]["username"] == "TestPlayer"
+        assert len(mocked_http.calls) == calls  # no bonk.io call
+
+    def test_a_friend_request_sign_in_counts_too(self, client):
+        _friend_login(client)
+        client.post("/logout/")
+
+        client.post("/login/choose/", {"username": "AltOne"})
+
+        assert client.get("/api/me/").json()["user"]["username"] == "AltOne"
+
+    def test_it_follows_next(self, client, mocked_http):
+        _password_login(client, mocked_http)
+        client.post("/logout/")
+
+        response = client.post("/login/choose/", {"username": "TestPlayer", "next": "/skins/"})
+
+        assert response["Location"] == "/skins/"
+
+    def test_one_click_does_not_extend_the_window(self, client, mocked_http):
+        _password_login(client, mocked_http)
+        client.post("/logout/")
+        _age_proofs(29)
+
+        client.post("/login/choose/", {"username": "TestPlayer"})
+        client.post("/logout/")
+        _age_proofs(31)
+
+        assert "Signs straight in" not in _page(client)
+
+    def test_after_the_window_it_asks_again(self, client, mocked_http):
+        _password_login(client, mocked_http)
+        client.post("/logout/")
+        _expire_one_click()
+
+        response = client.post("/login/choose/", {"username": "TestPlayer"})
+
+        assert response["Location"] == "/login/?username=TestPlayer"
+        assert client.get("/api/me/").status_code == 401
+
+    def test_another_browser_cannot(self, client, mocked_http):
+        from django.test import Client
+
+        _password_login(client, mocked_http)
+        other = Client()
+
+        response = other.post("/login/choose/", {"username": "TestPlayer"})
+
+        assert response.status_code == 302
+        assert other.get("/api/me/").status_code == 401
+
+    def test_a_forged_name_cannot(self, client, mocked_http):
+        _password_login(client, mocked_http)
+        client.post("/logout/")
+        UserFactory(username="SomeoneElse")
+
+        client.post("/login/choose/", {"username": "SomeoneElse"})
+
+        assert client.get("/api/me/").status_code == 401
+
+    def test_remove_ends_it(self, client, mocked_http):
+        _password_login(client, mocked_http)
+        client.post("/logout/")
+
+        client.post("/login/forget/", {"username": "TestPlayer"})
+
+        assert not RememberedSignIn.objects.exists()
+
+    def test_also_forget_this_device_ends_it(self, client, mocked_http):
+        _password_login(client, mocked_http)
+
+        client.post("/logout/", {"forget": "on"})
+
+        assert not RememberedSignIn.objects.exists()
+
+    def test_settings_lists_and_removes_it(self, client, mocked_http):
+        _password_login(client, mocked_http)
+
+        page = client.get("/settings/profile/").content.decode()
+        row = RememberedSignIn.objects.get()
+        client.post("/accounts/one-click/remove/", {"browser": row.pk})
+
+        assert "One-click sign-in" in page and "this browser" in page
+        assert not RememberedSignIn.objects.exists()
+
+    def test_settings_cannot_remove_another_accounts(self, client, mocked_http):
+        _password_login(client, mocked_http)
+        theirs = RememberedSignIn.objects.create(
+            user=UserFactory(), device_hash="x" * 64, proven_at=timezone.now()
+        )
+
+        client.post("/accounts/one-click/remove/", {"browser": theirs.pk})
+
+        assert RememberedSignIn.objects.filter(pk=theirs.pk).exists()
 
 
 class TestForgetting:

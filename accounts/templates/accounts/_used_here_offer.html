@@ -1,0 +1,18 @@
+{% comment %}Once, on the first page after a sign-in: other accounts used on this
+browser could join this one (accounts/used_here.py). Review opens the "Add a
+bonk.io account" page, where they're ticked and confirmed.{% endcomment %}
+<div class="site-used-here-offer" role="status">
+  <div class="bv-notice">
+    <i data-lucide="users" aria-hidden="true"></i>
+    <span>
+      {% with count=used_here_offer|length %}
+        {% if count == 1 %}{{ used_here_offer.0.username }} was{% else %}{{ count }} other accounts were{% endif %}
+      {% endwith %}
+      used on this browser. Add {% if used_here_offer|length == 1 %}it{% else %}them{% endif %} to your accounts?
+    </span>
+    <span class="site-used-here-offer__actions">
+      <a class="bv-btn bv-btn--primary" href="{% url 'accounts:login' %}?add=1#used-here">Review</a>
+      <a class="bv-btn bv-btn--ghost" href="{{ request.get_full_path }}">Not now</a>
+    </span>
+  </div>
+</div>
