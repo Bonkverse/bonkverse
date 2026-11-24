@@ -67,6 +67,9 @@ class AccountGroup(models.Model):
         related_name="+",
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    # "Also plays as…": every account's public profile lists the group's
+    # other accounts. Off by default (RFC-0003: grouping is private).
+    show_on_profiles = models.BooleanField(default=False)
 
     def __str__(self):
         return f"group {self.pk} (main: {self.main_id})"

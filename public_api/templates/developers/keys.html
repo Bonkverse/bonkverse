@@ -87,7 +87,7 @@ Revoke confirm dialog come from ui/ui.js (data-bv-copy, data-bv-dialog-open).
                   <span class="dev-keys__name"><a href="{% url 'developers:developer_key_usage' key.prefix %}">{{ key.name }}</a></span>
                   {% if key.tier == partner_tier %}<span class="bv-pill bv-pill--accent dev-keys__tier">Partner</span>{% endif %}
                   <span class="bv-hint dev-keys__meta">
-                    Created {{ key.created_at|date:"M j, Y" }} ·
+                    Created {{ key.created_at|date:"M j, Y" }}{% if key.owner_id != user.pk %} by {{ key.owner.username }}{% endif %} ·
                     {% if not key.is_active %}revoked {{ key.revoked_at|date:"M j, Y" }}
                     {% elif key.last_used_at %}last used {{ key.last_used_at|timesince }} ago
                     {% else %}never used{% endif %}

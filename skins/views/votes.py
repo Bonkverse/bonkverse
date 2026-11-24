@@ -15,7 +15,7 @@ from core.ratelimits import limit
 
 from accounts.services import log_event
 from skins.models import Skin
-from skins.votes import DIRECTIONS, cast_vote
+from skins.votes import DIRECTIONS, VoteNotAllowed, cast_vote
 
 
 def _get_vote_from_request(request):
@@ -40,7 +40,12 @@ def vote_skin_api(request, skin_id):
     if direction not in DIRECTIONS:
         return JsonResponse({"error": "invalid vote"}, status=400)
 
-    result = cast_vote(request.user, skin, direction)
+    try:
+        result = cast_vote(request.user, skin, direction)
+    except VoteNotAllowed as refusal:
+        # Below bonk.io level 5 (the page disables the buttons; this is
+        # for anything that calls the API anyway).
+        return JsonResponse({"error": "not_allowed", "message": refusal.message}, status=403)
 
     if result.current_vote:
         log_event(request.user, "skin_voted", skin=skin, direction=result.current_vote)

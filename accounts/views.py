@@ -169,6 +169,26 @@ def make_main_account(request):
     return redirect(_back(request))
 
 
+@login_required
+@require_POST
+@limit("write")
+def show_on_profiles_view(request):
+    """Settings: turn "Also plays as…" on (show=1) or off for the group."""
+    show = request.POST.get("show") == "1"
+    try:
+        groups.show_on_profiles(request, show)
+    except groups.NotAllowed as refusal:
+        messages.error(request, refusal.message)
+    else:
+        messages.success(
+            request,
+            "Your profiles now list your other accounts."
+            if show
+            else "Your profiles no longer list your other accounts.",
+        )
+    return redirect(_back(request))
+
+
 def _account_id(value) -> int:
     try:
         return int(value)

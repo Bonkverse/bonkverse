@@ -38,6 +38,7 @@ from players.selectors import (
     worn_skins,
 )
 
+from accounts.services import group_member_ids
 from .models import ApiKey
 
 MAX_USERNAME_LENGTH = 100
@@ -254,11 +255,17 @@ def level_history(username):
 
 
 def keys_for(user):
-    """The account's API keys for its developer portal list: active first,
-    newest first."""
-    return ApiKey.objects.filter(owner=user).order_by("-is_active", "-created_at")
+    """The person's API keys for the developer portal list: those of every
+    bonk.io account in their group (keys are shared across a group, RFC-0003
+    phase 5), active first, newest first."""
+    return (
+        ApiKey.objects.filter(owner_id__in=group_member_ids(user))
+        .select_related("owner")
+        .order_by("-is_active", "-created_at")
+    )
 
 
 def own_key(user, prefix):
-    """One of the account's own keys (active or revoked) by its prefix, or None."""
-    return ApiKey.objects.filter(owner=user, prefix=prefix).first()
+    """One of the person's keys (any account in their group; active or
+    revoked) by its prefix, or None."""
+    return ApiKey.objects.filter(owner_id__in=group_member_ids(user), prefix=prefix).first()

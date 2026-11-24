@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from core.ratelimits import limit
-from skins.models import Skin, SkinVote
+from skins.models import Skin
+from skins.selectors import vote_state
 from django.conf import settings
 
 
@@ -38,14 +39,10 @@ def skin_detail(request, skin_id):
 
     fav_count = skin.favorited_by.count()  # 1 query: COUNT(*)
     is_favorited = False
-    current_vote = None
 
     if request.user.is_authenticated:
         # .exists() → SELECT 1 LIMIT 1, not a full fetch
         is_favorited = skin.favorited_by.filter(pk=request.user.pk).exists()
-
-        vote = SkinVote.objects.filter(user=request.user, skin=skin).first()
-        current_vote = vote.vote if vote else None
 
     return render(
         request,
@@ -57,6 +54,7 @@ def skin_detail(request, skin_id):
             "share_url": share_url,
             "fav_count": fav_count,
             "is_favorited": is_favorited,
-            "current_vote": current_vote,
+            # The person's vote (one per group) and why they can't vote, if so.
+            "vote": vote_state(request.user, skin),
         },
     )

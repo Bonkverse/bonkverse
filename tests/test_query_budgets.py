@@ -45,7 +45,9 @@ BUDGETS = {
     "/category/minimalist/": (4, 9),
     "/leaderboards/upvoted/": (2, 5),
     "/leaderboards/favorited/": (2, 5),
-    "DETAIL": (3, 8),
+    # Signed in, the skin page also reads the voter's bonk.io level (level 5
+    # to vote, RFC-0003 phase 5, 2026-11-24).
+    "DETAIL": (3, 9),
     # Your own profile's Skins tab (owner cards); signed in as OWNER only.
     "MY_SKINS": (None, 16),
 }

@@ -39,6 +39,11 @@ urlpatterns = [
     ),
     path("settings/profile/", views.profile_settings, name="profile_settings"),
     path(
+        "settings/profile/apply-to-all/",
+        views.apply_visibility_to_all,
+        name="apply_visibility_to_all",
+    ),
+    path(
         "settings/bonk/disconnect/",
         views.disconnect_bonk_view,
         name="disconnect_bonk",

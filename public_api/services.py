@@ -19,6 +19,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from .keys import create_key
+from accounts.services import group_member_ids
 from .models import ApiKey, ApiTermsAcceptance
 
 logger = logging.getLogger(__name__)
@@ -82,9 +83,14 @@ def create_own_key(user, *, name: str, agree_to_terms: bool = False) -> tuple[Ap
     if len(name) > MAX_KEY_NAME_LENGTH:
         raise PortalError("name_too_long")
 
-    # Lock the owner's active keys so two quick submits can't both pass the
-    # limit check.
-    active = list(ApiKey.objects.select_for_update().filter(owner=user, is_active=True))
+    # The limit is per person: keys are shared across a group of bonk.io
+    # accounts (RFC-0003 phase 5), so adding accounts doesn't raise it. Lock
+    # those active keys so two quick submits can't both pass the check.
+    active = list(
+        ApiKey.objects.select_for_update().filter(
+            owner_id__in=group_member_ids(user), is_active=True
+        )
+    )
     if len(active) >= settings.PUBLIC_API_MAX_KEYS_PER_USER:
         raise PortalError("too_many_keys")
 
@@ -96,13 +102,16 @@ def create_own_key(user, *, name: str, agree_to_terms: bool = False) -> tuple[Ap
 
 
 def revoke_own_key(user, prefix: str) -> ApiKey:
-    """Revoke one of `user`'s active keys, found by its public prefix.
+    """Revoke one of the person's active keys (any account in `user`'s
+    group), found by its public prefix.
 
     Raises:
         PortalError: "key_not_found" if they have no active key with that
             prefix (someone else's key looks the same as a missing one).
     """
-    api_key = ApiKey.objects.filter(owner=user, prefix=prefix, is_active=True).first()
+    api_key = ApiKey.objects.filter(
+        owner_id__in=group_member_ids(user), prefix=prefix, is_active=True
+    ).first()
     if api_key is None:
         raise PortalError("key_not_found")
     api_key.revoke()

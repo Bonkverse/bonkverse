@@ -48,6 +48,7 @@ from skins.selectors import (
 )
 
 from accounts.models import BonkAccountLink
+from accounts.services import shown_alongside
 from skins.services import code_digest
 from .models import BonkPlayer, FlashFriend, FlashFriendship, Friendship
 
@@ -266,6 +267,9 @@ def profile_base(username, viewer, active=""):
         "account_age": calculator.account_age(bonk_player.bonk_id) if bonk_player else None,
         "username": name,
         "account": account,
+        # "Also plays as…": the account's other bonk.io accounts, when its
+        # group chose to show them (RFC-0003 phase 5); else [].
+        "also_plays_as": shown_alongside(account) if account else [],
         "is_owner": is_owner,
         "shown": shown,
         "hidden_labels": [label for f, label, _ in ProfileVisibility.SECTIONS if not saved[f]],

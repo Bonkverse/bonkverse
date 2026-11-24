@@ -33,7 +33,7 @@ All in `skins/urls.py`; views in `skins/views/`, one module per area.
 
 ## Inside the app
 
-- `votes.py`: `cast_vote`, the one way vote counters change (ADR 0014); `recount_votes`, `fix_vote_counts` for `audit_vote_counts`.
+- `votes.py`: `cast_vote`, the one way vote counters change (ADR 0014): one vote per person across their group of bonk.io accounts, the latest wins, and a new vote needs bonk.io level 5 (ADR 0023); `group_vote`, `why_cant_vote`; `merge_votes_into_group` when an account joins a group; `recount_votes`, `fix_vote_counts` for `audit_vote_counts`.
 - `skin_media.py`: the one writer of skin image files and rows (`save_render`; [skin-images.md](../architecture/skin-images.md)).
 - `rerender.py`: `rerender(skin)`, shared by the staff button and `rerender_skins`.
 - `skin_import.py`: importing a BonkLeagues skin (upload form, BonxBot); `bonxbot_migration.py`: the one-time BonxBot import behind `import_bonxbot_skins`.

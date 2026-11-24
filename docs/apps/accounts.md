@@ -17,6 +17,7 @@ Names are in the `accounts` namespace (`app_name` in `accounts/urls.py`): `{% ur
 | `/accounts/switch/` | `switch_account` | POST `account`: use another account signed in on this browser |
 | `/accounts/remove/` | `remove_account` | POST `account`: take it out of the group (it keeps its own history) |
 | `/accounts/main/` | `make_main_account` | POST `account`: make it the group's main |
+| `/accounts/show-on-profiles/` | `show_on_profiles` | POST `show=1/0`: "Also plays as…" on the group's profiles (main signed in here) |
 
 ## A person's bonk.io accounts (groups)
 
@@ -26,7 +27,9 @@ RFC-0003 phase 5, [ADR 0023](../adr/0023-account-groups-of-site-accounts.md), `a
 - **Switching** needs no password, but only between accounts signed in on this browser (`groups.SIGNED_IN_KEY` in the session). The group's other accounts show "Sign in". Trusted devices (a later PR) will let any account unlock the group on a device the group used before.
 - **Adding:** "Add account" (`/login/?add=1`) or a Wear popup login with another account joins the group and keeps both signed in. A plain login while signed in replaces the session, so logging in to a friend's account never groups it. An account in another group moves (the password proves who controls it now).
 - **Removing:** the account itself, or the main when it's signed in here. Its history goes with it. Two becoming one deletes the group; the main leaving hands main to the next account.
-- **Shared:** appearance (`appearance.from_cookies` writes it to every account in the group; a new account takes the group's).
+- **Shared:** appearance (`appearance.from_cookies` writes it to every account in the group; a new account takes the group's), one vote per skin (`skins.votes`, via `group_member_ids` and the `account_joined_group` signal), and API keys (`public_api`: listed, revoked and limited per group).
+- **Level 5 to vote:** `bonk_level(user)` reads the XP stored at the account's last sign-in.
+- **Privacy:** per account; "Apply these to all my accounts" (`players` settings) and "Also plays as…" (`AccountGroup.show_on_profiles`, `/accounts/show-on-profiles/`, `shown_alongside(user)` on profiles) need the main signed in on this browser (`main_signed_in_here`).
 - `manage.py group_linked_accounts` (dry run; `--run`) converts site accounts that hold links to several bonk.io accounts, from before groups: each link moves to its own account's site account, all in one group, main = the most recently connected.
 
 ## Public entry points for other apps
@@ -98,7 +101,7 @@ accounts/
 | Model | Table | What |
 |---|---|---|
 | `BonkUser` | `skins_bonkuser` (+ `skins_bonkuser_groups`, `skins_bonkuser_user_permissions`) | The site account: `AUTH_USER_MODEL`, a bonk.io username, no usable password (sign-in is through bonk.io). Admin: `/admin/accounts/bonkuser/` |
-| `AccountGroup` | `accounts_accountgroup` | A person's bonk.io accounts: `main`, and `BonkUser.account_group` / `joined_group_at` on each member. Never one member (groups.py deletes it) |
+| `AccountGroup` | `accounts_accountgroup` | A person's bonk.io accounts: `main`, `show_on_profiles` ("Also plays as…"), and `BonkUser.account_group` / `joined_group_at` on each member. Never one member (groups.py deletes it) |
 | `UserEvent` | `skins_userevent` | The event log: one row per thing a person (or the site for them) did. Written only by `log_event`. Moved from `skins` in 5.6c, no data moved (`accounts.0003`, `skins.0035`) |
 | `BonkAccountLink` | `skins_bonkaccountlink` | A site account ↔ a `players.BonkPlayer`, with the bonk.io session token from the latest login, encrypted (`encrypt_token()` / `bonk_token()`, [ADR 0016](../adr/0016-bonk-tokens-encrypted-at-rest.md)), when it stops being usable (`token_expires_at`, from the token's `exp`; `bonk_token()` returns None after it) the account's active slot (`active_slot`), and with "Keep me connected" bonk.io's remember-me token, encrypted the same way (`remember_token_encrypted`, `remember_token()`; `remember_status`: none, active or revoked; `last_refreshed_at`) |
 

@@ -22,7 +22,8 @@ from django.db.models import Count, F, Max, Min, Q, Sum
 from core.db import time_limited_queries
 
 from .editing import tags_of
-from .models import Skin, SkinVote
+from .models import Skin
+from .votes import group_vote, why_cant_vote
 from .querysets import MIN_NAME_SIMILARITY
 from accounts.models import BonkAccountLink
 from players.models import BonkPlayer, FlashFriendship
@@ -50,9 +51,8 @@ def decorate_skins_for_user(skins, user=None):
 
     votes, favorited = {}, set()
     if user is not None and user.is_authenticated:
-        votes = dict(
-            SkinVote.objects.filter(user=user, skin_id__in=ids).values_list("skin_id", "vote")
-        )
+        # The person's vote: any of their accounts' (one vote per group).
+        votes = group_vote(user, ids)
         favorited = set(user.favorite_skins.filter(id__in=ids).values_list("id", flat=True))
 
     for skin in skins:
@@ -209,3 +209,15 @@ def account_links_for(players):
             "bonk_player_id", "user_id"
         )
     )
+
+
+def vote_state(user, skin) -> dict:
+    """For the skin page's vote buttons: the person's vote (any of their
+    accounts', one per group) and, if they may not cast a new one, why
+    ("Reach level 5 on bonk.io to vote...")."""
+    if user is None or not user.is_authenticated:
+        return {"current_vote": None, "blocked": None}
+    return {
+        "current_vote": group_vote(user, [skin.id]).get(skin.id),
+        "blocked": why_cant_vote(user),
+    }

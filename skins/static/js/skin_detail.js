@@ -15,8 +15,15 @@
       if (btn.getAttribute("aria-busy") === "true") return;
       btn.setAttribute("aria-busy", "true");
       try {
-        const json = await BVApi.postOrLogin(page.dataset.voteUrl, { vote: btn.dataset.vote });
-        if (!json) return;
+        const res = await BVApi.post(page.dataset.voteUrl, { vote: btn.dataset.vote });
+        if (BVApi.needsSiteLogin(res)) { BVApi.goToLogin(); return; }
+        if (!res.ok) {
+          // e.g. below bonk.io level 5: the server says why.
+          const status = page.querySelector(".bv-status");
+          if (status && res.json && res.json.message) status.textContent = res.json.message;
+          return;
+        }
+        const json = res.json;
         page.querySelector(".up-count").textContent = json.upvotes;
         page.querySelector(".down-count").textContent = json.downvotes;
         votes.forEach((b) => b.setAttribute("aria-pressed", b.dataset.vote === json.current_vote ? "true" : "false"));

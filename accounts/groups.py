@@ -33,8 +33,11 @@ from django.utils import timezone
 
 from core.token_crypto import bonk_session
 
+from core.bonk.levels import level_for_xp
+
 from .events import log_event
 from .models import AccountGroup, BonkAccountLink, BonkUser
+from .signals import account_joined_group
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +68,34 @@ def members(user: BonkUser) -> list[BonkUser]:
     )
     accounts.sort(key=lambda account: account.pk != group.main_id)
     return accounts
+
+
+def member_ids(user: BonkUser) -> list[int]:
+    """Ids of every account in `user`'s group, or just `user`'s."""
+    if user.account_group_id is None:
+        return [user.pk]
+    return list(
+        BonkUser.objects.filter(account_group_id=user.account_group_id).values_list("pk", flat=True)
+    )
+
+
+def bonk_level(user: BonkUser) -> int | None:
+    """The account's bonk.io level from the XP stored at its last sign-in
+    (the highest of its linked bonk.io accounts), or None if never stored."""
+    xp = (
+        BonkAccountLink.objects.filter(user=user, active=True, bonk_player__xp__isnull=False)
+        .order_by("-bonk_player__xp")
+        .values_list("bonk_player__xp", flat=True)
+        .first()
+    )
+    return None if xp is None else level_for_xp(xp)
+
+
+def main_signed_in_here(request) -> bool:
+    """Whether the group's main is signed in on this browser (true for an
+    account with no group). Actions that change the other accounts need it."""
+    group = request.user.account_group if request.user.account_group_id else None
+    return group is None or group.main_id in signed_in_ids(request)
 
 
 def is_main(user: BonkUser) -> bool:
@@ -227,6 +258,7 @@ def join(owner: BonkUser, account: BonkUser) -> AccountGroup:
     if account.account_group_id is not None:
         _leave(account)
     group = owner.account_group
+    others = member_ids(owner)
     now = timezone.now()
     if group is None:
         group = AccountGroup.objects.create(main=owner)
@@ -243,6 +275,7 @@ def join(owner: BonkUser, account: BonkUser) -> AccountGroup:
     account.save(
         update_fields=["account_group", "joined_group_at", "theme", "seasonal", "appearance_at"]
     )
+    account_joined_group.send(sender=BonkUser, account=account, group=group, others=others)
     log_event(owner, "account_group_joined", account_id=account.pk, group_id=group.pk)
     logger.info("account joined a group | group=%s | account=%s", group.pk, account.pk)
     return group
@@ -316,3 +349,27 @@ def _leave(account: BonkUser) -> None:
     if group.main_id == account.pk:
         group.main = rest[0]
         group.save(update_fields=["main"])
+
+
+def show_on_profiles(request, show: bool) -> None:
+    """Turn "Also plays as…" on or off for the active account's group.
+    Allowed when the main is signed in on this browser.
+
+    Raises:
+        NotAllowed
+    """
+    group = request.user.account_group if request.user.account_group_id else None
+    if group is None:
+        raise NotAllowed("You have only one bonk.io account here.")
+    if not main_signed_in_here(request):
+        raise NotAllowed("Sign in to your main account on this browser first.")
+    AccountGroup.objects.filter(pk=group.pk).update(show_on_profiles=show)
+    log_event(request.user, "account_group_profiles", group_id=group.pk, shown=show)
+
+
+def shown_alongside(user: BonkUser) -> list[str]:
+    """For `user`'s public profile: the usernames of the other accounts in
+    its group when the group shows them ("Also plays as…"), else []."""
+    if user.account_group_id is None or not user.account_group.show_on_profiles:
+        return []
+    return [account.username for account in members(user) if account.pk != user.pk]

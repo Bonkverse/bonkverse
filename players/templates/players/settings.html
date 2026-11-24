@@ -52,7 +52,7 @@ Save button is only for browsers without scripts.
   <section class="bv-card pv-settings" id="accounts" aria-labelledby="accounts-title">
     <h2 class="pv-card__title" id="accounts-title">Your bonk.io accounts</h2>
     {% if group_accounts|length > 1 %}
-      <p class="pv-fine">Switch between these from the account menu without a password once each is signed in on this browser. Each keeps its own profile, favorites, votes and uploads; appearance is shared. Only you see that they're grouped.</p>
+      <p class="pv-fine">Switch between these from the account menu without a password once each is signed in on this browser. Each keeps its own profile, favorites and uploads. They share one vote per skin, your appearance and your API keys.</p>
     {% else %}
       <p class="pv-fine">Play as more than one bonk.io account? Add the others to switch between them from the account menu without a password. Each keeps its own profile, favorites, votes and uploads.</p>
     {% endif %}
@@ -93,6 +93,20 @@ Save button is only for browsers without scripts.
         </li>
       {% endfor %}
     </ul>
+    {% if group_accounts|length > 1 %}
+      <form method="post" action="{% url 'accounts:show_on_profiles' %}" class="pv-also-setting">
+        {% csrf_token %}
+        {% if group_shown_on_profiles %}
+          <p class="pv-fine">Your profiles say “Also plays as” with these accounts.</p>
+          <input type="hidden" name="show" value="0">
+          <button type="submit" class="bv-btn">Hide from my profiles</button>
+        {% else %}
+          <p class="pv-fine">Only you see that these accounts are yours. You can list them on each of their profiles (“Also plays as…”).</p>
+          <input type="hidden" name="show" value="1">
+          <button type="submit" class="bv-btn">Show on my profiles</button>
+        {% endif %}
+      </form>
+    {% endif %}
     <div class="pv-actions">
       <a class="bv-btn bv-btn--primary" href="{% url 'accounts:login' %}?add=1&amp;next={{ request.path|urlencode }}">Add bonk.io account</a>
     </div>
@@ -147,6 +161,14 @@ Save button is only for browsers without scripts.
     </p>
     <button type="submit" class="bv-btn bv-btn--primary" data-save>Save</button>
   </form>
+  {% if group_accounts|length > 1 %}
+    {# Privacy is per account; this copies this account's switches to the others (RFC-0003 phase 5). #}
+    <form method="post" action="{% url 'players:apply_visibility_to_all' %}" class="bv-card pv-settings">
+      {% csrf_token %}
+      <p class="pv-fine">These switches are for {{ user.username }} only. Each of your bonk.io accounts has its own.</p>
+      <button type="submit" class="bv-btn">Apply these to all my accounts</button>
+    </form>
+  {% endif %}
 </div>
 {% endblock %}
 
