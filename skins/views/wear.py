@@ -1,7 +1,9 @@
 """Wearing skins on bonk.io from Bonkverse.
 
 Owns: the wear endpoints (gallery skin by id, unsaved editor skin by code) and
-the in-page bonk.io login used when the player's bonk.io token is missing.
+the in-page bonk.io login used when the player's bonk.io account needs
+connecting. Tokens come only from the token broker (accounts/bonk_tokens.py),
+which refreshes an expired one with the remember-me token when it can.
 A wear into the player's active slot is recorded as the skin they wear
 (players.services.record_worn_skin).
 Does not own: the bonk.io session rules (core/bonk/session.py) or the HTTP
@@ -9,12 +11,14 @@ calls to bonk.io (integrations/bonk_api.py).
 
 JSON contract the frontend relies on (tests/test_wear.py):
 - 401 with auth="bonkverse" -> sign in to the site
-- 401 with auth="bonk"      -> show the bonk.io login modal
+- 401 with auth="bonk"      -> show the bonk.io login modal (no linked
+                               account, or the broker needs the password)
 - 401 without auth          -> the bonk.io credentials were wrong
 - any other failure         -> no modal; show `message` (a sentence):
     422 avatar_too_big   the skin is over bonk.io's size limit
     503 rate_limited     bonk.io is limiting skin changes from Bonkverse, or
-                         its login pause is on (which stops wears too)
+                         its login pause is on (which stops wears and token
+                         refreshes too)
                          (+ retry_after seconds and a Retry-After header, and
                          the wait in `message`)
     429 wear_in_progress this account already has a wear waiting on bonk.io
@@ -62,23 +66,23 @@ from integrations.bonk_api import (
 )
 
 from accounts.services import (
+    ReconnectNeeded,
+    TokensPaused,
+    TokensUnavailable,
+    active_link,
     attempt_login,
     bot_check_site_key,
+    connect_from_wear,
     login_failure_message,
-    refresh_link,
+    usable_bonk_token,
 )
-from core.auth_guards import api_login_required, bonk_token_required
+from core.auth_guards import api_login_required
 from players.services import WornSkinSource, forget_user_skin, record_worn_skin
 
 from accounts.services import log_event
 from skins.models import Skin
 
 logger = logging.getLogger(__name__)
-
-
-def _resolve_slot(request) -> AvatarSlot:
-    """The slot from the form if valid, else the player's active slot, else 3."""
-    return AvatarSlot.choose(request.POST.get("slot"), bonk_session(request).active_slot)
 
 
 # Failures a new bonk.io login can't fix: (HTTP status, sentence for the player).
@@ -172,29 +176,82 @@ def _update_failed_response(request, result: BonkAvatarUpdateResult) -> JsonResp
     return response
 
 
-def _wear(request, skin_code: str) -> tuple[AvatarSlot, JsonResponse | None]:
-    """Send `skin_code` to the player's bonk.io account.
+def _reconnect_response() -> JsonResponse:
+    """The one reply that opens the bonk.io login popup."""
+    return JsonResponse({"ok": False, "auth": "bonk"}, status=401)
+
+
+def _paused_response(request, seconds: int) -> JsonResponse:
+    """bonk.io is limiting Bonkverse; the token broker didn't ask it."""
+    mark_expected_error(request)
+    response = JsonResponse(
+        {
+            "ok": False,
+            "error": BonkError.RATE_LIMITED,
+            "message": _LOGIN_PAUSE_MESSAGE.format(wait=describe_wait(seconds)),
+            "retry_after": seconds,
+        },
+        status=503,
+    )
+    response["Retry-After"] = str(seconds)
+    return response
+
+
+def _token_for(request, link, *, force_refresh=False) -> tuple[str | None, JsonResponse | None]:
+    """A usable bonk.io token for `link` from the token broker, or the reply
+    to send instead (popup, pause, or bonk.io unreachable)."""
+    try:
+        return usable_bonk_token(link, force_refresh=force_refresh), None
+    except ReconnectNeeded:
+        return None, _reconnect_response()
+    except TokensPaused as paused:
+        return None, _paused_response(request, paused.seconds)
+    except TokensUnavailable:
+        status, message = _WEAR_FAILURES[BonkError.UNAVAILABLE]
+        return None, JsonResponse(
+            {"ok": False, "error": BonkError.UNAVAILABLE, "message": message}, status=status
+        )
+
+
+def _wear(request, skin_code: str) -> tuple[AvatarSlot | None, JsonResponse | None]:
+    """Send `skin_code` to the bonk.io account this browser acts as.
+
+    The token comes from the token broker (accounts/bonk_tokens.py), which
+    refreshes an expired one with the remember-me token when the player has
+    one. If bonk.io refuses a token before its expiry ("token"), it's
+    refreshed once and the wear tried again; never more.
 
     Returns the slot used, and an error response if bonk.io didn't apply it.
     """
-    bonk = bonk_session(request)
-    token = bonk.token  # guaranteed present by bonk_token_required
-    slot = _resolve_slot(request)
+    link = active_link(request)
+    if link is None:
+        return None, _reconnect_response()
+    slot = AvatarSlot.choose(
+        request.POST.get("slot"), link.active_slot or bonk_session(request).active_slot
+    )
     with _wear_lock(request.user.pk) as acquired:
         if not acquired:
             return slot, JsonResponse(
                 {"ok": False, "error": "wear_in_progress", "message": _IN_PROGRESS_MESSAGE},
                 status=429,
             )
+        token, refusal = _token_for(request, link)
+        if refusal:
+            return slot, refusal
         result = get_client().update_avatar(token, slot, skin_code)
+        if result.error == BonkError.TOKEN_REJECTED:
+            token, refusal = _token_for(request, link, force_refresh=True)
+            if refusal:
+                return slot, refusal
+            result = get_client().update_avatar(token, slot, skin_code)
     if not result.ok:
         # integrations/bonk_api.py logs bonk.io's refusal code.
         return slot, _update_failed_response(request, result)
-    if slot == bonk.active_slot:
+    if link.active_slot is not None and slot.number == link.active_slot:
         # Only the active slot is what the player wears in game. A failure
         # here must not turn a skin bonk.io applied into an error reply.
         try:
-            if record_worn_skin(bonk.bonk_id, skin_code, WornSkinSource.WEAR):
+            if record_worn_skin(link.bonk_player.bonk_id, skin_code, WornSkinSource.WEAR):
                 forget_user_skin(request.user)
         except Exception:
             logger.exception("could not record the worn skin after a wear")
@@ -205,13 +262,19 @@ def _wear(request, skin_code: str) -> tuple[AvatarSlot, JsonResponse | None]:
 @require_POST
 @limit("login", method="POST")
 def bonk_login_for_wear(request):
-    """Mint a bonk.io token from credentials (the rare first-time / expired path)."""
+    """The Wear popup's bonk.io login: connect (or reconnect) an account.
+
+    With "Keep me connected for Wear" ticked (`bonk_remember`), the link keeps
+    a remember-me token and the popup shouldn't be needed again on this
+    account until bonk.io revokes it.
+    """
     bonk_username = request.POST.get("bonk_username")
     password = request.POST.get("bonk_password")
     if not bonk_username or not password:
         return JsonResponse({"ok": False, "error": "missing_params"}, status=400)
+    remember = request.POST.get("bonk_remember") in ("1", "on", "true")
 
-    attempt = attempt_login(request, bonk_username, password, via="wear")
+    attempt = attempt_login(request, bonk_username, password, via="wear", remember=remember)
     if not attempt.ok:
         # Bad bonk credentials (or held for too many) — 401 WITHOUT an `auth`
         # tag so the client treats it as a credential error, not a
@@ -234,14 +297,13 @@ def bonk_login_for_wear(request):
     result = attempt.result
 
     bonk = bonk_session(request)
-    bonk.store_token(result.token)
-    # The account this token belongs to, which wears record their skin on.
+    # The account this browser now acts as; its tokens live on the link.
     bonk.store_identity(result.username.value, result.bonk_id)
     bonk.store_active_slot(result.active_slot)
     try:
-        refresh_link(request.user, result)
+        connect_from_wear(request.user, result, remember=remember)
     except Exception:
-        logger.exception("could not refresh the account link after a wear login")
+        logger.exception("could not link the account after a wear login")
     try:
         if record_worn_skin(result.bonk_id, result.skin_code, WornSkinSource.LOGIN):
             forget_user_skin(request.user)
@@ -251,7 +313,7 @@ def bonk_login_for_wear(request):
     return JsonResponse({"ok": True, "active_slot": active_slot})
 
 
-@bonk_token_required
+@api_login_required
 @require_POST
 @limit("wear_burst", key="user_or_ip", group=_WEAR_GROUP)
 @limit("wear", key="user_or_ip", group=_WEAR_GROUP)
@@ -268,7 +330,7 @@ def wear_skin_code(request):
     return JsonResponse({"ok": True, "slot": slot.number})
 
 
-@bonk_token_required
+@api_login_required
 @require_POST
 @limit("wear_burst", key="user_or_ip", group=_WEAR_GROUP)
 @limit("wear", key="user_or_ip", group=_WEAR_GROUP)

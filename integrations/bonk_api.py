@@ -33,6 +33,10 @@ DEFAULT_BASE_URL = "https://bonk2.io/scripts"
 DEFAULT_TIMEOUT = (4.0, 8.0)  # (connect, read) seconds
 
 LOGIN_SCRIPT = "login_legacy.php"
+# Remember-me (RFC-0003 Part 2, measured 2026-11-24, docs/bonk/api.md): a
+# remember-me token for a fresh session token, and revoking one.
+LOGIN_AUTO_SCRIPT = "login_auto.php"
+CLEARAUTO_SCRIPT = "login_clearauto.php"
 FRIENDS_SCRIPT = "friends.php"
 AVATAR_UPDATE_SCRIPT = "avatar_update.php"
 
@@ -67,6 +71,8 @@ class BonkError:
     # bonk.io from the server's IP, so this is everyone's limit. See
     # docs/bonk/login-rate-limit.md, LOGIN_RATE_LIMIT_PAUSE and _Cooldown.
     RATE_LIMITED = "rate_limited"
+    # login_auto.php: the remember-me token was revoked or never existed.
+    NOT_FOUND = "not_found"
     REJECTED = "rejected"  # a refusal code we don't recognise (see bonk_error)
     # bonk.io didn't give a usable answer: connection failed, timed out,
     # HTTP error (e.g. a Cloudflare challenge) or a body that isn't JSON.
@@ -82,6 +88,7 @@ _REFUSALS = {
     "token": BonkError.TOKEN_REJECTED,
     "avatar_too_big": BonkError.AVATAR_TOO_BIG,
     "ratelimited": BonkError.RATE_LIMITED,
+    "not_found": BonkError.NOT_FOUND,
 }
 
 # After bonk.io says "ratelimited" for a script, Bonkverse stops calling that
@@ -225,7 +232,13 @@ class _Cooldowns:
         self._store = store
         self._lock = threading.Lock()
         self._by_script: dict[str, _Cooldown] = {}
-        for script in (LOGIN_SCRIPT, FRIENDS_SCRIPT, AVATAR_UPDATE_SCRIPT):
+        for script in (
+            LOGIN_SCRIPT,
+            LOGIN_AUTO_SCRIPT,
+            CLEARAUTO_SCRIPT,
+            FRIENDS_SCRIPT,
+            AVATAR_UPDATE_SCRIPT,
+        ):
             self.for_script(script)
 
     def use_store(self, store) -> None:
@@ -303,6 +316,20 @@ class BonkLoginResult:
     # callers fall back to friends.php (RFC-0003 phase 2).
     friends: tuple[BonkFriend, ...] | None = field(default=None, repr=False)
     requests: tuple[BonkFriend, ...] | None = field(default=None, repr=False)
+    # BONK: with remember: true the login answer's rememberToken holds a
+    # remember-me token (77 characters); with remember: false it's "". None
+    # when there was none, and always None from login_auto.php, which
+    # doesn't rotate it (lab, 2026-11-24).
+    remember_token: str | None = field(default=None, repr=False)
+
+
+@dataclass(frozen=True)
+class BonkClearResult:
+    """What `login_clearauto.php` said."""
+
+    ok: bool
+    error: str | None = None
+    bonk_error: str | None = None
 
 
 @dataclass(frozen=True)
@@ -345,9 +372,10 @@ class _CoolingDown(Exception):
     """bonk.io rate-limited this script recently; no call was made. Internal."""
 
 
-# Matches "token":"<anything up to the next quote>" so a token can be removed
-# from a logged snippet without parsing it (snippets may be cut mid-JSON).
-_TOKEN_PATTERN = re.compile(r'("token"\s*:\s*")[^"]*(")')
+# Matches "token":"..." and "rememberToken":"..." (anything up to the next
+# quote) so a token can be removed from a logged snippet without parsing it
+# (snippets may be cut mid-JSON).
+_TOKEN_PATTERN = re.compile(r'("(?:token|rememberToken)"\s*:\s*")[^"]*(")')
 _SNIPPET_LENGTH = 300
 
 
@@ -379,12 +407,13 @@ class BonkApi:
         self._http = http or requests
         self._cooldowns = cooldowns or rate_limit_cooldowns
 
-    def login(self, username: str, password: str) -> BonkLoginResult:
+    def login(self, username: str, password: str, *, remember: bool = False) -> BonkLoginResult:
         """Exchange a bonk.io username and password for a token.
 
         Args:
             username: As the player typed it; sent unchanged.
             password: Sent to bonk.io only; never logged or stored.
+            remember: Ask for a remember-me token too (`remember_token`).
 
         Returns:
             A BonkLoginResult. `error` is a BonkError code when `ok` is False.
@@ -395,41 +424,47 @@ class BonkApi:
             # task=legacy; the client doesn't, so neither do we.
             data = self._post(
                 LOGIN_SCRIPT,
-                {"username": username, "password": password, "remember": "false"},
+                {
+                    "username": username,
+                    "password": password,
+                    "remember": "true" if remember else "false",
+                },
             )
         except _Unavailable:
             return BonkLoginResult(ok=False, error=BonkError.UNAVAILABLE)
         except _CoolingDown:
             return BonkLoginResult(ok=False, error=BonkError.RATE_LIMITED)
+        return _login_result(data, username)
 
-        if data.get("r") != "success" or not data.get("token"):
-            code = _bonk_code(data)
-            return BonkLoginResult(ok=False, error=_refusal(code), bonk_error=code)
+    def login_auto(self, remember_token: str) -> BonkLoginResult:
+        """Exchange a remember-me token for a fresh session token, no password.
 
+        Answers like `login` (token, friends, xp, slot) but never with a new
+        remember-me token. A revoked token is NOT_FOUND. During bonk.io's
+        login pause nothing is sent (RATE_LIMITED): a request during the
+        block seems to restart it (docs/bonk/login-rate-limit.md).
+        """
         try:
-            # BONK: the response carries the account's own spelling of the name.
-            canonical = BonkUsername(data.get("username") or username)
-        except InvalidUsername:
-            logger.warning("bonk.io login succeeded but returned an unusable username")
+            data = self._post(LOGIN_AUTO_SCRIPT, {"rememberToken": remember_token})
+        except _Unavailable:
             return BonkLoginResult(ok=False, error=BonkError.UNAVAILABLE)
+        except _CoolingDown:
+            return BonkLoginResult(ok=False, error=BonkError.RATE_LIMITED)
+        return _login_result(data, "")
 
-        # BONK: the key is activeAvatarNumber; the lowercase spelling is
-        # accepted too because older Bonkverse code expected it.
-        active_slot = AvatarSlot.parse(
-            data.get("activeAvatarNumber") or data.get("activeavatarnumber")
-        )
-        return BonkLoginResult(
-            ok=True,
-            token=data["token"],
-            active_slot=active_slot,
-            username=canonical,
-            bonk_id=_int_or_none(data.get("id")),
-            legacy_friends=data.get("legacyFriends") or "",
-            xp=_int_or_none(data.get("xp")),
-            skin_code=_slot_skin_code(data, active_slot),
-            friends=_friend_list_or_none(data.get("friends")),
-            requests=_friend_list_or_none(data.get("requests")),
-        )
+    def clear_auto(self, remember_token: str) -> BonkClearResult:
+        """Revoke one remember-me token (bonk.io's own logout does this). The
+        account's other remember-me tokens keep working."""
+        try:
+            data = self._post(CLEARAUTO_SCRIPT, {"rememberToken": remember_token})
+        except _Unavailable:
+            return BonkClearResult(ok=False, error=BonkError.UNAVAILABLE)
+        except _CoolingDown:
+            return BonkClearResult(ok=False, error=BonkError.RATE_LIMITED)
+        if data.get("r") != "success":
+            code = _bonk_code(data)
+            return BonkClearResult(ok=False, error=_refusal(code), bonk_error=code)
+        return BonkClearResult(ok=True)
 
     def get_friends(self, token: str) -> BonkFriendsResult:
         """The player's current bonk.io friends and incoming friend requests.
@@ -556,6 +591,38 @@ def get_client() -> BonkApi:
     return BonkApi(
         settings.BONK_API_BASE_URL,
         timeout=(settings.BONK_CONNECT_TIMEOUT, settings.BONK_READ_TIMEOUT),
+    )
+
+
+def _login_result(data: dict, typed_username: str) -> BonkLoginResult:
+    """A BonkLoginResult from a login_legacy.php or login_auto.php answer."""
+    if data.get("r") != "success" or not data.get("token"):
+        code = _bonk_code(data)
+        return BonkLoginResult(ok=False, error=_refusal(code), bonk_error=code)
+
+    try:
+        # BONK: the response carries the account's own spelling of the name.
+        canonical = BonkUsername(data.get("username") or typed_username)
+    except InvalidUsername:
+        logger.warning("bonk.io login succeeded but returned an unusable username")
+        return BonkLoginResult(ok=False, error=BonkError.UNAVAILABLE)
+
+    # BONK: the key is activeAvatarNumber; the lowercase spelling is
+    # accepted too because older Bonkverse code expected it.
+    active_slot = AvatarSlot.parse(data.get("activeAvatarNumber") or data.get("activeavatarnumber"))
+    remember = data.get("rememberToken")
+    return BonkLoginResult(
+        ok=True,
+        token=data["token"],
+        active_slot=active_slot,
+        username=canonical,
+        bonk_id=_int_or_none(data.get("id")),
+        legacy_friends=data.get("legacyFriends") or "",
+        xp=_int_or_none(data.get("xp")),
+        skin_code=_slot_skin_code(data, active_slot),
+        friends=_friend_list_or_none(data.get("friends")),
+        requests=_friend_list_or_none(data.get("requests")),
+        remember_token=remember if isinstance(remember, str) and remember else None,
     )
 
 

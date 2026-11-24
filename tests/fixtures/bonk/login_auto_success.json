@@ -1,0 +1,28 @@
+{
+  "r": "success",
+  "token": "SCRUBBED-TEST-TOKEN-abc123",
+  "username": "TestPlayer",
+  "id": 1234567,
+  "xp": 300,
+  "avatar": "",
+  "activeAvatarNumber": 1,
+  "avatar1": "",
+  "avatar2": "",
+  "avatar3": "",
+  "avatar4": "",
+  "avatar5": "",
+  "controls": false,
+  "friends": [
+    {
+      "id": 111,
+      "name": "Friend One",
+      "roomid": null
+    },
+    {
+      "id": 222,
+      "name": "Friend Two",
+      "roomid": 5
+    }
+  ],
+  "legacyFriends": ""
+}

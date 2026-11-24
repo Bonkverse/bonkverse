@@ -8,12 +8,10 @@ payloads (see tests/fixtures/bonk/).
 
 import base64
 import json
-import time
 from pathlib import Path
 
 import pytest
 
-from core import token_crypto
 import responses
 from django.core.cache import cache
 
@@ -158,12 +156,61 @@ def make_bonk_token(*, exp: float, **fields) -> str:
     return f"{part({'alg': 'HS256', 'typ': 'JWT'})}.{part(payload)}.not-a-real-signature"
 
 
-@pytest.fixture
-def bonk_session_client(logged_in_client):
-    """A logged-in client whose session also holds a live bonk.io token."""
-    session = logged_in_client.session
-    session["bonk_token"] = token_crypto.encrypt("test-bonk-token")
-    session["bonk_token_expires"] = time.time() + 3600
-    session["bonk_active_slot"] = 2
+def connect_bonk(
+    client,
+    user,
+    *,
+    player=None,
+    token="test-bonk-token",
+    slot=2,
+    expires_in=3600,
+    remember_token=None,
+):
+    """Give `user` a bonk.io connection the token broker can use: an account
+    link holding `token` (good for `expires_in` seconds; None for no session
+    token) and, optionally, a remember-me token; and point `client`'s
+    session at that account (accounts/bonk_tokens.py, RFC-0003 Part 2).
+
+    Returns the link.
+    """
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from accounts.models import BonkAccountLink
+    from tests.factories import BonkPlayerFactory
+
+    player = player or BonkPlayerFactory()
+    link, _ = BonkAccountLink.objects.update_or_create(
+        user=user,
+        bonk_player=player,
+        defaults={
+            "token_encrypted": BonkAccountLink.encrypt_token(token) if token else None,
+            "token_expires_at": timezone.now() + timedelta(seconds=expires_in) if token else None,
+            "active_slot": slot,
+            "remember_token_encrypted": (
+                BonkAccountLink.encrypt_token(remember_token) if remember_token else None
+            ),
+            "remember_status": (
+                BonkAccountLink.REMEMBER_ACTIVE if remember_token else BonkAccountLink.REMEMBER_NONE
+            ),
+        },
+    )
+    session = client.session
+    session["bonk_user_id"] = player.bonk_id
+    session["bonk_username"] = player.username
+    if slot is not None:
+        session["bonk_active_slot"] = slot
     session.save()
+    return link
+
+
+@pytest.fixture
+def bonk_session_client(logged_in_client, user):
+    """A logged-in client with a live bonk.io connection (an account link
+    whose token is good for an hour; active slot 2). `.link` and `.player`
+    are the link and its BonkPlayer."""
+    link = connect_bonk(logged_in_client, user)
+    logged_in_client.link = link
+    logged_in_client.player = link.bonk_player
     return logged_in_client

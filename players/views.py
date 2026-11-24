@@ -1,17 +1,16 @@
 import os
-from datetime import datetime
-from datetime import timezone as dt_timezone
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import redirect, render
+from django.views.decorators.http import require_POST
 from django.urls import reverse
 
 from core.bonk import dbid, levels
 from core.ratelimits import limit
-from core.token_crypto import bonk_session
+from accounts.services import active_link, bonk_connection, disconnect_bonk
 from skins.services import code_image
 
 from . import selectors, services
@@ -225,15 +224,24 @@ def profile_settings(request):
 
 
 def _bonk_connection(request) -> dict:
-    """This browser's bonk.io connection, for the settings page: who it's
-    for and when it ends (RFC-0003 phase 2). Ends about a day after login,
-    from the token's own `exp`."""
-    bonk = bonk_session(request)
-    expires_at = bonk.expires_at
-    if expires_at is None:
-        return {"connected": False}
-    return {
-        "connected": True,
-        "username": bonk.username,
-        "until": datetime.fromtimestamp(expires_at, tz=dt_timezone.utc),
-    }
+    """This browser's bonk.io connection, for the settings page (RFC-0003
+    Part 2): "remembered" (stays connected, refreshed when Wear needs it),
+    "connected" until a time (about a day after login), or "disconnected".
+    From the account link, through the token broker (no secrets)."""
+    return bonk_connection(active_link(request))
+
+
+@login_required
+@require_POST
+@limit("write")
+def disconnect_bonk_view(request):
+    """Settings' "Disconnect": revoke the remember-me token on bonk.io and
+    forget both tokens. The account stays linked; the next Wear asks for the
+    password."""
+    link = active_link(request)
+    if link is not None:
+        disconnect_bonk(link)
+    messages.success(
+        request, "Disconnected from bonk.io. Wear will ask for your password next time."
+    )
+    return redirect("players:profile_settings")

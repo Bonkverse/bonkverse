@@ -146,12 +146,7 @@ class TestLoginRecordsWornSkin:
 
 @pytest.fixture
 def wearing_client(bonk_session_client):
-    """bonk_session_client (active slot 2) whose session names its player."""
-    player = BonkPlayerFactory()
-    session = bonk_session_client.session
-    session["bonk_user_id"] = player.bonk_id
-    session.save()
-    bonk_session_client.player = player
+    """bonk_session_client: connected to its player, active slot 2."""
     return bonk_session_client
 
 
@@ -208,10 +203,17 @@ class TestWearRecordsWornSkin:
 
         assert response.json() == {"ok": True, "slot": 2}
 
-    def test_session_without_identity_records_nothing(self, bonk_session_client, bonk_accepts):
+    def test_a_link_without_a_known_active_slot_records_nothing(
+        self, bonk_session_client, bonk_accepts
+    ):
+        """Without the account's active slot we can't tell whether the slot
+        worn is the one the player wears in game."""
+        from accounts.models import BonkAccountLink
+
+        BonkAccountLink.objects.filter(pk=bonk_session_client.link.pk).update(active_slot=None)
         skin = SkinFactory()
 
-        response = bonk_session_client.post(f"/api/skins/{skin.id}/wear/")
+        response = bonk_session_client.post(f"/api/skins/{skin.id}/wear/", {"slot": "2"})
 
         assert response.json()["ok"] is True
         assert not BonkPlayer.objects.filter(worn_skin_seen_at__isnull=False).exists()

@@ -279,7 +279,9 @@ def _in_flight(account_key: str):
             _cache("delete", key)
 
 
-def attempt_login(request, username: str, password: str, *, via: str) -> LoginAttempt:
+def attempt_login(
+    request, username: str, password: str, *, via: str, remember: bool = False
+) -> LoginAttempt:
     """Try a bonk.io login unless one of the guards turns it away.
 
     Args:
@@ -287,6 +289,8 @@ def attempt_login(request, username: str, password: str, *, via: str) -> LoginAt
         username: As the player typed it; sent to bonk.io unchanged.
         password: Sent to bonk.io only; never logged or stored.
         via: Which form it came from, for the log line ("page" or "wear").
+        remember: Ask bonk.io for a remember-me token too ("Keep me
+            connected for Wear"; stored by bonk_tokens.store_login).
 
     Returns:
         A LoginAttempt. When a guard turns it away, bonk.io isn't called.
@@ -344,7 +348,7 @@ def attempt_login(request, username: str, password: str, *, via: str) -> LoginAt
             logger.info("bonk login busy | %s | retry_after=%s", tags, retry_after)
             return LoginAttempt(result=None, error=BUSY, retry_after=retry_after)
 
-        result = get_client().login(username, password)
+        result = get_client().login(username, password, remember=remember)
 
     # Outcome only: a success holds the player's token, username, id and avatar.
     logger.info(

@@ -58,8 +58,9 @@ label has moved. In order:
 
 ## bonk.io token keys: set, rotate or recover
 
-Stored bonk.io tokens (account links and site sessions) are encrypted with
-`BONK_TOKEN_KEYS` ([ADR 0016](../adr/0016-bonk-tokens-encrypted-at-rest.md)).
+Stored bonk.io tokens (session and remember-me tokens on account links) are
+encrypted with `BONK_TOKEN_KEYS` ([ADR 0016](../adr/0016-bonk-tokens-encrypted-at-rest.md),
+[ADR 0022](../adr/0022-remember-me-tokens-and-the-token-broker.md)).
 Never paste a key into a chat, an issue, a commit or a log.
 
 **Make a key** (on your own machine):
@@ -80,8 +81,17 @@ Never paste a key into a chat, an issue, a commit or a log.
 3. Remove the old key: `BONK_TOKEN_KEYS` = `new`. Deploy.
 
 **A key may have leaked.** Rotate as above, and do step 3 right after step 2.
-A leaked key only matters together with a copy of the database; tokens
-themselves expire within about a day.
+A leaked key only matters together with a copy of the database. Session tokens
+expire within about a day, but remember-me tokens ("Keep me connected for
+Wear") work until bonk.io revokes them, so if a database copy may have leaked
+too, revoke them on bonk.io:
+1. `railway ssh` into `bonkverse`, `python manage.py revoke_bonk_remember_tokens`
+   (dry run: counts only).
+2. The same with `--run`. It calls `login_clearauto.php` for each token, 2 a
+   second, and deletes the stored copy even when bonk.io can't be reached. It
+   waits out a login pause rather than sending during one.
+3. Players who ticked "Keep me connected" type their bonk.io password once
+   more the next time they wear a skin.
 
 **Every key is lost.** Set a new key and deploy, then run
 `reencrypt_bonk_tokens --run`: it removes the tokens no key opens. Players log

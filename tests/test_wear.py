@@ -17,8 +17,8 @@ import pytest
 from core import token_crypto
 import requests
 
-from accounts.models import UserEvent
-from tests.conftest import load_bonk_fixture, make_bonk_token
+from accounts.models import BonkAccountLink, UserEvent
+from tests.conftest import connect_bonk, load_bonk_fixture, make_bonk_token
 from tests.factories import SkinFactory
 
 BONK_LOGIN_URL = "https://bonk2.io/scripts/login_legacy.php"
@@ -109,24 +109,27 @@ class TestWearSkin:
     ):
         """bonk.io tokens last about a day; a wear used to push our copy 14
         days out, so the next wear a day later spent a call to find out."""
-        before = bonk_session_client.session["bonk_token_expires"]
+        before = bonk_session_client.link.token_expires_at
 
         bonk_session_client.post(_wear_url(skin.id))
 
-        assert bonk_session_client.session["bonk_token_expires"] == before
+        bonk_session_client.link.refresh_from_db()
+        assert bonk_session_client.link.token_expires_at == before
 
     def test_an_expired_token_asks_to_reconnect_without_calling_bonk(
-        self, logged_in_client, skin, mocked_http
+        self, logged_in_client, user, skin, mocked_http
     ):
         """RFC-0003 Part 1, item 7: a token past its own `exp` goes straight to
         the bonk.io login, without spending an avatar_update.php call."""
         bonk = mocked_http.post(BONK_AVATAR_UPDATE_URL, json={"r": "success"})
-        session = logged_in_client.session
         # Our stored expiry is far off (the old 14-day rule); the token's own
-        # `exp` passed an hour ago.
-        session["bonk_token"] = token_crypto.encrypt(make_bonk_token(exp=time.time() - 3600))
-        session["bonk_token_expires"] = time.time() + 13 * 24 * 3600
-        session.save()
+        # `exp` passed an hour ago. No remember-me token to refresh with.
+        connect_bonk(
+            logged_in_client,
+            user,
+            token=make_bonk_token(exp=time.time() - 3600),
+            expires_in=13 * 24 * 3600,
+        )
 
         response = logged_in_client.post(_wear_url(skin.id))
 
@@ -149,6 +152,7 @@ class TestWearSkin:
         assert response.json()["slot"] == 2
 
     def test_no_active_slot_defaults_to_3(self, bonk_session_client, skin, bonk_accepts):
+        BonkAccountLink.objects.filter(pk=bonk_session_client.link.pk).update(active_slot=None)
         session = bonk_session_client.session
         del session["bonk_active_slot"]
         session.save()
@@ -165,9 +169,10 @@ class TestWearSkin:
         response = bonk_session_client.post(_wear_url(skin.id))
 
         # The one refusal a fresh bonk.io login fixes, so the only one that
-        # opens the login modal.
+        # opens the login modal (no remember-me token to refresh with).
         assert response.status_code == 401
-        assert response.json() == {"ok": False, "auth": "bonk", "error": "token_rejected"}
+        assert response.json() == {"ok": False, "auth": "bonk"}
+        assert len(mocked_http.calls) == 1
 
     def test_bonk_network_error_does_not_ask_for_bonk_login(
         self, bonk_session_client, skin, mocked_http
@@ -187,7 +192,8 @@ class TestWearSkin:
             "message": "bonk.io isn't responding. Try again in a minute.",
         }
         # The token is kept: nothing says it went bad.
-        assert token_crypto.decrypt(bonk_session_client.session["bonk_token"]) == "test-bonk-token"
+        bonk_session_client.link.refresh_from_db()
+        assert bonk_session_client.link.bonk_token() == "test-bonk-token"
 
     @pytest.mark.parametrize(
         "code,status,message_start",
@@ -212,7 +218,8 @@ class TestWearSkin:
         assert response.status_code == status
         assert "auth" not in body
         assert body["message"].startswith(message_start)
-        assert token_crypto.decrypt(bonk_session_client.session["bonk_token"]) == "test-bonk-token"
+        bonk_session_client.link.refresh_from_db()
+        assert bonk_session_client.link.bonk_token() == "test-bonk-token"
 
     def test_cloudflare_page_from_bonk_does_not_ask_for_bonk_login(
         self, bonk_session_client, skin, mocked_http
@@ -300,12 +307,14 @@ class TestBonkLoginForWear:
         )
 
         assert response.json() == {"ok": True, "active_slot": 2}
-        assert (
-            token_crypto.decrypt(logged_in_client.session["bonk_token"])
-            == "SCRUBBED-TEST-TOKEN-abc123"
-        )
+        # Tokens live on the account link, never in the site session.
+        link = BonkAccountLink.objects.get(bonk_player__bonk_id=1234567)
+        assert link.bonk_token() == "SCRUBBED-TEST-TOKEN-abc123"
+        assert link.active_slot == 2
+        assert "bonk_token" not in logged_in_client.session
         assert logged_in_client.session["bonk_active_slot"] == 2
-        # One request shape for every bonk.io login (integrations/bonk_api.py).
+        # One request shape for every bonk.io login (integrations/bonk_api.py);
+        # the popup's "Keep me connected" box wasn't sent, so no remember-me.
         assert _sent_form(call.calls[0]) == {
             "username": "TestPlayer",
             "password": "hunter2",
@@ -360,10 +369,7 @@ class TestWearSpamProtection:
 
         other_client = Client()
         other_client.force_login(other)
-        session = other_client.session
-        session["bonk_token"] = token_crypto.encrypt("other-token")
-        session["bonk_token_expires"] = time.time() + 3600
-        session.save()
+        connect_bonk(other_client, other, token="other-token")
 
         assert other_client.post(_wear_url(skin.id)).status_code == 200
 

@@ -5,8 +5,9 @@ its BonkPlayer (with the encrypted token and the skin the player is wearing),
 storing the bonk.io session, syncing
 Flash friends from the login reply, and queueing the regular friend sync on
 the worker: from the friend list in the login answer when it has one, else
-from friends.php (RFC-0003 phase 2). Also refreshing a link's token after the
-in-page login on wear (refresh_link).
+from friends.php (RFC-0003 phase 2). Also linking the account the Wear
+popup logged in to (connect_from_wear). Tokens are stored through the token
+broker (bonk_tokens.py).
 Does not own: the /login/ page (views.py) and its messages (login_messages.py), trying the
 bonk.io login and the limit on wrong passwords (login_attempts.py), the
 bonk.io session rules (core/bonk/session.py) or friend storage
@@ -34,6 +35,7 @@ from players.services import (
 )
 
 from players.models import BonkPlayer
+from . import bonk_tokens
 from .events import log_event
 from .models import BonkUser
 from .models import BonkAccountLink
@@ -41,20 +43,24 @@ from .models import BonkAccountLink
 logger = logging.getLogger(__name__)
 
 
-def sign_in(request, result: BonkLoginResult) -> BonkUser:
+def sign_in(request, result: BonkLoginResult, *, remember: bool = False) -> BonkUser:
     """Sign the visitor in after bonk.io accepted their login.
 
-    Steps, in order: store the bonk.io session (token, name, id, active
-    slot), log in the site account (created on first login), link it to the
-    BonkPlayer, store Flash friends, and queue the regular friend sync. Only
-    the session and the site login are required: a failure in the later
-    steps is logged and the player is still signed in.
+    Steps, in order: note which bonk.io account this browser acts as (name,
+    id, active slot), log in the site account (created on first login), link
+    it to the BonkPlayer with its tokens (through the token broker,
+    bonk_tokens.py; the remember-me token only when `remember`), store Flash
+    friends, and queue the regular friend sync. Only the session and the
+    site login are required: a failure in the later steps is logged and the
+    player is still signed in.
+
+    The bonk.io tokens live on the account link only, never in the site
+    session (RFC-0003 Part 2).
 
     Returns:
         The site account now logged in.
     """
     bonk = bonk_session(request)
-    bonk.store_token(result.token)
     bonk.store_identity(result.username.value, result.bonk_id)
     # Remember the active slot so wear works immediately without the modal.
     bonk.store_active_slot(result.active_slot)
@@ -66,7 +72,7 @@ def sign_in(request, result: BonkLoginResult) -> BonkUser:
     link = None
     if result.bonk_id is not None:
         try:
-            link = link_bonk_player(user, result)
+            link = link_bonk_player(user, result, remember=remember)
         except Exception:
             logger.exception("Could not persist account link")
 
@@ -111,13 +117,15 @@ def site_account_for(username: BonkUsername) -> BonkUser:
     return BonkUser.objects.create_user(username=username.value)
 
 
-def link_bonk_player(user: BonkUser, result: BonkLoginResult) -> BonkAccountLink:
+def link_bonk_player(
+    user: BonkUser, result: BonkLoginResult, *, remember: bool = False
+) -> BonkAccountLink:
     """Create or refresh the BonkPlayer and its link to the site account.
 
     The player's stored name is corrected to bonk.io's spelling (bonk_id is
     the real identity), its XP and worn skin (the active slot's) are recorded
-    when the reply has them, and the link stores the token encrypted
-    (BonkAccountLink.encrypt_token).
+    when the reply has them, and the link stores its tokens through the
+    token broker (bonk_tokens.store_login).
     """
     adopt_replay_names({result.bonk_id: result.username.value})
     player, created = BonkPlayer.objects.get_or_create(
@@ -140,39 +148,25 @@ def link_bonk_player(user: BonkUser, result: BonkLoginResult) -> BonkAccountLink
     link, _ = BonkAccountLink.objects.update_or_create(
         user=user,
         bonk_player=player,
-        defaults={
-            **_token_fields(result),
-            "scopes": {"friends": True},
-            "active": True,
-        },
+        defaults={"scopes": {"friends": True}, "active": True},
     )
+    bonk_tokens.store_login(link, result, remember=remember)
     record_worn_skin(result.bonk_id, result.skin_code, WornSkinSource.LOGIN)
     forget_user_skin(user)
     return link
 
 
-def refresh_link(user: BonkUser, result: BonkLoginResult) -> bool:
-    """After the in-page login on wear, store the new token, its expiry and
-    the active slot on the user's existing link to that bonk.io account, so
-    the worker and the settings page see the fresh connection. Never creates
-    a link. Returns whether a link was updated.
+def connect_from_wear(
+    user: BonkUser, result: BonkLoginResult, *, remember: bool
+) -> BonkAccountLink | None:
+    """After the Wear popup's bonk.io login: link that account to the user
+    (or refresh the existing link) with its new tokens, and record the skin
+    it wears. Wear reads tokens from the link (bonk_tokens.usable_token).
+    Returns the link, or None when bonk.io gave no account id.
     """
     if result.bonk_id is None:
-        return False
-    updated = BonkAccountLink.objects.filter(user=user, bonk_player__bonk_id=result.bonk_id).update(
-        **_token_fields(result), updated_at=timezone.now()
-    )
-    return bool(updated)
-
-
-def _token_fields(result: BonkLoginResult) -> dict:
-    """The link fields a successful login sets: the encrypted token, when it
-    stops being usable (from its own `exp`), and the active slot."""
-    return {
-        "token_encrypted": BonkAccountLink.encrypt_token(result.token),
-        "token_expires_at": BonkAccountLink.expiry_for(result.token),
-        "active_slot": result.active_slot.number if result.active_slot else None,
-    }
+        return None
+    return link_bonk_player(user, result, remember=remember)
 
 
 def queue_friend_sync(request, link_id: int, result: BonkLoginResult | None = None) -> bool:

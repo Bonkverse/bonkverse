@@ -2,7 +2,7 @@
 <div class="modal-overlay" id="bonk-login-modal" data-login-url="{% url 'skins:bonk_login_for_wear' %}">
   <div class="modal-box">
     <div class="modal-header">
-      <h2 class="modal-title">Bonk.io Login</h2>
+      <h2 class="modal-title">Connect bonk.io</h2>
       <button class="modal-close-btn" id="bonk-login-modal-close">
         <i data-lucide="x"></i>
       </button>
@@ -10,7 +10,7 @@
 
     <div class="modal-body">
       <p class="modal-hint">
-        We don't store your password. It's sent to Bonk.io once to apply the skin.
+        Your password goes to bonk.io once to check it; Bonkverse never stores it.
       </p>
 
       <form id="bonk-login-form">
@@ -19,6 +19,14 @@
 
         <label class="modal-label" for="bonk-password">Bonk.io Password</label>
         <input class="modal-input" id="bonk-password" name="bonk_password" type="password" required>
+
+        {# Remember-me (RFC-0003 Part 2): ticked by default. #}
+        <label class="bv-check">
+          <input type="checkbox" name="bonk_remember" value="1" checked>
+          <span>Keep me connected for Wear
+            <span class="bv-muted">· Bonkverse keeps a bonk.io sign-in token (never your password). Disconnect in Settings.</span>
+          </span>
+        </label>
 
         {# The "not a bot" check goes here when the server asks for it (bot_check in the reply; core/js/bv-wear.js). #}
         <div id="bonk-login-bot-check"></div>
