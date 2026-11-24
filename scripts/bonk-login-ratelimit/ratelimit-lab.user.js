@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         bonk.io Rate-Limit Lab
 // @namespace    https://bonkverse.io/
-// @version      1.2.0
-// @description  Runs a fixed, timed set of bonk.io login experiments (wrong-password speed, whether a success resets the count, how long a block lasts, whether retrying extends it) and logs every request to the millisecond. Passwords stay in local Tampermonkey storage and never appear in the log or export.
+// @version      1.3.0
+// @description  Runs timed bonk.io login experiments: how the login rate limit works, and (1.3) how remember-me tokens behave (login_auto.php, login_clearauto.php). Logs every request to the millisecond. Passwords and tokens stay on this computer and never appear in the log or export.
 // @author       Bonkverse
 // @match        https://bonk.io/
 // @match        https://bonk.io/index.html
@@ -45,6 +45,8 @@
   // Remember-me login: bonk.io's own client posts {rememberToken} here
   // (seen in bonk.io's alpha2s.js, 2026-11-10).
   const AUTO_URL = "https://bonk2.io/scripts/login_auto.php";
+  // Revokes a remember-me token; bonk.io's own logout posts {rememberToken}.
+  const CLEARAUTO_URL = "https://bonk2.io/scripts/login_clearauto.php";
   const IPIFY = "https://api.ipify.org?format=json";
 
   const KEYS = {
@@ -149,6 +151,55 @@
       trip: { interval: 1000, max: 40 },
       after: { tokens: 1, delay: 3000 },
     },
+
+    // ── Remember-me (added 1.3, RFC-0003 Part 2, lab tests 1-5) ──
+    // Real remember-me tokens from logging in with remember: true. They use
+    // the first two saved accounts (A and B). Every token an experiment gets
+    // is revoked with login_clearauto.php at its end, so none is left behind.
+    // The first four send only a handful of correct logins and can share an
+    // IP; the last two need fresh IPs because they count limits.
+    {
+      id: "remember-answer",
+      group: "remember",
+      freshIp: false,
+      what: "Tests 4+5: what login_legacy (remember true/false) and login_auto.php answer; token lifetimes",
+      run: (exp, ctx) => rememberAnswer(exp, ctx),
+    },
+    {
+      id: "remember-second-token",
+      group: "remember",
+      freshIp: false,
+      what: "Test 1: log in with remember-me twice; does the second token cancel the first?",
+      run: (exp, ctx) => rememberSecondToken(exp, ctx),
+    },
+    {
+      id: "remember-revoke",
+      group: "remember",
+      freshIp: false,
+      what: "Test 3: revoke one token with login_clearauto.php; is the other still good?",
+      run: (exp, ctx) => rememberRevoke(exp, ctx),
+    },
+    {
+      id: "remember-password-change",
+      group: "remember",
+      freshIp: false,
+      optional: true,
+      what: "Test 3 (manual, optional): does changing the password revoke a token? Asks you to change it",
+      run: (exp, ctx) => rememberPasswordChange(exp, ctx),
+    },
+    {
+      id: "remember-auto-count",
+      group: "remember",
+      what: "Test 2a: a real token to login_auto.php every 1 s (30x); does it trip the limit or use up logins?",
+      run: (exp, ctx) => rememberAutoCount(exp, ctx),
+    },
+    {
+      id: "remember-auto-during-block",
+      group: "remember",
+      what: "Test 2b: trip the limit, then login_auto.php at +3 s and +10 min, one correct login at +22 min (~23 min)",
+      trip: { interval: 500, max: 40 },
+      run: (exp, ctx) => rememberAutoDuringBlock(exp, ctx),
+    },
   ];
 
   // ── Storage ───────────────────────────────────────────────────
@@ -248,8 +299,9 @@
     const recv = Date.now();
     let result = "no_json";
     let error = netError || `http ${status}`;
+    let data = null;
     try {
-      const data = JSON.parse(text);
+      data = JSON.parse(text);
       if (data && data.r === "success") {
         result = "success";
         error = "";
@@ -261,7 +313,281 @@
       /* keep no_json */
     }
     // `text` (which holds the token on success) is dropped here on purpose.
-    return { sent, recv, status, result, error };
+    // `data` is kept in memory only, for the remember-me experiments to read
+    // tokens from; it never goes into the log or the export.
+    return { sent, recv, status, result, error, data };
+  }
+
+  // ── Remember-me helpers (1.3) ─────────────────────────────────
+  // Tokens are compared by a short SHA-256 fingerprint and described by
+  // length; the tokens themselves stay in memory and are never logged.
+
+  async function fingerprint(token) {
+    if (!token) return "";
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(token)));
+    return Array.from(new Uint8Array(digest).slice(0, 4), (b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  // Hours from now until a session token's `exp` (it's a JWT; the payload is
+  // readable without a key). null when it can't be read.
+  function hoursLeft(token) {
+    try {
+      const part = String(token).split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+      const exp = JSON.parse(atob(part + "=".repeat((4 - (part.length % 4)) % 4))).exp;
+      return typeof exp === "number" ? +((exp * 1000 - Date.now()) / 3600000).toFixed(2) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // What an answer holds, without any secret: key names, token sizes and
+  // fingerprints, session lifetime, friend count, XP and slot present.
+  async function shape(data) {
+    if (!data || typeof data !== "object") return { keys: "" };
+    const remember = typeof data.rememberToken === "string" ? data.rememberToken : null;
+    return {
+      keys: Object.keys(data).join(","),
+      sessionHours: data.token ? hoursLeft(data.token) : null,
+      rememberLen: remember === null ? null : remember.length,
+      rememberPrint: remember ? await fingerprint(remember) : "",
+      friends: Array.isArray(data.friends) ? data.friends.length : null,
+      requests: Array.isArray(data.requests) ? data.requests.length : null,
+      xp: "xp" in data,
+      slot: "activeAvatarNumber" in data,
+    };
+  }
+
+  const describeShape = (sh) =>
+    [
+      sh.keys && `keys=[${sh.keys}]`,
+      sh.sessionHours != null && `session ${sh.sessionHours}h`,
+      sh.rememberLen != null && `rememberToken len ${sh.rememberLen}${sh.rememberPrint ? " #" + sh.rememberPrint : ""}`,
+      sh.friends != null && `friends ${sh.friends}`,
+      sh.requests != null && `requests ${sh.requests}`,
+    ]
+      .filter(Boolean)
+      .join(" | ");
+
+  // One logged call, sent now. `label` is what the log shows as the account.
+  async function call(exp, ctx, step, label, url, fields, kind) {
+    const r = await bonkPost(url, fields);
+    const sh = await shape(r.data);
+    const entry = {
+      exp: exp.id,
+      step,
+      ip: state.expIp,
+      account: label,
+      pw: kind,
+      script: url.split("/").pop(),
+      planned: new Date(r.sent).toISOString(),
+      sent: new Date(r.sent).toISOString(),
+      late_ms: 0,
+      rtt_ms: r.recv - r.sent,
+      result: r.result,
+      error: r.error,
+      status: r.status,
+      note: describeShape(sh),
+      hidden: document.hidden,
+    };
+    appendLog(entry);
+    return { ...r, shape: sh };
+  }
+
+  // Log in with the real password; remember: true asks for a remember-me
+  // token, which is kept for the experiment's clean-up.
+  async function loginAs(exp, ctx, step, account, remember) {
+    const r = await call(
+      exp,
+      ctx,
+      step,
+      account.username,
+      LOGIN_URL,
+      { username: account.username, password: account.password, remember: remember ? "true" : "false" },
+      remember ? "correct, remember" : "correct"
+    );
+    const token = r.data && typeof r.data.rememberToken === "string" ? r.data.rememberToken : "";
+    if (token) ctx.tokens.push(token);
+    return { ...r, rememberToken: token };
+  }
+
+  // login_auto.php with a real remember-me token. A new remember-me token in
+  // the answer is kept for clean-up too.
+  async function auto(exp, ctx, step, token, label) {
+    const r = await call(exp, ctx, step, label, AUTO_URL, { rememberToken: token }, "remember token");
+    const fresh = r.data && typeof r.data.rememberToken === "string" ? r.data.rememberToken : "";
+    if (fresh && !ctx.tokens.includes(fresh)) ctx.tokens.push(fresh);
+    return { ...r, newRememberToken: fresh };
+  }
+
+  async function clearToken(exp, ctx, step, token, label) {
+    const r = await call(exp, ctx, step, label, CLEARAUTO_URL, { rememberToken: token }, "clear token");
+    ctx.cleared.push(token);
+    return r;
+  }
+
+  // Revoke every token the experiment got that isn't revoked yet.
+  async function cleanUp(exp, ctx) {
+    for (const token of ctx.tokens) {
+      if (ctx.cleared.includes(token)) continue;
+      await clearToken(exp, ctx, "clean-up", token, `token #${await fingerprint(token)}`);
+    }
+  }
+
+  const verdict = (r) => (r.result === "success" ? "ok" : r.error || r.result);
+
+  function needToken(r, what) {
+    if (!r.rememberToken) {
+      throw new Error(`${what}: no rememberToken came back with remember: true (${verdict(r)})`);
+    }
+    return r.rememberToken;
+  }
+
+  // ── Remember-me experiments (1.3) ─────────────────────────────
+
+  async function rememberAnswer(exp, ctx) {
+    const [A] = ctx.accounts;
+    const plain = await loginAs(exp, ctx, "login remember=false", A, false);
+    const withMe = await loginAs(exp, ctx, "login remember=true", A, true);
+    const token = needToken(withMe, "remember-answer");
+    const first = await auto(exp, ctx, "login_auto #1", token, `token #${withMe.shape.rememberPrint}`);
+    const second = await auto(exp, ctx, "login_auto #2 (same token)", token, `token #${withMe.shape.rememberPrint}`);
+    const out = {
+      sessionHoursRememberFalse: plain.shape.sessionHours,
+      sessionHoursRememberTrue: withMe.shape.sessionHours,
+      rememberTokenEmptyWithFalse: plain.shape.rememberLen === 0,
+      rememberTokenLength: withMe.shape.rememberLen,
+      autoAnswer: verdict(first),
+      autoKeys: first.shape.keys,
+      autoSessionHours: first.shape.sessionHours,
+      autoFriends: first.shape.friends,
+      autoHasXp: first.shape.xp,
+      autoHasSlot: first.shape.slot,
+      autoGivesNewRememberToken: Boolean(first.newRememberToken) && first.newRememberToken !== token,
+      sameTokenWorksTwice: second.result === "success",
+    };
+    if (out.autoGivesNewRememberToken) {
+      const next = await auto(exp, ctx, "login_auto with the new token", first.newRememberToken, "new token");
+      out.newTokenWorks = next.result === "success";
+    }
+    out.summary =
+      `session ${out.sessionHoursRememberFalse}h (remember false) vs ${out.sessionHoursRememberTrue}h (true); ` +
+      `login_auto ${out.autoAnswer}, session ${out.autoSessionHours}h, friends ${out.autoFriends}, ` +
+      `xp ${out.autoHasXp}, slot ${out.autoHasSlot}; new remember token ${out.autoGivesNewRememberToken}; ` +
+      `same token twice ${out.sameTokenWorksTwice ? "works" : "fails"}`;
+    return out;
+  }
+
+  async function rememberSecondToken(exp, ctx) {
+    const [A] = ctx.accounts;
+    const one = needToken(await loginAs(exp, ctx, "login #1 remember=true", A, true), "remember-second-token");
+    const two = needToken(await loginAs(exp, ctx, "login #2 remember=true", A, true), "remember-second-token");
+    const first = await auto(exp, ctx, "login_auto with token #1", one, "token #1");
+    const second = await auto(exp, ctx, "login_auto with token #2", two, "token #2");
+    const out = {
+      tokensDiffer: one !== two,
+      firstStillWorks: first.result === "success",
+      secondWorks: second.result === "success",
+      firstAnswer: verdict(first),
+    };
+    out.summary = out.firstStillWorks
+      ? "both tokens work: a second remember-me login does NOT cancel the first (good)"
+      : `token #1 refused (${out.firstAnswer}) after a second remember-me login: one token per account (design needs a rethink)`;
+    return out;
+  }
+
+  async function rememberRevoke(exp, ctx) {
+    const [A] = ctx.accounts;
+    const one = needToken(await loginAs(exp, ctx, "login #1 remember=true", A, true), "remember-revoke");
+    const two = needToken(await loginAs(exp, ctx, "login #2 remember=true", A, true), "remember-revoke");
+    const cleared = await clearToken(exp, ctx, "login_clearauto token #1", one, "token #1");
+    const revoked = await auto(exp, ctx, "login_auto with revoked token #1", one, "token #1");
+    const other = await auto(exp, ctx, "login_auto with token #2", two, "token #2");
+    const out = {
+      clearAnswer: verdict(cleared),
+      clearKeys: cleared.shape.keys,
+      revokedTokenRefused: revoked.result !== "success",
+      revokedAnswer: verdict(revoked),
+      otherStillWorks: other.result === "success",
+    };
+    out.summary =
+      `clearauto ${out.clearAnswer}; revoked token ${out.revokedTokenRefused ? "refused (" + out.revokedAnswer + ")" : "STILL WORKS"}; ` +
+      `other token ${out.otherStillWorks ? "still works" : "refused too"}`;
+    return out;
+  }
+
+  async function rememberPasswordChange(exp, ctx) {
+    const [A] = ctx.accounts;
+    const token = needToken(await loginAs(exp, ctx, "login remember=true", A, true), "remember-password-change");
+    await ui.waitForUser(
+      `In another tab, change the password of "${A.username}" on bonk.io now. Leave the panel's saved password as it is. Press Continue when done.`
+    );
+    const after = await auto(exp, ctx, "login_auto after password change", token, "token");
+    await ui.waitForUser(
+      `Now change "${A.username}"'s password BACK to the one saved in the panel (other experiments use it), then press Continue.`
+    );
+    const out = {
+      tokenAfterPasswordChange: verdict(after),
+      revokedByPasswordChange: after.result !== "success",
+    };
+    out.summary = out.revokedByPasswordChange
+      ? `a password change revokes remember-me tokens (${out.tokenAfterPasswordChange})`
+      : "the token still works after a password change";
+    return out;
+  }
+
+  async function rememberAutoCount(exp, ctx) {
+    const [A, B] = ctx.accounts;
+    const token = needToken(await loginAs(exp, ctx, "login remember=true", B, true), "remember-auto-count");
+    const start = Date.now() + 1000;
+    let ok = 0;
+    let limitedAt = null;
+    for (let i = 0; i < 30; i++) {
+      await sleepUntil(start + i * 1000);
+      const r = await auto(exp, ctx, `login_auto ${i + 1}/30`, token, "token");
+      if (r.error === "ratelimited") {
+        limitedAt = i + 1;
+        break;
+      }
+      if (r.result === "success") ok++;
+    }
+    // Did those calls use up the IP's login allowance? One correct login.
+    const after = await loginAs(exp, ctx, "correct login after", A, false);
+    const out = {
+      autoOk: ok,
+      autoLimitedAt: limitedAt,
+      loginAfter: verdict(after),
+    };
+    out.summary =
+      (limitedAt ? `login_auto limited at call ${limitedAt}` : `30 login_auto calls, ${ok} ok, never limited`) +
+      `; a correct login right after: ${out.loginAfter}`;
+    return out;
+  }
+
+  async function rememberAutoDuringBlock(exp, ctx) {
+    const [A, B] = ctx.accounts;
+    const token = needToken(await loginAs(exp, ctx, "login remember=true (B)", B, true), "remember-auto-during-block");
+    const trip = await runTrip(exp, A);
+    if (!trip.limited) throw new Error("never limited, so nothing to test");
+    const out = { wrongBeforeLimit: trip.wrongBefore };
+    await sleepUntil(trip.tripAt + 3000);
+    out.autoAtPlus3s = verdict(await auto(exp, ctx, "login_auto +3 s", token, "token"));
+    await sleepUntil(trip.tripAt + 10 * MIN - 5000, `${exp.id}: login_auto at +10 min in`);
+    await assertSameIp();
+    await sleepUntil(trip.tripAt + 10 * MIN);
+    out.autoAtPlus10min = verdict(await auto(exp, ctx, "login_auto +10 min", token, "token"));
+    // Without a restart the block ends 15-20 min after the trip; if the
+    // +10 min call restarted it, it lasts until at least +25 min.
+    await sleepUntil(trip.tripAt + 22 * MIN - 5000, `${exp.id}: correct login at +22 min in`);
+    await assertSameIp();
+    await sleepUntil(trip.tripAt + 22 * MIN);
+    out.loginAtPlus22min = verdict(await loginAs(exp, ctx, "correct login +22 min", B, false));
+    out.summary =
+      `login_auto during the block: ${out.autoAtPlus3s} (+3 s), ${out.autoAtPlus10min} (+10 min); ` +
+      `correct login at +22 min: ${out.loginAtPlus22min} ` +
+      (out.loginAtPlus22min === "ok"
+        ? "(login_auto didn't extend the block)"
+        : "(still blocked: login_auto may restart the block)");
+    return out;
   }
 
   // Sends one request at `planned` and logs it. Checks the IP hasn't moved.
@@ -438,13 +764,38 @@
     return { wrong, limited: false, lastAt: Date.now(), answers };
   }
 
+  async function useCurrentIp() {
+    const ip = await publicIp();
+    state.currentIp = ip;
+    state.expIp = ip;
+    ui.ip(ip);
+  }
+
   async function runExperiment(exp, index) {
-    await waitForFreshIp(exp);
+    if (exp.freshIp === false) {
+      await useCurrentIp();
+    } else {
+      await waitForFreshIp(exp);
+    }
     const { tripper, prober } = pickAccounts(index);
     ui.status(`Running ${exp.id} on ${state.expIp}: ${exp.what}`, "go");
     const result = { id: exp.id, what: exp.what, ip: state.expIp, startedAt: new Date().toISOString() };
     try {
-      if (exp.pattern) {
+      if (exp.run) {
+        const ctx = { accounts: usableAccounts(), tokens: [], cleared: [] };
+        try {
+          Object.assign(result, await exp.run(exp, ctx));
+        } finally {
+          // Never leave a remember-me token behind, even when stopped.
+          const stopped = state.stop;
+          state.stop = false;
+          try {
+            await cleanUp(exp, ctx);
+          } finally {
+            state.stop = stopped;
+          }
+        }
+      } else if (exp.pattern) {
         Object.assign(result, await runPattern(exp, tripper));
       } else {
         if (exp.pre) {
@@ -531,7 +882,7 @@
   }
 
   function exportCsv() {
-    const cols = ["exp", "step", "ip", "account", "pw", "planned", "sent", "late_ms", "rtt_ms", "result", "error", "status", "hidden"];
+    const cols = ["exp", "step", "ip", "account", "pw", "script", "planned", "sent", "late_ms", "rtt_ms", "result", "error", "status", "note", "hidden"];
     const esc = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
     return [cols.join(",")]
       .concat(get(KEYS.log, []).map((e) => cols.map((c) => esc(e[c])).join(",")))
@@ -584,7 +935,7 @@
       return n;
     };
 
-    let root, statusEl, ipEl, countEl, resultsBody, logBody, startBtn, stopBtn, checks;
+    let root, statusEl, ipEl, countEl, askEl, resultsBody, logBody, startBtn, stopBtn, checks;
 
     function build() {
       document.head.appendChild(h("style", {}, CSS));
@@ -605,7 +956,10 @@
       statusEl = h("div", { className: "status" }, "Set up accounts, pick experiments, press Start.");
       root.appendChild(statusEl);
       countEl = h("div", { className: "muted", style: "padding:0 8px 6px" });
+      // A step that needs you (1.3): the question and a Continue button.
+      askEl = h("div", { className: "row", style: "padding:0 8px 6px", hidden: true });
       root.appendChild(countEl);
+      root.appendChild(askEl);
 
       // Accounts: saved locally only.
       const acc = h("section");
@@ -650,7 +1004,9 @@
       const done = get(KEYS.results, {});
       checks = PROTOCOL.map((e) => {
         // Experiments that already have a valid result start unticked.
-        const cb = h("input", { type: "checkbox", checked: !(done[e.id] && done[e.id].valid) });
+        // Experiments that already have a valid result, and optional ones
+        // (they ask you to do something), start unticked.
+        const cb = h("input", { type: "checkbox", checked: !e.optional && !(done[e.id] && done[e.id].valid) });
         const label = h("label");
         label.append(cb, ` ${e.id} `, h("span", { className: "muted" }, `— ${e.what}`));
         proto.appendChild(label);
@@ -669,7 +1025,7 @@
         h(
           "div",
           { className: "muted" },
-          "Rough time: memory ones about 2 h, token ones a few minutes. Keep this tab visible."
+          "Rough time: memory ones about 2 h, made-up-token ones a few minutes, remember-me ones about 25 min. Keep this tab visible."
         )
       );
       root.appendChild(proto);
@@ -750,6 +1106,7 @@
       if ("probeOk" in r) parts.push(`after ${r.probeAfterMin} min: ${r.probeOk ? "UNBLOCKED" : "still " + r.probeError}`);
       if ("unblockedAfterMin" in r)
         parts.push(r.unblockedAfterMin ? `unblocked after ${r.unblockedAfterMin} min (${r.probes} retries)` : `still blocked after ${r.probes} retries`);
+      if (r.summary) parts.push(r.summary);
       if (r.note) parts.push(r.note);
       return parts.join("; ");
     }
@@ -782,6 +1139,29 @@
         if (!label) return (countEl.textContent = "");
         const s = Math.max(0, Math.ceil(left / 1000));
         countEl.textContent = s > 1 ? `${label} ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : "";
+      },
+      // Show `text` with a Continue button; resolves when it's pressed.
+      // Stop also ends the wait.
+      waitForUser(text) {
+        this.status(`▶ ${text}`, "warn");
+        askEl.textContent = "";
+        const go = h("button", {}, "Continue");
+        askEl.appendChild(go);
+        askEl.hidden = false;
+        return new Promise((resolve, reject) => {
+          const timer = setInterval(() => {
+            if (state.stop) {
+              clearInterval(timer);
+              askEl.hidden = true;
+              reject(new Stopped());
+            }
+          }, 250);
+          go.onclick = () => {
+            clearInterval(timer);
+            askEl.hidden = true;
+            resolve();
+          };
+        });
       },
       running(on) {
         startBtn.disabled = on;
