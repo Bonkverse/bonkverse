@@ -114,7 +114,7 @@
 .site-toast-close:hover,
 .site-toast-close:focus-visible {
   opacity: 1;
-  background: rgba(127, 127, 127, 0.18);
+  background: var(--bv-hover);
 }
 
 .site-toast-close:focus-visible {
