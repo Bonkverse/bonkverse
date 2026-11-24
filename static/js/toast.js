@@ -9,6 +9,14 @@
 //   const handle = BVToast.show("Syncing your friends…", { type: "info", spinner: true, sticky: true });
 //   handle.update("Synced 1132 friends (3 new)", { type: "success", spinner: false });
 //   handle.dismiss();
+//
+// How long a toast stays:
+//   - error and warning: until closed (×), so there's time to read what went
+//     wrong (login errors give a reason and a time to retry). Pass
+//     `duration` to time one out anyway.
+//   - success and info: a few seconds, longer for long text; never while the
+//     pointer is over it or it has focus.
+//   - `sticky: true`: until closed or dismissed by code, for any type.
 
 (function (window) {
   var ICONS = {
@@ -28,13 +36,24 @@
     return stack;
   }
 
+  // Errors and warnings wait to be closed unless the caller times them.
+  function durationFor(text, type, opts) {
+    if (opts.sticky) return null;
+    if (opts.duration) return opts.duration;
+    if (type === "error" || type === "warning") return null;
+    // About 60 ms a character, at least 3.2 s: time to read a longer one.
+    return Math.max(3200, String(text || "").length * 60);
+  }
+
   function show(text, opts) {
     opts = opts || {};
     var type = opts.type || "info";
-    var duration = opts.sticky ? null : (opts.duration || 3200);
+    var duration = durationFor(text, type, opts);
 
     var el = document.createElement("div");
     el.className = "site-toast site-toast-" + type;
+    // Errors interrupt a screen reader; the rest wait their turn.
+    el.setAttribute("role", type === "error" ? "alert" : "status");
 
     var iconHTML = opts.spinner
       ? '<span class="site-toast-spinner"></span>'
@@ -62,10 +81,40 @@
     // null) toast, since scheduleDismiss never fires one for it.
     el.querySelector(".site-toast-close").addEventListener("click", dismiss);
 
+    // The time left is kept so hovering or focusing the toast pauses it.
+    var remaining = duration;
+    var startedAt = 0;
+    var paused = false;
+
     function scheduleDismiss(ms) {
       if (dismissTimer) clearTimeout(dismissTimer);
-      if (ms !== null) dismissTimer = setTimeout(dismiss, ms);
+      dismissTimer = null;
+      remaining = ms;
+      if (ms === null || paused) return;
+      startedAt = Date.now();
+      dismissTimer = setTimeout(dismiss, ms);
     }
+
+    function pause() {
+      if (paused) return;
+      paused = true;
+      if (dismissTimer) {
+        clearTimeout(dismissTimer);
+        dismissTimer = null;
+        remaining = Math.max(1000, remaining - (Date.now() - startedAt));
+      }
+    }
+
+    function resume() {
+      if (!paused) return;
+      paused = false;
+      scheduleDismiss(remaining);
+    }
+
+    el.addEventListener("mouseenter", pause);
+    el.addEventListener("mouseleave", resume);
+    el.addEventListener("focusin", pause);
+    el.addEventListener("focusout", resume);
 
     scheduleDismiss(duration);
 
@@ -74,6 +123,7 @@
       var newType = newOpts.type || type;
 
       el.className = "site-toast site-toast-" + newType + " site-toast-visible";
+      el.setAttribute("role", newType === "error" ? "alert" : "status");
       var newIconHTML = newOpts.spinner
         ? '<span class="site-toast-spinner"></span>'
         : '<span class="site-toast-icon">' + (ICONS[newType] || ICONS.info) + '</span>';
@@ -81,7 +131,7 @@
       el.querySelector(".site-toast-text").textContent = newText;
       el.querySelector(".site-toast-close").addEventListener("click", dismiss);
 
-      scheduleDismiss(newOpts.sticky ? null : (newOpts.duration || 3200));
+      scheduleDismiss(durationFor(newText, newType, newOpts));
     }
 
     return { dismiss: dismiss, update: update, element: el };
