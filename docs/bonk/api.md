@@ -201,6 +201,34 @@ Refusals: `e: "password"` (`login_wrong_password.json`), `e: "username_fail"`
 (`login_unknown_username.json`). Both codes are the ones other open-source
 bonk.io clients check; our fixtures are hand-written to match.
 
+## `login_auto.php`
+
+Exchange a remember-me token for a fresh session token, without a password.
+bonk.io's own client calls it on page load. Measured with the lab on
+2026-11-24 ([login-rate-limit.md](login-rate-limit.md#remember-me-tokens)).
+
+Request: `rememberToken` (77 characters in every token seen).
+
+Success (`login_auto_success.json`): the same keys as a password login's
+answer except `rememberToken`: `token` (a fresh session token, `exp` 24 hours
+out), `username`, `id`, `xp`, `avatar`, `activeAvatarNumber`, `avatar1`–`avatar5`,
+`controls`, `friends`, `legacyFriends`. No new remember-me token: the same one
+keeps working, any number of times.
+
+Refusal: `e: "not_found"` for a revoked token (`login_auto_not_found.json`).
+
+Where remember-me tokens come from: a password login with `remember: true`
+answers with `rememberToken` filled in. With `remember: false` the key is
+there but empty. Each `remember: true` login gives a new token, and older
+ones keep working.
+
+## `login_clearauto.php`
+
+Revoke one remember-me token (bonk.io's own logout calls it). Request:
+`rememberToken`. Answer: `{"r": "success"}` (`login_clearauto_success.json`).
+Afterwards that token gets `not_found` from `login_auto.php`; the account's
+other remember-me tokens keep working.
+
 ## `friends.php`
 
 The player's current friends and incoming friend requests.

@@ -76,14 +76,38 @@ What production logs showed before the tests, and how they fit:
   checked bonk.io again after 2, 4, 8 and 16 minutes; each check landed inside
   the block and, by rule 5, restarted it.
 
+## Remember-me tokens
+
+Measured on 2026-11-24 with the lab's "remember" experiments (1.3), on two
+fresh VPN IPs, with two test accounts (RFC-0003 lab tests 1–5).
+
+| Question | Result |
+|---|---|
+| How long does a session token last? | 24 hours, with or without `remember: true`, and from `login_auto.php` too |
+| What does `login_auto.php` answer? | The password login's answer minus `rememberToken`: a fresh 24 h `token`, `friends`, `xp`, `activeAvatarNumber`, the avatars |
+| Does a remember-me token rotate or wear out? | No: the same token worked again and again (30 times in 30 s) and no new one came back |
+| Does a second `remember: true` login cancel the first token? | No: both kept working |
+| What does `login_clearauto.php` revoke? | Only the token sent; it then answers `not_found`. The account's other tokens keep working |
+| Does a password change revoke tokens? | Not measured yet (the lab's optional `remember-password-change`) |
+| Do `login_auto.php` calls count toward the login limit? | No: 30 calls in 30 s, all accepted, and a correct password login right after worked |
+| Does `login_auto.php` work during a login block? | **Yes**: accepted 3 s and 10 min after the IP was blocked |
+| Does a `login_auto.php` call during a block extend it? | **Probably**: a correct login 22 min after the trip (12 min after the last `login_auto.php`) was still refused, when blocks left alone ended by 20 min in the first lab. One run; the lab's `block-control-22min` (a trip with nothing after it, then a login at 22 min) settles it |
+
+What this means for Bonkverse (RFC-0003 Part 2): one password login per
+account and device, then `login_auto.php` refreshes the session daily without
+a password and without spending the wrong-password budget. While Bonkverse's
+own login pause is on, refreshes still wait (the broker answers "paused"),
+because a request during bonk.io's block seems to restart it.
+
 ## What we don't know yet
 
 - **How long bonk.io remembers wrong passwords** that didn't cause a block.
   This decides whether wrong passwords spread over a busy afternoon add up to
   4. The lab's `memory-5/15/30/60min` experiments measure it (3 wrong, a quiet
   wait, then count how many more get through).
-- **Whether made-up remember-me tokens sent to `login_auto.php` count**, and
-  whether `login_auto.php` is blocked along with `login_legacy.php`. This
+- **Whether made-up remember-me tokens sent to `login_auto.php` count.**
+  Real ones don't, and `login_auto.php` isn't blocked along with
+  `login_legacy.php` (see "Remember-me tokens" above). This
   decides how a login made by the extension (from the player's IP) can be
   checked on the server. The lab's `tokens-alone-1s`, `tokens-then-wrong` and
   `token-during-block` experiments measure it. bonk.io's own client posts

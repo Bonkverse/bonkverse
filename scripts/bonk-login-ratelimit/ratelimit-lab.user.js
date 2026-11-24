@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         bonk.io Rate-Limit Lab
 // @namespace    https://bonkverse.io/
-// @version      1.3.0
+// @version      1.3.1
 // @description  Runs timed bonk.io login experiments: how the login rate limit works, and (1.3) how remember-me tokens behave (login_auto.php, login_clearauto.php). Logs every request to the millisecond. Passwords and tokens stay on this computer and never appear in the log or export.
 // @author       Bonkverse
 // @match        https://bonk.io/
@@ -192,6 +192,16 @@
       group: "remember",
       what: "Test 2a: a real token to login_auto.php every 1 s (30x); does it trip the limit or use up logins?",
       run: (exp, ctx) => rememberAutoCount(exp, ctx),
+    },
+    {
+      // Control for remember-auto-during-block (1.3.1): the same trip and the
+      // same correct login at +22 min, with nothing in between. If this one
+      // works and that one didn't, login_auto.php during a block extends it.
+      id: "block-control-22min",
+      group: "remember",
+      what: "Control: trip the limit, nothing at all, then ONE correct login at +22 min (~23 min)",
+      trip: { interval: 500, max: 40 },
+      probe: { mode: "once", after: 22 * MIN },
     },
     {
       id: "remember-auto-during-block",

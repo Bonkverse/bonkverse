@@ -21,7 +21,7 @@ Rules:
 
 ## Remember-me experiments (1.3)
 
-Six experiments, grouped "remember", for RFC-0003 Part 2. They use the first
+Seven experiments, grouped "remember", for RFC-0003 Part 2. They use the first
 two saved accounts (A and B), log in with `remember: true` to get real
 remember-me tokens, and revoke every token they got with
 `login_clearauto.php` when they finish (or are stopped).
@@ -34,7 +34,11 @@ remember-me tokens, and revoke every token they got with
 | `remember-password-change` | 3: does a password change revoke tokens? **Optional, unticked** | Change account A's password on bonk.io when asked, then change it back |
 | `remember-auto-count` | 2a: 30 `login_auto.php` calls, 1 s apart; limited? A correct login after? | A new VPN location when asked |
 | `remember-auto-during-block` | 2b: trip the limit, `login_auto.php` at +3 s and +10 min, one correct login at +22 min (~23 min) | A new VPN location when asked |
+| `block-control-22min` (1.3.1) | Control for 2b: the same trip and the same login at +22 min, nothing in between (~23 min) | A new VPN location when asked |
 
 Tokens are never logged or exported: the log shows key names, token lengths,
 a 4-byte SHA-256 fingerprint (to tell tokens apart), and the session token's
 hours left. Export JSON when done and hand it over.
+
+Results of the first run (2026-11-24) are in
+[docs/bonk/login-rate-limit.md](../../docs/bonk/login-rate-limit.md#remember-me-tokens).
