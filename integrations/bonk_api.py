@@ -294,11 +294,12 @@ class BonkLoginResult:
     # other than a string. Unchecked here; callers check it with
     # core.bonk.SkinCode.
     skin_code: str | None = field(default=None, repr=False)
-    # BONK: per DemystifyBonk, the login answer carries the account's
-    # friend list ("friends") like friends.php does, and maybe its incoming
-    # requests ("requests"). Not yet seen in a recorded answer, so each is
-    # None when the key is missing or isn't a list, and callers fall back
-    # to friends.php (RFC-0003 phase 2).
+    # BONK: the login answer carries the account's friend list ("friends"),
+    # entries shaped like friends.php's ({id, name, roomid}); seen in the
+    # owner's capture of bonk.io's own client on 2026-11-23 (1,229 friends).
+    # Whether it also carries incoming requests ("requests") is unconfirmed.
+    # Each is None when the key is missing or isn't a list, and callers fall
+    # back to friends.php (RFC-0003 phase 2).
     friends: tuple[BonkFriend, ...] | None = field(default=None, repr=False)
     requests: tuple[BonkFriend, ...] | None = field(default=None, repr=False)
 
