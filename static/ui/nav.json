@@ -1,6 +1,6 @@
 {
   "$comment": "The header and footer links every Bonkverse site renders. Edit here, release, then bump each site. Paths starting with / are on bonkverse.io; sites prefix them with https://bonkverse.io when they live elsewhere. 'site' marks which item is highlighted on each site.",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "brand": {
     "label": "Bonkverse",
     "href": "https://bonkverse.io/",
@@ -34,6 +34,7 @@
       { "label": "My profile", "href": "/my-profile/" },
       { "label": "Settings", "href": "/settings/profile/" },
       { "label": "API keys", "href": "/developers/keys/" },
+      { "label": "Add bonk.io account", "href": "/login/?add=1", "id": "add-account" },
       { "label": "Log out", "href": "/logout/", "method": "post" }
     ]
   },

@@ -79,31 +79,29 @@ menus open with static/ui/ui.js.
               {% comment %}The person's other bonk.io accounts (RFC-0003 phase 5, accounts/groups.py):
                  one click to switch to those signed in on this browser, "Sign in" for the rest.{% endcomment %}
               {% if viewer_accounts %}
-                <div class="bv-hint bv-account-menu__label">Switch account</div>
+                <div class="bv-menu__label">Switch account</div>
                 {% for account in viewer_accounts %}
                   {% if account.signed_in %}
                     <form method="post" action="{% url 'accounts:switch_account' %}">
                       {% csrf_token %}
                       <input type="hidden" name="account" value="{{ account.id }}">
                       <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                      <button class="bv-menu__item bv-account-row" type="submit">
+                      <button class="bv-menu__item" type="submit">
                         {% include "partials/_account_avatar.html" %}
-                        <span class="bv-account-row__name">{{ account.username }}</span>
-                        {% if not account.connected %}<span class="bv-hint bv-account-row__badge" title="Wear will ask for this account's bonk.io password">Not connected</span>{% endif %}
+                        <span class="bv-menu__text">{{ account.username }}</span>
+                        {% if not account.connected %}<span class="bv-menu__badge" title="Wear will ask for this account's bonk.io password">Not connected</span>{% endif %}
                       </button>
                     </form>
                   {% else %}
-                    <a class="bv-menu__item bv-account-row" href="{% url 'accounts:login' %}?add=1&amp;username={{ account.username|urlencode }}&amp;next={{ request.path|urlencode }}">
+                    <a class="bv-menu__item" href="{% url 'accounts:login' %}?add=1&amp;username={{ account.username|urlencode }}&amp;next={{ request.path|urlencode }}">
                       {% include "partials/_account_avatar.html" %}
-                      <span class="bv-account-row__name">{{ account.username }}</span>
-                      <span class="bv-hint bv-account-row__badge">Sign in</span>
+                      <span class="bv-menu__text">{{ account.username }}</span>
+                      <span class="bv-menu__badge">Sign in</span>
                     </a>
                   {% endif %}
                 {% endfor %}
                 <div class="bv-menu__divider"></div>
               {% endif %}
-              <a class="bv-menu__item" href="{% url 'accounts:login' %}?add=1&amp;next={{ request.path|urlencode }}"><i data-lucide="user-plus" aria-hidden="true"></i> Add bonk.io account</a>
-              <div class="bv-menu__divider"></div>
               {% if can_moderate %}
                 <a class="bv-menu__item" href="{% url 'skins:moderation' %}">Skin reports</a>
               {% endif %}
@@ -127,6 +125,9 @@ menus open with static/ui/ui.js.
                       <button class="bv-menu__item" type="submit">{{ item.label }}</button>
                     </form>
                   {% endif %}
+                {% elif item.id == "add-account" %}
+                  {# nav.json's "Add bonk.io account": come back to this page afterwards. #}
+                  <a class="bv-menu__item" href="{{ item.href }}&amp;next={{ request.path|urlencode }}">{{ item.label }}</a>
                 {% else %}
                   <a class="bv-menu__item" href="{{ item.href }}">{{ item.label }}</a>
                 {% endif %}

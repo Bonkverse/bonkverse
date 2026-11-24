@@ -132,11 +132,19 @@
               <svg class="bv-chevron" aria-hidden="true"><use href="#i-chevron"/></svg>
             </button>
             <div class="bv-menu bv-menu--end" id="account-menu" hidden>
+              <!-- The person's other bonk.io accounts (account.mjs). Signed in on this
+                   browser: one click switches. Not signed in here: "Sign in". -->
+              <div class="bv-menu__label">Switch account</div>
+              <button class="bv-menu__item" type="button" data-g-sample><svg aria-hidden="true"><use href="#i-user"/></svg><span class="bv-menu__text">comet_alt</span></button>
+              <a class="bv-menu__item" href="#" data-g-sample><svg aria-hidden="true"><use href="#i-user"/></svg><span class="bv-menu__text">a_really_long_bonk_io_name_that_wraps</span><span class="bv-menu__badge">Sign in</span></a>
+              <div class="bv-menu__divider"></div>
               <a class="bv-menu__item" href="#" data-g-sample>My profile</a>
               <a class="bv-menu__item" href="#" data-g-sample>Settings</a>
               <a class="bv-menu__item" href="#" data-g-sample>API keys</a>
+              <a class="bv-menu__item" href="#" data-g-sample>Add bonk.io account</a>
               <div class="bv-menu__divider"></div>
-              <button class="bv-menu__item" type="button" data-g-sample>Log out</button>
+              <button class="bv-menu__item" type="button" data-g-sample>Sign out of nova_rider</button>
+              <button class="bv-menu__item" type="button" data-g-sample>Sign out of all accounts</button>
             </div>
           </div>
         </div>
@@ -148,7 +156,7 @@
     <!-- ═══ Page header ═══ -->
     <div class="bv-page-header">
       <div class="bv-page-header__text">
-        <span class="bv-eyebrow">Bonkverse UI · v0.1.8</span>
+        <span class="bv-eyebrow">Bonkverse UI · v0.1.9</span>
         <h1>Component gallery</h1>
         <p class="bv-lead">Every shared piece of the Bonkverse sites. Switch the theme from the palette button in the header to check each one in Bonkverse, Light and Dark.</p>
       </div>

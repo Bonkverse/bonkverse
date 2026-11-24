@@ -1,10 +1,10 @@
 {
   "package": "Bonkverse/ui",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "note": "Copied by scripts/sync_ui.py. Don't edit these files; change Bonkverse/ui and sync a new release.",
   "files": {
-    "base.css": "a719092d782621c9229e47a33a9acd04de1f9cfc9106f347230ec0ec587602b5",
-    "components.css": "9837bf427864b5ced6802ca55ec1f59b046a62d9ea52589c16af1539614d8cdb",
+    "base.css": "87516e74159881c77c8d21bfbc448c8fbb5e3e385b47d5b3f0e1d2aeacab8e50",
+    "components.css": "35678a5bd6524ea850fe54bb604ffc28578c22bd170a6b275cfd3f12fe81f4cd",
     "fonts/OFL.txt": "536533cad95838e13777663c4109b802aa662ef1ef285337f0c7f51d35682fdc",
     "fonts/jost-latin-400-normal.woff2": "1cbc4d4e9893ec7bdb58916b103cd85fda6bf0a3769612a72ee2de63e9e727ae",
     "fonts/jost-latin-500-normal.woff2": "ac309711998c2193c86a54ca3340c80f64738c592359d0a7137bee3b4474a4be",
@@ -19,11 +19,11 @@
     "img/samples/comet.svg": "7379029359d4a0dea6df2a19a27689f629c5c1fb4e9ef8ce1f85c488311df2e6",
     "img/samples/leaf.svg": "8ff0bf1f08da4c8922c2290aac6b9c632659b21059e4fe69a164bed1795ac355",
     "img/samples/planet.svg": "5a436ec131f492e9ea75e7238bb0ea7e3c614421969e2466b0c9c035be8e104a",
-    "index.html": "8e2de5e1e453902809198e927f8ebe87272636a2c13bab2b541e3ded6bf9ef81",
-    "nav.json": "6c709336ff61fa2930800edef440599631e4a58851b907163d6d426a30f48407",
-    "seasons.css": "8dd9e9886128a8678424afad99a82f7336ce112933a1e73dc2f616a4da7311da",
-    "theme.js": "80b798dc284869184e7e255a2b055673b6a26f4eaeca19d5fc1e007189b921a6",
-    "tokens.css": "c707d144d1ed0d84723998e7c892796054e936cbdd2528f255561b11a6552cce",
-    "ui.js": "9d440628c0d27d06914bd2a3d9cf836664b0fd325dab058a998087288272821f"
+    "index.html": "01ec181b5e609d0ad8e9bbed39df4af38450fc414bac6d373257ccce235092a8",
+    "nav.json": "c3bf9fe1543c8bedf061695af4974b6a8832eb6277af740077220011143307b3",
+    "seasons.css": "9620f7d44b286c314093ae3ceaeedfadf6e90ac16f8ba205e5d3204858d372b1",
+    "theme.js": "772e2d89fec8d73977c8deaa0c98b75ab3930ecef62dc14235b2e4c08c36d64e",
+    "tokens.css": "64bde552fa94416a1f5da153683e7828396b6620e553d54c2b761a60f57bbb4c",
+    "ui.js": "ab9f480a5785324b94cbd6f1cdd8658068e7fda4420549df4ef442ee3f928f8e"
   }
 }
