@@ -1,0 +1,10 @@
+{# One account in "Choose an account": picture, name and how it signs in. #}
+{% if account.thumbnail %}
+  <span class="bv-nav-avatar bv-skin-avatar site-chooser__avatar" style="--skin: url('{{ account.thumbnail }}')" aria-hidden="true"><i data-lucide="circle-user"></i></span>
+{% else %}
+  <i class="site-chooser__avatar" data-lucide="circle-user" aria-hidden="true"></i>
+{% endif %}
+<span class="site-chooser__text">
+  <strong>{{ account.username }}</strong>
+  <span class="bv-hint">{{ hint }}</span>
+</span>

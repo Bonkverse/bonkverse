@@ -20,6 +20,10 @@
     "name": "accounts:make_main_account"
   },
   {
+    "route": "accounts/one-click/remove/",
+    "name": "accounts:remove_one_click_browser"
+  },
+  {
     "route": "accounts/remove/",
     "name": "accounts:remove_account"
   },
@@ -182,6 +186,10 @@
   {
     "route": "login/",
     "name": "accounts:login"
+  },
+  {
+    "route": "login/choose/",
+    "name": "accounts:one_click_sign_in"
   },
   {
     "route": "login/forget/",
