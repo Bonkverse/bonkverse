@@ -17,6 +17,7 @@ from accounts.services import (
     disconnect_bonk,
     group_member_ids,
     main_signed_in_here,
+    trusted_browsers,
 )
 from skins.services import code_image
 
@@ -230,6 +231,7 @@ def profile_settings(request):
             "sections": sections,
             "bonk_connection": _bonk_connection(request),
             "group_accounts": account_rows(request),
+            "trusted_browsers": trusted_browsers(request),
             "group_shown_on_profiles": bool(
                 request.user.account_group_id and request.user.account_group.show_on_profiles
             ),

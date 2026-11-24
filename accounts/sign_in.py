@@ -68,11 +68,11 @@ def sign_in(
         The site account now logged in.
     """
     previous = request.user if request.user.is_authenticated else None
-    previous_ids = groups.signed_in_ids(request)
+    previous_lists = groups.browser_lists(request)
 
     user = site_account_for(result.username)
     login(request, user)
-    groups.after_login(request, previous, previous_ids, add=add)
+    groups.after_login(request, previous, previous_lists, add=add)
     if add:
         log_event(user, "user_logged_in", added=True)
     else:

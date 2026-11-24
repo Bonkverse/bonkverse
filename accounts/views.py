@@ -111,7 +111,12 @@ def logout_view(request):
     if not request.user.is_authenticated:
         return redirect("site_pages:home")
     leaving = request.user.username
-    now = groups.sign_out(request, everywhere_here=request.POST.get("scope") != "this")
+    now = groups.sign_out(
+        request,
+        everywhere_here=request.POST.get("scope") != "this",
+        # "Also forget this device" under "Sign out of all accounts".
+        forget_device=request.POST.get("forget") == "on",
+    )
     if now is None:
         messages.success(request, "Logged out!")
         return redirect("site_pages:home")
@@ -186,6 +191,20 @@ def show_on_profiles_view(request):
             if show
             else "Your profiles no longer list your other accounts.",
         )
+    return redirect(_back(request))
+
+
+@login_required
+@require_POST
+@limit("write")
+def remove_trusted_browser(request):
+    """Settings: stop trusting one of the group's browsers."""
+    try:
+        groups.remove_browser(request, _account_id(request.POST.get("device")))
+    except groups.NotAllowed as refusal:
+        messages.error(request, refusal.message)
+    else:
+        messages.success(request, "That browser is no longer trusted.")
     return redirect(_back(request))
 
 

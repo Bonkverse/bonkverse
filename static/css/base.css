@@ -79,3 +79,17 @@
   display: inline-flex; align-items: center; justify-content: center;
   width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
 }
+
+/* The header account menu's "Also forget this device" checkbox, under
+   "Sign out of all accounts" (accounts/devices.py). */
+.bv-menu__check {
+  gap: var(--bv-space-2);
+  min-height: 0;
+  padding-bottom: var(--bv-space-2);
+  color: var(--bv-muted);
+  font-size: var(--bv-text-xs);
+  cursor: pointer;
+}
+.bv-menu__check input {
+  accent-color: var(--bv-link);
+}

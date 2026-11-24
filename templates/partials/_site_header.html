@@ -118,6 +118,10 @@ menus open with static/ui/ui.js.
                     <form method="post" action="{{ item.href }}">
                       {% csrf_token %}
                       <button class="bv-menu__item" type="submit">Sign out of all accounts</button>
+                      {# On a shared computer: this browser stops being trusted, so only the main's password brings the others back (accounts/devices.py). #}
+                      <label class="bv-menu__item bv-menu__check">
+                        <input type="checkbox" name="forget"> Also forget this device
+                      </label>
                     </form>
                   {% else %}
                     <form method="post" action="{{ item.href }}">

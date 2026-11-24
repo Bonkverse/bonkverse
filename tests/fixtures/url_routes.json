@@ -12,6 +12,10 @@
     "name": null
   },
   {
+    "route": "accounts/browsers/remove/",
+    "name": "accounts:remove_trusted_browser"
+  },
+  {
     "route": "accounts/main/",
     "name": "accounts:make_main_account"
   },
