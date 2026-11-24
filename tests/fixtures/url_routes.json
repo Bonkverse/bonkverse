@@ -184,6 +184,18 @@
     "name": "accounts:login"
   },
   {
+    "route": "login/friend/",
+    "name": "accounts:friend_request_login"
+  },
+  {
+    "route": "login/friend/<int:claim_id>/",
+    "name": "accounts:friend_request_wait"
+  },
+  {
+    "route": "login/friend/<int:claim_id>/status/",
+    "name": "accounts:friend_request_status"
+  },
+  {
     "route": "logout/",
     "name": "accounts:logout"
   },

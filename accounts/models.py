@@ -203,6 +203,11 @@ class BonkAccountLink(models.Model):
     )
     # Last successful refresh through login_auto.php.
     last_refreshed_at = models.DateTimeField(blank=True, null=True)
+    # When the owner last proved this bonk.io account with its password. A
+    # password login also stores the account's XP (its level); a friend
+    # request doesn't, so voting needs one password login (skins.votes).
+    # Every link from before friend-request linking was made by password.
+    password_proven_at = models.DateTimeField(blank=True, null=True)
     scopes = models.JSONField(blank=True, null=True)  # e.g. {"friends": true}
     active = models.BooleanField(default=True)
     connected_at = models.DateTimeField(auto_now_add=True)
@@ -274,3 +279,59 @@ class UserEvent(models.Model):
 
     def __str__(self):
         return f"{self.event_type} by {self.user_id} at {self.created_at}"
+
+
+class LinkClaim(models.Model):
+    """ "I own bonk.io account NAME": proven by a friend request from NAME to
+    the bot's bonk.io account within CLAIM_MINUTES (accounts/link_claims.py,
+    RFC-0003 phase 6).
+
+    Made by a browser that wants to sign in as NAME without its password, or
+    by a signed-in person adding NAME to their accounts. The worker marks it
+    proven when the request arrives; the browser that made it then finishes
+    it (signs in, or adds the account) once.
+    """
+
+    SIGN_IN = "sign_in"
+    ADD = "add"
+    PURPOSES = [(SIGN_IN, "Sign in"), (ADD, "Add to my accounts")]
+
+    PENDING = "pending"
+    PROVEN = "proven"
+    DONE = "done"
+    EXPIRED = "expired"
+    REFUSED = "refused"
+    STATUSES = [
+        (PENDING, "Waiting for the friend request"),
+        (PROVEN, "Proven"),
+        (DONE, "Finished"),
+        (EXPIRED, "Expired"),
+        (REFUSED, "Refused"),
+    ]
+
+    name = models.CharField(max_length=64)  # as typed
+    name_key = models.CharField(max_length=64, db_index=True)  # casefolded
+    purpose = models.CharField(max_length=10, choices=PURPOSES)
+    # ADD: the signed-in account the new one joins. SIGN_IN: null.
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    status = models.CharField(max_length=10, choices=STATUSES, default=PENDING, db_index=True)
+    started_at = models.DateTimeField()
+    expires_at = models.DateTimeField()
+    # Filled in when proven: bonk.io's id and spelling of the account.
+    bonk_id = models.BigIntegerField(null=True, blank=True)
+    bonk_name = models.CharField(max_length=64, blank=True)
+    proven_at = models.DateTimeField(null=True, blank=True)
+    # Why it was refused, in words for the person.
+    problem = models.CharField(max_length=200, blank=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["status", "expires_at"], name="linkclaim_pending")]
+
+    def __str__(self):
+        return f"claim {self.pk} ({self.purpose}, {self.status})"

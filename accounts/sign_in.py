@@ -108,6 +108,51 @@ def sign_in(
     return user
 
 
+def sign_in_by_friend_request(request, *, bonk_id: int, bonk_name: str, add: bool) -> BonkUser:
+    """Sign the browser in as a bonk.io account proven by a friend request
+    (accounts/link_claims.py, RFC-0003 phase 6), with no password.
+
+    Like `sign_in`, without what only a password login gives: no tokens (Wear
+    asks for the password once, later), no XP (no vote until one password
+    login, skins.votes), no friend lists. With `add` it joins the group of
+    the account signed in before; a main signed in this way unlocks its
+    group, the same as a password sign-in (groups.after_login).
+
+    Returns:
+        The site account now logged in.
+    """
+    previous = request.user if request.user.is_authenticated else None
+    previous_lists = groups.browser_lists(request)
+
+    username = BonkUsername(bonk_name)
+    user = site_account_for(username)
+    link_by_friend_request(user, bonk_id=bonk_id, bonk_name=username.value)
+    login(request, user)
+    groups.after_login(request, previous, previous_lists, add=add)
+    log_event(user, "user_logged_in", via="friend_request", added=add)
+
+    bonk = bonk_session(request)
+    bonk.store_identity(username.value, bonk_id)
+    return user
+
+
+def link_by_friend_request(user: BonkUser, *, bonk_id: int, bonk_name: str) -> BonkAccountLink:
+    """Link `user` to the BonkPlayer `bonk_id` after a friend request proved
+    it. The link has no tokens and keeps any it had; `password_proven_at`
+    isn't touched (a friend request doesn't tell us the level)."""
+    adopt_replay_names({bonk_id: bonk_name})
+    player, created = BonkPlayer.objects.get_or_create(
+        bonk_id=bonk_id, defaults={"username": bonk_name}
+    )
+    if not created and player.username != bonk_name:
+        player.username = bonk_name
+        player.save(update_fields=["username", "updated_at"])
+    link, _ = BonkAccountLink.objects.update_or_create(
+        user=user, bonk_player=player, defaults={"active": True}
+    )
+    return link
+
+
 def site_account_for(username: BonkUsername) -> BonkUser:
     """The site account for a bonk.io name, created on first login.
 
@@ -163,7 +208,12 @@ def link_bonk_player(
     link, _ = BonkAccountLink.objects.update_or_create(
         user=user,
         bonk_player=player,
-        defaults={"scopes": {"friends": True}, "active": True},
+        defaults={
+            "scopes": {"friends": True},
+            "active": True,
+            # A password login: the account's level (XP) is known now.
+            "password_proven_at": timezone.now(),
+        },
     )
     bonk_tokens.store_login(link, result, remember=remember)
     record_worn_skin(result.bonk_id, result.skin_code, WornSkinSource.LOGIN)

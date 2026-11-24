@@ -25,7 +25,7 @@ from django.views.decorators.http import require_POST
 from core.ratelimits import limit
 from players import selectors as player_selectors
 
-from . import appearance, bot_check, groups
+from . import appearance, bot_account, bot_check, groups, link_claims
 from .forms import LoginForm
 from .login_attempts import attempt_login
 from .login_messages import login_failure_message
@@ -93,6 +93,7 @@ def _render_login(request, form, *, retry_after=None, adding=False):
             "form": form,
             "retry_after": retry_after,
             "adding": adding,
+            "friend_requests": bot_account.configured(),
             "turnstile_site_key": bot_check.site_key_if_wanted(request),
         },
     )
@@ -122,6 +123,84 @@ def logout_view(request):
         return redirect("site_pages:home")
     messages.success(request, f"Signed out of {leaving}. You're now using {now.username}.")
     return redirect(_back(request))
+
+
+@limit("login", method="POST")
+def friend_request_login(request):
+    """Sign in, or add an account, with a friend request instead of a
+    password (accounts/link_claims.py, RFC-0003 phase 6). GET: the name
+    form. POST: start the claim and go to the waiting page."""
+    adding = request.user.is_authenticated and "1" in (
+        request.POST.get("add"),
+        request.GET.get("add"),
+    )
+    name = (request.POST.get("username") or request.GET.get("username") or "")[:100]
+    next_url = _safe_next(request)
+    if request.method == "POST":
+        try:
+            claim = link_claims.start(request, name, add=adding)
+        except link_claims.ClaimProblem as problem:
+            messages.error(request, problem.message)
+        else:
+            url = reverse("accounts:friend_request_wait", args=[claim.pk])
+            return redirect(f"{url}?next={next_url}" if next_url else url)
+    return render(
+        request,
+        "accounts/friend_request_login.html",
+        {
+            "adding": adding,
+            "username": name,
+            "bot_name": bot_account.bot_name(),
+            "available": bot_account.configured(),
+            "next": next_url,
+        },
+    )
+
+
+@limit("browse")
+def friend_request_wait(request, claim_id):
+    """The waiting page: send the friend request now; the page checks."""
+    try:
+        state = link_claims.status(request, claim_id)
+    except link_claims.ClaimProblem as problem:
+        messages.error(request, problem.message)
+        return redirect("accounts:friend_request_login")
+    if state["status"] == "done":
+        return redirect(_safe_next(request) or reverse("players:profile_settings"))
+    claim_name = link_claims.claimed_name(claim_id)
+    return render(
+        request,
+        "accounts/friend_request_wait.html",
+        {
+            "claim_id": claim_id,
+            "state": state,
+            "name": claim_name,
+            "bot_name": bot_account.bot_name(),
+            "next": _safe_next(request),
+        },
+    )
+
+
+@require_POST
+@limit("browse")
+def friend_request_status(request, claim_id):
+    """The waiting page's check (every few seconds): pending, done (now
+    signed in, or the account added), expired or refused."""
+    try:
+        state = link_claims.status(request, claim_id)
+    except link_claims.ClaimProblem as problem:
+        return JsonResponse({"status": "refused", "message": problem.message}, status=403)
+    if state["status"] == "done":
+        state["redirect"] = _safe_next(request) or reverse("players:profile_settings")
+    return JsonResponse(state)
+
+
+def _safe_next(request) -> str:
+    """`next` from the query or form when it points at this site, else ""."""
+    next_url = request.POST.get("next") or request.GET.get("next") or ""
+    if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        return next_url
+    return ""
 
 
 @login_required

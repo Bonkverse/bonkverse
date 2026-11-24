@@ -342,6 +342,9 @@ class BonkFriend:
 
     bonk_id: int
     name: str | None
+    # Incoming requests only: when it was sent, exactly as bonk.io wrote it
+    # ("2026-11-10 21:39:07", US Eastern, no zone). None for friends.
+    date: str | None = None
 
 
 @dataclass(frozen=True)
@@ -488,6 +491,27 @@ class BonkApi:
             friends=_parse_friends(data.get("friends")),
             requests=_parse_friends(data.get("requests")),
         )
+
+    def delete_friend_request(self, token: str, bonk_id: int) -> BonkClearResult:
+        """Delete (not accept) the friend request `bonk_id` sent to the token's
+        account. Used by friend-request linking (accounts/link_claims.py): the
+        bot account never needs friends.
+
+        BONK: task "deleterequest" with theirid; seen in the WolfRichie
+        Demystify-Bonk notes and used by BonxBot since 2026-11-17.
+        """
+        try:
+            data = self._post(
+                FRIENDS_SCRIPT, {"token": token, "task": "deleterequest", "theirid": str(bonk_id)}
+            )
+        except _Unavailable:
+            return BonkClearResult(ok=False, error=BonkError.UNAVAILABLE)
+        except _CoolingDown:
+            return BonkClearResult(ok=False, error=BonkError.RATE_LIMITED)
+        if data.get("r") not in ("success", "delete_success", "deleterequest_success"):
+            code = _bonk_code(data)
+            return BonkClearResult(ok=False, error=_refusal(code), bonk_error=code)
+        return BonkClearResult(ok=True)
 
     def update_avatar(self, token: str, slot: AvatarSlot, skin_code: str) -> BonkAvatarUpdateResult:
         """Put `skin_code` in avatar `slot` of the token's account.
@@ -680,5 +704,12 @@ def _parse_friends(entries) -> tuple[BonkFriend, ...]:
         if bonk_id is None:
             continue
         name = entry.get("name")
-        parsed.append(BonkFriend(bonk_id, name if isinstance(name, str) and name else None))
+        date = entry.get("date")
+        parsed.append(
+            BonkFriend(
+                bonk_id,
+                name if isinstance(name, str) and name else None,
+                date if isinstance(date, str) and date else None,
+            )
+        )
     return tuple(parsed)

@@ -12,7 +12,7 @@
   (events.py); every app records what people do through it.
 - `account_rows(request)`: the signed-in person's bonk.io accounts (their
   group), for the settings page (groups.py).
-- `group_member_ids(user)`, `bonk_level(user)`, `main_signed_in_here(request)`,
+- `group_member_ids(user)`, `bonk_level(user)`, `voting_standing(user)`, `main_signed_in_here(request)`,
   `shown_alongside(user)`, `set_group_shown_on_profiles(request, show)`: what
   other apps need from groups (one vote per group, level 5 to vote, privacy
   "apply to all", "Also plays as…").
@@ -33,7 +33,7 @@ refreshes the bonk.io token for a player who is already signed in.
 from .bot_check import site_key_if_wanted as bot_check_site_key
 from .groups import accounts_for as account_rows
 from .groups import NotAllowed as GroupActionNotAllowed
-from .groups import bonk_level, main_signed_in_here, shown_alongside
+from .groups import bonk_level, main_signed_in_here, shown_alongside, voting_standing
 from .groups import member_ids as group_member_ids
 from .signals import account_joined_group
 from .groups import show_on_profiles as set_group_shown_on_profiles
@@ -66,6 +66,7 @@ __all__ = [
     "bonk_level",
     "group_member_ids",
     "main_signed_in_here",
+    "voting_standing",
     "set_group_shown_on_profiles",
     "shown_alongside",
     "trusted_browsers",

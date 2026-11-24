@@ -106,6 +106,28 @@ deploy, `railway ssh` into `bonkverse`:
 1. `python manage.py group_linked_accounts`: a dry run, counts only.
 2. The same with `--run`. Running it again should report 0 links moved.
 
+## Friend-request sign-in (the bot's bonk.io account)
+
+"Log in with a friend request" (RFC-0003 phase 6, `accounts/link_claims.py`)
+reads the friend requests of the bot's bonk.io account, the same account
+BonxBot uses for `/link`. It's off until both variables are set:
+
+| Variable | Where | What |
+|---|---|---|
+| `BONK_BOT_USERNAME` | `bonkverse` and `worker` | The bot account's bonk.io name, shown to players |
+| `BONK_BOT_PASSWORD` | `bonkverse` and `worker` | Its password; used for one login, then its remember-me token |
+
+The worker's `check-link-claims` (every 30 s) does one query when nothing is
+pending. Log lines: `link check | pending=…` when it read requests,
+`bot account: signed in to bonk.io` (should be rare: later sessions come
+from the remember-me token), and `bot account: bonk.io refused
+BONK_BOT_USERNAME/BONK_BOT_PASSWORD` (wrong setting; it waits 30 minutes
+before trying the password again, so the shared login budget isn't spent).
+If the bot's password changes, update both services and run in a
+`railway ssh` shell: `python manage.py shell -c "from django.core.cache import
+cache; cache.delete_many(['bonk_bot:token', 'bonk_bot:remember',
+'bonk_bot:password_hold'])"`.
+
 ## Rotating the Redis password
 
 Railway's **Regenerate** button (Redis → Database → Config) is the supported way.

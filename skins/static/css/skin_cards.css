@@ -126,6 +126,18 @@ a.bv-chip[aria-current="page"]::before {
 .site-form-card {
   max-width: none;
 }
+/* Numbered how-to steps in a form card (friend-request login). */
+.site-steps {
+  margin: 0;
+  padding-left: var(--bv-space-5);
+  display: grid;
+  gap: var(--bv-space-2);
+}
+/* The other way to do it, under a form ("Log in with a friend request instead"). */
+.site-form-alt {
+  margin-top: var(--bv-space-3);
+  font-size: var(--bv-text-sm);
+}
 
 /* "Just uploaded" (the search page's highlight, ADR 0021) sits above the name. */
 .bv-skin-card__body > .bv-pill {

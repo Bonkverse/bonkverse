@@ -22,7 +22,7 @@ from django.db.models import Count, F, Q
 from django.db.models.functions import Greatest
 from django.utils import timezone
 
-from accounts.services import bonk_level, group_member_ids
+from accounts.services import group_member_ids, voting_standing
 
 from .models import Skin, SkinVote
 
@@ -46,12 +46,16 @@ class VoteNotAllowed(Exception):
 def why_cant_vote(user) -> str | None:
     """Why `user` may not cast a new vote, or None if they may.
 
-    An account whose level was never stored (signed in before Bonkverse kept
-    XP) isn't blocked: every sign-in now stores it.
+    An account whose level was never stored but that signed in with its
+    password (before Bonkverse kept XP) isn't blocked. One proven only by a
+    friend request is, until it logs in once with its password: a friend
+    request doesn't tell us its level (RFC-0003 phase 6).
     """
-    level = bonk_level(user)
+    level, friend_request_only = voting_standing(user)
     if level is not None and level < MIN_VOTE_LEVEL:
         return f"Reach level {MIN_VOTE_LEVEL} on bonk.io to vote. You're level {level}."
+    if level is None and friend_request_only:
+        return "Log in once with your bonk.io password so Bonkverse can see your level, then vote."
     return None
 
 
