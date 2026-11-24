@@ -104,6 +104,14 @@ _REFUSALS = {
 # and restarted it, which is why 2026-11-09 had outages of over an hour.
 # 17 minutes leaves room for clock and network differences.
 LOGIN_RATE_LIMIT_PAUSE = 17 * 60.0
+# But on 2026-11-24 the first login after a 17-minute pause was refused three
+# times running (19:50, 20:39 and 21:00 UTC), with no Bonkverse calls during
+# the pauses: after a burst, bonk.io's block can outlast 15 minutes (or
+# another service on the shared IP keeps restarting it). Each early try
+# spends a real person's login and restarts the block, so a refusal right
+# after a pause waits longer: 17, 30, 45, then 60 minutes, back to 17 once a
+# login gets through (clear()).
+LOGIN_RATE_LIMIT_PAUSES = (17 * 60.0, 30 * 60.0, 45 * 60.0, 60 * 60.0)
 
 # Other scripts (friends.php, avatar_update.php) haven't been measured, so
 # they keep the doubling pause: 2, 4, 8, 16 minutes, then 30 at most, starting
@@ -111,18 +119,19 @@ LOGIN_RATE_LIMIT_PAUSE = 17 * 60.0
 RATE_LIMIT_COOLDOWN = 120.0  # the first pause
 RATE_LIMIT_COOLDOWN_MAX = 1800.0
 # How long a run of limits is remembered. A limit after this much quiet starts
-# again at RATE_LIMIT_COOLDOWN.
-RATE_LIMIT_STRIKE_MEMORY = 3600
+# again at the first pause. Longer than the longest login pause.
+RATE_LIMIT_STRIKE_MEMORY = 2 * 3600
 
 
 def backoff_seconds(strikes: int, script: str | None = None) -> float:
     """The pause after `strikes` limits in a row for `script`.
 
-    login_legacy.php: always LOGIN_RATE_LIMIT_PAUSE. Others: 120, 240, 480, ...
-    up to 1800.
+    login_legacy.php: LOGIN_RATE_LIMIT_PAUSES (17, 30, 45, then 60 minutes).
+    Others: 120, 240, 480, ... up to 1800.
     """
     if script == LOGIN_SCRIPT:
-        return LOGIN_RATE_LIMIT_PAUSE
+        step = min(max(strikes, 1), len(LOGIN_RATE_LIMIT_PAUSES)) - 1
+        return LOGIN_RATE_LIMIT_PAUSES[step]
     return min(RATE_LIMIT_COOLDOWN * 2 ** max(strikes - 1, 0), RATE_LIMIT_COOLDOWN_MAX)
 
 
