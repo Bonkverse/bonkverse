@@ -374,16 +374,39 @@ class TestLoginPause:
     block lasts ~15 min after the last request it saw, and any request during
     it restarts the 15 min. The old 2/4/8/16-min checks kept restarting it."""
 
-    def test_login_pauses_once_for_17_minutes_however_many_in_a_row(self, mocked_http):
+    def test_a_refusal_right_after_a_pause_waits_longer(self, mocked_http):
+        """2026-11-24: the first login after a 17-minute pause was refused
+        three times running. 17, 30, 45, then 60 minutes."""
         now = [1000.0]
         cooldowns = _Cooldowns(clock=lambda: now[0])
         api = BonkApi(BASE, cooldowns=cooldowns)
         mocked_http.post(LOGIN, json={"r": "fail", "e": "ratelimited"})
 
-        for _ in range(3):
+        pauses = []
+        for _ in range(5):
             api.login("TestPlayer", "pw")
-            assert cooldowns.remaining(LOGIN_SCRIPT) == LOGIN_RATE_LIMIT_PAUSE == 17 * 60
-            now[0] += LOGIN_RATE_LIMIT_PAUSE + 1
+            pauses.append(cooldowns.remaining(LOGIN_SCRIPT))
+            now[0] += cooldowns.remaining(LOGIN_SCRIPT) + 1
+
+        assert pauses == [17 * 60, 30 * 60, 45 * 60, 60 * 60, 60 * 60]
+        assert LOGIN_RATE_LIMIT_PAUSE == 17 * 60
+
+    def test_a_login_that_gets_through_starts_over_at_17(self, mocked_http):
+        now = [1000.0]
+        cooldowns = _Cooldowns(clock=lambda: now[0])
+        api = BonkApi(BASE, cooldowns=cooldowns)
+        mocked_http.post(LOGIN, json={"r": "fail", "e": "ratelimited"})
+        api.login("TestPlayer", "pw")
+        now[0] += cooldowns.remaining(LOGIN_SCRIPT) + 1
+        api.login("TestPlayer", "pw")  # 30 minutes now
+        now[0] += cooldowns.remaining(LOGIN_SCRIPT) + 1
+        mocked_http.post(LOGIN, json=load_bonk_fixture("login_success"))
+        assert api.login("TestPlayer", "pw").ok is True
+        mocked_http.post(LOGIN, json={"r": "fail", "e": "ratelimited"})
+
+        api.login("TestPlayer", "pw")
+
+        assert cooldowns.remaining(LOGIN_SCRIPT) == 17 * 60
 
     def test_nothing_reaches_bonk_during_the_login_pause(self, mocked_http):
         now = [1000.0]
@@ -433,7 +456,13 @@ class TestLoginPause:
         assert api.login("TestPlayer", "pw").ok is True
 
     def test_other_scripts_keep_the_doubling_pause(self):
-        assert backoff_seconds(1, LOGIN_SCRIPT) == backoff_seconds(5, LOGIN_SCRIPT) == 1020
+        assert [backoff_seconds(n, LOGIN_SCRIPT) for n in range(1, 6)] == [
+            1020,
+            1800,
+            2700,
+            3600,
+            3600,
+        ]
         assert backoff_seconds(1, AVATAR_UPDATE_SCRIPT) == 120
         assert backoff_seconds(2, FRIENDS_SCRIPT) == 240
 
