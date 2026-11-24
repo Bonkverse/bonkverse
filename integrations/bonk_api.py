@@ -294,6 +294,13 @@ class BonkLoginResult:
     # other than a string. Unchecked here; callers check it with
     # core.bonk.SkinCode.
     skin_code: str | None = field(default=None, repr=False)
+    # BONK: per DemystifyBonk, the login answer carries the account's
+    # friend list ("friends") like friends.php does, and maybe its incoming
+    # requests ("requests"). Not yet seen in a recorded answer, so each is
+    # None when the key is missing or isn't a list, and callers fall back
+    # to friends.php (RFC-0003 phase 2).
+    friends: tuple[BonkFriend, ...] | None = field(default=None, repr=False)
+    requests: tuple[BonkFriend, ...] | None = field(default=None, repr=False)
 
 
 @dataclass(frozen=True)
@@ -418,6 +425,8 @@ class BonkApi:
             legacy_friends=data.get("legacyFriends") or "",
             xp=_int_or_none(data.get("xp")),
             skin_code=_slot_skin_code(data, active_slot),
+            friends=_friend_list_or_none(data.get("friends")),
+            requests=_friend_list_or_none(data.get("requests")),
         )
 
     def get_friends(self, token: str) -> BonkFriendsResult:
@@ -584,6 +593,13 @@ def _int_or_none(value) -> int | None:
         return int(value)
     except (TypeError, ValueError):
         return None
+
+
+def _friend_list_or_none(entries) -> tuple[BonkFriend, ...] | None:
+    """A friend list from a login answer, or None when there wasn't one."""
+    if not isinstance(entries, list):
+        return None
+    return _parse_friends(entries)
 
 
 def _parse_friends(entries) -> tuple[BonkFriend, ...]:

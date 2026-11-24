@@ -15,7 +15,7 @@ from core.background import enqueue
 from .flash_friends_sync import sync_flash_friends_for_user
 from .friends_sync import adopt_replay_names
 from .models import ProfileVisibility, WornSkinSource
-from .tasks import sync_friends
+from .tasks import sync_friends, sync_login_friends
 from .worn_skins import record_replay_skins, record_worn_skin
 
 __all__ = [
@@ -23,6 +23,7 @@ __all__ = [
     "WornSkinSource",
     "forget_user_skin",
     "queue_friend_sync",
+    "queue_login_friends",
     "record_replay_skins",
     "record_worn_skin",
     "sync_flash_friends_for_user",
@@ -42,6 +43,24 @@ def queue_friend_sync(account_link_id: int) -> bool:
     """Queue the regular friend sync (friends.php) for this account link on the
     worker. Returns whether it was queued (enqueue never raises)."""
     return enqueue(sync_friends, account_link_id)
+
+
+def queue_login_friends(account_link_id: int, friends, requests=None) -> bool:
+    """Queue storing the friend list a login answer carried (no bonk.io call).
+
+    `friends` and `requests` are BonkFriends; `requests` None when the answer
+    had none. Returns whether it was queued (enqueue never raises).
+    """
+
+    def as_json(entries):
+        return [[friend.bonk_id, friend.name] for friend in entries]
+
+    return enqueue(
+        sync_login_friends,
+        account_link_id,
+        as_json(friends),
+        as_json(requests) if requests is not None else None,
+    )
 
 
 def forget_user_skin(user) -> None:

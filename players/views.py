@@ -1,4 +1,6 @@
 import os
+from datetime import datetime
+from datetime import timezone as dt_timezone
 
 from django.conf import settings
 from django.contrib import messages
@@ -9,6 +11,7 @@ from django.urls import reverse
 
 from core.bonk import dbid, levels
 from core.ratelimits import limit
+from core.token_crypto import bonk_session
 from skins.services import code_image
 
 from . import selectors, services
@@ -214,4 +217,23 @@ def profile_settings(request):
         {"field": field, "label": label, "help": help_text, "on": getattr(visibility, field)}
         for field, label, help_text in ProfileVisibility.SECTIONS
     ]
-    return render(request, "players/settings.html", {"sections": sections})
+    return render(
+        request,
+        "players/settings.html",
+        {"sections": sections, "bonk_connection": _bonk_connection(request)},
+    )
+
+
+def _bonk_connection(request) -> dict:
+    """This browser's bonk.io connection, for the settings page: who it's
+    for and when it ends (RFC-0003 phase 2). Ends about a day after login,
+    from the token's own `exp`."""
+    bonk = bonk_session(request)
+    expires_at = bonk.expires_at
+    if expires_at is None:
+        return {"connected": False}
+    return {
+        "connected": True,
+        "username": bonk.username,
+        "until": datetime.fromtimestamp(expires_at, tz=dt_timezone.utc),
+    }

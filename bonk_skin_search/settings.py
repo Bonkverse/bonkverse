@@ -193,6 +193,11 @@ CLOUDFLARE_CACHE_API_TOKEN = os.getenv("CLOUDFLARE_CACHE_API_TOKEN", "")
 # Security / CORS / Cookies
 # =========================================================
 
+# A Bonkverse sign-in lasts 90 days, renewed as the player visits
+# (accounts/sessions.py, RFC-0003 phase 2). Getting back in after it ends
+# costs a bonk.io password login on the server's shared budget.
+SESSION_COOKIE_AGE = 90 * 24 * 60 * 60
+
 # Prod: share session + CSRF cookies across *.bonkverse.io so editor.bonkverse.io
 # is authenticated by the same login as bonkverse.io. Lax is sufficient because
 # subdomains of one registrable domain are same-site.
@@ -326,6 +331,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     # A signed-in player's theme follows them across devices (accounts/appearance.py)
     "accounts.appearance.AppearanceMiddleware",
+    # Signing in lasts 90 days from the last visit (accounts/sessions.py).
+    "accounts.sessions.SessionRenewalMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # Turns Ratelimited from views still on the old @ratelimit decorator into

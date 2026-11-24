@@ -8,11 +8,18 @@ site account (`AUTH_USER_MODEL`), followed in 5.5c the same way, keeping
 `skins_userevent` and its index names.
 """
 
+import time
+from datetime import datetime
+from datetime import timezone as dt_timezone
+
 from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
+from django.utils import timezone
 
 from core import token_crypto
+from core.bonk.session import EXPIRY_MARGIN_SECONDS
+from core.bonk.tokens import token_expiry
 
 
 class BonkUserManager(BaseUserManager):
@@ -96,9 +103,13 @@ class BonkAccountLink(models.Model):
     # Encrypted with BONK_TOKEN_KEYS (core/token_crypto.py, ADR 0016). Read
     # and written only through encrypt_token() and bonk_token().
     token_encrypted = models.TextField(blank=True, null=True)
-    # Assumed 14 days from login; bonk.io tokens really last about a day
-    # (RFC-0003 reads the token's own expiry instead).
+    # The token's own expiry (its `exp`, about a day after login), less a
+    # minute's margin (core.bonk.session.EXPIRY_MARGIN_SECONDS). Null for
+    # links saved before RFC-0003 phase 2; bonk_token() then reads `exp`.
     token_expires_at = models.DateTimeField(blank=True, null=True)
+    # The account's active avatar slot (1-5) at its latest login: the slot
+    # the player wears in game. Null before RFC-0003 phase 2.
+    active_slot = models.PositiveSmallIntegerField(blank=True, null=True)
     scopes = models.JSONField(blank=True, null=True)  # e.g. {"friends": true}
     active = models.BooleanField(default=True)
     connected_at = models.DateTimeField(auto_now_add=True)
@@ -114,8 +125,26 @@ class BonkAccountLink(models.Model):
         return token_crypto.encrypt(bonk_token)
 
     def bonk_token(self) -> str | None:
-        """The stored bonk.io token, or None if there is none or no key opens it."""
-        return token_crypto.decrypt(self.token_encrypted)
+        """The stored bonk.io token, or None if there is none, no key opens
+        it, or it has expired (so nothing spends a bonk.io call to find out)."""
+        if self.token_expires_at is not None and self.token_expires_at <= timezone.now():
+            return None
+        token = token_crypto.decrypt(self.token_encrypted)
+        if token is None:
+            return None
+        exp = token_expiry(token)
+        if exp is not None and time.time() >= exp - EXPIRY_MARGIN_SECONDS:
+            return None
+        return token
+
+    @staticmethod
+    def expiry_for(bonk_token: str):
+        """When a stored `bonk_token` stops being usable, as a datetime, or
+        None when its `exp` can't be read."""
+        exp = token_expiry(bonk_token)
+        if exp is None:
+            return None
+        return datetime.fromtimestamp(exp - EXPIRY_MARGIN_SECONDS, tz=dt_timezone.utc)
 
 
 class UserEvent(models.Model):

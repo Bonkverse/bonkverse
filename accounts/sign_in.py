@@ -4,7 +4,9 @@ Owns: finding or creating the site account for a bonk.io name, linking it to
 its BonkPlayer (with the encrypted token and the skin the player is wearing),
 storing the bonk.io session, syncing
 Flash friends from the login reply, and queueing the regular friend sync on
-the worker.
+the worker: from the friend list in the login answer when it has one, else
+from friends.php (RFC-0003 phase 2). Also refreshing a link's token after the
+in-page login on wear (refresh_link).
 Does not own: the /login/ page (views.py) and its messages (login_messages.py), trying the
 bonk.io login and the limit on wrong passwords (login_attempts.py), the
 bonk.io session rules (core/bonk/session.py) or friend storage
@@ -26,6 +28,7 @@ from players.services import (
     adopt_replay_names,
     forget_user_skin,
     queue_friend_sync as queue_players_friend_sync,
+    queue_login_friends,
     record_worn_skin,
     sync_flash_friends_for_user,
 )
@@ -73,12 +76,14 @@ def sign_in(request, result: BonkLoginResult) -> BonkUser:
     except Exception:
         logger.exception("flash friends sync at login failed")
 
-    # Regular friends come from a second bonk.io call, so they sync on the
-    # worker; the task reads the token from the link, never from the queue.
-    # Requests run in autocommit (no ATOMIC_REQUESTS; a test pins it), so the
-    # link is committed already and the worker can't run before it exists.
+    # Regular friends sync on the worker. When the login answer carried the
+    # friend list, the worker stores that list and bonk.io isn't called
+    # again; otherwise it reads friends.php with the token from the link,
+    # never from the queue. Requests run in autocommit (no ATOMIC_REQUESTS; a
+    # test pins it), so the link is committed already and the worker can't
+    # run before it exists.
     if settings.SYNC_FRIENDS_ON_LOGIN and link is not None:
-        queue_friend_sync(request, link.id)
+        queue_friend_sync(request, link.id, result)
     return user
 
 
@@ -136,7 +141,7 @@ def link_bonk_player(user: BonkUser, result: BonkLoginResult) -> BonkAccountLink
         user=user,
         bonk_player=player,
         defaults={
-            "token_encrypted": BonkAccountLink.encrypt_token(result.token),
+            **_token_fields(result),
             "scopes": {"friends": True},
             "active": True,
         },
@@ -146,14 +151,52 @@ def link_bonk_player(user: BonkUser, result: BonkLoginResult) -> BonkAccountLink
     return link
 
 
-def queue_friend_sync(request, link_id: int) -> bool:
-    """Hand the regular friend sync (friends.php) to the worker.
+def refresh_link(user: BonkUser, result: BonkLoginResult) -> bool:
+    """After the in-page login on wear, store the new token, its expiry and
+    the active slot on the user's existing link to that bonk.io account, so
+    the worker and the settings page see the fresh connection. Never creates
+    a link. Returns whether a link was updated.
+    """
+    if result.bonk_id is None:
+        return False
+    updated = BonkAccountLink.objects.filter(user=user, bonk_player__bonk_id=result.bonk_id).update(
+        **_token_fields(result), updated_at=timezone.now()
+    )
+    return bool(updated)
+
+
+def _token_fields(result: BonkLoginResult) -> dict:
+    """The link fields a successful login sets: the encrypted token, when it
+    stops being usable (from its own `exp`), and the active slot."""
+    return {
+        "token_encrypted": BonkAccountLink.encrypt_token(result.token),
+        "token_expires_at": BonkAccountLink.expiry_for(result.token),
+        "active_slot": result.active_slot.number if result.active_slot else None,
+    }
+
+
+def queue_friend_sync(request, link_id: int, result: BonkLoginResult | None = None) -> bool:
+    """Hand the regular friend sync to the worker.
+
+    With the friend list from the login answer (`result.friends`), the worker
+    stores it and bonk.io isn't called; without one, it reads friends.php.
+    Each login logs which, so production shows whether bonk.io's answer
+    carries the list (unconfirmed: docs/bonk/api.md).
 
     The profile page shows a toast that polls /api/friends-sync-status/ until
     the task logs `friends_synced`; it's only shown when the sync was queued.
     Returns whether it was queued.
     """
-    queued = queue_players_friend_sync(link_id)
+    if result is not None and result.friends is not None:
+        logger.info(
+            "login answer carried friends | friends=%s | requests=%s",
+            len(result.friends),
+            "none" if result.requests is None else len(result.requests),
+        )
+        queued = queue_login_friends(link_id, result.friends, result.requests)
+    else:
+        logger.info("login answer carried no friend list; reading friends.php")
+        queued = queue_players_friend_sync(link_id)
     if queued:
         request.session["show_friend_sync_toast"] = True
     return queued

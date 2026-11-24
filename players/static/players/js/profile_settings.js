@@ -8,6 +8,22 @@
 (function () {
   "use strict";
 
+  // Times the server writes in UTC (<time datetime data-local-time>), shown
+  // in the viewer's own time zone, e.g. "Tue 9:50 PM".
+  document.querySelectorAll("time[data-local-time]").forEach(function (el) {
+    const at = new Date(el.getAttribute("datetime"));
+    if (Number.isNaN(at.getTime())) return;
+    el.textContent = at.toLocaleString([], {
+      weekday: "short",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  });
+})();
+
+(function () {
+  "use strict";
+
   const form = document.querySelector("[data-profile-settings]");
   if (!form || !window.fetch) return;
   const save = form.querySelector("[data-save]");

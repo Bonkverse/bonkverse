@@ -1,7 +1,9 @@
 """Storing a player's bonk.io friend list (friends.php) as Friendship edges.
 
 Owns: syncing a linked player's friends (sync_friends_for_link, run by the
-sync_friends worker task in players/tasks.py after login), upserting BonkPlayer rows
+sync_friends worker task in players/tasks.py after login when the login
+answer had no friend list; store_friend_list, for a list already in hand,
+run by sync_login_friends), upserting BonkPlayer rows
 for friends and requests, adding and pruning Friendship edges, and
 friend-count history.
 Does not own: talking to bonk.io (integrations/bonk_api.py), queueing the
@@ -82,18 +84,33 @@ def sync_friends_for_link(link: BonkAccountLink) -> LinkSyncResult:
         logger.warning("friends sync skipped: %s (bonk_error=%s)", result.error, result.bonk_error)
         return LinkSyncResult(error=result.error)
 
+    return LinkSyncResult(stats=store_friend_list(link, result.friends, result.requests))
+
+
+def store_friend_list(
+    link: BonkAccountLink,
+    friends: Iterable[BonkFriend],
+    requests: Iterable[BonkFriend] = (),
+) -> dict:
+    """Store a friend list bonk.io gave for the linked player, from
+    friends.php or from the login answer itself, and log `friends_synced`
+    (the event the profile page's toast polls for). Returns the counts.
+
+    Args:
+        link: an account link with its user and bonk_player loaded.
+    """
     stats = sync_friends_for_player(
         current_bonk_id=link.bonk_player.bonk_id,
         current_username=link.bonk_player.username,
-        friends=result.friends,
-        requests=result.requests,
+        friends=friends,
+        requests=requests,
     )
     # Imported here: accounts.services loads accounts' login code, which uses
     # players.services, which loads this module.
     from accounts.services import log_event
 
     log_event(link.user, "friends_synced", **stats)
-    return LinkSyncResult(stats=stats)
+    return stats
 
 
 def sync_friends_for_player(
