@@ -84,6 +84,49 @@
     pendingSuccess = null;
   }
 
+  // ── The "not a bot" check (Cloudflare Turnstile) ────────────
+  // The server asks for it in a login reply (`bot_check`: the site key) after
+  // a failed try or when the site is busy (accounts/bot_check.py). Cloudflare's
+  // script loads only then, and the widget sits inside the form, so its answer
+  // (cf-turnstile-response) goes with the next submit. Each answer works
+  // once, so the widget is reset after every try.
+  var botCheckWidget = null;
+  var turnstileLoading = null;
+
+  function loadTurnstile() {
+    if (window.turnstile) return Promise.resolve(window.turnstile);
+    if (turnstileLoading) return turnstileLoading;
+    turnstileLoading = new Promise(function (resolve, reject) {
+      var script = document.createElement("script");
+      script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+      script.async = true;
+      script.onload = function () { resolve(window.turnstile); };
+      script.onerror = function () { turnstileLoading = null; reject(new Error("turnstile")); };
+      document.head.appendChild(script);
+    });
+    return turnstileLoading;
+  }
+
+  function showBotCheck(siteKey) {
+    var box = el("bonk-login-bot-check");
+    if (!box || !siteKey) return;
+    if (botCheckWidget !== null) {
+      window.turnstile.reset(botCheckWidget);
+      return;
+    }
+    loadTurnstile().then(function (turnstile) {
+      if (botCheckWidget === null) {
+        botCheckWidget = turnstile.render(box, { sitekey: siteKey, theme: "auto" });
+      }
+    }).catch(function () {
+      setMsg("❌ The \"not a bot\" check couldn't load. Try again in a minute.", "error");
+    });
+  }
+
+  function resetBotCheck() {
+    if (botCheckWidget !== null && window.turnstile) window.turnstile.reset(botCheckWidget);
+  }
+
   // One bonk.io login at a time: extra presses while one is in flight would
   // each send bonk.io another password (skins/login_attempts.py).
   var loginInFlight = false;
@@ -101,8 +144,10 @@
     } finally {
       loginInFlight = false;
     }
+    resetBotCheck();
     if (!res.ok || !res.json.ok) {
       setMsg("❌ " + (res.json.message || res.json.error || "Login failed"), "error");
+      if (res.json.bot_check) showBotCheck(res.json.bot_check);
       return;
     }
     setMsg("✅ Logged in!", "success");

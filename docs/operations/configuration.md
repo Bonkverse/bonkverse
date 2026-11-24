@@ -56,7 +56,10 @@ Used by login, friend sync and wearing skins (`integrations/bonk_api.py`,
 | `BONK_LOGIN_VISITOR_WRONG_PASSWORDS` / `BONK_LOGIN_ACCOUNT_WRONG_PASSWORDS` | `2` / `2` before that visitor, or that account from that visitor, is held 15 min |
 | `BONK_LOGIN_VISITOR_UNKNOWN_USERNAMES` | `5` unknown usernames per visitor before a hold |
 
-The `BONK_LOGIN_*` guards are explained in
+| `TURNSTILE_SITE_KEY` | `0x4AAAAAAGP08z9bSQTcL_Xu` (public; it's in the page) |
+| `TURNSTILE_SECRET_KEY` | empty = the "not a bot" check on bonk.io logins is off. Secret: set it in Railway only |
+
+The `BONK_LOGIN_*` guards and the Turnstile check are explained in
 [bonk/login-rate-limit.md](../bonk/login-rate-limit.md#what-bonkverse-does-about-it).
 
 ## Capacity and limits

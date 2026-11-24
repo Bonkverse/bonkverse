@@ -110,6 +110,25 @@ class BonkAccountLink(models.Model):
     # The account's active avatar slot (1-5) at its latest login: the slot
     # the player wears in game. Null before RFC-0003 phase 2.
     active_slot = models.PositiveSmallIntegerField(blank=True, null=True)
+
+    # Remember-me (RFC-0003 Part 2): a bonk.io remember-me token, kept only
+    # when the player ticks "Keep me connected for Wear". It works like the
+    # password until bonk.io revokes it, so it's encrypted like the session
+    # token and read only by accounts/bonk_tokens.py (the token broker).
+    REMEMBER_NONE = "none"
+    REMEMBER_ACTIVE = "active"
+    REMEMBER_REVOKED = "revoked"  # bonk.io refused it (login_auto.php: not_found)
+    REMEMBER_STATUSES = [
+        (REMEMBER_NONE, "None"),
+        (REMEMBER_ACTIVE, "Active"),
+        (REMEMBER_REVOKED, "Revoked"),
+    ]
+    remember_token_encrypted = models.TextField(blank=True, null=True)
+    remember_status = models.CharField(
+        max_length=10, choices=REMEMBER_STATUSES, default=REMEMBER_NONE
+    )
+    # Last successful refresh through login_auto.php.
+    last_refreshed_at = models.DateTimeField(blank=True, null=True)
     scopes = models.JSONField(blank=True, null=True)  # e.g. {"friends": true}
     active = models.BooleanField(default=True)
     connected_at = models.DateTimeField(auto_now_add=True)
@@ -136,6 +155,13 @@ class BonkAccountLink(models.Model):
         if exp is not None and time.time() >= exp - EXPIRY_MARGIN_SECONDS:
             return None
         return token
+
+    def remember_token(self) -> str | None:
+        """The stored remember-me token, or None. Only accounts/bonk_tokens.py
+        should call this."""
+        if self.remember_status != self.REMEMBER_ACTIVE:
+            return None
+        return token_crypto.decrypt(self.remember_token_encrypted)
 
     @staticmethod
     def expiry_for(bonk_token: str):

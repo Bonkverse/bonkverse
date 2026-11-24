@@ -138,6 +138,11 @@ is a setting in `BONK_LOGIN_LIMITS`.
 - **Caps**: 4 logins a minute sent to bonk.io site-wide, 1 a minute per
   account (`busy`). Tries during bonk.io's pause don't count.
 - **One at a time** per account and visitor (`login_in_progress`).
+- **Not a bot**: when the visitor or the site looks risky, the login must
+  carry a genuine Cloudflare Turnstile answer (`bot_check`;
+  `accounts/bot_check.py`). The wear popup's reply carries `bot_check` (the
+  site key) when the next try needs it, and `core/js/bv-wear.js` shows the
+  widget.
 - When bonk.io answers `ratelimited`, every account and visitor with a wrong
   password in the window is held until 5 minutes after the site-wide pause,
   so none of their retries is the first login bonk.io sees when it ends. The

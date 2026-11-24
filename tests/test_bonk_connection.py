@@ -17,10 +17,9 @@ from django.utils import timezone
 
 from accounts import sessions
 from accounts.models import BonkAccountLink
-from core import token_crypto
 from core.bonk.session import EXPIRY_MARGIN_SECONDS
 from players.models import BonkPlayer
-from tests.conftest import load_bonk_fixture, make_bonk_token
+from tests.conftest import connect_bonk, load_bonk_fixture, make_bonk_token
 from tests.factories import UserFactory
 
 BONK_LOGIN_URL = "https://bonk2.io/scripts/login_legacy.php"
@@ -95,7 +94,7 @@ class TestExpiredLinkToken:
         assert len(mocked_http.calls) == 0
 
 
-class TestWearLoginRefreshesTheLink:
+class TestWearLoginConnectsTheAccount:
     def test_updates_the_users_own_link(self, logged_in_client, user, mocked_http):
         player = BonkPlayer.objects.create(bonk_id=1234567, username="TestPlayer")
         link = BonkAccountLink.objects.create(
@@ -114,14 +113,16 @@ class TestWearLoginRefreshesTheLink:
         assert link.active_slot == 5
         assert link.token_expires_at is not None
 
-    def test_never_creates_a_link(self, logged_in_client, mocked_http):
+    def test_links_an_account_the_user_proved_they_own(self, logged_in_client, user, mocked_http):
+        """Wear reads tokens from the link (the token broker), so the popup's
+        login links the account it logged in to."""
         mocked_http.post(BONK_LOGIN_URL, json=_login_answer(time.time() + 86400))
 
         logged_in_client.post(
             WEAR_LOGIN_URL, {"bonk_username": "TestPlayer", "bonk_password": "pw"}
         )
 
-        assert not BonkAccountLink.objects.exists()
+        assert BonkAccountLink.objects.filter(user=user, bonk_player__bonk_id=1234567).exists()
 
 
 class TestNinetyDaySignIn:
@@ -168,20 +169,23 @@ class TestNinetyDaySignIn:
 
 
 class TestSettingsShowsTheConnection:
-    def test_connected_says_until_when(self, logged_in_client):
-        session = logged_in_client.session
-        exp = time.time() + 6 * 3600
-        session["bonk_token"] = token_crypto.encrypt(make_bonk_token(exp=exp))
-        session["bonk_token_expires"] = exp - EXPIRY_MARGIN_SECONDS
-        session["bonk_username"] = "TestPlayer"
-        session.save()
+    def test_connected_says_until_when(self, logged_in_client, user):
+        connect_bonk(logged_in_client, user, token=make_bonk_token(exp=time.time() + 6 * 3600))
 
         page = logged_in_client.get(SETTINGS_URL).content.decode()
 
         assert "bonk.io connection" in page
-        assert "Connected as <strong>TestPlayer</strong>" in page
+        assert "Connected as <strong>" in page
         assert "data-local-time" in page
-        assert "Reconnect now" in page
+        assert "Reconnect" in page and "Disconnect" in page
+
+    def test_remembered_says_it_stays_connected(self, logged_in_client, user):
+        connect_bonk(logged_in_client, user, remember_token="r" * 77)
+
+        page = logged_in_client.get(SETTINGS_URL).content.decode()
+
+        assert "Stays connected" in page
+        assert "Disconnect" in page
 
     def test_not_connected_says_so(self, logged_in_client):
         page = logged_in_client.get(SETTINGS_URL).content.decode()
@@ -189,3 +193,4 @@ class TestSettingsShowsTheConnection:
         assert "Not connected." in page
         assert "Connect bonk.io" in page
         assert "next=/settings/profile/" in page
+        assert "settings/bonk/disconnect/" not in page

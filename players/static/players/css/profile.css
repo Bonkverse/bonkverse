@@ -633,3 +633,12 @@ a.pv-friend:hover { background: var(--bv-hover); color: var(--bv-text); text-dec
 @media (prefers-reduced-motion: reduce) {
   .pv * { transition: none !important; }
 }
+
+/* A row of buttons in a settings card (bonk.io connection: Reconnect, Disconnect). */
+.pv-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bv-space-2);
+  margin-top: var(--bv-space-3);
+}
+.pv-actions form { margin: 0; }

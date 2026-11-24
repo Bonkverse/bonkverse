@@ -23,8 +23,10 @@ The guards, checked in this order before bonk.io sees anything:
 2. The site-wide wrong-password budget: after BONK_LOGIN_LIMITS
    site_wrong_passwords wrong passwords in 15 minutes, new logins wait until
    the oldest ages out, instead of one of them spending bonk.io's third.
-3. One login at a time per account and visitor, so a double submit is one try.
-4. Caps on logins sent per minute: per bonk.io account, then site-wide.
+3. The "not a bot" check (Cloudflare Turnstile, bot_check.py), when this
+   visitor or the site looks risky (looks_risky).
+4. One login at a time per account and visitor, so a double submit is one try.
+5. Caps on logins sent per minute: per bonk.io account, then site-wide.
 When bonk.io answers "ratelimited" anyway, every account and visitor with a
 wrong password in the window is held past the pause, not whoever came next.
 
@@ -69,6 +71,8 @@ TOO_MANY_ATTEMPTS = "too_many_attempts"
 SITE_WAIT = "site_wait"
 # More logins this minute than the site (or this account) sends to bonk.io.
 BUSY = "busy"
+# The login needed the "not a bot" check (bot_check.py) and didn't pass it.
+BOT_CHECK = "bot_check"
 # This account and visitor already have a login waiting on bonk.io.
 IN_PROGRESS = "login_in_progress"
 
@@ -275,7 +279,9 @@ def _in_flight(account_key: str):
             _cache("delete", key)
 
 
-def attempt_login(request, username: str, password: str, *, via: str) -> LoginAttempt:
+def attempt_login(
+    request, username: str, password: str, *, via: str, remember: bool = False
+) -> LoginAttempt:
     """Try a bonk.io login unless one of the guards turns it away.
 
     Args:
@@ -283,6 +289,8 @@ def attempt_login(request, username: str, password: str, *, via: str) -> LoginAt
         username: As the player typed it; sent to bonk.io unchanged.
         password: Sent to bonk.io only; never logged or stored.
         via: Which form it came from, for the log line ("page" or "wear").
+        remember: Ask bonk.io for a remember-me token too ("Keep me
+            connected for Wear"; stored by bonk_tokens.store_login).
 
     Returns:
         A LoginAttempt. When a guard turns it away, bonk.io isn't called.
@@ -319,6 +327,12 @@ def attempt_login(request, username: str, password: str, *, via: str) -> LoginAt
             logger.info("bonk login waiting for the site budget | %s | retry_after=%s", tags, wait)
             return LoginAttempt(result=None, error=SITE_WAIT, retry_after=wait)
 
+    from . import bot_check  # imports this module
+
+    if bot_check.wanted(request) and not bot_check.passes(request):
+        logger.info("bonk login needs the bot check | %s", tags)
+        return LoginAttempt(result=None, error=BOT_CHECK)
+
     with _in_flight(account_key) as acquired:
         if not acquired:
             logger.info("bonk login already in flight | %s", tags)
@@ -334,7 +348,7 @@ def attempt_login(request, username: str, password: str, *, via: str) -> LoginAt
             logger.info("bonk login busy | %s | retry_after=%s", tags, retry_after)
             return LoginAttempt(result=None, error=BUSY, retry_after=retry_after)
 
-        result = get_client().login(username, password)
+        result = get_client().login(username, password, remember=remember)
 
     # Outcome only: a success holds the player's token, username, id and avatar.
     logger.info(
@@ -375,6 +389,31 @@ def attempt_login(request, username: str, password: str, *, via: str) -> LoginAt
         return LoginAttempt(result=result, error=result.error, retry_after=site_wide or None)
 
     return LoginAttempt(result=result, error=result.error)
+
+
+def looks_risky(request) -> bool:
+    """Whether a login from this visitor now should pass the bot check.
+
+    True when the visitor had a wrong password or unknown username in the
+    window, the site is one wrong password from its budget, or this minute's
+    logins are one short of the site-wide cap.
+    """
+    client_tag = pseudonym("client", client_ip(request))
+    if (
+        _Tracker("client", client_tag, 1).failures()
+        or _Tracker("client_names", client_tag, 1).failures()
+    ):
+        return True
+    config = limits()
+    budget = config["site_wrong_passwords"]
+    if budget > 0 and len(_SiteFailures().who()) >= max(budget - 1, 1):
+        return True
+    cap = config["site_per_minute"]
+    if cap > 1:
+        count = _cache("get", f"login:cap:site:{int(_now()) // 60}")
+        if isinstance(count, int) and count >= cap - 1:
+            return True
+    return False
 
 
 def _hold_everyone_who_spent_it(site: _SiteFailures, site_wide: int, tags: str) -> None:

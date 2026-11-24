@@ -21,13 +21,24 @@
         <span>{% for error in form.non_field_errors %}{{ error }} {% endfor %}</span>
       </div>
     {% endif %}
-    {% for field in form %}
+    {% for field in form %}{% if field.name != "remember" %}
       <div class="bv-field">
         <label class="bv-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
         {{ field }}
         {% for error in field.errors %}<span class="bv-error">{{ error }}</span>{% endfor %}
       </div>
-    {% endfor %}
+    {% endif %}{% endfor %}
+    {# Remember-me (RFC-0003 Part 2, accounts/bonk_tokens.py). Ticked by default; unticking revokes one kept before. #}
+    <label class="bv-check">
+      <input type="checkbox" name="remember" {% if form.remember.value %}checked{% endif %}>
+      <span>Keep me connected for Wear
+        <span class="bv-muted">· Bonkverse keeps a bonk.io sign-in token (never your password), so wearing skins works without logging in again. Disconnect any time in Settings.</span>
+      </span>
+    </label>
+    {% if turnstile_site_key %}
+      {# The "not a bot" check (accounts/bot_check.py), shown only after a failed try or when the site is busy. Fills cf-turnstile-response in this form. #}
+      <div class="cf-turnstile bv-field" data-sitekey="{{ turnstile_site_key }}" data-theme="auto"></div>
+    {% endif %}
     {% if retry_after %}
       {% comment %}The login has to wait (bonk.io's pause, or too many wrong passwords): the
          button stays off until the wait ends (accounts/js/login.js; accounts/views.py).{% endcomment %}
@@ -42,4 +53,5 @@
 
 {% block extra_scripts %}
   <script src="{% static 'accounts/js/login.js' %}" defer></script>
+  {% if turnstile_site_key %}<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>{% endif %}
 {% endblock %}

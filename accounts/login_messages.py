@@ -12,7 +12,14 @@ adds the time the wait ends, in the player's own time zone
 from core.ratelimits import describe_wait
 from integrations.bonk_api import BonkError
 
-from .login_attempts import BUSY, COUNTED_FAILURES, IN_PROGRESS, SITE_WAIT, TOO_MANY_ATTEMPTS
+from .login_attempts import (
+    BOT_CHECK,
+    BUSY,
+    COUNTED_FAILURES,
+    IN_PROGRESS,
+    SITE_WAIT,
+    TOO_MANY_ATTEMPTS,
+)
 
 # What a player sees when a login is turned down, by error code: bonk.io's
 # (BonkError) or Bonkverse's own (login_attempts.py).
@@ -36,6 +43,7 @@ LOGIN_FAILURE_MESSAGES = {
     ),
     BUSY: "Lots of logins right now. Try again in {wait}.",
     IN_PROGRESS: "Your last login is still going. Give it a few seconds.",
+    BOT_CHECK: "Confirm you're not a bot, then log in again.",
     BonkError.REJECTED: "bonk.io didn't accept that login.",
     BonkError.UNAVAILABLE: "Network error talking to bonk.io. Try again in a minute.",
 }

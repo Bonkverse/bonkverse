@@ -38,6 +38,11 @@ urlpatterns = [
         name="player_skin_avatar_thumb",
     ),
     path("settings/profile/", views.profile_settings, name="profile_settings"),
+    path(
+        "settings/bonk/disconnect/",
+        views.disconnect_bonk_view,
+        name="disconnect_bonk",
+    ),
     path("tools/xp/", views.xp_calculator, name="xp_calculator"),
     path("tools/xp/player.json", views.xp_calculator_player, name="xp_calculator_player"),
     path("tools/xp/levels.json", views.xp_calculator_levels, name="xp_calculator_levels"),

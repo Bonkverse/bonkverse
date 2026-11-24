@@ -248,6 +248,10 @@
     "name": "communities:list"
   },
   {
+    "route": "settings/bonk/disconnect/",
+    "name": "players:disconnect_bonk"
+  },
+  {
     "route": "settings/profile/",
     "name": "players:profile_settings"
   },
