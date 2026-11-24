@@ -39,7 +39,7 @@ from core.token_crypto import bonk_session
 
 from core.bonk.levels import level_for_xp
 
-from . import devices
+from . import devices, known_accounts
 from .events import log_event
 from .models import AccountGroup, BonkAccountLink, BonkUser
 from .signals import account_joined_group
@@ -289,8 +289,11 @@ def sign_out(request, *, everywhere_here: bool, forget_device: bool = False) -> 
     account now active, or None.
     """
     current = request.user
-    if forget_device and everywhere_here and current.account_group_id is not None:
-        devices.forget_this(request, current.account_group_id)
+    if forget_device and everywhere_here:
+        # A shared computer: no trust, and no names left on the login page.
+        known_accounts.forget_all(request)
+        if current.account_group_id is not None:
+            devices.forget_this(request, current.account_group_id)
     available = signed_in_ids(request)
     password, unlocked = browser_lists(request)
     password = [i for i in password if i != current.pk]

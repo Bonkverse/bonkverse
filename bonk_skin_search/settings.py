@@ -353,6 +353,8 @@ MIDDLEWARE = [
     # signs out of an account the main unlocked once the browser isn't
     # trusted any more (accounts/groups.py).
     "accounts.devices.DeviceCookieMiddleware",
+    # The login page's "Choose an account" (accounts/known_accounts.py).
+    "accounts.known_accounts.KnownAccountsMiddleware",
     "accounts.groups.UnlockedAccountMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",

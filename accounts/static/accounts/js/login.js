@@ -11,6 +11,12 @@
 (function () {
   "use strict";
 
+  // 3. Chosen from "Choose an account" (?username=): the name is filled in,
+  //    so start in the password box.
+  const name = document.querySelector('input[name="username"]');
+  const password = document.querySelector('input[name="password"]');
+  if (name && name.value && password && !password.value) password.focus();
+
   const button = document.getElementById("login-submit");
   if (!button) return;
 

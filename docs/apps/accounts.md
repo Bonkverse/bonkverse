@@ -10,7 +10,8 @@ Names are in the `accounts` namespace (`app_name` in `accounts/urls.py`): `{% ur
 
 | Path | Name | What |
 |---|---|---|
-| `/login/` | `login` | Login page (GET) and bonk.io login (POST, `login` rate tier). `?add=1` while signed in: "Add account" (`?username=` fills the name) |
+| `/login/` | `login` | Login page (GET) and bonk.io login (POST, `login` rate tier). Signed out with accounts used here before: "Choose an account" (`?other=1` skips it). `?username=` fills the name; `?add=1` while signed in: "Add account" |
+| `/login/forget/` | `forget_known_account` | POST `username`: take it off this browser's "Choose an account" |
 | `/logout/` | `logout` | POST only, so another site can't sign people out with a link. `scope=this`: only the account in use, switching to another signed in here; `forget=on` (with all): stop trusting this browser |
 | `/api/me/` | `api_me` | Who is signed in (the skin editor and the other sites' headers use it), with `accounts`: the person's bonk.io accounts for the switcher, each with its worn-skin `avatar`; 401 when nobody is |
 | `/api/me/switch/` | `api_switch_account` | The other sites' switcher: POST JSON `{"account": id}` with the `X-Bonkverse-Switch` header, from an origin in `CORS_ALLOWED_ORIGINS`. Answers like `/api/me/` |
@@ -75,6 +76,10 @@ Wear asks again with `force_refresh=True` once if bonk.io refuses a token before
 2. `sign_in.sign_in`: only the session and the site login are required; a failure in a later step is logged and the player stays signed in.
 3. `views.login_view`: shows the message, or redirects to `next` (same host only) or My Profile.
 
+## Choose an account
+
+After signing out, the login page lists the accounts that signed in on this browser, newest first, like Google's chooser (`known_accounts.py`). Each opens the way it last signed in, password or friend request, with the name filled in; choosing one never skips the proof. The list lives only in the browser: a signed HttpOnly `bv_known` cookie of names, the way in and when, at most 8 and each dropped after 90 days unused. Remove takes one off; "Also forget this device" on sign-out clears it.
+
 Log lines from step 1 still use the logger name **`skins.login`** (its name before the move), so Railway searches like `@logger:skins.login` find old and new lines.
 
 ## Files
@@ -90,6 +95,7 @@ accounts/
   bonk_tokens.py        # the token broker: stored bonk.io tokens, refreshed with remember-me
   groups.py             # a person's bonk.io accounts: add, switch, sign out, remove, main
   devices.py            # trusted browsers: the device cookie and TrustedDevice
+  known_accounts.py     # "Choose an account": the bv_known cookie
   link_claims.py        # friend-request sign-in: claims, matching, finishing
   bot_account.py        # the bot's bonk.io session (remember-me, encrypted in the cache)
   tasks.py              # check_link_claims
@@ -98,7 +104,7 @@ accounts/
   forms.py              # LoginForm (username and password never stripped)
   models.py             # BonkUser (AUTH_USER_MODEL), BonkAccountLink, UserEvent
   admin.py              # site accounts in /admin/
-  templates/accounts/login.html
+  templates/accounts/login.html, choose_account.html
   static/accounts/js/login.js   # keeps Login off until a wait ends; one submit per click
   events.py             # log_event: the event log (UserEvent)
   management/commands/grant_admin.py, reencrypt_bonk_tokens.py,

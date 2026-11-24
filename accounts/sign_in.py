@@ -35,7 +35,7 @@ from players.services import (
 )
 
 from players.models import BonkPlayer
-from . import bonk_tokens, groups
+from . import bonk_tokens, groups, known_accounts
 from .events import log_event
 from .models import BonkUser
 from .models import BonkAccountLink
@@ -77,6 +77,8 @@ def sign_in(
         log_event(user, "user_logged_in", added=True)
     else:
         log_event(user, "user_logged_in")
+    # The login page's account chooser offers it next time, by password.
+    known_accounts.remember(request, user.username, known_accounts.PASSWORD)
 
     # After login(): changing the user flushes the session.
     bonk = bonk_session(request)
@@ -130,6 +132,8 @@ def sign_in_by_friend_request(request, *, bonk_id: int, bonk_name: str, add: boo
     login(request, user)
     groups.after_login(request, previous, previous_lists, add=add)
     log_event(user, "user_logged_in", via="friend_request", added=add)
+    # The login page's account chooser offers it next time, by friend request.
+    known_accounts.remember(request, user.username, known_accounts.FRIEND_REQUEST)
 
     bonk = bonk_session(request)
     bonk.store_identity(username.value, bonk_id)

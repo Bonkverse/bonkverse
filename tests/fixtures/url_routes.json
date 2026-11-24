@@ -184,6 +184,10 @@
     "name": "accounts:login"
   },
   {
+    "route": "login/forget/",
+    "name": "accounts:forget_known_account"
+  },
+  {
     "route": "login/friend/",
     "name": "accounts:friend_request_login"
   },

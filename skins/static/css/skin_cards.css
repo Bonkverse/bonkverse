@@ -133,6 +133,51 @@ a.bv-chip[aria-current="page"]::before {
   display: grid;
   gap: var(--bv-space-2);
 }
+/* The login page's "Choose an account" (accounts/choose_account.html). */
+.site-chooser {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.site-chooser__row {
+  display: flex;
+  align-items: center;
+  gap: var(--bv-space-2);
+  border-bottom: 1px solid var(--bv-divider);
+}
+.site-chooser__row:last-child {
+  border-bottom: 0;
+}
+.site-chooser__pick {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--bv-space-3);
+  min-height: 56px;
+  padding: var(--bv-space-2);
+  border-radius: var(--bv-radius);
+  color: var(--bv-text);
+  text-decoration: none;
+}
+.site-chooser__pick:hover {
+  background: var(--bv-hover);
+  text-decoration: none;
+}
+.site-chooser .site-chooser__avatar {
+  flex: none;
+  width: 32px;
+  height: 32px;
+}
+.site-chooser__text {
+  display: grid;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.site-chooser__remove {
+  min-width: var(--bv-target);
+}
+
 /* The other way to do it, under a form ("Log in with a friend request instead"). */
 .site-form-alt {
   margin-top: var(--bv-space-3);
