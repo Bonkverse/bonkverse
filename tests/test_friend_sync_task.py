@@ -196,22 +196,15 @@ class TestLoginQueuesTheSync:
 
 
 class TestLoginAnswerWithFriends:
-    """RFC-0003 phase 2: when bonk.io's login answer carries the friend list
-    (DemystifyBonk says it does; our fixtures can't confirm it yet), store
-    that list and skip the friends.php call every login used to make."""
+    """RFC-0003 phase 2: bonk.io's login answer carries the friend list
+    (captured 2026-11-23, login_success_with_friends.json), so store that
+    list and skip the friends.php call every login used to make. It has no
+    incoming requests."""
 
     @pytest.fixture(autouse=True)
     def _sync_on(self, settings, mocked_http):
         settings.SYNC_FRIENDS_ON_LOGIN = True
-        answer = {
-            **load_bonk_fixture("login_success"),
-            "friends": [
-                {"id": 111, "name": "Friend One", "roomid": None},
-                {"id": 222, "name": "Friend Two", "roomid": 5},
-            ],
-            "requests": [{"id": 333, "name": "Asker", "date": "2026-11-10 21:39:07"}],
-        }
-        mocked_http.post(BONK_LOGIN_URL, json=answer)
+        mocked_http.post(BONK_LOGIN_URL, json=load_bonk_fixture("login_success_with_friends"))
 
     def test_stores_them_without_calling_friends_php(self, client, mocked_http):
         friends_php = mocked_http.post(BONK_FRIENDS_URL, json=load_bonk_fixture("friends_success"))
@@ -222,7 +215,6 @@ class TestLoginAnswerWithFriends:
         assert friends_php.call_count == 0
         player = BonkPlayer.objects.get(bonk_id=1234567)
         assert Friendship.objects.filter(Q_player(player)).count() == 2
-        assert BonkPlayer.objects.filter(bonk_id=333, username="Asker").exists()
         status = client.get(reverse("players:friends_sync_status")).json()
         assert status["status"] == "done"
         assert status["friends_now"] == 2
@@ -236,7 +228,7 @@ class TestLoginAnswerWithFriends:
             sync_login_friends,
             link.id,
             [[111, "Friend One"], [222, "Friend Two"]],
-            [[333, "Asker"]],
+            None,
         )
 
     def test_logs_which_way_the_friends_came(self, client, caplog):
@@ -246,7 +238,7 @@ class TestLoginAnswerWithFriends:
             client.post("/login/", {"username": "TestPlayer", "password": "x"})
 
         assert any(
-            "login answer carried friends | friends=2 | requests=1" in r.getMessage()
+            "login answer carried friends | friends=2 | requests=none" in r.getMessage()
             for r in caplog.records
         )
 
