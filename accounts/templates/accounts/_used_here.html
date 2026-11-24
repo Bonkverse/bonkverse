@@ -1,0 +1,32 @@
+{% comment %}"Used on this browser": accounts that proved themselves here in the last
+30 days and are in no group, added to the signed-in person's accounts with no
+password once they confirm (accounts/used_here.py, ADR 0025). Needs `used_here`
+and `back` (where to return).{% endcomment %}
+<section class="site-used-here" id="used-here" aria-labelledby="used-here-title">
+  <h3 class="pv-subtitle" id="used-here-title">Used on this browser</h3>
+  <p class="pv-fine">These accounts signed in here recently. Add the ones that are yours, with no password. They'll share one vote per skin with your other accounts.</p>
+  <form method="post" action="{% url 'accounts:add_used_here' %}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ back }}">
+    <ul class="site-chooser">
+      {% for account in used_here %}
+        <li class="site-chooser__row">
+          <label class="site-chooser__pick">
+            <input type="checkbox" name="account" value="{{ account.id }}" checked>
+            {% if account.thumbnail %}
+              <span class="bv-nav-avatar bv-skin-avatar site-chooser__avatar" style="--skin: url('{{ account.thumbnail }}')" aria-hidden="true"><i data-lucide="circle-user"></i></span>
+            {% else %}
+              <i class="site-chooser__avatar" data-lucide="circle-user" aria-hidden="true"></i>
+            {% endif %}
+            <span class="site-chooser__text"><strong>{{ account.username }}</strong></span>
+          </label>
+        </li>
+      {% endfor %}
+    </ul>
+    <label class="site-used-here__confirm">
+      <input type="checkbox" name="confirm" required>
+      These accounts are mine.
+    </label>
+    <button type="submit" class="bv-btn bv-btn--primary">Add to my accounts</button>
+  </form>
+</section>

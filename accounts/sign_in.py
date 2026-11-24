@@ -35,7 +35,7 @@ from players.services import (
 )
 
 from players.models import BonkPlayer
-from . import bonk_tokens, devices, groups, known_accounts
+from . import bonk_tokens, devices, groups, known_accounts, used_here
 from .events import log_event
 from .models import BonkUser
 from .models import BonkAccountLink
@@ -81,6 +81,8 @@ def sign_in(
     # signs it back in with one click for a while (ADR 0025).
     known_accounts.remember(request, user.username, known_accounts.PASSWORD)
     devices.remember_sign_in(request, user)
+    if not add:
+        used_here.offer_after_sign_in(request)
 
     # After login(): changing the user flushes the session.
     bonk = bonk_session(request)
@@ -138,6 +140,8 @@ def sign_in_by_friend_request(request, *, bonk_id: int, bonk_name: str, add: boo
     # and signs it back in with one click for a while (ADR 0025).
     known_accounts.remember(request, user.username, known_accounts.FRIEND_REQUEST)
     devices.remember_sign_in(request, user)
+    if not add:
+        used_here.offer_after_sign_in(request)
 
     bonk = bonk_session(request)
     bonk.store_identity(username.value, bonk_id)
@@ -160,6 +164,7 @@ def sign_in_with_one_click(request, user: BonkUser) -> None:
     log_event(user, "user_logged_in", via="one_click")
     way = known_accounts.way_in(request, user.username) or known_accounts.PASSWORD
     known_accounts.remember(request, user.username, way)
+    used_here.offer_after_sign_in(request)
     groups.point_bonk_identity(request, user)
 
 

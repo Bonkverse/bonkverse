@@ -191,6 +191,33 @@ button.site-chooser__pick {
   min-width: var(--bv-target);
 }
 
+/* "Used on this browser" (accounts/_used_here.html) and its one-time offer. */
+label.site-chooser__pick {
+  cursor: pointer;
+}
+.site-used-here__confirm {
+  display: flex;
+  align-items: center;
+  gap: var(--bv-space-2);
+  margin: var(--bv-space-3) 0;
+}
+.site-used-here-offer {
+  max-width: 760px;
+  margin: var(--bv-space-3) auto 0;
+  padding-inline: var(--bv-space-3);
+}
+.site-used-here-offer .bv-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--bv-space-2);
+}
+.site-used-here-offer__actions {
+  display: flex;
+  gap: var(--bv-space-2);
+  margin-inline-start: auto;
+}
+
 /* The other way to do it, under a form ("Log in with a friend request instead"). */
 .site-form-alt {
   margin-top: var(--bv-space-3);

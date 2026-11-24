@@ -30,6 +30,17 @@ Discord) out of scope; this is the first, for browsers already used.
   Settings → "One-click sign-in" lists the account's browsers with Remove,
   so a browser left behind can be ended from elsewhere.
 
+- **The same proof adds accounts to a group** (`used_here.py`). Signed in,
+  a person sees "Used on this browser": accounts proven here within the
+  window and in no group. They tick the ones that are theirs, confirm
+  "These accounts are mine", and the accounts join their group with no
+  password and no bonk.io call. It's offered on "Add a bonk.io account", in
+  Settings, and once on the first page after a sign-in (a banner linking to
+  the add page). Accounts already in a group are never offered: moving one
+  needs a fresh password or friend request, so a friend who once signed in
+  on your computer can't be pulled out of their group. The owner chose this
+  over re-proving each account (2026-11-24).
+
 **Consequences.**
 - Signing out and back in costs bonk.io nothing for 30 days, so password
   logins fall to new browsers, a monthly proof, and Wear without remember-me.
@@ -38,4 +49,7 @@ Discord) out of scope; this is the first, for browsers already used.
   computer's answer, and the chooser says so.
 - A stolen `bv_device` cookie signs in for the rest of the window, like a
   stolen session cookie; both are HttpOnly.
+- Joining a group is lasting (one vote per skin, switching), unlike a
+  30-day one-click; the explicit tick and confirm are the guard, and an
+  account added by mistake is removed in Settings.
 - Next: passkeys, so a new device can sign in without bonk.io too.

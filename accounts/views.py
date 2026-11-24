@@ -27,7 +27,16 @@ from django.views.decorators.http import require_POST
 from core.ratelimits import limit
 from players import selectors as player_selectors
 
-from . import appearance, bot_account, bot_check, devices, groups, known_accounts, link_claims
+from . import (
+    appearance,
+    bot_account,
+    bot_check,
+    devices,
+    groups,
+    known_accounts,
+    link_claims,
+    used_here,
+)
 from .forms import LoginForm
 from .login_attempts import attempt_login
 from .login_messages import login_failure_message
@@ -104,6 +113,8 @@ def _render_login(request, form, *, retry_after=None, adding=False):
             "form": form,
             "retry_after": retry_after,
             "adding": adding,
+            # "Used on this browser": add without proving again (used_here.py).
+            "used_here": used_here.rows(request) if adding else [],
             "friend_requests": bot_account.configured(),
             "turnstile_site_key": bot_check.site_key_if_wanted(request),
         },
@@ -386,6 +397,26 @@ def remove_one_click_browser(request):
         messages.success(request, "That browser will ask you to sign in again.")
     else:
         messages.error(request, "That browser isn't on the list.")
+    return redirect(_back(request))
+
+
+@login_required
+@require_POST
+@limit("write")
+def add_used_here(request):
+    """Add the ticked accounts used on this browser to your accounts, after
+    "These accounts are mine" (used_here.py, ADR 0025)."""
+    if request.POST.get("confirm") != "on":
+        messages.error(request, "Tick \u201cThese accounts are mine\u201d to add them.")
+        return redirect(_back(request))
+    ids = [_account_id(value) for value in request.POST.getlist("account")]
+    try:
+        added = used_here.add(request, ids)
+    except groups.NotAllowed as refusal:
+        messages.error(request, refusal.message)
+    else:
+        names = ", ".join(account.username for account in added)
+        messages.success(request, f"Added {names}. Switch between them from the account menu.")
     return redirect(_back(request))
 
 

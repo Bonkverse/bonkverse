@@ -49,6 +49,7 @@ from .bonk_tokens import connection as bonk_connection
 from .bonk_tokens import disconnect as disconnect_bonk
 from .bonk_tokens import usable_token as usable_bonk_token
 from .sign_in import connect_from_wear, sign_in, site_account_for
+from .used_here import rows as used_here_rows
 
 __all__ = [
     "attempt_login",
@@ -71,6 +72,7 @@ __all__ = [
     "shown_alongside",
     "trusted_browsers",
     "one_click_browsers",
+    "used_here_rows",
     "connect_from_wear",
     "disconnect_bonk",
     "usable_bonk_token",
