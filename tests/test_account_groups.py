@@ -438,3 +438,22 @@ class TestConvertingOldMultiLinkAccounts:
         assert BonkUser.objects.filter(username__iexact="altone").count() == 1
         assert BonkAccountLink.objects.filter(user=alt).count() == 1
         assert AccountGroup.objects.count() == 1
+
+
+class TestMeAvatars:
+    def test_every_account_has_its_picture_for_the_other_sites(self, client):
+        """The replay and docs switchers only have /api/me/ to go on."""
+        from players.models import BonkPlayer
+
+        main, alt = UserFactory(), UserFactory()
+        _group(main, alt)
+        _signed_in(client, main, alt)
+        player = BonkPlayer.objects.create(
+            bonk_id=4242, username=main.username, worn_skin_code="abc123"
+        )
+        BonkAccountLink.objects.create(user=main, bonk_player=player)
+
+        accounts = {row["username"]: row for row in client.get("/api/me/").json()["accounts"]}
+
+        assert accounts[main.username]["avatar"].startswith("http")
+        assert accounts[alt.username]["avatar"] is None

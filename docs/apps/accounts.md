@@ -12,7 +12,7 @@ Names are in the `accounts` namespace (`app_name` in `accounts/urls.py`): `{% ur
 |---|---|---|
 | `/login/` | `login` | Login page (GET) and bonk.io login (POST, `login` rate tier). `?add=1` while signed in: "Add account" (`?username=` fills the name) |
 | `/logout/` | `logout` | POST only, so another site can't sign people out with a link. `scope=this`: only the account in use, switching to another signed in here |
-| `/api/me/` | `api_me` | Who is signed in (the skin editor and the other sites' headers use it), with `accounts`: the person's bonk.io accounts for the switcher; 401 when nobody is |
+| `/api/me/` | `api_me` | Who is signed in (the skin editor and the other sites' headers use it), with `accounts`: the person's bonk.io accounts for the switcher, each with its worn-skin `avatar`; 401 when nobody is |
 | `/api/me/switch/` | `api_switch_account` | The other sites' switcher: POST JSON `{"account": id}` with the `X-Bonkverse-Switch` header, from an origin in `CORS_ALLOWED_ORIGINS`. Answers like `/api/me/` |
 | `/accounts/switch/` | `switch_account` | POST `account`: use another account signed in on this browser |
 | `/accounts/remove/` | `remove_account` | POST `account`: take it out of the group (it keeps its own history) |
