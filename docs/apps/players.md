@@ -32,12 +32,13 @@ The advanced search (`search.py`) has a per-rule **␣** switch next to **Aa**, 
 
 ## Public entry points for other apps
 
-`players/services.py`: `queue_friend_sync(account_link_id)`, `sync_flash_friends_for_user(...)`, `adopt_replay_names(...)` (all used by `accounts/sign_in.py`), `record_worn_skin(bonk_id, skin_code, source)` (used by `accounts/sign_in.py` and `skins/views/wear.py`), `update_visibility(...)`. `players/selectors.py` for reads (profiles, directory, calculator).
+`players/services.py`: `queue_friend_sync(account_link_id)`, `queue_login_friends(account_link_id, friends, requests)`, `sync_flash_friends_for_user(...)`, `adopt_replay_names(...)` (all used by `accounts/sign_in.py`), `record_worn_skin(bonk_id, skin_code, source)` (used by `accounts/sign_in.py` and `skins/views/wear.py`), `update_visibility(...)`. `players/selectors.py` for reads (profiles, directory, calculator).
 
 ## Background work
 
 `tasks.py`:
-- `sync_friends`, queued at login, registered as **`skins.tasks.sync_friends`** (its name before the move, so runs queued during a deploy keep working; pinned by `tests/test_friend_sync_task.py`).
+- `sync_login_friends`, queued at login when bonk.io's login answer carried the friend list: stores it without calling bonk.io.
+- `sync_friends`, queued at login otherwise (reads `friends.php`), registered as **`skins.tasks.sync_friends`** (its name before the move, so runs queued during a deploy keep working; pinned by `tests/test_friend_sync_task.py`).
 - `sync_replays`, every 5 minutes (`REPLAY_SYNC_INTERVAL_SECONDS`): new players appear a few minutes after their replay reaches the archive.
 
 Details: [background-work.md](../architecture/background-work.md).

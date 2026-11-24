@@ -181,7 +181,7 @@ Before 2.2, Bonkverse had two shapes: the site login sent no `remember`, and
 the in-page wear login sent `task=legacy` and no browser headers. Both
 worked; the client now sends only the web client's shape.
 
-Success (`login_success.json`, synthetic):
+Success (`login_success.json`, synthetic; `login_success_with_friends.json` has every key of a real answer captured 2026-11-23, values made up):
 
 | Field | Meaning |
 |---|---|
@@ -192,6 +192,9 @@ Success (`login_success.json`, synthetic):
 | `legacyFriends` | Flash-era friends: one string of names separated by `#`. Empty segments are parsing artifacts; whitespace-only names are real. |
 | `xp` | Total XP, stored as `BonkPlayer.xp`. |
 | `avatar1` … `avatar5` | Each avatar slot's skin code (plain base64), per the [DemystifyBonk notes](https://github.com/WolfRichie/Demystify-Bonk). The active slot's code is the skin the player wears in game; it is stored as `BonkPlayer.worn_skin_code` once it parses as a skin. A slot that was never worn comes back `""` (seen on a new account, along with an empty `avatar`); bonk.io shows its default skin for it, so an empty or null active slot is read as `core.bonk.DEFAULT_SKIN_CODE` (no layers on `0x448AFF`). **Not yet recorded**: the notes also list an `avatar` key and describe the numbering loosely, so check a real reply that `avatar<activeAvatarNumber>` is the active skin. |
+| `friends`, `requests` | `friends`: **confirmed** 2026-11-23 in the owner's capture of bonk.io's own client (a list of `{id, name, roomid}`, the same shape as `friends.php`; 1,229 entries for one account). `requests`: **not in the login answer**, so incoming requests (which only add `BonkPlayer` rows) aren't refreshed at login any more. When `friends` is a list, it's read like `friends.php`'s and stored by `players.tasks.sync_login_friends`, and the `friends.php` call after login is skipped (RFC-0003 phase 2). Missing or not a list: `BonkLoginResult.friends` is None and the login falls back to `friends.php`. Every login logs which happened (`login answer carried friends` / `carried no friend list`) under logger `accounts.sign_in`, so production settles it. |
+| `rememberToken` | Present even when Bonkverse sends `remember: false`; `""` in the 2026-11-23 capture. Expected to hold the remember-me token with `remember: true` (RFC-0003 Part 2, lab tests 1–4). Not read yet. |
+| `avatar`, `controls` | Present in the 2026-11-23 capture (`""`, `false`); meaning unknown. Not read. |
 | Others | Not used. |
 
 Refusals: `e: "password"` (`login_wrong_password.json`), `e: "username_fail"`

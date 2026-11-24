@@ -10,8 +10,8 @@
 
 {% block content %}
 {% comment %}
-Appearance (theme, seasonal themes), then which profile sections other
-people can see. Each switch saves as it's
+Appearance (theme, seasonal themes), the bonk.io connection, then which
+profile sections other people can see. Each switch saves as it's
 flipped (players/js/profile_settings.js) and says "Saved" beside it; the
 Save button is only for browsers without scripts.
 {% endcomment %}
@@ -46,6 +46,23 @@ Save button is only for browsers without scripts.
       <span class="pv-switch__track" aria-hidden="true"></span>
     </label>
     <p class="pv-fine">Saved to your account, so they follow you to your other devices and to Bonkverse Replays and Docs.</p>
+  </section>
+
+  {# This browser's bonk.io connection (players/views.py _bonk_connection). Times are written in UTC and shown in the viewer's own time zone by profile_settings.js. #}
+  <section class="bv-card pv-settings" aria-labelledby="bonk-connection-title">
+    <h2 class="pv-card__title" id="bonk-connection-title">bonk.io connection</h2>
+    {% if bonk_connection.connected %}
+      <p>
+        Connected{% if bonk_connection.username %} as <strong>{{ bonk_connection.username }}</strong>{% endif %}
+        until <time datetime="{{ bonk_connection.until|date:'c' }}" data-local-time>{{ bonk_connection.until|date:"M j, H:i" }} UTC</time>.
+        Wearing skins works until then.
+      </p>
+      <a class="bv-btn" href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">Reconnect now</a>
+    {% else %}
+      <p>Not connected. Bonkverse asks for your bonk.io password the next time you wear a skin.</p>
+      <a class="bv-btn bv-btn--primary" href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">Connect bonk.io</a>
+    {% endif %}
+    <p class="pv-fine">A bonk.io connection lasts about a day. Your Bonkverse sign-in lasts 90 days from your last visit, so you only need bonk.io again to wear skins.</p>
   </section>
 
   <form method="post" class="bv-card pv-settings" data-profile-settings>

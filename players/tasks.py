@@ -1,7 +1,9 @@
 """Celery tasks for the players app (standards: docs/architecture/background-work.md).
 
-sync_friends: a player's bonk.io friend list, queued at login through
-players.services.queue_friend_sync.
+sync_login_friends: store the friend list a bonk.io login answer carried,
+queued at login through players.services.queue_login_friends (no bonk.io call).
+sync_friends: a player's bonk.io friend list from friends.php, queued at login
+through players.services.queue_friend_sync when the login answer had none.
 sync_replays: every 5 minutes (CELERY_BEAT_SCHEDULE, REPLAY_SYNC_INTERVAL_SECONDS):
 names in and DBIDs out between Bonkverse and the replay archive
 (players/replay_sync.py).
@@ -14,11 +16,11 @@ from celery import shared_task
 from django.conf import settings
 from celery.exceptions import SoftTimeLimitExceeded
 
-from integrations.bonk_api import BonkError
+from integrations.bonk_api import BonkError, BonkFriend
 from accounts.models import BonkAccountLink
 
 from . import replay_sync
-from .friends_sync import sync_friends_for_link
+from .friends_sync import store_friend_list, sync_friends_for_link
 
 logger = logging.getLogger(__name__)
 
@@ -85,3 +87,37 @@ def sync_friends(self, account_link_id: int) -> dict:
         time.monotonic() - started,
     )
     return outcome.stats
+
+
+def _friends_from_json(entries) -> tuple[BonkFriend, ...]:
+    """[[bonk_id, name or null], ...] (the task's arguments) as BonkFriends."""
+    return tuple(BonkFriend(int(bonk_id), name) for bonk_id, name in entries or ())
+
+
+# At least once: the stored list is computed from the list passed in, so
+# running twice is harmless. Never retried: there's no bonk.io call to fail.
+@shared_task(soft_time_limit=60, time_limit=90)
+def sync_login_friends(account_link_id: int, friends: list, requests: list | None = None) -> dict:
+    """Store the friend list from this link's latest login answer.
+
+    Saves the friends.php call each login used to make (RFC-0003 phase 2).
+    Arguments are plain JSON: [[bonk_id, name or null], ...], never a token.
+    """
+    link = (
+        BonkAccountLink.objects.select_related("user", "bonk_player")
+        .filter(id=account_link_id, active=True)
+        .first()
+    )
+    if link is None:
+        logger.info("friends sync skipped: account link %s is gone or inactive", account_link_id)
+        return {"skipped": "link_gone"}
+
+    started = time.monotonic()
+    stats = store_friend_list(link, _friends_from_json(friends), _friends_from_json(requests))
+    logger.info(
+        "friends sync from login done for bonk_id=%s: %s (%.2fs)",
+        link.bonk_player.bonk_id,
+        stats,
+        time.monotonic() - started,
+    )
+    return stats

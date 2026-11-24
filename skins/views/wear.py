@@ -61,7 +61,7 @@ from integrations.bonk_api import (
     rate_limit_cooldowns,
 )
 
-from accounts.services import attempt_login, login_failure_message
+from accounts.services import attempt_login, login_failure_message, refresh_link
 from core.auth_guards import api_login_required, bonk_token_required
 from players.services import WornSkinSource, forget_user_skin, record_worn_skin
 
@@ -228,6 +228,10 @@ def bonk_login_for_wear(request):
     # The account this token belongs to, which wears record their skin on.
     bonk.store_identity(result.username.value, result.bonk_id)
     bonk.store_active_slot(result.active_slot)
+    try:
+        refresh_link(request.user, result)
+    except Exception:
+        logger.exception("could not refresh the account link after a wear login")
     try:
         if record_worn_skin(result.bonk_id, result.skin_code, WornSkinSource.LOGIN):
             forget_user_skin(request.user)

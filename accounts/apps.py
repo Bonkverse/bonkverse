@@ -9,3 +9,10 @@ class AccountsConfig(AppConfig):
 
     default_auto_field = "django.db.models.BigAutoField"
     name = "accounts"
+
+    def ready(self):
+        from django.contrib.auth.signals import user_logged_in
+
+        from .sessions import mark_renewed_on_login
+
+        user_logged_in.connect(mark_renewed_on_login, dispatch_uid="accounts.session_renewal")

@@ -75,6 +75,20 @@ class BonkSession:
         return self._clock() >= self._store.get(TOKEN_EXPIRES, 0)
 
     @property
+    def expires_at(self) -> float | None:
+        """When the token stops being usable (Unix time), or None without a
+        live token."""
+        if self.token is None:
+            return None
+        return float(self._store.get(TOKEN_EXPIRES, 0))
+
+    @property
+    def username(self) -> str | None:
+        """The bonk.io name of the account whose token this session holds."""
+        name = self._store.get(USERNAME)
+        return name if isinstance(name, str) and name else None
+
+    @property
     def expires_in_seconds(self) -> int:
         """Seconds until the token expires (negative once it has)."""
         return round(self._store.get(TOKEN_EXPIRES, 0) - self._clock())

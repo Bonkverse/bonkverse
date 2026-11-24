@@ -17,6 +17,7 @@ Rules:
 | File | Endpoint | Source |
 |------|----------|--------|
 | `login_success.json` | `login_legacy.php` | synthetic; `avatar1`–`avatar5` synthetic (community): DemystifyBonk's field names, real skin codes in slots 1–2, slot 3 empty, slot 4 null |
+| `login_success_with_friends.json` | `login_legacy.php` | keys and their order from a real answer captured with bonk.io's own client (2026-11-23); values made up (the real answer had 1,229 friends). No `requests` key. `rememberToken` was `""` |
 | `login_wrong_password.json` | `login_legacy.php` (HTTP 200 with failure body) | synthetic (community) |
 | `login_unknown_username.json` | `login_legacy.php` (HTTP 200 with failure body) | synthetic (community) |
 | `friends_success.json` | `friends.php` (includes a blank name and a bad id on purpose) | synthetic |

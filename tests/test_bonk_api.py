@@ -57,6 +57,31 @@ class TestLogin:
         assert result.active_slot == AvatarSlot(2)
         assert result.error is None
 
+    def test_friends_in_the_answer_are_read_when_present(self, api, mocked_http):
+        """DemystifyBonk says the login answer carries the friend list; RFC-0003
+        phase 2 uses it instead of a second friends.php call."""
+        answer = {
+            **load_bonk_fixture("login_success"),
+            "friends": [{"id": 11, "name": "Pal", "roomid": None}, {"id": "x"}],
+            "requests": [{"id": 12, "name": ""}],
+        }
+        mocked_http.post(LOGIN, json=answer)
+
+        result = api.login("TestPlayer", "pw")
+
+        assert result.friends == (BonkFriend(11, "Pal"),)
+        assert result.requests == (BonkFriend(12, None),)
+
+    def test_no_friend_list_reads_as_none_not_empty(self, api, mocked_http):
+        """None means "fall back to friends.php"; an empty tuple would mean
+        the player has no friends and would prune every edge."""
+        mocked_http.post(LOGIN, json={**load_bonk_fixture("login_success"), "friends": "?"})
+
+        result = api.login("TestPlayer", "pw")
+
+        assert result.friends is None
+        assert result.requests is None
+
     def test_sends_the_web_clients_request_shape(self, api, mocked_http):
         """The one request shape for login (RFC-0001 Phase 2.2): the fields
         bonk.io's own web client sends, plus its Origin/Referer."""
