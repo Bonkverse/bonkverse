@@ -20,6 +20,10 @@
     "name": "accounts:remove_account"
   },
   {
+    "route": "accounts/show-on-profiles/",
+    "name": "accounts:show_on_profiles"
+  },
+  {
     "route": "accounts/switch/",
     "name": "accounts:switch_account"
   },
@@ -270,6 +274,10 @@
   {
     "route": "settings/profile/",
     "name": "players:profile_settings"
+  },
+  {
+    "route": "settings/profile/apply-to-all/",
+    "name": "players:apply_visibility_to_all"
   },
   {
     "route": "skin/<int:skin_id>/delete/",

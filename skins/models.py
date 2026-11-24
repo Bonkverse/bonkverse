@@ -140,6 +140,8 @@ class SkinVote(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     skin = models.ForeignKey(Skin, on_delete=models.CASCADE)
     vote = models.CharField(max_length=4, choices=VOTE_CHOICES)
+    # When it was cast; null for votes from before RFC-0003 phase 5.
+    voted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = ("user", "skin")

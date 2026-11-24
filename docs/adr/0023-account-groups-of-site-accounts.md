@@ -43,8 +43,10 @@ were possible:
 - **Removing:** the account itself, or the main while signed in here. Two
   becoming one deletes the group; the main leaving hands main to the next.
 - **Shared:** appearance is written to every member when it changes, and a
-  joining account takes the group's. API keys and the Discord link follow in
-  PR 2.
+  joining account takes the group's. API keys are shared from PR 2 (each key
+  keeps the account that made it as owner; the portal lists and revokes the
+  group's keys, and the key limit counts the group). The Discord link isn't
+  on the site yet; it's shared when BonxBot's links move here (phase 7).
 - **The other sites switch through `/api/me/switch/`.** They can't send
   bonkverse.io's host-only CSRF token, so the endpoint takes JSON plus a
   custom `X-Bonkverse-Switch` header (a cross-site form can't send one, and
@@ -66,11 +68,18 @@ were possible:
   friend's account would join it to your group.
 
 **Consequences.**
-- One vote per group (RFC-0003) isn't enforced yet. Separate accounts could
-  always vote separately, so nothing gets worse; PR 2 counts a group's votes
-  once and adds the level-5 rule.
+- **One vote per person (PR 2, 2026-11-24).** Votes stay rows per account
+  (`SkinVote.user`), but `skins.votes.cast_vote` treats the group's rows on a
+  skin as one vote: a vote from any account replaces the others', so the
+  latest wins, and the buttons show the group's vote. Votes now carry
+  `voted_at`. When an account joins, where both it and the group voted, the
+  group's vote stays (`accounts.services.account_joined_group` →
+  `skins.votes.merge_votes_into_group`; old votes have no time to compare).
+  A new vote needs bonk.io level 5 on the account casting it (XP stored at
+  sign-in; unknown = allowed); taking a vote back is always allowed.
 - `is_staff` and other permissions stay per account. Staff tools see groups in
   a later PR.
-- A person's site accounts are still found by username. The privacy of the
-  grouping (who can see "also plays as…") arrives with per-account privacy in
-  PR 2; until then nothing public shows a group.
+- A person's site accounts are still found by username. Grouping is private
+  unless the group turns on "Also plays as…" (`AccountGroup.show_on_profiles`,
+  PR 2): then each account's profile lists the others. Privacy switches stay
+  per account, with "Apply these to all my accounts" (main signed in here).

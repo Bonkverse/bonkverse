@@ -12,6 +12,10 @@
   (events.py); every app records what people do through it.
 - `account_rows(request)`: the signed-in person's bonk.io accounts (their
   group), for the settings page (groups.py).
+- `group_member_ids(user)`, `bonk_level(user)`, `main_signed_in_here(request)`,
+  `shown_alongside(user)`, `set_group_shown_on_profiles(request, show)`: what
+  other apps need from groups (one vote per group, level 5 to vote, privacy
+  "apply to all", "Also plays as…").
 - `connect_from_wear(user, result, remember=...)`: after the Wear popup's
   login, link that bonk.io account with its new tokens (sign_in.py).
 - The token broker (bonk_tokens.py), the only way to get a stored bonk.io
@@ -28,6 +32,11 @@ refreshes the bonk.io token for a player who is already signed in.
 
 from .bot_check import site_key_if_wanted as bot_check_site_key
 from .groups import accounts_for as account_rows
+from .groups import NotAllowed as GroupActionNotAllowed
+from .groups import bonk_level, main_signed_in_here, shown_alongside
+from .groups import member_ids as group_member_ids
+from .signals import account_joined_group
+from .groups import show_on_profiles as set_group_shown_on_profiles
 from .events import log_event
 from .login_attempts import attempt_login
 from .login_messages import login_failure_message
@@ -50,7 +59,14 @@ __all__ = [
     "TokensUnavailable",
     "active_link",
     "bonk_connection",
+    "GroupActionNotAllowed",
+    "account_joined_group",
     "account_rows",
+    "bonk_level",
+    "group_member_ids",
+    "main_signed_in_here",
+    "set_group_shown_on_profiles",
+    "shown_alongside",
     "connect_from_wear",
     "disconnect_bonk",
     "usable_bonk_token",

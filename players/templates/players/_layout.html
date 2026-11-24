@@ -50,6 +50,12 @@ header, the owner's privacy note and the tab bar, on Bonkverse/ui components
           <span class="bv-pill pv-pill--quiet">Seen in friend lists</span>
         {% endif %}
       </div>
+      {% if also_plays_as %}
+        {# The group chose to show its accounts (RFC-0003 phase 5; off by default). #}
+        <p class="pv-small pv-also">Also plays as
+          {% for other in also_plays_as %}<a href="{% url 'players:player_profile' other %}">{{ other }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}
+        </p>
+      {% endif %}
     </div>
     {% if summary or is_owner %}
       <div class="pv-hero__actions">

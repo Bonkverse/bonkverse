@@ -659,3 +659,12 @@ a.pv-friend:hover { background: var(--bv-hover); color: var(--bv-text); text-dec
   border-bottom: 1px solid var(--bv-divider);
 }
 .pv-account-row .pv-actions { margin-top: 0; }
+
+/* "Also plays as…" under a profile's name, when the group shows it. */
+.pv-also {
+  margin: var(--bv-space-1) 0 0;
+  color: var(--bv-muted);
+}
+.pv-also-setting {
+  margin-top: var(--bv-space-3);
+}

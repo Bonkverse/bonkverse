@@ -31,6 +31,25 @@ __all__ = [
 ]
 
 
+def copy_visibility_to(user, account_ids) -> int:
+    """Give every account in `account_ids` the same profile switches as
+    `user` ("Apply to all my accounts", RFC-0003 phase 5). The caller checks
+    they're the user's own accounts.
+
+    Returns:
+        How many other accounts were changed.
+    """
+    saved = ProfileVisibility.objects.filter(user=user).first() or ProfileVisibility(user=user)
+    values = saved.as_dict()
+    changed = 0
+    for account_id in account_ids:
+        if account_id == user.pk:
+            continue
+        ProfileVisibility.objects.update_or_create(user_id=account_id, defaults=values)
+        changed += 1
+    return changed
+
+
 def update_visibility(user, shown: dict[str, bool]) -> ProfileVisibility:
     """Save the user's switches. Sections missing from `shown` become hidden,
     which is how an unticked checkbox arrives from a form."""

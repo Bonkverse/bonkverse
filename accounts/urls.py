@@ -15,5 +15,6 @@ urlpatterns = [
     path("accounts/switch/", views.switch_account, name="switch_account"),
     path("accounts/remove/", views.remove_account, name="remove_account"),
     path("accounts/main/", views.make_main_account, name="make_main_account"),
+    path("accounts/show-on-profiles/", views.show_on_profiles_view, name="show_on_profiles"),
     path("api/me/switch/", views.api_switch_account, name="api_switch_account"),
 ]

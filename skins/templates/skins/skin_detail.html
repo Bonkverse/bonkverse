@@ -66,13 +66,14 @@ js/skin_detail.js; Copy link is ui/ui.js; Report is core/js/bv-report.js.
       </div>
 
       <div class="bv-skin-detail__actions">
-        <div class="bv-votes" role="group" aria-label="Vote">
+        {# One vote per person, shared by all their bonk.io accounts; level 5 on bonk.io to cast one (skins/votes.py). #}
+        <div class="bv-votes" role="group" aria-label="Vote"{% if vote.blocked %} aria-describedby="vote-blocked"{% endif %}>
           <button class="bv-btn bv-vote" type="button" data-vote="up" aria-label="Upvote"
-                  aria-pressed="{% if current_vote == 'up' %}true{% else %}false{% endif %}">
+                  aria-pressed="{% if vote.current_vote == 'up' %}true{% else %}false{% endif %}"{% if vote.blocked %} disabled{% endif %}>
             <i data-lucide="arrow-up" aria-hidden="true"></i><span class="up-count">{{ skin.upvotes }}</span>
           </button>
           <button class="bv-btn bv-vote" type="button" data-vote="down" aria-label="Downvote"
-                  aria-pressed="{% if current_vote == 'down' %}true{% else %}false{% endif %}">
+                  aria-pressed="{% if vote.current_vote == 'down' %}true{% else %}false{% endif %}"{% if vote.blocked %} disabled{% endif %}>
             <i data-lucide="arrow-down" aria-hidden="true"></i><span class="down-count">{{ skin.downvotes }}</span>
           </button>
         </div>
@@ -82,6 +83,7 @@ js/skin_detail.js; Copy link is ui/ui.js; Report is core/js/bv-report.js.
           <a class="bv-btn bv-btn--primary bv-wear" href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">Log in to wear</a>
         {% endif %}
       </div>
+      {% if vote.blocked %}<p class="bv-hint" id="vote-blocked">{{ vote.blocked }}</p>{% endif %}
       <p class="bv-status" role="status" aria-live="polite"></p>
 
       <div class="bv-skin-detail__tools">

@@ -10,7 +10,14 @@ from django.urls import reverse
 
 from core.bonk import dbid, levels
 from core.ratelimits import limit
-from accounts.services import account_rows, active_link, bonk_connection, disconnect_bonk
+from accounts.services import (
+    account_rows,
+    active_link,
+    bonk_connection,
+    disconnect_bonk,
+    group_member_ids,
+    main_signed_in_here,
+)
 from skins.services import code_image
 
 from . import selectors, services
@@ -223,8 +230,25 @@ def profile_settings(request):
             "sections": sections,
             "bonk_connection": _bonk_connection(request),
             "group_accounts": account_rows(request),
+            "group_shown_on_profiles": bool(
+                request.user.account_group_id and request.user.account_group.show_on_profiles
+            ),
         },
     )
+
+
+@login_required
+@require_POST
+@limit("write")
+def apply_visibility_to_all(request):
+    """Settings: give every account in the group this account's profile
+    switches. Needs the main signed in on this browser (RFC-0003 phase 5)."""
+    if not main_signed_in_here(request):
+        messages.error(request, "Sign in to your main account on this browser first.")
+    else:
+        changed = services.copy_visibility_to(request.user, group_member_ids(request.user))
+        messages.success(request, f"Applied to your {changed} other bonk.io account(s).")
+    return redirect("players:profile_settings")
 
 
 def _bonk_connection(request) -> dict:
