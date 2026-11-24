@@ -1,5 +1,5 @@
 /*
- * Bonkverse UI components (v0.1.8)
+ * Bonkverse UI components (v0.1.9)
  * Needs tokens.css and base.css first. Every class starts with bv-.
  * index.html shows each one in all three themes with its markup.
  *
@@ -252,7 +252,8 @@
   }
   /* Menus open in place inside the phone menu (it scrolls, so a floating
      menu would be clipped). */
-  .bv-header__nav .bv-menu {
+  .bv-header__nav .bv-menu,
+  .bv-header__nav .bv-menu:has(.bv-menu__badge) {
     position: static;
     min-width: 0;
     margin: var(--bv-space-1) 0 var(--bv-space-2) var(--bv-space-4);
@@ -629,6 +630,32 @@
   height: 1px;
   margin: var(--bv-space-1) 0;
   background: var(--bv-outline);
+}
+/* A small heading over a group of items ("Switch account"). */
+.bv-menu__label {
+  padding: var(--bv-space-2) var(--bv-space-3) var(--bv-space-1);
+  color: var(--bv-muted);
+  font-size: var(--bv-text-xs);
+  font-weight: 600;
+}
+/* An item's main text when something follows it (a badge): it takes the
+   room and wraps, never cut off. */
+.bv-menu__text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+/* A menu with badges is wider, so ordinary names fit beside them. */
+.bv-menu:has(.bv-menu__badge) {
+  min-width: 260px;
+}
+/* A short status at the end of an item: "Sign in", "Not connected". */
+.bv-menu__badge {
+  flex: none;
+  margin-left: auto;
+  color: var(--bv-muted);
+  font-size: var(--bv-text-xs);
+  font-weight: 500;
 }
 
 @keyframes bv-rise {

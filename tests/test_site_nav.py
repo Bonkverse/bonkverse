@@ -3,6 +3,7 @@
 
 import json
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import pytest
 from django.urls import Resolver404, resolve
@@ -24,7 +25,8 @@ def _links():
 )
 def test_every_site_path_in_nav_json_exists(href):
     try:
-        resolve(href)
+        # Paths only: "/login/?add=1" is served by /login/.
+        resolve(urlsplit(href).path)
     except Resolver404:
         pytest.fail(f"nav.json links to {href}, which this site doesn't serve")
 
