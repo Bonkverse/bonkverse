@@ -99,6 +99,11 @@ Log lines (one JSON object per line, see `core/logs.py`):
 - `bonk.io <script> paused for another <s>s; answered rate_limited without
   calling it` (INFO): a request during the pause; nothing was sent.
 
+While the login pause is on, every script waits with it: wears and friend
+reads answer `rate_limited` without calling bonk.io, because a request during
+bonk.io's login block restarts it (`_Cooldowns.remaining`). A wear's own pause
+doesn't stop logins.
+
 Players are told how long is left ("Try again in about 17 minutes."), and the
 wear reply and the login page carry the seconds (`retry_after`) so the page
 waits instead of retrying into the pause.
@@ -108,30 +113,39 @@ at a time, and the `wear_burst` / `wear` tiers in `RATE_LIMITS`. On
 2026-11-09 one player's 11 Wear clicks in about 1.5 s preceded a
 `ratelimited`, which then paused wearing for every user.
 
-### Wrong passwords
+### Wrong passwords and bursts
 
-With about 4 wrong passwords allowed for the whole site, Bonkverse limits
-failed logins itself before bonk.io sees them (`accounts/login_attempts.py`,
-used by both the /login/ page and the in-page login on wear). The numbers and
-why are in [login-rate-limit.md](login-rate-limit.md#what-bonkverse-does-about-it).
+With about 3 wrong passwords (or a fast burst of logins) allowed for the whole
+site, Bonkverse guards logins itself before bonk.io sees them
+(`accounts/login_attempts.py`, used by both the /login/ page and the in-page
+login on wear). The numbers and why are in
+[login-rate-limit.md](login-rate-limit.md#what-bonkverse-does-about-it); each
+is a setting in `BONK_LOGIN_LIMITS`.
 
-- Only bonk.io's `password` answers count per account; `username_fail` counts
-  per visitor only (bonk.io didn't limit 20 unknown usernames in a row). Rate
-  limits, network errors and unknown refusals don't count.
+- Only bonk.io's `password` answers count as wrong passwords.
+  `username_fail` counts only on a looser per-visitor count (bonk.io didn't
+  limit 20 unknown usernames in a row). Rate limits, network errors and
+  unknown refusals don't count.
+- **Site-wide**: after 2 wrong passwords anywhere in 15 minutes, new logins
+  wait until the oldest ages out (`site_wait`), with the wait in seconds.
 - **Per account, per visitor** (the name, case-insensitive, together with the
   visitor's IP from `core/client_ip.py`): 2 wrong passwords in 15 minutes,
   then held for 15 minutes. A stranger's wrong passwords for your name hold
   only the stranger. The wrong try that uses up the allowance already tells
   the player to wait.
-- **Per visitor**, across accounts: 3 wrong tries in 15 minutes (below
-  bonk.io's 4), then held for 15 minutes.
-- When bonk.io answers `ratelimited` to an account or visitor that had a wrong
-  try in the window, they're held for 30 minutes (or the site-wide pause, if
-  longer), so their retry isn't the first login bonk.io sees when the pause
-  ends.
+- **Per visitor**, across accounts: 2 wrong passwords in 15 minutes, then
+  held for 15 minutes.
+- **Caps**: 4 logins a minute sent to bonk.io site-wide, 1 a minute per
+  account (`busy`). Tries during bonk.io's pause don't count.
+- **One at a time** per account and visitor (`login_in_progress`).
+- When bonk.io answers `ratelimited`, every account and visitor with a wrong
+  password in the window is held until 5 minutes after the site-wide pause,
+  so none of their retries is the first login bonk.io sees when it ends. The
+  login that received the refusal isn't held for it.
 - A successful login clears that account's count for that visitor.
 - Counts live in the cache (`login:failures:<kind>:<key>`,
-  `login:hold:<kind>:<key>`). If the cache fails, logins go ahead unlimited.
+  `login:hold:<kind>:<key>`, `login:site_failures`, `login:cap:<key>:<minute>`,
+  `login:inflight:<key>`). If the cache fails, logins go ahead unguarded.
 
 Every attempt is logged on `skins.login` (the logger keeps its old name after the move to `accounts/`) with a pseudonym for the account and
 the visitor (`core/pseudonym.py`: an HMAC with `SECRET_KEY`, never the name or
@@ -139,8 +153,11 @@ IP) and where it came from:
 
 - `bonk login response | result=... | error=... | bonk_error=... | account=<tag> | client=<tag> | via=page|wear`
 - `bonk login held | account=<tag> | client=<tag> | via=... | account_failures=<n> | client_failures=<n> | retry_after=<s>`
-- `bonk.io rate-limited a login after wrong passwords; holding it for <s>s | ...` (WARNING)
-- `bonk.io rate-limited a login with no recent wrong passwords from it | ...` (WARNING)
+- `bonk login waiting for the site budget | ... | retry_after=<s>`
+- `bonk login busy | ... | retry_after=<s>`
+- `bonk login already in flight | ...`
+- `bonk.io rate-limited logins after <n> wrong passwords; holding <n> visitors for <s>s | ...` (WARNING)
+- `bonk.io rate-limited a login with no recent wrong passwords | ...` (WARNING)
 
 The last line means a login was limited although nobody had recent wrong
 passwords through Bonkverse: either bonk.io remembers wrong passwords for
@@ -222,7 +239,10 @@ code of 1,552 characters; bonk.io's limit is unknown) and `ratelimited`
 
 The token is a JWT whose payload holds the account id, username, the IP it
 was issued to and an `exp` time. Treat it like a password. The one recorded
-was valid for about two days, and bonk.io refused it once `exp` passed.
+was valid for about two days, and bonk.io refused it once `exp` passed; the
+owner's own token (2026-11-10) was valid for about 24 hours. Bonkverse reads
+`exp` (`core/bonk/tokens.py`) and treats a token as expired a minute before
+it, so a wear never sends a dead token (RFC-0003 Part 1, item 7).
 
 Skin codes are sent as stored. A URL-encoded stored code (`%2F` etc.) is
 form-encoded again on the way, and bonk.io still answers success

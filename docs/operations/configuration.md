@@ -50,6 +50,14 @@ Used by login, friend sync and wearing skins (`integrations/bonk_api.py`,
 | `BONK_API_BASE_URL` | `https://bonk2.io/scripts` |
 | `BONK_CONNECT_TIMEOUT` / `BONK_READ_TIMEOUT` | `4` / `8` seconds, for every call (wear used a flat 10 before Phase 2.2) |
 | `SYNC_FRIENDS_ON_LOGIN` | `1` (queue the friend sync on the worker after login) |
+| `BONK_LOGIN_SITE_PER_MINUTE` | `4` password logins sent to bonk.io per minute, whole site (`0` = no cap) |
+| `BONK_LOGIN_ACCOUNT_PER_MINUTE` | `1` per bonk.io account per minute (`0` = no cap) |
+| `BONK_LOGIN_SITE_WRONG_PASSWORDS` | `2` wrong passwords site-wide in 15 min before new logins wait (`0` = off) |
+| `BONK_LOGIN_VISITOR_WRONG_PASSWORDS` / `BONK_LOGIN_ACCOUNT_WRONG_PASSWORDS` | `2` / `2` before that visitor, or that account from that visitor, is held 15 min |
+| `BONK_LOGIN_VISITOR_UNKNOWN_USERNAMES` | `5` unknown usernames per visitor before a hold |
+
+The `BONK_LOGIN_*` guards are explained in
+[bonk/login-rate-limit.md](../bonk/login-rate-limit.md#what-bonkverse-does-about-it).
 
 ## Capacity and limits
 

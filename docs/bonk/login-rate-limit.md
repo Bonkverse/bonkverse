@@ -97,23 +97,43 @@ What production logs showed before the tests, and how they fit:
 
 ## What Bonkverse does about it
 
+Production showed the lab's 4 is 3 from Railway's IP: on 2026-11-10 three
+trips came after exactly 3 wrong passwords, and one came from a burst of
+correct logins with none wrong (a bot logging in 10 new accounts 17 times in
+100 s, each from a different visitor IP). So Bonkverse guards the whole
+site's budget, not only each visitor's (RFC-0003 Part 1, from the
+production check of 2026-11-10).
+
 | Rule | What the code does | Where |
 |---|---|---|
-| Per IP, and our IP is everyone's | Every login goes through one place that limits wrong passwords before bonk.io sees them | `accounts/login_attempts.py` |
-| 4 wrong passwords per IP | 2 wrong per account per visitor in 15 min, 3 per visitor across accounts, then a 15-minute hold. Keyed on name **and** visitor, so a stranger's wrong passwords for your name hold only the stranger | `ACCOUNT_FAILURES_ALLOWED`, `CLIENT_FAILURES_ALLOWED` |
-| Unknown usernames don't count | They count per visitor only, not per account | `ACCOUNT_COUNTED_FAILURES` |
-| Any request restarts the block | After `ratelimited`, no login reaches bonk.io for 17 minutes, with no checks inside the pause | `LOGIN_RATE_LIMIT_PAUSE` in `integrations/bonk_api.py` |
-| — | Whoever had wrong passwords when bonk.io limited the site is held 30 minutes, so their retry isn't the first login after the pause | `TRIGGER_HOLD_SECONDS` |
+| Per IP, and our IP is everyone's | Every login goes through one place, which checks the guards below before bonk.io sees anything | `accounts/login_attempts.py` |
+| About 3 wrong passwords, site-wide | After 2 wrong passwords anywhere on the site in 15 minutes, new logins wait (with a countdown) until the oldest ages out, instead of one of them spending the third | `site_wrong_passwords` |
+| — | 2 wrong per account per visitor, 2 per visitor across accounts, then a 15-minute hold. Keyed on name **and** visitor, so a stranger's wrong passwords for your name hold only the stranger | `account_wrong_passwords`, `visitor_wrong_passwords` |
+| Unknown usernames don't count | They don't count toward the site budget or the wrong-password allowances; a looser per-visitor count (5) only stops guessing names through Bonkverse | `visitor_unknown_usernames` |
+| Fast bursts trip it too | At most 4 logins a minute reach bonk.io site-wide, and 1 a minute per bonk.io account; above that, "Lots of logins right now" and nothing is sent | `site_per_minute`, `account_per_minute` |
+| — | One login at a time per account and visitor, on the server, so a double submit is one try | `_in_flight` |
+| Any request restarts the block | After `ratelimited`, no login reaches bonk.io for 17 minutes, with no checks inside the pause. Wears and friend reads wait too: on 2026-11-10 two wears during a pause were the only calls before it re-tripped | `LOGIN_RATE_LIMIT_PAUSE`, `_Cooldowns.remaining` in `integrations/bonk_api.py` |
+| — | When bonk.io limits the site anyway, everyone with a wrong password in the window is held 5 minutes past the pause, not whoever's login happened to get the refusal | `AFTER_PAUSE_SECONDS` |
 | — | One login per click on `/login/` and in the wear login popup | `accounts/static/accounts/js/login.js`, `core/js/bv-wear.js` |
 
-None of this can stop four different players' wrong passwords from adding up.
-The lasting fix is for logins to leave from **each player's own IP**, so a
-wrong password only ever blocks the person who typed it: the Bonkverse
-extension can make the request itself; a normal web page can't,
-because bonk2.io doesn't allow other sites to read its answers (checked
-2026-11-10: a `fetch` from bonkverse.io to `login_legacy.php` was blocked by
-CORS, no `Access-Control-Allow-Origin` header).
-Remember-me logins (`login_auto.php`) would also mean fewer typed passwords.
+The limits in the right-hand column are `BONK_LOGIN_LIMITS` in settings,
+each overridable with `BONK_LOGIN_<NAME>` (docs/operations/configuration.md),
+so they can be tuned from the logs. Every turned-away login is logged under
+`skins.login` ("bonk login held", "waiting for the site budget", "busy",
+"already in flight").
+
+Players read why: a shared wait says it is for everyone and not their fault,
+and the login page adds the time it ends in their own time zone.
+
+None of this can stop different players' wrong passwords from adding up; it
+only keeps them from reaching bonk.io's count. The lasting fix is for logins
+to leave from **each player's own IP**, so a wrong password only ever blocks
+the person who typed it: the Bonkverse extension can make the request itself;
+a normal web page can't, because bonk2.io doesn't allow other sites to read
+its answers (checked 2026-11-10: a `fetch` from bonkverse.io to
+`login_legacy.php` was blocked by CORS, no `Access-Control-Allow-Origin`
+header). Remember-me logins (`login_auto.php`, RFC-0003 Part 2) would also
+mean fewer typed passwords.
 
 The pause, holds and log lines are described in [api.md](api.md#rate-limits-and-the-cooldown).
 
