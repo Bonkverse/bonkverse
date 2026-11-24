@@ -204,8 +204,8 @@ class TestFailedLogin:
         response = _post_login(client)
 
         assert [str(m) for m in response.context["messages"]] == [
-            "Bonk.io login failed: bonk.io is limiting logins from Bonkverse right now. "
-            "Try again in about 17 minutes."
+            "Bonk.io login failed: bonk.io has paused logins from Bonkverse for everyone, "
+            "so this isn't your fault. Try again in about 17 minutes."
         ]
 
     def test_rate_limited_page_holds_the_login_button(self, client, mocked_http):

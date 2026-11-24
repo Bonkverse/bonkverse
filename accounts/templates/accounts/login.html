@@ -32,6 +32,7 @@
       {% comment %}The login has to wait (bonk.io's pause, or too many wrong passwords): the
          button stays off until the wait ends (accounts/js/login.js; accounts/views.py).{% endcomment %}
       <button type="submit" class="bv-btn bv-btn--primary" id="login-submit" disabled data-retry-after="{{ retry_after }}">Log in (wait {{ retry_after }}s)</button>
+      <p class="bv-hint" id="login-wait-until" hidden></p>
     {% else %}
       <button type="submit" class="bv-btn bv-btn--primary" id="login-submit">Log in</button>
     {% endif %}

@@ -39,6 +39,15 @@
   // A fixed deadline keeps the count right if the tab is in the background.
   const deadline = Date.now() + seconds * 1000;
 
+  // Long waits also say when they end, in the player's own time zone
+  // (RFC-0003 Part 1, item 8: "try again at 9:42 PM").
+  const until = document.getElementById("login-wait-until");
+  if (until && seconds >= 90) {
+    const at = new Date(deadline).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    until.textContent = `You can try again at ${at}.`;
+    until.hidden = false;
+  }
+
   function format(left) {
     if (left >= 60) {
       return `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
@@ -51,6 +60,7 @@
     if (left <= 0) {
       button.disabled = false;
       button.textContent = "Log in";
+      if (until) until.hidden = true;
       return;
     }
     button.textContent = `Log in (wait ${format(left)})`;
