@@ -8,6 +8,9 @@ comes from.
 
 Sources:
 
+- **DemystifyBonk**: [UnmatchedBracket/DemystifyBonk](https://github.com/UnmatchedBracket/DemystifyBonk)
+  (`Packets.md`, Unlicense), a documented list of bonk.io's packets.
+
 - **client**: bonk.io's game code, as built into Bonkverse/ReplayRenderer
   (`vendor/bonk-core.mjs`, generated from `alpha2s.js`, protocol version 49).
   Line numbers below are in that file.
@@ -62,9 +65,9 @@ guestName (if guest) | token (if signed in), avatar
 - **Server 2** (`createdRoom`) confirms the room was created.
 - **Server 49** (`ROOM_SHARE_LINK`) sends `(autoJoinID, bypass)`. The share
   link is `https://bonk.io/<autoJoinID><bypass>` (PixelMelt `getShareLink`).
-  The bypass appears to let someone with the link skip the room password:
-  the client stores it as `autoJoinPassBypass` (client 9520). Inferred, not
-  yet seen working.
+  The bypass lets someone with the link skip the room password: the client
+  stores it as `autoJoinPassBypass` (client 9520), and in the live test the
+  joiner wasn't asked for one.
 
 ### Someone joins: server → 4, then the host must answer 11
 
@@ -136,7 +139,8 @@ The default settings object (client `class Game`, 6236):
 | server → | 1 | ping data; answer `emit(1, {id})` (client 9484) |
 | server → | 5 | player left `(id, …)` |
 | server → | 6 | host left |
-| client → | 9 | kick/ban `{banshortid, kickonly}` |
+| client → | 9 | kick/ban `{banshortid, kickonly}`: `kickonly: true` lets them rejoin (DemystifyBonk; not tested live) |
+| client → | 50 | **No Host Swap**: when the host leaves, the room ends instead of passing host (DemystifyBonk, client `sendNoHostSwap`) |
 | client → | 18 | timesync request (with an acknowledgement callback) |
 | client → | 52 / 53 | change room name / password |
 
@@ -173,11 +177,12 @@ connected, and how long an idle room lives.
 | Event 4 reports the real account | **Yes**: username, `guest: false`, level from the server |
 | Chat arrives as 20 `(playerId, message)` | **Yes**; the host also gets its own messages back (id 0); trim input |
 | Keeping the connection alive | The server sends 1 `[pings, id]` every 3 s; answering `emit(1, {id})` kept it up |
-| Closing the room | Disconnecting ends it |
+| Closing the room | Disconnecting **without** No Host Swap hands host to the remaining player, so the room lives on (server 6 `[old host, new host, …]`; new host `-1` means closed). Send **50** after creating; then disconnecting ends it. |
 | TLS with checking on | **Works** with the Sectigo intermediate added (`NODE_EXTRA_CA_CERTS`) |
 
 **Still open:**
 - Does the share link's bypass skip the password prompt? Ask the tester.
 - What happens if the host *doesn't* answer pings (how long until the server drops it)?
-- How many rooms one IP can host at once.
+- How many rooms one IP can host: about **5 per 5 minutes** (reported by a
+  bonk.io player). Rooms close after 10 minutes, so that's also ~5 at once.
 - Hidden rooms aren't in `getrooms.php`, so "the room is gone" can only be checked by trying the link after closing.

@@ -18,7 +18,7 @@ import logging
 
 from django.conf import settings
 from django.contrib.auth import login
-from django.db import transaction
+from django.db import models, transaction
 from django.utils import timezone
 
 from core.background import enqueue
@@ -194,6 +194,55 @@ def sign_in_by_friend_request(request, *, bonk_id: int, bonk_name: str, add: boo
     bonk = bonk_session(request)
     bonk.store_identity(username.value, bonk_id)
     return user
+
+
+def sign_in_by_room_code(request, *, bonk_name: str, add: bool) -> BonkUser:
+    """Sign the browser in as a bonk.io account proven by a code typed in a
+    bot-hosted room (accounts/room_claims.py, ADR 0026, experimental), with
+    no password.
+
+    Like `sign_in_by_friend_request`, except that a room proves the name, not
+    the account id: bonk.io's join event doesn't carry it. The player row is
+    found by name (bonk.io names are unique ignoring case) and gets its id
+    later, from a friend list or a password login.
+    """
+    previous = request.user if request.user.is_authenticated else None
+    previous_lists = groups.browser_lists(request)
+
+    username = BonkUsername(bonk_name)
+    user = site_account_for(username)
+    player = link_by_room_code(user, bonk_name=username.value)
+    login(request, user)
+    groups.after_login(request, previous, previous_lists, add=add)
+    log_event(user, "user_logged_in", via="room_code", added=add)
+    known_accounts.remember(request, user.username, known_accounts.ROOM_CODE)
+    devices.remember_sign_in(request, user)
+    if not add:
+        used_here.offer_after_sign_in(request)
+
+    bonk = bonk_session(request)
+    bonk.store_identity(username.value, player.bonk_id)
+    return user
+
+
+def link_by_room_code(user: BonkUser, *, bonk_name: str) -> BonkPlayer:
+    """Link `user` to the BonkPlayer named `bonk_name` (case ignored), made
+    if Bonkverse hasn't seen the name yet. The link has no tokens and keeps
+    any it had. Prefers a row whose bonk.io id is known."""
+    player = (
+        BonkPlayer.objects.filter(username__iexact=bonk_name)
+        .order_by(models.F("bonk_id").asc(nulls_last=True), "pk")
+        .first()
+    )
+    if player is None:
+        player = BonkPlayer.objects.create(username=bonk_name, bonk_id=None)
+    elif player.username != bonk_name:
+        player.username = bonk_name
+        player.save(update_fields=["username", "updated_at"])
+    BonkAccountLink.objects.update_or_create(
+        user=user, bonk_player=player, defaults={"active": True}
+    )
+    return player
 
 
 def sign_in_with_one_click(request, user: BonkUser) -> None:

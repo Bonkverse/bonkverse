@@ -69,6 +69,13 @@
       Wear asks for the password once, later.
     </p>
   {% endif %}
+  {% if room_codes %}
+    {# Passwordless with a code typed in a bonk.io room the bot hosts (ADR 0026). Experimental. #}
+    <p class="bv-muted site-form-alt">
+      Or <a href="{% url 'accounts:room_code_login' %}?{% if adding %}add=1&amp;{% endif %}next={{ request.GET.next|default:''|urlencode }}">{% if adding %}add it{% else %}log in{% endif %} with a room code</a>
+      <span class="bv-pill bv-pill--accent">Experimental</span>
+    </p>
+  {% endif %}
 </div>
 {% endblock %}
 

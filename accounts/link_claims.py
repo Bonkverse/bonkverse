@@ -92,6 +92,11 @@ def name_problem(name: str) -> str | None:
 # ── Starting and finishing (in the browser) ──────────────────────────
 
 
+def _friend_claims():
+    """Claims proven by a friend request (not room-code claims, ADR 0026)."""
+    return LinkClaim.objects.filter(method=LinkClaim.FRIEND_REQUEST)
+
+
 def checks_paused_for() -> int:
     """Seconds until the bot's requests can be read again: bonk.io is
     pausing Bonkverse's calls (a login pause stops every script,
@@ -102,9 +107,7 @@ def checks_paused_for() -> int:
 def _hold_through_pause(now: datetime, paused: int) -> None:
     """Keep every pending claim until PAUSE_GRACE after the pause ends."""
     until = now + timedelta(seconds=paused) + PAUSE_GRACE
-    LinkClaim.objects.filter(status=LinkClaim.PENDING, expires_at__lt=until).update(
-        expires_at=until
-    )
+    _friend_claims().filter(status=LinkClaim.PENDING, expires_at__lt=until).update(expires_at=until)
 
 
 def _wait_text(seconds: int) -> str:
@@ -194,7 +197,7 @@ def status(request, claim_id: int) -> dict:
     """
     if claim_id not in _session_claims(request):
         raise ClaimProblem("That link request isn't from this browser.")
-    claim = LinkClaim.objects.filter(pk=claim_id).first()
+    claim = _friend_claims().filter(pk=claim_id).first()
     if claim is None:
         raise ClaimProblem("That link request isn't from this browser.")
     now = timezone.now()
@@ -327,12 +330,16 @@ def check_pending() -> dict:
     if paused:
         # Nothing can be read: hold the claims instead of letting them run out.
         _hold_through_pause(now, paused)
-        pending = LinkClaim.objects.filter(status=LinkClaim.PENDING).count()
+        pending = _friend_claims().filter(status=LinkClaim.PENDING).count()
         return {"pending": pending, "expired": 0, "skipped": "paused"}
-    expired = LinkClaim.objects.filter(status=LinkClaim.PENDING, expires_at__lte=now).update(
-        status=LinkClaim.EXPIRED
+    expired = (
+        _friend_claims()
+        .filter(status=LinkClaim.PENDING, expires_at__lte=now)
+        .update(status=LinkClaim.EXPIRED)
     )
-    claims = list(LinkClaim.objects.filter(status=LinkClaim.PENDING))
+    # Never room-code claims (ADR 0026): those are proven by a code, and a
+    # friend request from the name must not stand in for it.
+    claims = list(_friend_claims().filter(status=LinkClaim.PENDING))
     if not claims:
         return {"pending": 0, "expired": expired}
 

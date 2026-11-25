@@ -35,12 +35,13 @@ from . import (
     groups,
     known_accounts,
     link_claims,
+    room_claims,
     used_here,
 )
 from .forms import LoginForm
 from .login_attempts import attempt_login
 from .login_messages import login_failure_message
-from .models import BonkUser
+from .models import BonkUser, LinkClaim
 from .sign_in import sign_in, sign_in_with_one_click
 
 
@@ -116,6 +117,7 @@ def _render_login(request, form, *, retry_after=None, adding=False):
             # "Used on this browser": add without proving again (used_here.py).
             "used_here": used_here.rows(request) if adding else [],
             "friend_requests": bot_account.configured(),
+            "room_codes": room_claims.configured(),
             "turnstile_site_key": bot_check.site_key_if_wanted(request),
         },
     )
@@ -193,11 +195,10 @@ def one_click_sign_in(request):
     user = BonkUser.objects.filter(username__iexact=name).order_by("pk").first() if name else None
     if user is None or user.pk not in devices.one_click_ids(request, [user.pk]):
         way = known_accounts.way_in(request, name)
-        target = (
-            "accounts:friend_request_login"
-            if way == known_accounts.FRIEND_REQUEST
-            else "accounts:login"
-        )
+        target = {
+            known_accounts.FRIEND_REQUEST: "accounts:friend_request_login",
+            known_accounts.ROOM_CODE: "accounts:room_code_login",
+        }.get(way, "accounts:login")
         query = {"username": name}
         if _safe_next(request):
             query["next"] = _safe_next(request)
@@ -288,6 +289,75 @@ def friend_request_status(request, claim_id):
     signed in, or the account added), expired or refused."""
     try:
         state = link_claims.status(request, claim_id)
+    except link_claims.ClaimProblem as problem:
+        return JsonResponse({"status": "refused", "message": problem.message}, status=403)
+    if state["status"] == "done":
+        state["redirect"] = _safe_next(request) or reverse("players:profile_settings")
+    return JsonResponse(state)
+
+
+@limit("login", method="POST")
+def room_code_login(request):
+    """Sign in, or add an account, with a code typed in a bonk.io room the
+    bot hosts (accounts/room_claims.py, ADR 0026). Experimental. GET: the
+    name form. POST: open a room and go to the waiting page."""
+    adding = request.user.is_authenticated and "1" in (
+        request.POST.get("add"),
+        request.GET.get("add"),
+    )
+    name = (request.POST.get("username") or request.GET.get("username") or "")[:100]
+    next_url = _safe_next(request)
+    if request.method == "POST":
+        try:
+            claim = room_claims.start(request, name, add=adding)
+        except link_claims.ClaimProblem as problem:
+            messages.error(request, problem.message)
+        else:
+            url = reverse("accounts:room_code_wait", args=[claim.pk])
+            return redirect(f"{url}?next={next_url}" if next_url else url)
+    return render(
+        request,
+        "accounts/room_code_login.html",
+        {
+            "adding": adding,
+            "username": name,
+            "available": room_claims.configured(),
+            "next": next_url,
+        },
+    )
+
+
+@limit("browse")
+def room_code_wait(request, claim_id):
+    """The waiting page: join the room and type the code; the page checks."""
+    try:
+        state = room_claims.status(request, claim_id)
+    except link_claims.ClaimProblem as problem:
+        messages.error(request, problem.message)
+        return redirect("accounts:room_code_login")
+    if state["status"] == "done":
+        return redirect(_safe_next(request) or reverse("players:profile_settings"))
+    claim = LinkClaim.objects.filter(pk=claim_id).values("name", "room_link").first() or {}
+    return render(
+        request,
+        "accounts/room_code_wait.html",
+        {
+            "claim_id": claim_id,
+            "state": state,
+            "name": claim.get("name", ""),
+            "room_link": claim.get("room_link", ""),
+            "code": room_claims.code_for(request, claim_id),
+            "next": _safe_next(request),
+        },
+    )
+
+
+@require_POST
+@limit("browse")
+def room_code_status(request, claim_id):
+    """The waiting page's check (every few seconds)."""
+    try:
+        state = room_claims.status(request, claim_id)
     except link_claims.ClaimProblem as problem:
         return JsonResponse({"status": "refused", "message": problem.message}, status=403)
     if state["status"] == "done":

@@ -1,0 +1,14 @@
+{
+  "name": "bonkverse-roombot",
+  "private": true,
+  "type": "module",
+  "description": "Hosts bonk.io rooms for room-code sign-in (docs/adr/0026). Experimental.",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node src/index.mjs",
+    "test": "node --test --test-timeout=20000 test/*.test.mjs"
+  },
+  "dependencies": {
+    "socket.io-client": "2.5.0"
+  }
+}

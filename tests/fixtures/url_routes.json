@@ -212,6 +212,18 @@
     "name": "accounts:friend_request_status"
   },
   {
+    "route": "login/room/",
+    "name": "accounts:room_code_login"
+  },
+  {
+    "route": "login/room/<int:claim_id>/",
+    "name": "accounts:room_code_wait"
+  },
+  {
+    "route": "login/room/<int:claim_id>/status/",
+    "name": "accounts:room_code_status"
+  },
+  {
     "route": "logout/",
     "name": "accounts:logout"
   },

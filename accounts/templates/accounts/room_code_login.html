@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if adding %}Add a bonk.io account{% else %}Log in{% endif %} with a room code · Bonkverse{% endblock %}
+{% block content_class %}site-page{% endblock %}
+
+{% block content %}
+{# Sign in, or add an account, with a code typed in a bonk.io room the bot hosts (accounts/room_claims.py, ADR 0026). Experimental. #}
+<div class="bv-main site-narrow">
+  <div class="bv-page-header">
+    <div class="bv-page-header__text">
+      <h1>{% if adding %}Add a bonk.io account{% else %}Log in{% endif %} with a room code <span class="bv-pill bv-pill--accent">Experimental</span></h1>
+      <p class="bv-muted">No password: Bonkverse opens a private bonk.io room, you join it signed in to your account, and type a code shown here. {% if adding %}It joins {{ user.username }}'s accounts.{% endif %}</p>
+    </div>
+  </div>
+
+  <div class="bv-notice" role="note">
+    <i data-lucide="flask-conical" aria-hidden="true"></i>
+    <span><strong>This is experimental.</strong> It depends on how bonk.io's rooms work today and may stop working or change. If it doesn't work for you, log in with your password or a friend request instead.</span>
+  </div>
+
+  {% if available %}
+    <form method="post" class="bv-card bv-form site-form-card">
+      {% csrf_token %}
+      {% if adding %}<input type="hidden" name="add" value="1">{% endif %}
+      {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+      <div class="bv-field">
+        <label class="bv-label" for="rc-username">bonk.io username</label>
+        <input class="bv-input" id="rc-username" name="username" value="{{ username }}" maxlength="64" autocomplete="username" required autofocus>
+      </div>
+      <ol class="site-steps">
+        <li>Press Continue. Bonkverse opens a private bonk.io room and shows you a code.</li>
+        <li>Open bonk.io, <strong>log in to that account</strong> (guests can't sign in), and join the room from the link.</li>
+        <li>Type the code in the room's chat. This page notices it within a few seconds.</li>
+      </ol>
+      {# The code is tied to this browser; someone asking you to type "their" code would be signing in as you. #}
+      <div class="bv-notice bv-notice--danger" role="note">
+        <i data-lucide="triangle-alert" aria-hidden="true"></i>
+        <span><strong>Only type a code you got on this page yourself.</strong> If someone gives you a code to type in a bonk.io room, don't: it can sign them in to your Bonkverse account.</span>
+      </div>
+      <button type="submit" class="bv-btn bv-btn--primary">Continue</button>
+    </form>
+  {% else %}
+    <p class="bv-notice">Signing in with a room code isn't available right now. <a href="{% url 'accounts:login' %}">Log in with your password</a>.</p>
+  {% endif %}
+
+  <p class="bv-muted site-form-alt">
+    <a href="{% url 'accounts:login' %}{% if adding %}?add=1{% endif %}">Use your password instead</a>
+    · <a href="{% url 'accounts:friend_request_login' %}{% if adding %}?add=1{% endif %}">Use a friend request</a>.
+  </p>
+</div>
+{% endblock %}

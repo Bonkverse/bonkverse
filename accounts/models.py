@@ -325,6 +325,14 @@ class LinkClaim(models.Model):
     ADD = "add"
     PURPOSES = [(SIGN_IN, "Sign in"), (ADD, "Add to my accounts")]
 
+    # How it's proven: a friend request to the bot (ADR 0024), or a code typed
+    # in a room the room service hosts (ADR 0026, experimental). The friend
+    # request worker only ever looks at FRIEND_REQUEST claims: a friend
+    # request must never prove a room-code claim.
+    FRIEND_REQUEST = "friend"
+    ROOM_CODE = "room"
+    METHODS = [(FRIEND_REQUEST, "Friend request"), (ROOM_CODE, "Room code")]
+
     PENDING = "pending"
     PROVEN = "proven"
     DONE = "done"
@@ -358,6 +366,15 @@ class LinkClaim(models.Model):
     proven_at = models.DateTimeField(null=True, blank=True)
     # Why it was refused, in words for the person.
     problem = models.CharField(max_length=200, blank=True)
+
+    method = models.CharField(max_length=10, choices=METHODS, default=FRIEND_REQUEST)
+    # ROOM_CODE only: sha256 of the code (the code itself lives in the
+    # session of the browser that started the claim), the room service's room
+    # and its bonk.io link, and wrong codes typed so far.
+    code_hash = models.CharField(max_length=64, blank=True)
+    room_id = models.CharField(max_length=40, blank=True)
+    room_link = models.URLField(max_length=200, blank=True)
+    wrong_codes = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
         indexes = [models.Index(fields=["status", "expires_at"], name="linkclaim_pending")]

@@ -2,11 +2,15 @@
 
 **Status:** Proposed, experimental.
 - **Research:** protocol in [docs/bonk/rooms.md](../bonk/rooms.md).
-- **Prototype:** [experimental/room-verification/](../../experimental/room-verification/)
-  passed a live test on 2026-11-25. A signed-in player joined the bot's room,
-  the server reported the real account, and the code typed in chat verified
-  it.
-- **Not built yet:** the Bonkverse side and a deployable service.
+- **Live test:** a one-file prototype passed on 2026-11-25. A signed-in
+  player joined the bot's room, the server reported the real account, and
+  the code typed in chat verified it. That prototype became
+  [roombot/](../../roombot/).
+- **Built, behind settings:** the room service ([roombot/](../../roombot/))
+  and the Bonkverse side (`accounts/room_claims.py`,
+  `integrations/roombot.py`, `/login/room/`). It stays hidden until
+  `ROOMBOT_URL` and `ROOMBOT_TOKEN` are set, and is labelled
+  **Experimental** on the site.
 
 ## Context
 
