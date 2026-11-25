@@ -384,23 +384,24 @@ def test_a_lookalike_name_in_a_bulk_lookup_says_nothing_about_the_real_player(ap
     UserFactory(username="Fook")
     BonkPlayer.objects.create(bonk_id=13159907, username="Fook")
     record_worn_skin(13159907, SKIN_CODE, WornSkinSource.LOGIN)
+    # A player row under the look-alike spelling, seen wearing a skin later:
+    # the newer row used to win the key both spellings shared, which left
+    # the real player with no skin.
+    BonkPlayer.objects.create(bonk_id=555, username=spelling)
+    record_worn_skin(555, SKIN_CODE, WornSkinSource.LOGIN)
     mock_lookup(mocked_http, [lookup_row("Fook")])
 
     body = api.post("/api/v1/lookup/players/", {"usernames": [spelling, "fOOK"]}).json()
     fake, real = body["data"]["players"]
 
-    assert fake == {
-        "requested": spelling,
-        "username": spelling,
-        "status": "not_found",
-        "level": None,
-        "games": None,
-        "account": None,
-        "bonkverse_account": False,
-        "profile_url": None,
-        "skin": None,
-    }
+    # What Bonkverse knows about the look-alike spelling itself is its own.
+    assert fake["status"] == "not_found"
+    assert (fake["username"], fake["level"], fake["games"]) == (spelling, None, None)
+    assert fake["bonkverse_account"] is False
+    assert fake["account"]["dbid"] == 555
+    assert quote(spelling) in fake["profile_url"] and quote(spelling) in fake["skin"]["image_url"]
     assert real["status"] == "found" and real["username"] == "Fook"
+    assert "/player/Fook/" in real["skin"]["image_url"]
     assert real["bonkverse_account"] is True
     assert real["account"]["dbid"] == 13159907
     assert real["skin"] is not None
@@ -419,6 +420,23 @@ def test_an_older_lookalike_account_doesnt_unhide_the_real_players_level(api, mo
     history = api.get("/api/v1/players/Fook/level-history/")
 
     assert entry["status"] == "private" and entry["level"] is None
+    assert history.status_code == 403
+
+
+def test_hidden_level_holds_for_a_name_with_a_non_english_capital(api, mocked_http):
+    """fold("JOS\u00c9") keeps the "\u00c9" where lower() wouldn't: the account,
+    its key and the hidden-names set must all use the one rule, in Python
+    and in SQL (core.db.folded)."""
+    name = "JOS\u00c9"
+    owner = UserFactory(username=name)
+    ProfileVisibility.objects.create(user=owner, level_history=False)
+    mock_lookup(mocked_http, [lookup_row(name)])
+
+    entry = api.get(f"/api/v1/players/{quote(name)}/").json()["data"]
+    history = api.get(f"/api/v1/players/{quote(name)}/level-history/")
+
+    assert entry["status"] == "private" and entry["level"] is None
+    assert entry["bonkverse_account"] is True
     assert history.status_code == 403
 
 

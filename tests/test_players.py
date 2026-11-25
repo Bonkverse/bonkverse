@@ -466,6 +466,10 @@ def _assert_nothing_hidden_is_shown(client, spelling):
         html = client.get(reverse(f"players:{tab}", args=[spelling])).content.decode()
         for private in ("Friend One", "Rival Two", "Secret Pal", "Level explorer", "Snipers Spot"):
             assert private not in html, f"{tab} shows {private!r} under {spelling!r}"
+    # One map's detail (replay_map) is only reached through the Maps tab.
+    one_map = client.get(reverse("players:player_maps", args=[spelling]), {"map": "777"})
+    assert one_map.status_code == 404
+    assert "Map Buddy" not in one_map.content.decode()
     calculator = client.get(reverse("players:xp_calculator_player"), {"name": spelling})
     assert calculator.json()["ok"] is False
 
@@ -525,6 +529,37 @@ def test_a_lookalike_player_doesnt_stand_in_for_or_hide_the_real_one(client, moc
     found = bonk_players_named(["fOOK", fake.username])
 
     assert found == {"fook": real, "foo" + KELVIN_SIGN: fake}
+
+
+@pytest.mark.django_db
+def test_a_lookalike_player_doesnt_take_the_real_ones_skin_or_member_badge(client, mocked_http):
+    from players import selectors
+    from players.models import BonkPlayer, WornSkinSource
+    from players.services import record_worn_skin
+    from tests.factories import SKIN_CODE
+
+    lookalike = "Foo" + KELVIN_SIGN
+    BonkPlayer.objects.create(bonk_id=1, username="Fook")
+    BonkPlayer.objects.create(bonk_id=2, username=lookalike)
+    record_worn_skin(1, SKIN_CODE, WornSkinSource.LOGIN)
+    UserFactory(username="Fook")
+
+    assert set(selectors.worn_skin_codes(["fOOK", lookalike])) == {"fook"}
+    assert selectors._accounts_named(["fOOK", lookalike]) == {"fook"}
+
+
+@pytest.mark.django_db
+def test_names_with_spaces_at_the_end_still_open(client, mocked_http):
+    """The replay site sends names exactly as stored; the check that a
+    profile is the one asked for must not trip over spaces."""
+    name = "ako   "
+    mock_player(mocked_http, name)
+
+    response = client.get(reverse("players:player_level", args=[name]))
+
+    # 404 is "no such player"; the Level tab's script means its tab rendered.
+    assert response.status_code == 200
+    assert "players/js/player_level.js" in response.content.decode()
 
 
 @pytest.mark.django_db

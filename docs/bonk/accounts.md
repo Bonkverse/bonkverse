@@ -113,9 +113,10 @@ So: `__iexact`, `lower()` and `casefold()` may narrow a search, but
 `same_name` decides whenever the answer grants something (who is signed in,
 whose privacy switches apply, who owns a skin).
 
-- In SQL the same rule is `Lower(Collate(field, "C"))`: under the "C"
-  collation Postgres's `lower()` changes only A-Z
-  (`public_api/selectors.py`).
+- In SQL the same rule is `core.db.folded(field)`, which is
+  `Lower(Collate(field, "C"))`: under the "C" collation Postgres's `lower()`
+  changes only A-Z. No name column has an index on `lower(...)`, so this
+  costs what the `Lower(...)` it replaced did.
 - Dicts of players or accounts by name are keyed with `fold`, not
   `lower()`, so a look-alike has its own key and can't answer for, or hide,
   the real name.

@@ -85,5 +85,5 @@ def bulk_delete_skins(request):
     # same check edit and delete make (made_by alone matches more loosely).
     candidates = Skin.objects.made_by(request.user.username).filter(id__in=ids)
     deleted_ids = [skin.id for skin in candidates if skin.is_owned_by(request.user)]
-    Skin.objects.filter(id__in=deleted_ids).delete()
+    candidates.filter(id__in=deleted_ids).delete()
     return JsonResponse({"ok": True, "data": {"deleted_ids": deleted_ids}})

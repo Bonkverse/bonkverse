@@ -24,9 +24,9 @@ from datetime import UTC
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
-from django.db.models.functions import Collate, Lower
 
 from core.bonk import fold, same_name
+from core.db import folded
 from players.models import BonkPlayer
 
 from integrations.replays import LOOKUP_MAX, PlayerError, lookup_players_configured
@@ -65,12 +65,6 @@ def valid_username(raw) -> str | None:
     return raw
 
 
-def _folded(field):
-    """`field` lowercased A-Z only, in SQL: core.bonk.fold's rule. Under the
-    "C" collation Postgres's lower() changes no other letter."""
-    return Lower(Collate(field, "C"))
-
-
 def accounts_named(names) -> dict:
     """{fold(name): BonkUser} for the Bonkverse accounts with these names,
     ignoring capitalization only (core.bonk.fold). Look one up with
@@ -80,7 +74,7 @@ def accounts_named(names) -> dict:
         return {}
     users = (
         get_user_model()
-        .objects.annotate(fname=_folded("username"))
+        .objects.annotate(fname=folded("username"))
         .filter(fname__in=wanted)
         .order_by("id")
     )
@@ -108,7 +102,7 @@ def bonk_accounts_named(names) -> dict:
     if not wanted:
         return {}
     players = (
-        BonkPlayer.objects.annotate(fname=_folded("username"))
+        BonkPlayer.objects.annotate(fname=folded("username"))
         .filter(fname__in=wanted)
         .order_by("last_seen")
     )
@@ -198,17 +192,15 @@ def player_entries(names, build_url) -> list[dict]:
 
     entries = []
     for requested in unique:
-        # The replay rows and skins are keyed by lower(), which a look-alike
-        # spelling can share with the real name; whatever is found under it
-        # counts only if it's spelled like the request (same_name). Accounts
-        # and bonk.io accounts are keyed by fold already.
-        key, name = requested.lower(), fold(requested)
-        row = rows.get(key)
+        # Accounts, bonk.io accounts and skins are keyed by fold. The replay
+        # rows are keyed by the replay site's lower(), which a look-alike
+        # spelling can share with the real name, so a row counts only if
+        # it's spelled like the request (same_name, below).
+        name = fold(requested)
+        row = rows.get(requested.lower())
         account = accounts.get(name)
         bonk_player = bonk_players.get(name)
-        worn = skins.get(key)
-        if worn is not None and not same_name(worn["username"], requested):
-            worn = None
+        worn = skins.get(name)
         entry = {
             "requested": requested,
             "username": requested,

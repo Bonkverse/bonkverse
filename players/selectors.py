@@ -27,6 +27,7 @@ from django.db.models.functions import Lower, RTrim
 from django.utils import timezone
 
 from core.bonk import fold, same_name
+from core.db import folded
 from integrations.replays import (
     PlayerError,
     get_player_configured,
@@ -142,17 +143,18 @@ def site_account(username):
 
 
 def worn_skins(names):
-    """{lower name: {"skin_code", "seen_at"}} for the names whose player has
-    a worn skin.
+    """{fold(name): {"skin_code", "seen_at"}} for the names whose player has
+    a worn skin. Look one up with `.get(fold(name))`.
 
     Several BonkPlayers can share a name (copies from replays); the newest
-    sighting wins.
+    sighting wins. A player spelled with a look-alike letter has its own key
+    (core.bonk.fold), so it can't take the real name's place.
     """
-    lowered = {n.lower() for n in names if n}
-    if not lowered:
+    wanted = {fold(n) for n in names if n}
+    if not wanted:
         return {}
     query = Q()
-    for name in lowered:
+    for name in wanted:
         query |= Q(username__iexact=name)
     found = {}
     rows = (
@@ -161,14 +163,12 @@ def worn_skins(names):
         .values_list("username", "worn_skin_code", "worn_skin_seen_at")
     )
     for username, skin_code, seen_at in rows:
-        found.setdefault(
-            username.lower(), {"username": username, "skin_code": skin_code, "seen_at": seen_at}
-        )
+        found.setdefault(fold(username), {"skin_code": skin_code, "seen_at": seen_at})
     return found
 
 
 def worn_skin_codes(names):
-    """{lower name: worn skin code} for the names whose player has one."""
+    """{fold(name): worn skin code} for the names whose player has one."""
     return {name: skin["skin_code"] for name, skin in worn_skins(names).items()}
 
 
@@ -230,7 +230,7 @@ def with_skin_avatars(rows, key="username"):
     """`rows` (dicts) with "skin" set to each player's avatar URL, or None."""
     codes = worn_skin_codes([row[key] for row in rows])
     for row in rows:
-        skin_code = codes.get(row[key].lower())
+        skin_code = codes.get(fold(row[key]))
         row["skin"] = skin_avatar_url(row[key], skin_code) if skin_code else None
     return rows
 
@@ -292,7 +292,7 @@ def profile_base(username, viewer, active=""):
         )
 
     links = charts.ReplayLinks(settings.BONKVERSE_REPLAYS_URL)
-    skin_code = worn_skin_codes([name]).get(name.lower())
+    skin_code = worn_skin_codes([name]).get(fold(name))
     return {
         "skin_avatar": skin_avatar_url(name, skin_code, "png") if skin_code else None,
         "bonk_player": bonk_player,
@@ -706,14 +706,16 @@ def replay_lookup(names):
 
 
 def _accounts_named(names):
-    lowered = {n.lower() for n in names}
-    if not lowered:
+    """The folded names (core.bonk.fold) among `names` that have a Bonkverse
+    account: test with `fold(name) in ...`."""
+    wanted = {fold(n) for n in names}
+    if not wanted:
         return set()
     return set(
         get_user_model()
-        .objects.annotate(lname=Lower("username"))
-        .filter(lname__in=lowered)
-        .values_list("lname", flat=True)
+        .objects.annotate(fname=folded("username"))
+        .filter(fname__in=wanted)
+        .values_list("fname", flat=True)
     )
 
 
@@ -793,7 +795,7 @@ def _exact_replay_card(query, cards):
     if not row:
         return None
     name = row.get("username") or query
-    return _card(name, stats=row, member=name.lower() in _accounts_named([name]))
+    return _card(name, stats=row, member=fold(name) in _accounts_named([name]))
 
 
 def directory(get):
@@ -849,7 +851,7 @@ def _directory(get):
             _card(
                 r["username"],
                 stats=r,
-                member=r["username"].lower() in members,
+                member=fold(r["username"]) in members,
                 bonk_player=bonk.get(fold(r["username"])),
             )
             for r in rows
@@ -866,7 +868,7 @@ def _directory(get):
             _card(
                 n,
                 stats=(stats or {}).get(n.lower()),
-                member=n.lower() in members,
+                member=fold(n) in members,
                 bonk_player=fr.bonk_player,
                 listed_by=fr.listed_by,
             )
@@ -887,7 +889,7 @@ def _directory(get):
         _card(
             p.username,
             stats=(stats or {}).get(p.username.lower()),
-            member=p.linked or p.username.lower() in members,
+            member=p.linked or fold(p.username) in members,
             bonk_player=p,
             flash_friends=flash.get(links.get(p.id)),
         )
@@ -996,7 +998,7 @@ def calculator_player(username, viewer):
         bonk_id=player.bonk_id if player else None,
         xp=player.xp if player else None,
     )
-    skin_code = worn_skin_codes([base["username"]]).get(base["username"].lower())
+    skin_code = worn_skin_codes([base["username"]]).get(fold(base["username"]))
     summary["skin"] = skin_avatar_url(base["username"], skin_code) if skin_code else None
     return summary, None
 
