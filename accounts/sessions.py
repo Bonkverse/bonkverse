@@ -49,3 +49,30 @@ class SessionRenewalMiddleware:
             if not isinstance(renewed, (int, float)) or now - renewed >= RENEW_EVERY_SECONDS:
                 request.session[RENEWED_AT] = now
         return self.get_response(request)
+
+
+def end_other_sessions(user_id: int, keep_key: str | None) -> int:
+    """Sign every other browser out of `user_id`: sessions where it's the
+    account in use or one of the browser's signed-in or unlocked accounts
+    (groups.py). Used when a password reclaims an account someone else had
+    claimed by friend request (sign_in._reclaim). Scans live sessions, so
+    it runs on the worker. Returns how many sessions ended."""
+    from django.contrib.sessions.models import Session
+    from django.utils import timezone
+
+    ended = 0
+    live = Session.objects.filter(expire_date__gt=timezone.now())
+    if keep_key:
+        live = live.exclude(session_key=keep_key)
+    for session in live.iterator():
+        try:
+            data = session.get_decoded()
+        except Exception:  # an unreadable session can't hold the account
+            continue
+        holds = str(data.get("_auth_user_id")) == str(user_id) or any(
+            user_id in (data.get(key) or []) for key in ("bv_signed_in", "bv_unlocked")
+        )
+        if holds:
+            session.delete()
+            ended += 1
+    return ended

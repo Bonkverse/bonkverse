@@ -16,7 +16,7 @@ from django.core.cache import cache
 from django.utils import timezone
 
 from accounts import bot_account, groups, link_claims
-from accounts.models import BonkAccountLink, BonkUser, LinkClaim, TrustedDevice
+from accounts.models import BonkAccountLink, BonkUser, LinkClaim
 from integrations.bonk_api import LOGIN_SCRIPT, rate_limit_cooldowns
 from skins.votes import why_cant_vote
 from tests.conftest import load_bonk_fixture, make_bonk_token
@@ -266,19 +266,15 @@ class TestFinishing:
             "AltOne",
         }
 
-    def test_the_main_by_friend_request_unlocks_its_group(self, client):
-        main, alt = UserFactory(username="MainOne"), UserFactory(username="AltOne")
-        groups.join(main, alt)
+    def test_an_account_owned_since_the_claim_started_is_refused(self, client):
         claim = _start(client, name="MainOne")
+        UserFactory(username="MainOne")  # signed in with its password meanwhile
         self._prove(claim, bonk_id=777, name="MainOne")
 
-        _status(client, claim)
+        state = _status(client, claim)
 
-        signed_in = {
-            r["username"] for r in client.get("/api/me/").json()["accounts"] if r["signed_in"]
-        }
-        assert signed_in == {"MainOne", "AltOne"}
-        assert TrustedDevice.objects.exists()
+        assert state["status"] == "refused" and "already on Bonkverse" in state["message"]
+        assert client.get("/api/me/").status_code == 401
 
     def test_expired_says_so(self, client):
         claim = _start(client)
@@ -431,3 +427,104 @@ class TestDuringABonkPause:
         claim.refresh_from_db()
         assert counts["skipped"] == "rate_limited"
         assert claim.expires_at > timezone.now() + timedelta(minutes=5)
+
+
+class TestTakeover:
+    """Reported 2026-11-25: a friend request can't show who started the claim
+    it proves. Someone waiting on a claim for your name could sign in as you
+    when you friend the bot for any reason (BonxBot's /link uses it too).
+    A friend request may now claim only accounts no one has on Bonkverse,
+    and the password beats an earlier friend-request claim (ADR 0024)."""
+
+    def _prove(self, claim, bonk_id=1234567, name="TestPlayer"):
+        LinkClaim.objects.filter(pk=claim.pk).update(
+            status=LinkClaim.PROVEN, bonk_id=bonk_id, bonk_name=name, proven_at=timezone.now()
+        )
+
+    def _password_login(self, client, mocked_http):
+        mocked_http.post(LOGIN_URL, json=load_bonk_fixture("login_success"))
+        client.post("/login/", {"username": "TestPlayer", "password": "pw"})
+
+    def test_cannot_start_a_claim_for_an_account_already_here(self, client, mocked_http):
+        from django.test import Client
+
+        self._password_login(Client(), mocked_http)  # the victim, elsewhere
+
+        response = client.post("/login/friend/", {"username": "testplayer"}, follow=True)
+
+        assert not LinkClaim.objects.exists()
+        assert "already on Bonkverse" in response.content.decode()
+
+    def test_cannot_add_an_account_already_here_to_your_group(self, client, mocked_http):
+        from django.test import Client
+
+        self._password_login(Client(), mocked_http)  # the victim
+        client.force_login(UserFactory(username="Mallory"))
+
+        client.post("/login/friend/", {"username": "TestPlayer", "add": "1"})
+
+        assert not LinkClaim.objects.exists()
+
+    def test_an_owned_account_under_another_name_is_refused_at_the_end(self, client):
+        claim = _start(client, name="NewName")
+        owner = UserFactory(username="OldName")
+        from players.models import BonkPlayer
+
+        player = BonkPlayer.objects.create(bonk_id=4242, username="OldName")
+        BonkAccountLink.objects.create(user=owner, bonk_player=player, active=True)
+        self._prove(claim, bonk_id=4242, name="NewName")
+
+        assert _status(client, claim)["status"] == "refused"
+        assert client.get("/api/me/").status_code == 401
+
+    def test_a_new_account_can_still_start_by_friend_request(self, client):
+        claim = _start(client, name="TestPlayer")
+        self._prove(claim)
+
+        assert _status(client, claim)["status"] == "done"
+
+    def test_the_password_takes_it_back_from_a_claimer(
+        self, client, mocked_http, django_capture_on_commit_callbacks
+    ):
+        from django.test import Client
+
+        from accounts.models import RememberedSignIn
+
+        # Mallory claimed TestPlayer by friend request and grouped it with hers.
+        claim = _start(client, name="TestPlayer")
+        self._prove(claim)
+        _status(client, claim)
+        mallory_alt = UserFactory(username="MalloryAlt")
+        groups.join(BonkUser.objects.get(username="TestPlayer"), mallory_alt)
+        assert client.get("/api/me/").json()["user"]["username"] == "TestPlayer"
+
+        # The real owner signs in with the password on their own browser.
+        owner = Client()
+        with django_capture_on_commit_callbacks(execute=True):
+            self._password_login(owner, mocked_http)
+
+        account = BonkUser.objects.get(username="TestPlayer")
+        assert account.account_group_id is None
+        assert owner.get("/api/me/").json()["user"]["username"] == "TestPlayer"
+        assert client.get("/api/me/").status_code == 401  # Mallory's session ended
+        assert RememberedSignIn.objects.filter(user=account).count() == 1  # owner's only
+
+    def test_the_groups_own_browser_keeps_its_alt(self, client, mocked_http):
+        """The owner signs in to their main (trusting this browser), adds a
+        new alt by friend request, then signs in to the alt with its password
+        here: nothing to take back."""
+        main_answer = load_bonk_fixture("login_success")
+        main_answer.update(username="MainOne", id=7654321)
+        mocked_http.post(LOGIN_URL, json=main_answer)
+        client.post("/login/", {"username": "MainOne", "password": "pw"})
+        claim = _start(client, name="TestPlayer", add="1")
+        self._prove(claim)
+        _status(client, claim)
+        account = BonkUser.objects.get(username="TestPlayer")
+        group_id = account.account_group_id
+        assert group_id is not None
+
+        self._password_login(client, mocked_http)
+
+        account.refresh_from_db()
+        assert account.account_group_id == group_id
