@@ -104,6 +104,14 @@ _REFUSALS = {
 # and restarted it, which is why 2026-11-09 had outages of over an hour.
 # 17 minutes leaves room for clock and network differences.
 LOGIN_RATE_LIMIT_PAUSE = 17 * 60.0
+# But on 2026-11-24 the first login after a 17-minute pause was refused three
+# times running (19:50, 20:39 and 21:00 UTC), with no Bonkverse calls during
+# the pauses: after a burst, bonk.io's block can outlast 15 minutes (or
+# another service on the shared IP keeps restarting it). Each early try
+# spends a real person's login and restarts the block, so a refusal right
+# after a pause waits longer: 17, 30, 45, then 60 minutes, back to 17 once a
+# login gets through (clear()).
+LOGIN_RATE_LIMIT_PAUSES = (17 * 60.0, 30 * 60.0, 45 * 60.0, 60 * 60.0)
 
 # Other scripts (friends.php, avatar_update.php) haven't been measured, so
 # they keep the doubling pause: 2, 4, 8, 16 minutes, then 30 at most, starting
@@ -111,18 +119,19 @@ LOGIN_RATE_LIMIT_PAUSE = 17 * 60.0
 RATE_LIMIT_COOLDOWN = 120.0  # the first pause
 RATE_LIMIT_COOLDOWN_MAX = 1800.0
 # How long a run of limits is remembered. A limit after this much quiet starts
-# again at RATE_LIMIT_COOLDOWN.
-RATE_LIMIT_STRIKE_MEMORY = 3600
+# again at the first pause. Longer than the longest login pause.
+RATE_LIMIT_STRIKE_MEMORY = 2 * 3600
 
 
 def backoff_seconds(strikes: int, script: str | None = None) -> float:
     """The pause after `strikes` limits in a row for `script`.
 
-    login_legacy.php: always LOGIN_RATE_LIMIT_PAUSE. Others: 120, 240, 480, ...
-    up to 1800.
+    login_legacy.php: LOGIN_RATE_LIMIT_PAUSES (17, 30, 45, then 60 minutes).
+    Others: 120, 240, 480, ... up to 1800.
     """
     if script == LOGIN_SCRIPT:
-        return LOGIN_RATE_LIMIT_PAUSE
+        step = min(max(strikes, 1), len(LOGIN_RATE_LIMIT_PAUSES)) - 1
+        return LOGIN_RATE_LIMIT_PAUSES[step]
     return min(RATE_LIMIT_COOLDOWN * 2 ** max(strikes - 1, 0), RATE_LIMIT_COOLDOWN_MAX)
 
 
@@ -225,11 +234,19 @@ class _Cooldown:
 
 
 class _Cooldowns:
-    """The cooldown for each bonk.io script, sharing one clock and store."""
+    """The cooldown for each bonk.io script, sharing one clock and store.
 
-    def __init__(self, clock=time.time, store=None):
+    With `django_cache` (the process-wide `rate_limit_cooldowns`), the first
+    read or write connects to Django's cache (Redis in production), so a
+    pause another process heard applies here before this process has called
+    bonk.io itself. Before 2026-11-24 only `get_client()` connected it, so a
+    fresh worker asking "is bonk.io paused?" first was told no.
+    """
+
+    def __init__(self, clock=time.time, store=None, *, django_cache: bool = False):
         self._clock = clock
         self._store = store
+        self._django_cache = django_cache
         self._lock = threading.Lock()
         self._by_script: dict[str, _Cooldown] = {}
         for script in (
@@ -248,7 +265,23 @@ class _Cooldowns:
             for cooldown in self._by_script.values():
                 cooldown.use_store(store)
 
+    def _connect_django_cache(self) -> None:
+        """Use Django's cache as the store, once, when asked to and none is set."""
+        if self._store is not None or not self._django_cache:
+            return
+        try:
+            from django.conf import settings
+
+            if not settings.configured:
+                return
+            from django.core.cache import cache
+        except Exception:  # no Django here: this process's copy still applies
+            return
+        self.use_store(cache)
+
     def for_script(self, script: str) -> _Cooldown:
+        # Outside the lock: use_store takes it too.
+        self._connect_django_cache()
         with self._lock:
             if script not in self._by_script:
                 self._by_script[script] = _Cooldown(script, self._clock, self._store)
@@ -277,7 +310,7 @@ class _Cooldowns:
             cooldown.reset()
 
 
-rate_limit_cooldowns = _Cooldowns()
+rate_limit_cooldowns = _Cooldowns(django_cache=True)
 
 
 @dataclass(frozen=True)
