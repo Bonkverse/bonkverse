@@ -221,6 +221,10 @@ ONE_CLICK_SIGN_IN_DAYS = int(os.getenv("ONE_CLICK_SIGN_IN_DAYS", "30"))
 BONK_BOT_USERNAME = os.getenv("BONK_BOT_USERNAME", "")
 BONK_BOT_PASSWORD = os.getenv("BONK_BOT_PASSWORD", "")
 
+# Refuse requests claiming to be a search engine's crawler that its DNS
+# doesn't confirm (core/search_crawlers.py). On unless set to "false".
+BLOCK_FAKE_SEARCH_CRAWLERS = os.getenv("BLOCK_FAKE_SEARCH_CRAWLERS", "true").lower() != "false"
+
 CLOUDFLARE_ZONE_ID = os.getenv("CLOUDFLARE_ZONE_ID", "")
 CLOUDFLARE_CACHE_API_TOKEN = os.getenv("CLOUDFLARE_CACHE_API_TOKEN", "")
 
@@ -362,6 +366,10 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     # WhiteNoise should come directly after SecurityMiddleware
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    # 403 for requests claiming to be Googlebot/Bingbot/... that the search
+    # engine's DNS doesn't confirm (core/search_crawlers.py). Early: before
+    # sessions and the database.
+    "core.search_crawlers.FakeSearchCrawlerMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
