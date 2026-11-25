@@ -105,3 +105,35 @@ The `worker` service uses `railway.worker.json` (set as its config file path in
 the service settings): the same Dockerfile, started with
 `celery -A bonk_skin_search worker --beat`, no healthcheck, one replica
 ([ADR 0010](../adr/0010-background-work-on-celery.md)).
+
+### Room-code sign-in service (`roombot`, experimental)
+
+Room-code sign-in ([ADR 0026](../adr/0026-room-code-sign-in.md)) needs the
+`roombot` service: a small Node app in `roombot/` that hosts the bonk.io rooms.
+It joins bonk.io **as a guest**, so it needs no bonk.io account or password.
+
+**The `roombot` service** (new service from this repo):
+
+- **Root directory:** `roombot`.
+- **Config file path:** `/roombot/railway.json`. That file builds
+  `roombot/Dockerfile`, runs **exactly one replica** (rooms live in memory),
+  and healthchecks `/health`.
+- **No public domain.** Bonkverse reaches it over Railway's private network.
+- **Variables:**
+  - `ROOMBOT_TOKEN`: a random secret of 32+ characters (for example
+    `openssl rand -hex 32`). It refuses to start without one.
+  - `PORT=8080`: the port it listens on, which `ROOMBOT_URL` below uses.
+
+**On `bonkverse` (web)**, as Railway reference variables, so nothing is copied
+by hand:
+
+| Variable | Value | Notes |
+|---|---|---|
+| `ROOMBOT_URL` | `http://${{roombot.RAILWAY_PRIVATE_DOMAIN}}:8080` | Where Bonkverse finds roombot. **Empty = room-code sign-in hidden** on the site. |
+| `ROOMBOT_TOKEN` | `${{roombot.ROOMBOT_TOKEN}}` | The same secret, so only Bonkverse can open, read and close rooms. |
+
+`ROOMBOT_TOKEN` isn't a bonk.io credential. Without it, anyone who could reach
+roombot could use up its rooms (bonk.io allows one IP about 5 rooms per
+5 minutes), read what's typed in them, or close them.
+
+The worker needs neither: the web service talks to roombot directly.

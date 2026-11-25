@@ -59,10 +59,14 @@ NODE_EXTRA_CA_CERTS=certs/sectigo-public-server-authentication-ca-dv-r36.pem \
 npm start                                 # listens on $PORT (8080)
 ```
 
-**Deploying:** run it as its own Railway service from this folder
-(`Dockerfile`), on the private network only.
-- **On roombot:** set `ROOMBOT_TOKEN` (32+ characters).
-- **On the Bonkverse web service:** set `ROOMBOT_URL` (the private address)
-  and the same `ROOMBOT_TOKEN`.
+**Deploying:** see "Room-code sign-in service" in
+[docs/operations/configuration.md](../docs/operations/configuration.md).
+In short:
+- **The service:** a new Railway service with root directory `roombot`,
+  config `/roombot/railway.json` (one replica, healthcheck `/health`), and
+  **no public domain**.
+- **On roombot:** set `ROOMBOT_TOKEN` (`openssl rand -hex 32`) and `PORT=8080`.
+- **On the web service:** set `ROOMBOT_URL=http://${{roombot.RAILWAY_PRIVATE_DOMAIN}}:8080`
+  and `ROOMBOT_TOKEN=${{roombot.ROOMBOT_TOKEN}}`.
 
-Room-code sign-in stays hidden on the site until both are set.
+Room-code sign-in stays hidden on the site until `ROOMBOT_URL` is set.
