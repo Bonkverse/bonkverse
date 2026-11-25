@@ -36,13 +36,14 @@ from datetime import timezone as dt_timezone
 from zoneinfo import ZoneInfo
 
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from integrations.bonk_api import FRIENDS_SCRIPT, BonkError, get_client, rate_limit_cooldowns
 
 from . import bot_account
 from .events import log_event
-from .models import LinkClaim
+from .models import BonkAccountLink, BonkUser, LinkClaim
 from .sign_in import sign_in_by_friend_request
 
 logger = logging.getLogger(__name__)
@@ -111,6 +112,34 @@ def _wait_text(seconds: int) -> str:
     return f"about {minutes} minute{'s' if minutes != 1 else ''}"
 
 
+def already_on_site(*, name: str = "", bonk_id: int | None = None) -> bool:
+    """Whether someone already uses this bonk.io account on Bonkverse: a site
+    account with the name, or an active link to the name or the id.
+
+    A friend request proves only that *someone* waiting on a claim for the
+    name received a request from it, not that the sender started that claim
+    (bonk.io's request carries no code). So it may only claim accounts no
+    one has here yet; owned ones sign in with their password, or with one
+    click on a browser they proved themselves on (ADR 0024, 2026-11-25).
+    """
+    match = Q()
+    if bonk_id is not None:
+        match |= Q(bonk_player__bonk_id=bonk_id)
+    if name:
+        match |= Q(bonk_player__username__iexact=name)
+    if match and BonkAccountLink.objects.filter(match, active=True).exists():
+        return True
+    return bool(name) and BonkUser.objects.filter(username__iexact=name).exists()
+
+
+def already_on_site_message(name: str) -> str:
+    return (
+        f"{name} is already on Bonkverse, so a friend request can't sign in to it. "
+        "Log in with its bonk.io password, or choose it under \u201cChoose an account\u201d "
+        "on a browser it used before."
+    )
+
+
 def start(request, name: str, *, add: bool) -> LinkClaim:
     """Start a claim for `name` from this browser. With `add`, the account
     joins the signed-in person's accounts when proven; otherwise the browser
@@ -131,6 +160,8 @@ def start(request, name: str, *, add: bool) -> LinkClaim:
     ).count()
     if recent >= CLAIMS_PER_NAME_PER_HOUR:
         raise ClaimProblem("Too many tries for that name. Wait a while and try again.")
+    if already_on_site(name=name):
+        raise ClaimProblem(already_on_site_message(name))
     paused = checks_paused_for()
     if paused:
         # A request sent now couldn't be read until the pause ends, and
@@ -189,6 +220,17 @@ def status(request, claim_id: int) -> dict:
         }
     if claim.status == LinkClaim.REFUSED:
         return {"status": "refused", "message": claim.problem or "That didn't work. Try again."}
+    if claim.status == LinkClaim.PROVEN and already_on_site(
+        name=claim.bonk_name or claim.name, bonk_id=claim.bonk_id
+    ):
+        # Owned since the claim started (or under another name): the request
+        # can't prove who's waiting here.
+        problem = already_on_site_message(claim.bonk_name or claim.name)
+        LinkClaim.objects.filter(pk=claim.pk, status=LinkClaim.PROVEN).update(
+            status=LinkClaim.REFUSED, problem=problem
+        )
+        log_event(None, "friend_request_claim_refused", claim_id=claim.pk, reason="owned")
+        return {"status": "refused", "message": problem}
     if claim.status == LinkClaim.PROVEN:
         _finish(request, claim)
     return {"status": "done", "username": claim.bonk_name or claim.name}

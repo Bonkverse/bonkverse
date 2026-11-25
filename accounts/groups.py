@@ -480,6 +480,22 @@ def make_main(request, account_id: int) -> None:
     log_event(current, "account_group_main_changed", account_id=account.pk, group_id=group.pk)
 
 
+def take_out(account: BonkUser) -> None:
+    """Take `account` out of its group, whatever browser asks: when a
+    password reclaims it from someone who claimed it by friend request
+    (sign_in._reclaim). No-op for an account with no group."""
+    with transaction.atomic():
+        locked = BonkUser.objects.select_for_update().get(pk=account.pk)
+        if locked.account_group_id is None:
+            return
+        group_id = locked.account_group_id
+        _leave(locked)
+    log_event(
+        account, "account_group_left", account_id=account.pk, group_id=group_id, reclaimed=True
+    )
+    account.refresh_from_db()
+
+
 def _leave(account: BonkUser) -> None:
     """Take a (locked) account out of its group: a new main if it was the
     main, and the group deleted when one member would be left."""

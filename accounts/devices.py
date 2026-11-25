@@ -264,3 +264,9 @@ def remove_remembered(user, row_id: int) -> bool:
     """Stop one-click sign-in for `user` on one browser. Returns whether it
     existed."""
     return bool(RememberedSignIn.objects.filter(user=user, pk=row_id).delete()[0])
+
+
+def forget_all_sign_ins(user) -> None:
+    """End one-click sign-in for `user` on every browser (a password just
+    reclaimed it from a friend-request claim)."""
+    RememberedSignIn.objects.filter(user=user).delete()
