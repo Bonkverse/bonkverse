@@ -34,6 +34,7 @@ header, the owner's privacy note and the tab bar, on Bonkverse/ui components
         <h1 class="pv-hero__name">{{ username }}</h1>
       {% endif %}
       <div class="pv-pills">
+        {% if role %}<span class="bv-pill bv-pill--accent" title="{{ role.description }}">{{ role.label }}</span>{% endif %}
         {% if summary and shown.level_history and not level_in_body %}<span class="bv-pill">Level {{ summary.current_level }}</span>{% endif %}
         {% if account_age %}
           <span class="bv-pill" title="Estimated from the account ID">
@@ -50,6 +51,7 @@ header, the owner's privacy note and the tab bar, on Bonkverse/ui components
           <span class="bv-pill pv-pill--quiet">Seen in friend lists</span>
         {% endif %}
       </div>
+      {% if role %}<p class="pv-small pv-role">{{ role.description }}</p>{% endif %}
       {% if also_plays_as %}
         {# The group chose to show its accounts (RFC-0003 phase 5; off by default). #}
         <p class="pv-small pv-also">Also plays as

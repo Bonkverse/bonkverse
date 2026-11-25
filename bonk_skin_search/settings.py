@@ -21,7 +21,17 @@ load_dotenv()
 # Environment
 # =========================================================
 
-ENV = os.getenv("ENV", "local")
+# ENV must be set, to one of these. A deploy that lost or misspelled it used
+# to start anyway as a development site: DEBUG on, cookies without Secure, and
+# bonk.io tokens encrypted with the public development key. Local development
+# sets ENV=local in .env (.env.example); the Docker build sets ENV=build.
+KNOWN_ENVS = ("production", "local", "ci", "build")
+ENV = os.getenv("ENV", "")
+if ENV not in KNOWN_ENVS:
+    raise RuntimeError(
+        f"ENV must be one of {', '.join(KNOWN_ENVS)}, got {ENV!r}. "
+        "For local development put ENV=local in .env (see .env.example)."
+    )
 IS_PROD = ENV == "production"
 DEBUG = not IS_PROD
 
@@ -36,15 +46,22 @@ sentry_sdk.init(
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 if not SECRET_KEY:
-    if os.getenv("DJANGO_ALLOW_DUMMY_SECRET") == "true":
+    # Only for building the image (collectstatic), never for a running site.
+    if os.getenv("DJANGO_ALLOW_DUMMY_SECRET") == "true" and not IS_PROD:
         SECRET_KEY = "build-time-secret-key"
     else:
         raise RuntimeError("SECRET_KEY is not set")
 
+# Keys anyone can read: the build dummy, .env.example's, and any
+# "django-insecure-" key (an old one is in this repo's git history). With one
+# of these, anyone could forge signed cookies, so production won't start.
+PUBLIC_SECRET_KEYS = {"build-time-secret-key", "dev-insecure-secret-key"}
+if IS_PROD and (SECRET_KEY in PUBLIC_SECRET_KEYS or SECRET_KEY.startswith("django-insecure-")):
+    raise RuntimeError("SECRET_KEY is a publicly known key; set a new random one")
+
 # Keys that encrypt stored bonk.io tokens (core/token_crypto.py, ADR 0016):
-# comma-separated Fernet keys, newest first. Required in production, even
-# with DJANGO_ALLOW_DUMMY_SECRET (the image sets it for good, not only while
-# building); the build itself runs without ENV=production. Never derived
+# comma-separated Fernet keys, newest first. Required in production; the
+# image build runs with ENV=build and doesn't need them. Never derived
 # from SECRET_KEY. Never print or log them.
 BONK_TOKEN_KEYS = token_crypto.parse_keys(os.getenv("BONK_TOKEN_KEYS"), required=IS_PROD)
 

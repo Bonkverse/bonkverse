@@ -25,6 +25,15 @@ def test_serves_file_with_cache_headers(client, media_file):
     assert response["Cache-Control"] == "public, max-age=3600, s-maxage=604800"
 
 
+def test_files_are_served_with_a_sandbox_csp(client, media_file):
+    """A skin SVG opened directly must not be able to run script on the site."""
+    csp = client.get(media_file)["Content-Security-Policy"]
+
+    assert "sandbox" in csp
+    assert "default-src 'none'" in csp
+    assert "script-src" not in csp  # falls back to default-src 'none'
+
+
 def test_missing_file_is_404_and_not_cacheable(client, media_file):
     response = client.get("/media/skins/999.png")
 

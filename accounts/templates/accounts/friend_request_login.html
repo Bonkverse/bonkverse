@@ -28,6 +28,11 @@
         <li>In bonk.io, signed in as that account, send a friend request to <strong>{{ bot_name }}</strong> within 10 minutes.</li>
         <li>This page notices it within half a minute and {% if adding %}adds the account{% else %}signs you in{% endif %}.</li>
       </ol>
+      {# A friend request to the bot proves whoever started the claim, not who sent it (accounts/link_claims.py), so warn against sending one because someone asked. #}
+      <div class="bv-notice bv-notice--danger" role="note">
+        <i data-lucide="triangle-alert" aria-hidden="true"></i>
+        <span><strong>Only send this friend request if you started this yourself.</strong> If someone asks you to friend-request {{ bot_name }} (in a game, on Discord, for a giveaway), don't: it can sign them in to your Bonkverse account.</span>
+      </div>
       <button type="submit" class="bv-btn bv-btn--primary">Continue</button>
     </form>
   {% else %}

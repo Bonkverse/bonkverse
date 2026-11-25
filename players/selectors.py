@@ -53,6 +53,7 @@ from skins.services import code_digest
 from .models import BonkPlayer, FlashFriend, FlashFriendship, Friendship
 
 from . import calculator, charts, search
+from .roles import role_for
 from .models import ProfileVisibility
 
 # Avatar image routes (players/urls.py), by image kind.
@@ -266,6 +267,8 @@ def profile_base(username, viewer, active=""):
         "bonk_player": bonk_player,
         "account_age": calculator.account_age(bonk_player.bonk_id) if bonk_player else None,
         "username": name,
+        # A label like "Bot" and what it means, for a few known names (roles.py).
+        "role": role_for(name),
         "account": account,
         # "Also plays as…": the account's other bonk.io accounts, when its
         # group chose to show them (RFC-0003 phase 5); else [].

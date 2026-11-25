@@ -8,6 +8,13 @@ fragments (#id) — any external url() is an outbound request to an
 attacker-controlled server (tracking/exfil). <use> may only reference
 local fragments, never an external document. Plain shapes and <image>
 references (https or raster data: URIs) are allowed.
+
+The document must be an SVG: its root is <svg> in the SVG namespace, and no
+element may be in the XHTML or MathML namespace. A file served as
+image/svg+xml whose root is XHTML is rendered by browsers as an HTML page, and
+HTML has script vectors this list doesn't cover (<form action="javascript:">).
+/media/ also serves files with a sandbox CSP (skins/views/media.py), so a
+file that got past these rules still couldn't run script there.
 """
 
 import re
@@ -41,8 +48,14 @@ BLOCKED_ELEMENTS = {
     "link",
 }
 
-# Attributes whose value is a URI and must be scheme-checked.
-URI_ATTRS = {"href", "src"}
+SVG_NS = "http://www.w3.org/2000/svg"
+# Namespaces whose elements browsers render as HTML/MathML inside an XML
+# document: never part of a skin.
+BLOCKED_NAMESPACES = {"http://www.w3.org/1999/xhtml", "http://www.w3.org/1998/Math/MathML"}
+
+# Attributes whose value is a URI and must be scheme-checked. action and
+# formaction submit a form to a javascript: URL on click.
+URI_ATTRS = {"href", "src", "action", "formaction"}
 
 # data: URIs allowed only for raster images on <image> (never image/svg+xml).
 RASTER_DATA_RE = re.compile(r"^data:image/(png|jpe?g|gif|webp|bmp|avif);")
@@ -62,7 +75,12 @@ CSS_BLOCKED_TOKENS = (
     "@import",
     "-moz-binding",
     "behavior:",
+    # image-set() takes quoted URLs, not url(), so the url() check misses it.
+    "image-set(",
 )
+
+# CSS escapes: "\\75 rl(" is "url(", "\\@import" is "@import".
+CSS_ESCAPE_RE = re.compile(r"\\([0-9a-fA-F]{1,6})[ \t\n\r\f]?|\\(.)", re.DOTALL)
 
 # Every url(...) target in CSS must be a local fragment; anything else is a
 # request to an external server. Checked on the obfuscation-stripped string,
@@ -107,8 +125,22 @@ def _uri_is_safe(value, allow_raster_data):
     return False
 
 
+def _decode_css_escapes(css):
+    def char(m):
+        if m.group(1):
+            code = int(m.group(1), 16)
+            return chr(code) if 0 < code <= 0x10FFFF else "\ufffd"
+        return m.group(2)
+
+    return CSS_ESCAPE_RE.sub(char, css)
+
+
+def _namespace(name):
+    return name[1:].split("}", 1)[0] if isinstance(name, str) and name.startswith("{") else ""
+
+
 def _css_is_safe(css):
-    norm = _strip_obfuscation(css)
+    norm = _strip_obfuscation(_decode_css_escapes(css or ""))
     if any(tok in norm for tok in CSS_BLOCKED_TOKENS):
         return False
     for m in CSS_URL_RE.finditer(norm):
@@ -146,8 +178,13 @@ def validate_svg_upload(content):
     except ET.ParseError as e:
         raise UnsafeSVGError(f"malformed XML: {e}") from e
 
+    if root.tag != f"{{{SVG_NS}}}svg":
+        raise UnsafeSVGError("the root element must be <svg> in the SVG namespace")
+
     for el in root.iter():
         tag = _localname(el.tag)
+        if _namespace(el.tag) in BLOCKED_NAMESPACES:
+            raise UnsafeSVGError(f"HTML/MathML element <{tag}> is not allowed in a skin")
         if tag in BLOCKED_ELEMENTS:
             raise UnsafeSVGError(f"blocked element <{tag}>")
 
@@ -165,8 +202,14 @@ def validate_svg_upload(content):
                     raise UnsafeSVGError(f"unsafe URI in '{name}' on <{tag}>")
             if name == "style" and not _css_is_safe(value):
                 raise UnsafeSVGError(f"unsafe CSS in style attribute on <{tag}>")
+            # Presentation attributes take url() too: fill="url(https://...)".
+            if name != "style" and "url(" in _strip_obfuscation(_decode_css_escapes(value)):
+                if not _css_is_safe(value):
+                    raise UnsafeSVGError(f"unsafe url() in '{name}' on <{tag}>")
 
-        if tag == "style" and el.text and not _css_is_safe(el.text):
+        # All of the element's text, not just .text: in <style>a{}<x/>@import ...
+        # the CSS after <x/> is <x/>'s tail, and browsers apply it.
+        if tag == "style" and not _css_is_safe("".join(el.itertext())):
             raise UnsafeSVGError("unsafe CSS in <style> element")
 
     return content

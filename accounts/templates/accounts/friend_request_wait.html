@@ -23,6 +23,11 @@
         <li>Send a friend request to <strong>{{ bot_name }}</strong>.</li>
         <li>Keep this page open. It checks every few seconds.</li>
       </ol>
+      {# A friend request to the bot proves whoever started the claim, not who sent it (accounts/link_claims.py), so warn against sending one because someone asked. #}
+      <div class="bv-notice bv-notice--danger" role="note">
+        <i data-lucide="triangle-alert" aria-hidden="true"></i>
+        <span><strong>Only send this friend request if you started this yourself.</strong> If someone asks you to friend-request {{ bot_name }} (in a game, on Discord, for a giveaway), don't: it can sign them in to your Bonkverse account.</span>
+      </div>
       <p class="bv-status" role="status" aria-live="polite" data-claim-message>Waiting for the friend request · <span data-claim-countdown>10:00</span> left</p>
       {# bonk.io is pausing Bonkverse's calls: the request can't be read until it ends, and the claim waits (link_claims.PAUSE_GRACE). friend_request.js fills in the time. #}
       <p class="bv-notice" role="status" data-claim-paused {% if not state.paused %}hidden{% endif %}>
