@@ -22,7 +22,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from core.background import enqueue
-from core.bonk import BonkUsername
+from core.bonk import BonkUsername, same_name
 from core.token_crypto import bonk_session
 from integrations.bonk_api import BonkLoginResult
 
@@ -241,8 +241,18 @@ def site_account_for(username: BonkUsername) -> BonkUser:
     one account. An exact-spelling match wins if older data holds more than
     one. An existing account keeps its stored spelling: skins and other rows
     refer to it by that name.
+
+    Only capitalization is ignored (core.bonk.usernames.fold). `__iexact`
+    alone compares with Postgres's UPPER(), which also turns "ı" into "I"
+    and "ſ" into "S": a bonk.io account named "admın" would be signed in to
+    the site account "admin". `__iexact` narrows the search; `same_name`
+    decides.
     """
-    matches = list(BonkUser.objects.filter(username__iexact=username.value).order_by("pk"))
+    matches = [
+        user
+        for user in BonkUser.objects.filter(username__iexact=username.value).order_by("pk")
+        if same_name(user.username, username.value)
+    ]
     if len(matches) > 1:
         # No names in the log line; the count and ids are enough to find them.
         logger.warning(

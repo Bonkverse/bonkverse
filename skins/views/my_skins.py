@@ -81,7 +81,9 @@ def bulk_delete_skins(request):
     if len(ids) > MAX_BULK_DELETE:
         return JsonResponse({"ok": False, "error": "too_many"}, status=400)
 
-    owned = Skin.objects.made_by(request.user.username).filter(id__in=ids)
-    deleted_ids = list(owned.values_list("id", flat=True))
-    owned.delete()
+    # made_by narrows the search in the database; is_owned_by decides, the
+    # same check edit and delete make (made_by alone matches more loosely).
+    candidates = Skin.objects.made_by(request.user.username).filter(id__in=ids)
+    deleted_ids = [skin.id for skin in candidates if skin.is_owned_by(request.user)]
+    Skin.objects.filter(id__in=deleted_ids).delete()
     return JsonResponse({"ok": True, "data": {"deleted_ids": deleted_ids}})

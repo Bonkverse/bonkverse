@@ -2,7 +2,15 @@
 
 import pytest
 
-from core.bonk import AvatarSlot, BonkSession, BonkUsername, InvalidUsername, SkinCode
+from core.bonk import (
+    AvatarSlot,
+    BonkSession,
+    BonkUsername,
+    InvalidUsername,
+    SkinCode,
+    fold,
+    same_name,
+)
 from core.bonk.session import TOKEN_TTL_SECONDS
 
 
@@ -67,6 +75,33 @@ class TestBonkUsername:
     def test_key_ignores_case_but_keeps_spaces(self):
         assert BonkUsername("Saucy").key == BonkUsername("sAUCY").key
         assert BonkUsername(" Saucy").key != BonkUsername("Saucy").key
+
+    @pytest.mark.parametrize(
+        "lookalike,real",
+        [
+            ("adm\u0131n", "admin"),  # dotless i: Postgres UPPER() makes it "I"
+            ("\u017faucy", "saucy"),  # long s: UPPER() and casefold() make it "S"/"s"
+            ("Foo\u212a", "Fook"),  # Kelvin sign: lower() and casefold() make it "k"
+            ("Foo\u0130", "Fooi"),  # dotted capital I: a database's lower() makes it "i"
+            ("Stra\u00dfe", "Strasse"),  # sharp s: casefold() makes it "ss"
+        ],
+    )
+    def test_a_lookalike_letter_is_another_name(self, lookalike, real):
+        """Only A-Z fold. lower(), casefold() and the database's UPPER() each
+        turn some of these into English letters; a name that is only almost
+        someone's must not be treated as theirs (audit, 2026-11-25)."""
+        assert not same_name(lookalike, real)
+        assert BonkUsername(lookalike).key != BonkUsername(real).key
+
+    def test_fold_lowercases_a_to_z_and_nothing_else(self):
+        assert fold("The Saucy_Tulip 9") == "the saucy_tulip 9"
+        assert fold("\u00c9A\u0130\u212a") == "\u00c9a\u0130\u212a"
+
+    def test_same_name_ignores_only_capitalization(self):
+        assert same_name("The Saucy Tulip", "the SAUCY tulip")
+        assert not same_name("The Saucy Tulip", "The Saucy  Tulip")
+        assert not same_name("Jos\u00e9", "JOS\u00c9")  # not an English letter: kept as is
+        assert not same_name(None, "x") and not same_name("x", None)
 
     def test_model_validator_uses_the_same_rules(self):
         from django.core.exceptions import ValidationError

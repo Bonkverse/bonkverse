@@ -17,7 +17,7 @@ from core.bonk.skin_codes import (
     SkinLayer,
 )
 from core.bonk.slots import AvatarSlot
-from core.bonk.usernames import BonkUsername, InvalidUsername
+from core.bonk.usernames import BonkUsername, InvalidUsername, fold, same_name
 
 __all__ = [
     "DEFAULT_SKIN_CODE",
@@ -29,4 +29,6 @@ __all__ = [
     "ParsedSkin",
     "SkinCode",
     "SkinLayer",
+    "fold",
+    "same_name",
 ]

@@ -165,6 +165,37 @@ class TestSiteAccountMatching:
         assert BonkUser.objects.filter(username="TestPlayer").exists()
         assert BonkUser.objects.count() == 2
 
+    @pytest.mark.parametrize(
+        "bonk_name,existing_name",
+        [
+            # Postgres UPPER(), which `__iexact` compares with, turns the
+            # dotless i into "I" and the long s into "S".
+            ("adm\u0131n", "admin"),
+            ("Te\u017ftPlayer", "TestPlayer"),
+        ],
+    )
+    def test_a_lookalike_bonk_name_is_never_signed_in_to_the_real_account(
+        self, client, mocked_http, bonk_name, existing_name
+    ):
+        """Only capitalization is ignored when a login finds its site
+        account. A bonk.io account whose name differs by a look-alike letter
+        gets its own account, never the (possibly staff) one it resembles
+        (audit, 2026-11-25)."""
+        real = UserFactory(username=existing_name, is_staff=True)
+        mocked_http.replace(
+            "POST",
+            BONK_LOGIN_URL,
+            json={**load_bonk_fixture("login_success"), "username": bonk_name, "id": 7654321},
+        )
+
+        _post_login(client, username=bonk_name)
+
+        signed_in = BonkUser.objects.get(pk=client.session["_auth_user_id"])
+        assert signed_in.pk != real.pk
+        assert signed_in.username == bonk_name
+        assert not signed_in.is_staff
+        assert not BonkAccountLink.objects.filter(user=real).exists()
+
 
 class TestFailedLogin:
     def test_wrong_password_rerenders_form_without_logging_in(self, client, mocked_http):
