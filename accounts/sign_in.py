@@ -18,8 +18,10 @@ import logging
 
 from django.conf import settings
 from django.contrib.auth import login
+from django.db import transaction
 from django.utils import timezone
 
+from core.background import enqueue
 from core.bonk import BonkUsername
 from core.token_crypto import bonk_session
 from integrations.bonk_api import BonkLoginResult
@@ -71,8 +73,11 @@ def sign_in(
     previous_lists = groups.browser_lists(request)
 
     user = site_account_for(result.username)
+    reclaimed = _reclaim(request, user, result.bonk_id, previous_lists)
     login(request, user)
     groups.after_login(request, previous, previous_lists, add=add)
+    if reclaimed:
+        _end_other_sessions(request, user)
     if add:
         log_event(user, "user_logged_in", added=True)
     else:
@@ -112,6 +117,49 @@ def sign_in(
     if settings.SYNC_FRIENDS_ON_LOGIN and link is not None:
         queue_friend_sync(request, link.id, result)
     return user
+
+
+def _reclaim(request, user: BonkUser, bonk_id: int | None, previous_lists) -> bool:
+    """The password beats an earlier friend-request claim (ADR 0024).
+
+    A friend request can't show who started the claim it proves, so an
+    account only ever proven that way may have been claimed by someone else.
+    When its password signs in on a browser where its group's main isn't
+    signed in and that the group doesn't trust, it leaves its group and every other browser's hold on it ends: one-click
+    sign-ins here and the other sessions (after login, on the worker).
+
+    Returns:
+        Whether it was reclaimed.
+    """
+    if bonk_id is None:
+        return False
+    links = BonkAccountLink.objects.filter(user=user, bonk_player__bonk_id=bonk_id, active=True)
+    if not links.exists() or links.filter(password_proven_at__isnull=False).exists():
+        return False  # new here, or its password signed in before
+    if user.account_group_id:
+        password_ids, _ = previous_lists
+        main_id = user.account_group.main_id
+        if main_id in password_ids or devices.is_trusted(request, user.account_group_id):
+            return False  # its group's own browser: the owner and their alt
+    groups.take_out(user)
+    devices.forget_all_sign_ins(user)
+    log_event(user, "account_reclaimed_by_password")
+    return True
+
+
+def _end_other_sessions(request, user: BonkUser) -> None:
+    """After the reclaim commits, end the other sessions on the worker; if
+    the work can't be queued, here and now (it's what stops the claimer)."""
+    from . import sessions, tasks  # tasks imports link_claims, which imports this module
+
+    request.session.save()
+    keep = request.session.session_key
+
+    def run():
+        if not enqueue(tasks.end_other_sessions, user.pk, keep):
+            sessions.end_other_sessions(user.pk, keep)
+
+    transaction.on_commit(run)
 
 
 def sign_in_by_friend_request(request, *, bonk_id: int, bonk_name: str, add: bool) -> BonkUser:

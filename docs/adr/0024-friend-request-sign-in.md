@@ -49,6 +49,27 @@ the account to a bot bonk.io account, which only its owner can do.
   checking resumes (and to resend the request if it's gone: BonxBot deletes
   requests older than 11 minutes), and no new claim starts during a pause.
 
+- **Only accounts no one has here yet** (security fix, 2026-11-25). A
+  friend request carries only the sender's name, id and time, so it proves
+  that *someone* waiting on a claim for that name received a request from
+  it, not that the sender started the claim. Reported in Discord: a person
+  waiting on a claim for your name could sign in as you when you friended
+  the bot for any reason (BonxBot's `/link` uses the same bot). So a claim
+  can't start for a name already on Bonkverse (a site account or an active
+  link), and a proven claim is refused if the account is owned by then
+  (`link_claims.already_on_site`). Owned accounts sign in with their
+  password, or with one click on a browser they proved themselves on.
+  This replaces "a friend-request sign-in to the main unlocks the group".
+- **The password takes it back** (`sign_in._reclaim`). When an account only
+  ever proven by friend request signs in with its password, on a browser
+  where its group's main isn't signed in and that the group doesn't trust,
+  it leaves its group, its one-click sign-ins end, and every other session
+  holding it ends (`tasks.end_other_sessions`, on the worker). A new
+  account claimed first by someone else therefore goes back to its owner.
+- Phase 7 sends BonxBot's `/link` through the site's claims, so a `/link`
+  and another claim for the same name meet the "two pending claims for one
+  name are both refused" rule instead of feeding each other.
+
 **Consequences.**
 - Anyone who can send a friend request from an account can sign in as it,
   the same trust bonk.io itself gives that session. Someone signed in to a
