@@ -248,11 +248,17 @@ def site_account_for(username: BonkUsername) -> BonkUser:
     the site account "admin". `__iexact` narrows the search; `same_name`
     decides.
     """
-    matches = [
-        user
-        for user in BonkUser.objects.filter(username__iexact=username.value).order_by("pk")
-        if same_name(user.username, username.value)
-    ]
+    candidates = list(BonkUser.objects.filter(username__iexact=username.value).order_by("pk"))
+    matches = [user for user in candidates if same_name(user.username, username.value)]
+    if len(matches) != len(candidates):
+        # A bonk.io name that the database's case rule matches to an account
+        # it isn't: either someone trying a look-alike name, or (if bonk.io
+        # itself treats the two as one) a real player split in two here.
+        # Either way someone should look. Ids only, never names.
+        logger.warning(
+            "login name matched site accounts %s only by a look-alike letter; not signed in to them",
+            [user.pk for user in candidates if user not in matches],
+        )
     if len(matches) > 1:
         # No names in the log line; the count and ids are enough to find them.
         logger.warning(

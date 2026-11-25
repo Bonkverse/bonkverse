@@ -377,6 +377,51 @@ def test_a_lookup_row_for_another_name_is_not_that_player(api, mocked_http):
     assert response.json()["error"] == "player_not_found"
 
 
+def test_a_lookalike_name_in_a_bulk_lookup_says_nothing_about_the_real_player(api, mocked_http):
+    """Its entry is "not found" and nothing else: not the real player's
+    account, DBID, profile link or skin."""
+    spelling = "Foo\u212a"
+    UserFactory(username="Fook")
+    BonkPlayer.objects.create(bonk_id=13159907, username="Fook")
+    record_worn_skin(13159907, SKIN_CODE, WornSkinSource.LOGIN)
+    mock_lookup(mocked_http, [lookup_row("Fook")])
+
+    body = api.post("/api/v1/lookup/players/", {"usernames": [spelling, "fOOK"]}).json()
+    fake, real = body["data"]["players"]
+
+    assert fake == {
+        "requested": spelling,
+        "username": spelling,
+        "status": "not_found",
+        "level": None,
+        "games": None,
+        "account": None,
+        "bonkverse_account": False,
+        "profile_url": None,
+        "skin": None,
+    }
+    assert real["status"] == "found" and real["username"] == "Fook"
+    assert real["bonkverse_account"] is True
+    assert real["account"]["dbid"] == 13159907
+    assert real["skin"] is not None
+
+
+def test_an_older_lookalike_account_doesnt_unhide_the_real_players_level(api, mocked_http):
+    """Accounts were keyed by lower(), where the older account won: a
+    look-alike made first would have answered for the real one's privacy."""
+    UserFactory(username="Foo\u212a")
+    owner = UserFactory(username="Fook")
+    ProfileVisibility.objects.create(user=owner, level_history=False)
+    mock_lookup(mocked_http, [lookup_row("Fook")])
+    mocked_http.get(f"{REPLAYS}/api/player/Fook", json=profile_json("Fook"))
+
+    entry = api.get("/api/v1/players/Fook/").json()["data"]
+    history = api.get("/api/v1/players/Fook/level-history/")
+
+    assert entry["status"] == "private" and entry["level"] is None
+    assert history.status_code == 403
+
+
 # ── Bulk lookup ──────────────────────────────────────────────────────────────
 
 

@@ -501,6 +501,33 @@ def test_lookalike_spelling_the_replay_site_accepts_cant_read_a_private_profile(
 
 
 @pytest.mark.django_db
+def test_a_replay_profile_that_doesnt_say_whose_it_is_is_refused(client, mocked_http):
+    """The check compares the profile's `username` with the name asked for.
+    An answer without one must not pass it by default."""
+    _member_who_hid_everything("Fooi")
+    spelling = "Foo" + DOTTED_CAPITAL_I
+    nameless = {k: v for k, v in profile_json("Fooi").items() if k != "username"}
+    mock_player(mocked_http, spelling, body=nameless)
+
+    _assert_nothing_hidden_is_shown(client, spelling)
+
+
+@pytest.mark.django_db
+def test_a_lookalike_player_doesnt_stand_in_for_or_hide_the_real_one(client, mocked_http):
+    """Both spellings lower() to the same text, and the newer row used to win
+    the shared key."""
+    from players.models import BonkPlayer
+    from skins.selectors import bonk_players_named
+
+    real = BonkPlayer.objects.create(bonk_id=1, username="Fook")
+    fake = BonkPlayer.objects.create(bonk_id=2, username="Foo" + KELVIN_SIGN)
+
+    found = bonk_players_named(["fOOK", fake.username])
+
+    assert found == {"fook": real, "foo" + KELVIN_SIGN: fake}
+
+
+@pytest.mark.django_db
 def test_other_capitalization_still_opens_the_profile_with_its_privacy(client, mocked_http):
     owner = _member_who_hid_everything("Fook")
     mock_player(mocked_http, "fOOK", body=profile_json("Fook"))

@@ -116,7 +116,10 @@ def replay_profile(username):
     profile, error = _cached(
         _cache_key("profile", username), lambda: get_player_configured(username)
     )
-    if profile is not None and not same_name(profile.get("username") or username, username):
+    # The replay site always says whose profile it is (`username`). One that
+    # doesn't is refused too, so this check can't be switched off by an
+    # answer that leaves the name out.
+    if profile is not None and not same_name(profile.get("username"), username):
         return None, PlayerError.NOT_FOUND
     return profile, error
 
@@ -158,7 +161,9 @@ def worn_skins(names):
         .values_list("username", "worn_skin_code", "worn_skin_seen_at")
     )
     for username, skin_code, seen_at in rows:
-        found.setdefault(username.lower(), {"skin_code": skin_code, "seen_at": seen_at})
+        found.setdefault(
+            username.lower(), {"username": username, "skin_code": skin_code, "seen_at": seen_at}
+        )
     return found
 
 
@@ -245,9 +250,7 @@ def profile_base(username, viewer, active=""):
     profile, error = replay_profile(username)
     account = site_account(username)
     lookup_name = (profile or {}).get("username") or (account.username if account else username)
-    bonk_player = bonk_players_named([lookup_name]).get(lookup_name.lower())
-    if bonk_player is not None and not same_name(bonk_player.username, lookup_name):
-        bonk_player = None
+    bonk_player = bonk_players_named([lookup_name]).get(fold(lookup_name))
     if (
         profile is None
         and account is None
@@ -494,7 +497,7 @@ def viewer_player(viewer):
     )
     if link:
         return link.bonk_player
-    return bonk_players_named([viewer.username]).get(viewer.username.lower())
+    return bonk_players_named([viewer.username]).get(fold(viewer.username))
 
 
 def _joined(bonk_id):
@@ -847,7 +850,7 @@ def _directory(get):
                 r["username"],
                 stats=r,
                 member=r["username"].lower() in members,
-                bonk_player=bonk.get(r["username"].lower()),
+                bonk_player=bonk.get(fold(r["username"])),
             )
             for r in rows
         ]

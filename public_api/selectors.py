@@ -24,9 +24,9 @@ from datetime import UTC
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
-from django.db.models.functions import Lower
+from django.db.models.functions import Collate, Lower
 
-from core.bonk import same_name
+from core.bonk import fold, same_name
 from players.models import BonkPlayer
 
 from integrations.replays import LOOKUP_MAX, PlayerError, lookup_players_configured
@@ -65,25 +65,33 @@ def valid_username(raw) -> str | None:
     return raw
 
 
+def _folded(field):
+    """`field` lowercased A-Z only, in SQL: core.bonk.fold's rule. Under the
+    "C" collation Postgres's lower() changes no other letter."""
+    return Lower(Collate(field, "C"))
+
+
 def accounts_named(names) -> dict:
-    """{lower name: BonkUser} for the Bonkverse accounts named like these."""
-    lowered = {n.lower() for n in names}
-    if not lowered:
+    """{fold(name): BonkUser} for the Bonkverse accounts with these names,
+    ignoring capitalization only (core.bonk.fold). Look one up with
+    `.get(fold(name))`."""
+    wanted = {fold(n) for n in names}
+    if not wanted:
         return {}
     users = (
         get_user_model()
-        .objects.annotate(lname=Lower("username"))
-        .filter(lname__in=lowered)
+        .objects.annotate(fname=_folded("username"))
+        .filter(fname__in=wanted)
         .order_by("id")
     )
     found = {}
     for user in users:
-        found.setdefault(user.lname, user)
+        found.setdefault(fold(user.username), user)
     return found
 
 
 def hidden_level_names(accounts: dict) -> set[str]:
-    """Lowercased names whose owner hid their Level section."""
+    """Folded names (accounts_named's keys) whose owner hid their Level section."""
     hidden_user_ids = set(
         ProfileVisibility.objects.filter(
             user__in=list(accounts.values()), level_history=False
@@ -93,17 +101,18 @@ def hidden_level_names(accounts: dict) -> set[str]:
 
 
 def bonk_accounts_named(names) -> dict:
-    """{lower name: BonkPlayer} for bonk.io accounts Bonkverse knows (from
-    friend lists and logins). The newest record wins if two share a name."""
-    lowered = {n.lower() for n in names}
-    if not lowered:
+    """{fold(name): BonkPlayer} for bonk.io accounts Bonkverse knows (from
+    friend lists and logins), ignoring capitalization only. The newest
+    record wins if two share a name."""
+    wanted = {fold(n) for n in names}
+    if not wanted:
         return {}
     players = (
-        BonkPlayer.objects.annotate(lname=Lower("username"))
-        .filter(lname__in=lowered)
+        BonkPlayer.objects.annotate(fname=_folded("username"))
+        .filter(fname__in=wanted)
         .order_by("last_seen")
     )
-    return {p.lname: p for p in players}
+    return {fold(p.username): p for p in players}
 
 
 def _account(bonk_player) -> dict | None:
@@ -178,8 +187,8 @@ def player_entries(names, build_url) -> list[dict]:
     (ignoring case) dropped. `build_url(path)` makes absolute URLs."""
     seen, unique = set(), []
     for name in names:
-        if name.lower() not in seen:
-            seen.add(name.lower())
+        if fold(name) not in seen:
+            seen.add(fold(name))
             unique.append(name)
     accounts = accounts_named(unique)
     hidden = hidden_level_names(accounts)
@@ -189,16 +198,24 @@ def player_entries(names, build_url) -> list[dict]:
 
     entries = []
     for requested in unique:
-        key = requested.lower()
+        # The replay rows and skins are keyed by lower(), which a look-alike
+        # spelling can share with the real name; whatever is found under it
+        # counts only if it's spelled like the request (same_name). Accounts
+        # and bonk.io accounts are keyed by fold already.
+        key, name = requested.lower(), fold(requested)
         row = rows.get(key)
-        account = accounts.get(key)
+        account = accounts.get(name)
+        bonk_player = bonk_players.get(name)
+        worn = skins.get(key)
+        if worn is not None and not same_name(worn["username"], requested):
+            worn = None
         entry = {
             "requested": requested,
             "username": requested,
             "status": FOUND,
             "level": None,
             "games": None,
-            "account": _account(bonk_players.get(key)),
+            "account": _account(bonk_player),
             "bonkverse_account": account is not None,
             "profile_url": None,
         }
@@ -208,23 +225,24 @@ def player_entries(names, build_url) -> list[dict]:
             row is _MISSING
             or row.get("missing")
             # The replay site's answer for another name than the one asked
-            # for (it matches names more loosely than Bonkverse does).
-            or not same_name(row.get("username") or requested, requested)
+            # for (it matches names more loosely than Bonkverse does), or
+            # one that doesn't say whose it is.
+            or not same_name(row.get("username"), requested)
         ):
             entry["status"] = NOT_FOUND
-            known = account or bonk_players.get(key)
+            known = account or bonk_player
             if known is not None:
                 entry["username"] = known.username
                 entry["profile_url"] = build_url(profile_path(known.username))
         else:
-            entry["username"] = row.get("username") or requested
+            entry["username"] = row["username"]
             entry["games"] = row.get("games")
             entry["profile_url"] = build_url(profile_path(entry["username"]))
-            if key in hidden:
+            if name in hidden:
                 entry["status"] = PRIVATE
             else:
                 entry["level"] = _level(row)
-        entry["skin"] = _skin(entry["username"], skins.get(key), build_url)
+        entry["skin"] = _skin(entry["username"], worn, build_url)
         entries.append(entry)
     return entries
 
@@ -233,7 +251,7 @@ def level_history(username):
     """(data, error) for one player's level history. Error is NOT_FOUND,
     PRIVATE or UNAVAILABLE."""
     accounts = accounts_named([username])
-    if username.lower() in hidden_level_names(accounts):
+    if fold(username) in hidden_level_names(accounts):
         return None, PRIVATE
 
     profile, error = replay_profile(username)

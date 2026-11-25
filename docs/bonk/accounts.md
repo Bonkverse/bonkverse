@@ -113,6 +113,19 @@ So: `__iexact`, `lower()` and `casefold()` may narrow a search, but
 `same_name` decides whenever the answer grants something (who is signed in,
 whose privacy switches apply, who owns a skin).
 
+- In SQL the same rule is `Lower(Collate(field, "C"))`: under the "C"
+  collation Postgres's `lower()` changes only A-Z
+  (`public_api/selectors.py`).
+- Dicts of players or accounts by name are keyed with `fold`, not
+  `lower()`, so a look-alike has its own key and can't answer for, or hide,
+  the real name.
+- The rule is stricter than bonk.io's may be. If bonk.io counts two
+  spellings that differ in a non-English letter's case as one account, a
+  login under the other spelling makes a second site account here. Such a
+  login logs a WARNING from `accounts.sign_in` ("matched site accounts ...
+  only by a look-alike letter", ids only): if it ever appears, look at
+  whether it was an attempt or a real player.
+
 ## Open questions
 
 - Is "leading space" really a separate account, or bonk.io storing the same

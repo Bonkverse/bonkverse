@@ -196,6 +196,42 @@ class TestSiteAccountMatching:
         assert not signed_in.is_staff
         assert not BonkAccountLink.objects.filter(user=real).exists()
 
+    def test_a_lookalike_login_is_logged_by_id_never_by_name(self, client, mocked_http, caplog):
+        """So someone notices: it's either an attempt, or a real player that
+        bonk.io counts as one account and Bonkverse just split in two."""
+        real = UserFactory(username="TestPlayer")
+        lookalike = "Te\u017ftPlayer"
+        mocked_http.replace(
+            "POST",
+            BONK_LOGIN_URL,
+            json={**load_bonk_fixture("login_success"), "username": lookalike, "id": 7654321},
+        )
+
+        with caplog.at_level(logging.WARNING, logger="accounts.sign_in"):
+            _post_login(client, username=lookalike)
+
+        [line] = [r.getMessage() for r in caplog.records if "look-alike" in r.getMessage()]
+        assert str(real.pk) in line
+        assert "TestPlayer" not in line and lookalike not in line
+
+    def test_another_capitalization_logs_nothing(self, client, caplog):
+        UserFactory(username="testplayer")
+
+        with caplog.at_level(logging.WARNING, logger="accounts.sign_in"):
+            _post_login(client)
+
+        assert not [r for r in caplog.records if "look-alike" in r.getMessage()]
+
+    def test_a_new_site_account_keeps_the_name_exactly(self):
+        """Django's own create_user would NFKC-normalize the name
+        (AbstractBaseUser.normalize_username: "ſ" becomes "s", the Kelvin sign
+        "K"), which would turn a look-alike back into the name it resembles.
+        BonkUserManager.create_user doesn't, and nothing here signs in through
+        authenticate() or get_by_natural_key, which normalize too."""
+        for name in ("Te\u017ftPlayer", "Foo\u212a", "adm\u0131n"):
+            assert BonkUser.objects.create_user(username=name).username == name
+            assert BonkUser.objects.get(username=name).username == name
+
 
 class TestFailedLogin:
     def test_wrong_password_rerenders_form_without_logging_in(self, client, mocked_http):
