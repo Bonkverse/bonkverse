@@ -14,8 +14,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    DJANGO_ALLOW_DUMMY_SECRET=true
+    PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app
 
@@ -24,7 +23,9 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 COPY . .
 
-RUN rm -rf staticfiles && python manage.py collectstatic --noinput --clear
+# collectstatic needs settings to load, but the build has no secrets: a dummy
+# key for this one step only (settings refuse it when ENV=production).
+RUN rm -rf staticfiles && ENV=build DJANGO_ALLOW_DUMMY_SECRET=true python manage.py collectstatic --noinput --clear
 
 EXPOSE 8080
 

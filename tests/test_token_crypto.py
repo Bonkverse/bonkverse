@@ -113,12 +113,12 @@ class TestKeys:
             _load_settings(monkeypatch, ENV="production", DJANGO_ALLOW_DUMMY_SECRET="true")
 
     def test_the_image_build_needs_no_keys(self, monkeypatch):
-        """collectstatic runs in the Docker build without ENV=production."""
+        """collectstatic runs in the Docker build with ENV=build and no secrets."""
         from tests.test_resilience import _load_settings
 
         monkeypatch.delenv("BONK_TOKEN_KEYS", raising=False)
-        monkeypatch.delenv("ENV", raising=False)
-        module = _load_settings(monkeypatch, DJANGO_ALLOW_DUMMY_SECRET="true")
+        monkeypatch.delenv("SECRET_KEY", raising=False)
+        module = _load_settings(monkeypatch, ENV="build", DJANGO_ALLOW_DUMMY_SECRET="true")
 
         assert module.BONK_TOKEN_KEYS == [token_crypto.dev_key()]
 
