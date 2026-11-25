@@ -1,7 +1,12 @@
 # ADR 0026: Sign in with a code typed in a bot-hosted room
 
-**Status:** Proposed (experimental; protocol research in
-[docs/bonk/rooms.md](../bonk/rooms.md), nothing built yet).
+**Status:** Proposed, experimental.
+- **Research:** protocol in [docs/bonk/rooms.md](../bonk/rooms.md).
+- **Prototype:** [experimental/room-verification/](../../experimental/room-verification/)
+  passed a live test on 2026-11-25. A signed-in player joined the bot's room,
+  the server reported the real account, and the code typed in chat verified
+  it.
+- **Not built yet:** the Bonkverse side and a deployable service.
 
 ## Context
 
@@ -89,8 +94,8 @@ keeps the claims, codes and sign-in, as in ADR 0024.
 
 ## Open questions
 
-- **Live checks first:** confirm the items listed in
-  [rooms.md](../bonk/rooms.md#still-to-confirm-against-the-live-servers)
-  against bonk.io with one hidden test room.
+- **Remaining live checks:** the items still open in
+  [rooms.md](../bonk/rooms.md#live-test-2026-11-25): password bypass from the
+  share link, what happens without pings, and rooms per IP.
 - **Replace or keep:** does friend-request sign-in stay as a fallback, or go
   away once rooms work?

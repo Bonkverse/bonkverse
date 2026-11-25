@@ -2,8 +2,9 @@
 
 Research for signing in with a code typed in a bot-hosted room
 ([ADR 0026](../adr/0026-room-code-sign-in.md)). **Experimental:** read from
-bonk.io's client and two community bots; nothing here has been run against
-bonk.io's servers yet. Each item says where it comes from.
+bonk.io's client and two community bots, then checked with one live test room
+on 2026-11-25 ([results](#live-test-2026-11-25)). Each item says where it
+comes from.
 
 Sources:
 
@@ -142,17 +143,41 @@ The default settings object (client `class Game`, 6236):
 **Unverified:** whether a host must answer pings or time sync to stay
 connected, and how long an idle room lives.
 
-## Still to confirm against the live servers
+## Live test (2026-11-25)
 
-Run these with one hidden, password-protected test room, briefly, at a gentle
-pace:
+**Setup:**
+- **Server:** `b2brazil1`, from `getrooms.php`.
+- **Room:** created as a guest (`guestName`, `dbid: 0`, `peerID: ""`): hidden, 2 players, with a password.
+- **Initial data:** the bot answered the joiner with the empty-map `gs` above.
+- **Joiner:** a signed-in account joined from the share link and typed a 6-character code in chat.
+- **TLS:** certificate checking on.
 
-1. Creating a room as a **guest** with `peerID: ""` (no P2P) works.
-2. A signed-in player can join from the share link, and the empty-map `gs`
-   from 11 clears their 6 s timer (no ghost room).
-3. Chat from the joiner arrives as 20 with the right player id.
-4. The `username`/`guest` in 4 match the joiner's real account.
-5. Pings/timesync: what the host must answer to stay connected.
-6. Closing: disconnecting the socket ends the room (check it disappears from
-   `getrooms.php`).
-7. TLS with the Sectigo intermediate supplied, certificate checking **on**.
+**Message timeline:**
+
+```text
+  0.1s  -> 12 create room (guest, peerID "", hidden 1, version 49)
+  0.8s  <- 2  ["<socket id>", 1, null]          room created
+  1.0s  <- 49 [816187, "dbais"]                 share link https://bonk.io/816187dbais
+  1.5s  <- 1  [{}, 3]   -> 1 {id: 3}            server pings every 3 s; the bot answers each
+ 15.3s  <- 4  [1, "<peer id>", "ButDoge", false, 52, 1, {layers, bc}]
+ 15.3s  -> 11 {sid: 1, gs: {map: <empty map>, ...}}
+ 16.8s  -> 10 {message: "Hi ButDoge! ..."}  <- 20 [0, "Hi ButDoge! ..."]  (own message echoed)
+ 22.6s  <- 20 [1, "W8NMFD "]                    the joiner's code (note the trailing space)
+ 25.2s  disconnect                              room closed
+```
+
+| Question | Result |
+|---|---|
+| A guest can create a room without P2P | **Yes** (`peerID: ""`, `dbid: 0`) |
+| The empty-map `gs` in 11 avoids the ghost room | **Yes**: the joiner reached the lobby and chatted |
+| Event 4 reports the real account | **Yes**: username, `guest: false`, level from the server |
+| Chat arrives as 20 `(playerId, message)` | **Yes**; the host also gets its own messages back (id 0); trim input |
+| Keeping the connection alive | The server sends 1 `[pings, id]` every 3 s; answering `emit(1, {id})` kept it up |
+| Closing the room | Disconnecting ends it |
+| TLS with checking on | **Works** with the Sectigo intermediate added (`NODE_EXTRA_CA_CERTS`) |
+
+**Still open:**
+- Does the share link's bypass skip the password prompt? Ask the tester.
+- What happens if the host *doesn't* answer pings (how long until the server drops it)?
+- How many rooms one IP can host at once.
+- Hidden rooms aren't in `getrooms.php`, so "the room is gone" can only be checked by trying the link after closing.
