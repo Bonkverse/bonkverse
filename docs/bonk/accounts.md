@@ -54,7 +54,8 @@ What that shows:
   bonk.io spells it**. `BonkUsername` only rejects what no account can have:
   empty, over 64 characters (headroom over the 35 seen), or control characters.
 - The login form doesn't strip spaces (`LoginForm.username` has `strip=False`).
-- Compare names with `BonkUsername.key` (case-insensitive, spaces kept).
+- Compare names with `core.bonk.same_name(a, b)` (or `BonkUsername.key`):
+  case-insensitive, spaces kept. See "One rule for the same name" below.
 - Login finds the site account with a case-insensitive match
   (`accounts.sign_in.site_account_for`), preferring an exact spelling if older
   data has more than one. An existing account keeps its stored spelling,
@@ -76,6 +77,41 @@ capitalization the owner chose; that spelling is what we store and show.
 "the saucy tulip" signs in to "The Saucy Tulip". The login response returns
 the account's own spelling, which is what Bonkverse stores, so a player who
 types a different capitalization still lands on the same site account.
+
+## One rule for the same name
+
+Two spellings are the same account when they are equal after lowercasing
+**A-Z only** (`core.bonk.usernames.fold`, `same_name`). Every other
+character, including accented and other non-English letters, must match
+exactly.
+
+Why not the usual tools: each of them also turns some non-English letters
+into English ones, and they disagree about which.
+
+| Tool | Used by | Also treats as equal |
+|---|---|---|
+| Postgres `UPPER()` | `__iexact` | "ı" (U+0131) = "i", "ſ" (U+017F) = "s" |
+| Postgres `lower()` | the replay site's name match | "İ" (U+0130) = "i", the Kelvin sign (U+212A) = "k" |
+| Python `str.lower()` | cache keys, dict keys | the Kelvin sign = "k" |
+| Python `str.casefold()` | | "ſ" = "s", "ß" = "ss", the Kelvin sign = "k" |
+
+Found in the 2026-11-25 audit, checked on Postgres 16 (`en_US.utf8`, the
+image's default):
+
+- A profile URL written with a look-alike letter (`/player/Foo%E2%84%AA/`
+  for "Fook") found the player's replays and friend list but not the account
+  holding their privacy switches, so every hidden section was shown to
+  anyone. Now a profile, player or account found under another name than
+  the one asked for is not that player's (`players/selectors.py`).
+- A login finds its site account by name. A bonk.io account named "admın"
+  would have been signed in to the site account "admin". No such bonk.io name
+  is known to exist (the audit above found only ASCII punctuation), and
+  whether bonk.io would register one is untested; Bonkverse no longer
+  depends on it.
+
+So: `__iexact`, `lower()` and `casefold()` may narrow a search, but
+`same_name` decides whenever the answer grants something (who is signed in,
+whose privacy switches apply, who owns a skin).
 
 ## Open questions
 

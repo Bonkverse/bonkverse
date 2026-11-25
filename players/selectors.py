@@ -26,6 +26,7 @@ from django.db.models import Case, Count, Exists, F, IntegerField, OuterRef, Q, 
 from django.db.models.functions import Lower, RTrim
 from django.utils import timezone
 
+from core.bonk import fold, same_name
 from integrations.replays import (
     PlayerError,
     get_player_configured,
@@ -82,7 +83,9 @@ profile_path = charts.profile_path
 
 def _cache_key(*parts):
     # Hashed only to keep any username (spaces, symbols) a safe cache key.
-    raw = "\x1f".join(str(p).lower() for p in parts)
+    # fold, not lower(): a look-alike spelling gets its own entry instead of
+    # sharing (and being able to overwrite) the real name's.
+    raw = "\x1f".join(fold(str(p)) for p in parts)
     return "players:v2:" + hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
@@ -101,7 +104,21 @@ def _cached(key, fetch):
 
 
 def replay_profile(username):
-    return _cached(_cache_key("profile", username), lambda: get_player_configured(username))
+    """(profile, error) for the replay player named `username`.
+
+    The replay site matches names with its database's lower(), which also
+    turns some non-English letters into English ones ("İ" into "i"). A
+    profile under another name than the one asked for is someone else's:
+    answering with it would show their replays where their own privacy
+    switches aren't looked up (they're found by name too). So it counts as
+    not found (core.bonk.usernames.fold).
+    """
+    profile, error = _cached(
+        _cache_key("profile", username), lambda: get_player_configured(username)
+    )
+    if profile is not None and not same_name(profile.get("username") or username, username):
+        return None, PlayerError.NOT_FOUND
+    return profile, error
 
 
 def replay_map(username, mapid):
@@ -112,8 +129,13 @@ def replay_map(username, mapid):
 
 def site_account(username):
     """The Bonkverse account for a bonk.io username, if there is one.
-    Site accounts are named after their bonk.io username."""
-    return get_user_model().objects.filter(username__iexact=username).order_by("id").first()
+    Site accounts are named after their bonk.io username.
+
+    `__iexact` narrows it down in the database; `same_name` decides, so the
+    account found is the one a profile's privacy switches belong to and
+    never a look-alike's (core.bonk.usernames.fold)."""
+    matches = get_user_model().objects.filter(username__iexact=username).order_by("id")
+    return next((user for user in matches if same_name(user.username, username)), None)
 
 
 def worn_skins(names):
@@ -216,10 +238,16 @@ def visibility_for(user):
 def profile_base(username, viewer, active=""):
     """What every tab shares: who this is, what the viewer may see, the
     replay profile and the tab bar. None when there's no such player."""
+    # All three are found by name, and all three must be the same name
+    # (same_name: only A-Z fold). A profile or player found under a
+    # look-alike spelling of the URL's name, with no account found for it,
+    # would be shown with every section public.
     profile, error = replay_profile(username)
     account = site_account(username)
     lookup_name = (profile or {}).get("username") or (account.username if account else username)
     bonk_player = bonk_players_named([lookup_name]).get(lookup_name.lower())
+    if bonk_player is not None and not same_name(bonk_player.username, lookup_name):
+        bonk_player = None
     if (
         profile is None
         and account is None
@@ -229,7 +257,7 @@ def profile_base(username, viewer, active=""):
         return None
 
     is_owner = bool(
-        account and viewer.is_authenticated and viewer.username.lower() == account.username.lower()
+        account and viewer.is_authenticated and same_name(viewer.username, account.username)
     )
     visibility = visibility_for(account) if account else None
     saved = (

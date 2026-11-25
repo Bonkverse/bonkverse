@@ -350,6 +350,33 @@ def test_level_history_private_is_403(api):
     assert response.json()["error"] == "player_private"
 
 
+def test_level_history_under_a_lookalike_name_is_not_the_private_players(api, mocked_http):
+    """The replay site matches names with its database's lower(), which makes
+    "İ" an "i": it answers "Sh\u0130" with Shi's profile, whose hidden Level
+    was only looked up under the spelling asked for (audit, 2026-11-25)."""
+    owner = UserFactory(username="Shi")
+    ProfileVisibility.objects.create(user=owner, level_history=False)
+    spelling = "Sh\u0130"
+    mocked_http.get(f"{REPLAYS}/api/player/{quote(spelling)}", json=profile_json("Shi"))
+
+    response = api.get(f"/api/v1/players/{quote(spelling)}/level-history/")
+
+    assert response.status_code == 404
+    assert response.json()["error"] == "player_not_found"
+
+
+def test_a_lookup_row_for_another_name_is_not_that_player(api, mocked_http):
+    """The replay site answers the Kelvin sign with the player spelled with
+    "k". One rule everywhere: that's another name, so not found."""
+    spelling = "Foo\u212a"
+    mock_lookup(mocked_http, [lookup_row("Fook")])
+
+    response = api.get(f"/api/v1/players/{quote(spelling)}/")
+
+    assert response.status_code == 404
+    assert response.json()["error"] == "player_not_found"
+
+
 # ── Bulk lookup ──────────────────────────────────────────────────────────────
 
 

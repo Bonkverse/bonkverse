@@ -26,6 +26,7 @@ from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.db.models.functions import Lower
 
+from core.bonk import same_name
 from players.models import BonkPlayer
 
 from integrations.replays import LOOKUP_MAX, PlayerError, lookup_players_configured
@@ -203,7 +204,13 @@ def player_entries(names, build_url) -> list[dict]:
         }
         if row is None:
             entry["status"] = UNAVAILABLE
-        elif row is _MISSING or row.get("missing"):
+        elif (
+            row is _MISSING
+            or row.get("missing")
+            # The replay site's answer for another name than the one asked
+            # for (it matches names more loosely than Bonkverse does).
+            or not same_name(row.get("username") or requested, requested)
+        ):
             entry["status"] = NOT_FOUND
             known = account or bonk_players.get(key)
             if known is not None:
