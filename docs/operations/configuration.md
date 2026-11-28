@@ -96,15 +96,26 @@ its tasks' integrations use, set as references to `bonkverse`'s values
 
 ## Railway build and deploy
 
-Pinned in `railway.json`, not the dashboard: build from the `Dockerfile`
-(which runs `collectstatic`; the container runs `migrate` then gunicorn), and a
-healthcheck on `/` that must pass before a deploy takes traffic.
-See [ADR 0004](../adr/0004-dockerfile-build-and-healthcheck.md).
+Set in the **Railway dashboard** (Settings of each service), which is the
+source of truth: Railway stops reading `railway.json` on 2026-12-01
+([ADR 0027](../adr/0027-railway-settings-in-the-dashboard.md)). Change a value
+there **and** in this table. All three build from a Dockerfile, deploy from
+`main` and run in `us-west2`.
 
-The `worker` service uses `railway.worker.json` (set as its config file path in
-the service settings): the same Dockerfile, started with
-`celery -A bonk_skin_search worker --beat`, no healthcheck, one replica
-([ADR 0010](../adr/0010-background-work-on-celery.md)).
+| Setting | `bonkverse` (web) | `worker` | `roombot` |
+|---|---|---|---|
+| Root directory | (repo root) | (repo root) | `roombot` |
+| Builder | Dockerfile | Dockerfile | Dockerfile |
+| Dockerfile path | `Dockerfile` | `Dockerfile` | `Dockerfile` |
+| Start command | (the Dockerfile's: `migrate`, then gunicorn) | `celery -A bonk_skin_search worker --beat --loglevel INFO --without-gossip --without-mingle` | (the Dockerfile's) |
+| Healthcheck | `/`, 180 s | none: it serves no pages | `/health`, 60 s |
+| Replicas | 1 (media volume) | **exactly 1** (it runs the scheduler) | **exactly 1** (rooms live in memory) |
+| Restart | default | On failure, 10 retries | On failure, 10 retries |
+| Public domain | `bonkverse.io` | none | **none** (private network only) |
+
+Why the web build must use the Dockerfile and wait for the healthcheck:
+[ADR 0004](../adr/0004-dockerfile-build-and-healthcheck.md). The worker:
+[ADR 0010](../adr/0010-background-work-on-celery.md).
 
 ### Room-code sign-in service (`roombot`, experimental)
 
@@ -115,9 +126,10 @@ It joins bonk.io **as a guest**, so it needs no bonk.io account or password.
 **The `roombot` service** (new service from this repo):
 
 - **Root directory:** `roombot`.
-- **Config file path:** `/roombot/railway.json`. That file builds
-  `roombot/Dockerfile`, runs **exactly one replica** (rooms live in memory),
-  and healthchecks `/health`.
+- **Build and deploy:** the `roombot` column of the table above: builder
+  Dockerfile (`Dockerfile`), healthcheck `/health` (60 s), restart on failure
+  (10 retries), **exactly one replica** (rooms live in memory). New services
+  can't use a config file, so set these in the service's Settings.
 - **No public domain.** Bonkverse reaches it over Railway's private network.
 - **Variables:**
   - `ROOMBOT_TOKEN`: a random secret of 32+ characters (for example

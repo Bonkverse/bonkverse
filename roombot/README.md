@@ -63,8 +63,9 @@ npm start                                 # listens on $PORT (8080)
 [docs/operations/configuration.md](../docs/operations/configuration.md).
 In short:
 - **The service:** a new Railway service with root directory `roombot`,
-  config `/roombot/railway.json` (one replica, healthcheck `/health`), and
-  **no public domain**.
+  builder Dockerfile, healthcheck `/health`, restart on failure, one replica,
+  and **no public domain**, all set in its Settings (new services can't use a
+  `railway.json`; see ADR 0027).
 - **On roombot:** set `ROOMBOT_TOKEN` (`openssl rand -hex 32`) and `PORT=8080`.
 - **On the web service:** set `ROOMBOT_URL=http://${{roombot.RAILWAY_PRIVATE_DOMAIN}}:8080`
   and `ROOMBOT_TOKEN=${{roombot.ROOMBOT_TOKEN}}`.

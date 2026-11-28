@@ -192,24 +192,6 @@ class TestTaskContextFilter:
         assert "task" not in entry and "task_id" not in entry
 
 
-class TestWorkerDeployConfig:
-    def _config(self, name):
-        return json.loads((REPO / name).read_text(encoding="utf-8"))
-
-    def test_worker_runs_celery_with_the_scheduler(self):
-        deploy = self._config("railway.worker.json")["deploy"]
-
-        assert deploy["startCommand"].startswith("celery -A bonk_skin_search worker")
-        assert "--beat" in deploy["startCommand"]
-
-    def test_worker_has_no_http_healthcheck(self):
-        """The worker serves no pages; the web healthcheck would fail every deploy."""
-        assert "healthcheckPath" not in self._config("railway.worker.json")["deploy"]
-
-    def test_worker_builds_the_same_image_as_the_site(self):
-        assert self._config("railway.worker.json")["build"] == self._config("railway.json")["build"]
-
-
 @pytest.mark.django_db(transaction=True)
 class TestBeatScheduler:
     """core.beat: a never-run schedule runs at worker start, not one interval later."""

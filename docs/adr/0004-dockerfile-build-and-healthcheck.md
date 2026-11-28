@@ -1,6 +1,8 @@
 # ADR 0004: Railway builds from the Dockerfile, behind a healthcheck
 
-**Status:** accepted, 2026-11-03 (#21)
+**Status:** accepted, 2026-11-03 (#21). Where the settings live is superseded
+by [ADR 0027](0027-railway-settings-in-the-dashboard.md): the Railway
+dashboard, since `railway.json` stops being read on 2026-12-01.
 
 **Context.** The builder (Dockerfile vs Nixpacks) was a dashboard setting.
 Builds without the Dockerfile skipped `collectstatic` and `migrate` and used a
