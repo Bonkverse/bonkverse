@@ -116,8 +116,9 @@ Once the deploy that removed it has settled:
    retire_friend_requests`. Migration 0014 only refused waiting claims; this
    takes accounts proven only by friend request out of their groups, ends
    their one-click sign-ins and signs them out everywhere (a browser holding
-   one is signed out of its other accounts too). It prints counts only and is
-   safe to repeat.
+   one is signed out of its other accounts too). It prints counts only (a nonzero
+   "accounts" the first time is expected) and is safe to repeat. Until it
+   runs, those accounts keep their groups and sessions, so run it right away.
 2. Delete `BONK_BOT_USERNAME` and `BONK_BOT_PASSWORD` from the `bonkverse`
    and `worker` services. BonxBot keeps its own copy for `/link` until
    phase 7.
@@ -127,7 +128,8 @@ Once the deploy that removed it has settled:
    'bonk_bot:password_hold'])"`.
 
 Rolling back past this deploy brings friend requests back, but not what step 1
-took away: those accounts stay out of their groups and signed out.
+took away: those accounts stay out of their groups and signed out, and claims
+the migration refused stay refused.
 
 ## Rotating the Redis password
 

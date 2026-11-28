@@ -65,11 +65,7 @@ def login_view(request):
             return render(
                 request,
                 "accounts/choose_account.html",
-                {
-                    "choices": chooser,
-                    "next": request.GET.get("next", ""),
-                    "room_codes": room_claims.configured(),
-                },
+                {"choices": chooser, "next": request.GET.get("next", "")},
             )
         initial = {"username": request.GET.get("username", "")[:100]}
         return _render_login(request, LoginForm(initial=initial), adding=adding)
@@ -170,6 +166,7 @@ def _account_chooser(request) -> list[dict]:
     codes = player_selectors.worn_skin_codes(names)
     ids = _site_ids(names)
     one_click = devices.one_click_ids(request, ids.values())
+    room_codes_on = room_claims.configured()
     for account in known:
         code = codes.get(fold(account["username"]))
         account["thumbnail"] = (
@@ -177,6 +174,12 @@ def _account_chooser(request) -> list[dict]:
         )
         # Proved itself here recently: one click signs it in (ADR 0025).
         account["one_click"] = ids.get(account["username"].casefold()) in one_click
+        # Past that: room code for accounts that came in without a password
+        # (friend requests were removed 2026-11-27), while room codes are on.
+        account["by_room_code"] = room_codes_on and account["via"] in (
+            known_accounts.FRIEND_REQUEST,
+            known_accounts.ROOM_CODE,
+        )
     return known
 
 
