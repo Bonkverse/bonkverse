@@ -22,7 +22,9 @@
   token: `active_link(request)`, `usable_bonk_token(link, force_refresh=...)`
   raising `ReconnectNeeded`, `TokensPaused` or `TokensUnavailable`;
   `disconnect_bonk(link)`; `bonk_connection(link)` for display.
-- `site_account_for(username)`: the site account for a bonk.io name, made if
+- `site_account_for(username, bonk_id=None)` (raises `ProtectedSiteAccount`
+  for a staff/admin site account not linked to that bonk.io account): the
+  site account for a bonk.io name, made if
   it doesn't exist yet, exactly as first sign-in makes it (sign_in.py). For
   BonxBot, which verifies players itself (public_api/views/bot.py).
 
@@ -48,7 +50,7 @@ from .bonk_tokens import active_link
 from .bonk_tokens import connection as bonk_connection
 from .bonk_tokens import disconnect as disconnect_bonk
 from .bonk_tokens import usable_token as usable_bonk_token
-from .sign_in import connect_from_wear, sign_in, site_account_for
+from .sign_in import ProtectedSiteAccount, connect_from_wear, sign_in, site_account_for
 from .used_here import rows as used_here_rows
 
 __all__ = [
@@ -78,4 +80,5 @@ __all__ = [
     "usable_bonk_token",
     "sign_in",
     "site_account_for",
+    "ProtectedSiteAccount",
 ]

@@ -352,6 +352,7 @@ class TestStaffAccountsAreNotSignedInByName:
 
     @pytest.fixture(autouse=True)
     def _bonk_accepts(self, mocked_http):
+        # login_success is TestPlayer, bonk.io id 1234567.
         mocked_http.post(BONK_LOGIN_URL, json=load_bonk_fixture("login_success"))
 
     @pytest.mark.parametrize(
@@ -370,11 +371,15 @@ class TestStaffAccountsAreNotSignedInByName:
             response = _post_login(client)
 
         assert response.status_code == 200
-        assert "staff account" in response.content.decode()
+        assert "can&#x27;t be signed in to this way" in response.content.decode()
         assert "_auth_user_id" not in client.session
         assert not BonkAccountLink.objects.filter(user=protected).exists()
+        assert not BonkPlayer.objects.filter(bonk_id=1234567).exists()
         assert "TestPlayer" not in caplog.text  # ids only
-        assert str(protected.pk) in caplog.text
+        assert (
+            f"bonk.io sign-in refused for unlinked staff site account {protected.pk}"
+            in caplog.messages
+        )
 
     def test_a_staff_account_linked_to_that_bonk_account_signs_in(self, client):
         staff = UserFactory(username="TestPlayer", is_staff=True)
@@ -385,8 +390,20 @@ class TestStaffAccountsAreNotSignedInByName:
 
         assert client.session["_auth_user_id"] == str(staff.pk)
 
+    def test_a_link_to_another_bonk_account_with_that_name_doesnt_count(self, client):
+        """By id when known: a name that changed hands on bonk.io isn't the
+        account the staff member linked."""
+        staff = UserFactory(username="TestPlayer", is_staff=True)
+        old = BonkPlayer.objects.create(username="TestPlayer", bonk_id=999)
+        BonkAccountLink.objects.create(user=staff, bonk_player=old)
+
+        _post_login(client)
+
+        assert "_auth_user_id" not in client.session
+
     def test_an_ordinary_account_still_signs_in(self, client):
         player = UserFactory(username="TestPlayer")
+        assert not (player.password and player.has_usable_password())  # what makes it ordinary
 
         _post_login(client)
 
@@ -404,14 +421,3 @@ def _with_password(user):
     user.set_password(_throwaway())
     user.save(update_fields=["password"])
     return user
-
-
-def test_bonxbot_collect_for_a_protected_name_is_refused(client, settings):
-    from accounts.services import site_account_for
-    from accounts.sign_in import ProtectedSiteAccount
-    from core.bonk import BonkUsername
-
-    BonkUser.objects.create_superuser(username="admin", password=_throwaway())
-
-    with pytest.raises(ProtectedSiteAccount):
-        site_account_for(BonkUsername("ADMIN"))

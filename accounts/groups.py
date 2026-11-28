@@ -238,6 +238,7 @@ def after_login(
     previous_lists: tuple[list[int], list[int]],
     *,
     add: bool,
+    unlock: bool = True,
 ):
     """Call right after login() put `request.user` in this browser (signed in
     with its password).
@@ -248,7 +249,9 @@ def after_login(
     browser keeps every account it had; a plain login keeps them only when
     the new account is already in the same group, and otherwise starts over.
     If the new account is its group's main, this browser becomes trusted and
-    every account in the group is unlocked here.
+    every account in the group is unlocked here, unless `unlock` is False (a
+    room code for an account that has used its password: it opens only
+    itself, ADR 0026).
     """
     user = request.user
     if add and previous is not None and previous.pk != user.pk:
@@ -258,7 +261,7 @@ def after_login(
     keep = previous is not None and same_group(previous, user)
     password, unlocked = previous_lists if keep else ([], [])
     password = [i for i in password if i != user.pk] + [user.pk]
-    if user.account_group_id is not None and is_main(user):
+    if unlock and user.account_group_id is not None and is_main(user):
         # Only the main unlocks the group, and only on this browser.
         devices.trust(request, user.account_group)
         unlocked = member_ids(user)

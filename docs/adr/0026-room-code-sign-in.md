@@ -110,27 +110,33 @@ and on the waiting page; before, nothing was said until the third wrong code
 ended the claim.
 
 **Added 2026-11-27: accounts already on Bonkverse.** A room code now works
-for any account, not only names no one has here yet, and counts like a
-password (owner decision): it signs in, adds, unlocks the group from its
-main, and lets the account vote with the level the room showed. It still
-gives no tokens (Wear asks for the password once).
+for any account, not only names no one has here yet (owner decision). It
+signs in, lets the account vote with the level the room showed, and takes
+back an account only a friend request had claimed. It still gives no tokens
+(Wear asks for the password once).
 
 **A code can be relayed.** It proves that the named account typed it, not
 that the browser that asked belongs to that person: someone can start a
 claim for your name and talk you into typing their code ("type this to
 enter the giveaway"). A password can be phished too, but a code looks
-harmless. So:
+harmless. So (owner, 2026-11-27, after butdoge's reviewer bot on #197):
 
+- **On an account that has used its password, a code opens only that
+  account.** It doesn't unlock the group or trust the browser, even on the
+  main (`groups.after_login(unlock=False)`), and it can't add the account to
+  a group (`NeedsPassword`, refused before a room opens and again at the
+  finish). Accounts that never used a password keep the full powers: there's
+  no stronger proof to protect.
+- **The proof is kept apart** (`BonkAccountLink.room_proven_at`,
+  `room_level`). **A password beats a room code newer than its last
+  password**, compared across all the account's links (`sign_in._reclaim`):
+  its one-click sign-ins and other sessions end, unless the browser is its
+  group's own; an account that never used its password also leaves the group
+  it's in (a code may have moved it). A room code takes an account back only
+  from a friend request.
 - The room greets the player with a warning ("Type the code on YOUR
   Bonkverse screen. Never type a code someone sent you."), as the waiting
   page already does.
-- The proof is kept apart from the password's
-  (`BonkAccountLink.room_proven_at`, `room_level`). **A password beats a
-  room code newer than the last password** (`sign_in._reclaim`): the
-  account leaves whatever group it's in, its one-click sign-ins and other
-  sessions end, unless the browser is its group's own. So a phished code
-  never locks the owner out: their password takes the account back. A room
-  code takes an account back only from a friend request.
 - The room's level is stored on the link, not written into the player's XP
   (other pages show XP). No known level and no password proof: no vote yet.
 - Staff, superuser and password-holding site accounts can't be reached by a
@@ -139,4 +145,6 @@ harmless. So:
 
 Left as is: claims for any name count toward that name's hourly limit, so
 someone can use up a name's room-code tries for an hour; its password still
-works. Friend-request sign-in is to be removed next (ADR 0024).
+works. A legitimate owner who used a room code and then signs in with the
+password on a browser their group doesn't trust has their other sessions
+ended. Friend-request sign-in is to be removed next (ADR 0024).

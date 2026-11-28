@@ -234,17 +234,18 @@ class BonkAccountLink(models.Model):
     last_refreshed_at = models.DateTimeField(blank=True, null=True)
     # How the owner proved this bonk.io account themselves, strongest first
     # (sign_in._reclaim). A password login also stores its XP (its level);
-    # every link from before friend-request linking was made by password.
+    # every link from before friend-request linking was made by password. A
+    # friend request proves neither (ADR 0024): an account proven only that
+    # way can't vote, and either proof takes it back.
     password_proven_at = models.DateTimeField(blank=True, null=True)
     # A code typed in a bot-hosted room (ADR 0026): proves the account was
     # logged in on bonk.io, but a code can be relayed (someone talked into
     # typing another person's code), so a password still takes the account
-    # back from it. `room_level`: the level the room showed, for the vote
-    # rule (not written into the player's XP, which other pages show).
+    # back from it, and on an account that has used its password a code opens
+    # only that account. `room_level`: the level the room showed, for the
+    # vote rule (not written into the player's XP, which other pages show).
     room_proven_at = models.DateTimeField(blank=True, null=True)
     room_level = models.PositiveSmallIntegerField(blank=True, null=True)
-    # A friend request proves neither (ADR 0024): an account proven only that
-    # way can't vote, and either proof above takes it back.
     scopes = models.JSONField(blank=True, null=True)  # e.g. {"friends": true}
     active = models.BooleanField(default=True)
     connected_at = models.DateTimeField(auto_now_add=True)
