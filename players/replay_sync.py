@@ -69,12 +69,42 @@ def enabled():
 # ── Replay names in ──────────────────────────────────────────────────
 
 
+# Invisible marks: zero-width space/non-joiner/joiner, left-to-right and
+# right-to-left marks (U+200B-U+200F), bidi embeddings and overrides
+# (U+202A-U+202E), word joiner and invisible operators (U+2060-U+2064), and
+# the zero-width no-break space / BOM (U+FEFF). Checked against production
+# on 2026-11-28: no row with a DBID (from friend lists and logins) has one.
+INVISIBLE_MARKS = frozenset(
+    [*range(0x200B, 0x2010), *range(0x202A, 0x202F), *range(0x2060, 0x2065), 0xFEFF]
+)
+
+
+def has_invisible_marks(name: str) -> bool:
+    """Whether `name` holds one of INVISIBLE_MARKS.
+
+    The replay archive has names like "YuZuuuuu" followed by 1, 2, 3 ...
+    left-to-right marks (U+200E): each looks exactly like the real name, and
+    copying them in filled the Players list with one "YuZuuuuu" per copy.
+    bonk.io's client sends guest names unchecked, so a guest can pad a name
+    this way; registered names come from the server. The replay sync skips
+    such names; a real account with one would still get its row from a
+    friend list or login.
+    """
+    return any(ord(ch) in INVISIBLE_MARKS for ch in name)
+
+
 def add_names(names):
     """Add BonkPlayers (no DBID) for names Bonkverse doesn't have yet,
-    matching case-insensitively. Returns how many were added."""
+    matching case-insensitively. Names with invisible marks are skipped
+    (has_invisible_marks). Returns how many were added."""
     fresh = {}
     for name in names:
-        if isinstance(name, str) and name and len(name) <= MAX_NAME_LENGTH:
+        if (
+            isinstance(name, str)
+            and name
+            and len(name) <= MAX_NAME_LENGTH
+            and not has_invisible_marks(name)
+        ):
             fresh.setdefault(name.lower(), name)
     if not fresh:
         return 0

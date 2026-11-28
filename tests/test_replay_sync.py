@@ -280,3 +280,85 @@ def test_lock_lasts_one_interval(monkeypatch, settings):
     replay_sync.run()
 
     assert seen[replay_sync.LOCK_KEY] == 300
+
+
+LRM = "‎"  # left-to-right mark, invisible
+
+
+def test_names_with_invisible_marks_are_spotted():
+    assert replay_sync.has_invisible_marks("YuZuuuuu" + LRM)
+    assert replay_sync.has_invisible_marks("a​b")  # zero-width space
+    assert replay_sync.has_invisible_marks("x﻿")
+    assert replay_sync.has_invisible_marks("a\u200db")  # zero-width joiner
+    for name in ("YuZuuuuu", "  spaced  ", "(%)", "admın", "ñandú"):
+        assert not replay_sync.has_invisible_marks(name)
+    # Other format characters are left alone: a soft hyphen, an Arabic mark.
+    assert not replay_sync.has_invisible_marks("soft\u00adhyphen")
+    assert not replay_sync.has_invisible_marks("\u0600x")
+
+
+@pytest.mark.django_db
+def test_pull_skips_names_with_invisible_marks(mocked_http):
+    """The replay archive has "YuZuuuuu" plus 1, 2, 3 ... left-to-right
+    marks; each would be one more "YuZuuuuu" card on the Players list."""
+    names = ["YuZuuuuu"] + ["YuZuuuuu" + LRM * n for n in range(1, 6)]
+    mocked_http.get(NAMES_URL, json=names_page(names, "1:1", True))
+    result = replay_sync.pull_replay_names()
+    assert result["added"] == 1
+    assert list(BonkPlayer.objects.values_list("username", flat=True)) == ["YuZuuuuu"]
+
+
+def _run_cleanup():
+    from importlib import import_module
+
+    from django.apps import apps
+
+    module = import_module("players.migrations.0009_remove_bad_replay_copies")
+    module.remove_bad_replay_copies(apps, None)
+
+
+@pytest.mark.django_db
+def test_cleanup_removes_marked_names_and_second_copies():
+    from accounts.models import BonkAccountLink
+    from players.models import FlashFriend, FriendCountHistory, Friendship
+    from tests.factories import UserFactory
+
+    real = BonkPlayer.objects.create(bonk_id=11397777, username="YuZuuuuu")
+    marked = [
+        BonkPlayer.objects.create(bonk_id=None, username="YuZuuuuu" + LRM * n) for n in range(1, 4)
+    ]
+    copy_of_real = BonkPlayer.objects.create(bonk_id=None, username="yuzuuuuu")
+    first = BonkPlayer.objects.create(bonk_id=None, username="torlok")
+    second = BonkPlayer.objects.create(bonk_id=None, username="Torlok")
+    lookalike = BonkPlayer.objects.create(bonk_id=None, username="torıok")
+    # Anything pointed at stays, mark or not.
+    linked = BonkPlayer.objects.create(bonk_id=None, username="linked" + LRM)
+    BonkAccountLink.objects.create(user=UserFactory(), bonk_player=linked)
+    in_history = BonkPlayer.objects.create(bonk_id=None, username="hist" + LRM)
+    FriendCountHistory.objects.create(player=in_history, count=1)
+    flash = BonkPlayer.objects.create(bonk_id=None, username="flash" + LRM)
+    FlashFriend.objects.create(name="flash", bonk_player=flash)
+    friend = BonkPlayer.objects.create(bonk_id=None, username="friend" + LRM)
+    other = BonkPlayer.objects.create(bonk_id=5, username="other")
+    low, high = sorted([friend, other], key=lambda p: p.pk)
+    Friendship.objects.create(player_low=low, player_high=high)
+    marked_with_id = BonkPlayer.objects.create(bonk_id=9, username="odd" + LRM)
+
+    _run_cleanup()
+
+    left = set(BonkPlayer.objects.values_list("pk", flat=True))
+    gone = {p.pk for p in [*marked, copy_of_real, second]}
+    kept = {
+        p.pk
+        for p in [real, first, lookalike, linked, in_history, flash, friend, other, marked_with_id]
+    }
+    assert left == kept
+    assert not left & gone
+
+
+@pytest.mark.django_db
+def test_cleanup_with_nothing_to_do():
+    BonkPlayer.objects.create(bonk_id=1, username="A")
+    BonkPlayer.objects.create(bonk_id=None, username="B")
+    _run_cleanup()
+    assert BonkPlayer.objects.count() == 2
