@@ -77,6 +77,9 @@ test("say something in an open room; a closed or unknown room can't", async () =
     assert.equal(said.status, 200);
     assert.ok(sockets[0].sent.some(([, data]) => data?.message === "That's not the code. 2 tries left."));
     assert.equal((await call(`/rooms/${id}/say`, { method: "POST", body: { message: " " } })).status, 400);
+    assert.equal((await call(`/rooms/${id}/say`, { method: "POST", body: { message: 42 } })).status, 400);
+    await call(`/rooms/${id}/say`, { method: "POST", body: { message: "x".repeat(500) } });
+    assert.ok(sockets[0].sent.some(([, data]) => data?.message === "x".repeat(120)));
 
     await call(`/rooms/${id}/close`, { method: "POST", body: {} });
     assert.equal((await call(`/rooms/${id}/say`, { method: "POST", body: { message: "hi" } })).status, 409);
