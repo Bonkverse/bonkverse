@@ -7,6 +7,7 @@ server reports it, and never by a guest.
 """
 
 import json
+import secrets
 import re
 
 import pytest
@@ -208,7 +209,7 @@ def test_it_uses_the_player_row_the_account_already_links_to(client, mocked_http
 
 
 def test_a_staff_name_is_refused_before_a_room_opens(client, mocked_http):
-    BonkUser.objects.create_superuser(username="ButDoge", password="x9-local")
+    BonkUser.objects.create_superuser(username="ButDoge", password=secrets.token_urlsafe(16))
 
     response = client.post("/login/room/", {"username": "butdoge"}, follow=True)
 
