@@ -504,7 +504,20 @@ def test_the_login_page_offers_room_codes_not_friend_requests(client):
 
 
 def _run_migration_0014():
-    """Migration 0014 runs accounts.retire_friend_requests.retire()."""
+    """Migration 0014's step, against the models as they were at 0013."""
+    from importlib import import_module
+
+    from django.db import connection
+    from django.db.migrations.executor import MigrationExecutor
+
+    state = MigrationExecutor(connection).loader.project_state(
+        ("accounts", "0013_room_proof_and_claim_level")
+    )
+    import_module("accounts.migrations.0014_cancel_friend_request_claims").cancel(state.apps, None)
+
+
+def _retire():
+    """`manage.py retire_friend_requests`, run after the deploy."""
     from accounts.retire_friend_requests import retire
 
     return retire()
@@ -536,7 +549,7 @@ def test_waiting_and_proven_friend_claims_are_cancelled_by_the_migration():
     assert finished.status == LinkClaim.DONE
 
 
-def test_the_migration_signs_friend_request_only_accounts_out(client):
+def test_retiring_signs_friend_request_only_accounts_out(client):
     """Whoever got in by friend request doesn't keep the account."""
     from django.test import Client
 
@@ -551,13 +564,13 @@ def test_the_migration_signs_friend_request_only_accounts_out(client):
     theirs.force_login(friend_only)
     mine.force_login(owner)
 
-    _run_migration_0014()
+    _retire()
 
     assert theirs.get("/api/me/").status_code == 401
     assert mine.get("/api/me/").status_code == 200
 
 
-def test_the_migration_takes_friend_only_accounts_out_of_groups(client):
+def test_retiring_takes_friend_only_accounts_out_of_groups(client):
     """A claimer who grouped the account under their main mustn't get it
     back by signing in as that main (butdoge's review)."""
     from accounts import groups
@@ -573,7 +586,7 @@ def test_the_migration_takes_friend_only_accounts_out_of_groups(client):
     owners_alt = _password_proven("OwnersAlt", 3)
     groups.join(_password_proven("OwnersMain", 4), owners_alt)
 
-    counts = _run_migration_0014()
+    counts = _retire()
 
     claimed.refresh_from_db()
     owners_alt.refresh_from_db()
@@ -598,7 +611,7 @@ def test_it_ends_a_session_holding_the_account_as_an_unlocked_alt():
     other[groups.UNLOCKED_KEY] = [claimed.pk]
     other.create()
 
-    _run_migration_0014()
+    _retire()
 
     assert not SessionStore().exists(other.session_key)
 
@@ -606,11 +619,11 @@ def test_it_ends_a_session_holding_the_account_as_an_unlocked_alt():
 def test_running_it_again_is_harmless():
     from django.core.management import call_command
 
-    _run_migration_0014()
+    _retire()
     call_command("retire_friend_requests", stdout=__import__("io").StringIO())
 
 
-def test_the_migration_ends_one_click_for_friend_request_only_accounts():
+def test_retiring_ends_one_click_for_friend_request_only_accounts():
     from accounts.models import RememberedSignIn
 
     friend_only = UserFactory(username="ByFriend")
@@ -625,7 +638,7 @@ def test_the_migration_ends_one_click_for_friend_request_only_accounts():
             user=user, device_hash="d" * 64, label="x", proven_at=timezone.now()
         )
 
-    _run_migration_0014()
+    _retire()
 
     assert not RememberedSignIn.objects.filter(user=friend_only).exists()
     assert RememberedSignIn.objects.filter(user=owner).exists()
@@ -1072,3 +1085,60 @@ def test_on_the_groups_own_browser_a_password_keeps_the_alt_in_its_group(client,
 
     alt.refresh_from_db()
     assert alt.account_group_id == BonkUser.objects.get(pk=main.pk).account_group_id
+
+
+def test_it_matches_session_lists_holding_ids_as_text():
+    """However a browser's lists stored the id, the session ends."""
+    from django.contrib.sessions.backends.db import SessionStore
+
+    from accounts import groups
+
+    claimed = UserFactory(username="ByFriend")
+    BonkAccountLink.objects.create(
+        user=claimed,
+        bonk_player=BonkPlayer.objects.create(username="ByFriend", bonk_id=1),
+        active=True,
+    )
+    other = SessionStore()
+    other[groups.SIGNED_IN_KEY] = [str(claimed.pk)]
+    other.create()
+
+    _retire()
+
+    assert not SessionStore().exists(other.session_key)
+
+
+def test_with_room_codes_off_old_links_and_the_chooser_use_the_password(client, settings):
+    settings.ROOMBOT_URL = ""
+
+    response = client.get("/login/friend/?username=ByFriend")
+
+    assert response["Location"].startswith("/login/?")
+
+
+def test_a_trusted_browser_keeps_the_alt_in_its_group(client, mocked_http):
+    """_reclaim's other exception: a browser the group trusts."""
+    from accounts import devices, groups
+
+    main = _password_proven("OwnersMain", 77)
+    alt = UserFactory(username="TestPlayer")
+    BonkAccountLink.objects.create(
+        user=alt,
+        bonk_player=BonkPlayer.objects.create(username="TestPlayer", bonk_id=1234567),
+        active=True,
+    )
+    groups.join(main, alt)
+    main.refresh_from_db()
+    from django.core.signing import get_cookie_signer
+    from django.test import RequestFactory
+
+    request = RequestFactory().get("/")
+    request.bv_device = "this-browser-device-id"
+    devices.trust(request, main.account_group)
+    signer = get_cookie_signer(salt=devices.COOKIE + devices.COOKIE_SALT)
+    client.cookies[devices.COOKIE] = signer.sign(request.bv_device)
+
+    _password_login(client, mocked_http)
+
+    alt.refresh_from_db()
+    assert alt.account_group_id == main.account_group_id

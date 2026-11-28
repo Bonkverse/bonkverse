@@ -91,7 +91,9 @@ it proves; room codes (ADR 0026) do the same job without that weakness.
 - Accounts that came in by friend request are left as they are; voting
   still needs a password or room code. But whatever a friend request may
   have given someone who wasn't the owner is taken back
-  (`accounts/retire_friend_requests.py`, run by migration 0014): accounts
+  (`manage.py retire_friend_requests`, run once after the deploy; migration
+  0014 only refuses waiting claims, since a migration mustn't run today's
+  code): accounts
   proven only by friend request leave any group they're in (even as its
   main), lose their one-click sign-ins, and every session holding them ends.
   The next sign-in needs a room code or the password. ("Proven only by
@@ -100,9 +102,10 @@ it proves; room codes (ADR 0026) do the same job without that weakness.
   sign-ins make links now.)
 - Chooser entries that last signed in by friend request open the room-code
   way.
-- Old processes still run friend requests for the minute of the deploy, so
-  `manage.py retire_friend_requests` runs once more after it settles
-  (runbook), before `BONK_BOT_*` is deleted.
+- The command runs after the deploy has settled (old processes still run
+  friend requests for that minute), before `BONK_BOT_*` is deleted
+  (runbook). Chooser entries and old links fall back to the password form
+  while room codes are off.
 - Removed: `link_claims` matching and the worker's `check-link-claims`,
   `bot_account.py`, `BonkClient.delete_friend_request`, the
   `BONK_BOT_USERNAME` / `BONK_BOT_PASSWORD` settings. BonxBot still uses the
