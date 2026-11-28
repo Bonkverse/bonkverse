@@ -542,6 +542,27 @@ def test_waiting_and_proven_friend_claims_are_cancelled_by_the_migration():
     assert finished.status == LinkClaim.DONE
 
 
+def test_the_migration_signs_friend_request_only_accounts_out(client):
+    """Whoever got in by friend request doesn't keep the account."""
+    from django.test import Client
+
+    friend_only = UserFactory(username="ByFriend")
+    BonkAccountLink.objects.create(
+        user=friend_only,
+        bonk_player=BonkPlayer.objects.create(username="ByFriend", bonk_id=1),
+        active=True,
+    )
+    owner = _password_proven("ByPassword", 2)
+    theirs, mine = Client(), Client()
+    theirs.force_login(friend_only)
+    mine.force_login(owner)
+
+    _run_migration_0014()
+
+    assert theirs.get("/api/me/").status_code == 401
+    assert mine.get("/api/me/").status_code == 200
+
+
 def test_the_migration_ends_one_click_for_friend_request_only_accounts():
     from accounts.models import RememberedSignIn
 
@@ -980,3 +1001,27 @@ def test_your_own_code_on_a_password_browser_keeps_main_powers(client, mocked_ht
     _prove_in_room(client, mocked_http)
 
     assert main.pk not in client.session.get(groups.CODE_ONLY_KEY, [])
+
+
+def test_on_the_groups_own_browser_a_password_keeps_the_alt_in_its_group(client, mocked_http):
+    """The owner signing in to their own alt where the main is signed in:
+    nothing to take back (sign_in._reclaim's own-browser exception)."""
+    from accounts import groups
+
+    main = _password_proven("OwnersMain", 77)
+    alt = UserFactory(username="TestPlayer")
+    BonkAccountLink.objects.create(
+        user=alt,
+        bonk_player=BonkPlayer.objects.create(username="TestPlayer", bonk_id=1234567),
+        active=True,
+    )
+    groups.join(main, alt)
+    client.force_login(main)
+    session = client.session
+    session[groups.SIGNED_IN_KEY] = [main.pk]
+    session.save()
+
+    _password_login(client, mocked_http)
+
+    alt.refresh_from_db()
+    assert alt.account_group_id == BonkUser.objects.get(pk=main.pk).account_group_id
