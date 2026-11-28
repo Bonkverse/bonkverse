@@ -43,7 +43,7 @@ from .forms import LoginForm
 from .login_attempts import attempt_login
 from .login_messages import login_failure_message
 from .models import BonkUser, LinkClaim
-from .sign_in import sign_in, sign_in_with_one_click
+from .sign_in import ProtectedSiteAccount, sign_in, sign_in_with_one_click
 
 
 @limit("login", method="POST")
@@ -93,7 +93,11 @@ def login_view(request):
         # don't resubmit into it (6 tries in a minute on 2026-11-09).
         return _render_login(request, form, retry_after=retry_after, adding=adding)
 
-    user = sign_in(request, attempt.result, remember=remember, add=adding)
+    try:
+        user = sign_in(request, attempt.result, remember=remember, add=adding)
+    except ProtectedSiteAccount as refused:
+        messages.error(request, str(refused))
+        return _render_login(request, form, adding=adding)
     if adding:
         messages.success(request, f"Added {user.username}. You're now using it.")
     else:
