@@ -14,6 +14,8 @@
   const countdown = box.querySelector("[data-claim-countdown]");
   const pausedNote = box.querySelector("[data-claim-paused]");
   const pausedFor = box.querySelector("[data-claim-paused-for]");
+  // Room codes: "A wrong code was typed once. 2 tries left." (room_claims.py).
+  const note = box.querySelector("[data-claim-note]");
   let left = parseInt(box.dataset.secondsLeft, 10) || 0;
   if (!countdown || left <= 0) return; // already finished
 
@@ -61,6 +63,10 @@
     if (typeof json.seconds_left === "number") left = json.seconds_left;
     paused = json.paused || 0;
     showPause(paused);
+    if (note) {
+      note.hidden = !json.note;
+      note.textContent = json.note || "";
+    }
     setTimeout(check, CHECK_EVERY_MS);
   }
   setTimeout(check, CHECK_EVERY_MS);

@@ -170,7 +170,11 @@ def status(request, claim_id: int) -> dict:
         _check_room(claim)
 
     if claim.status == LinkClaim.PENDING:
-        return {"status": "pending", "seconds_left": int((claim.expires_at - now).total_seconds())}
+        state = {"status": "pending", "seconds_left": int((claim.expires_at - now).total_seconds())}
+        note = _wrong_code_note(claim.wrong_codes)
+        if note:
+            state["note"] = note
+        return state
     if claim.status == LinkClaim.EXPIRED:
         return {
             "status": "expired",
@@ -218,9 +222,17 @@ def _check_room(claim: LinkClaim) -> None:
             return
         wrong += 1
 
-    if wrong != claim.wrong_codes:
-        LinkClaim.objects.filter(pk=claim.pk).update(wrong_codes=wrong)
+    if wrong > claim.wrong_codes:
+        # The database decides who answers: of overlapping polls (two tabs,
+        # a reload), only the one that moves the count says anything.
+        moved = LinkClaim.objects.filter(pk=claim.pk, wrong_codes__lt=wrong).update(
+            wrong_codes=wrong
+        )
         claim.wrong_codes = wrong
+        if moved and wrong < MAX_WRONG_CODES:
+            # Answer in the room at once, where the person is typing. Best
+            # effort: if roombot misses it, the waiting page still says it.
+            roombot.say(claim.room_id, f"That's not the code. {_tries_left(wrong)}")
     if wrong >= MAX_WRONG_CODES:
         _end(
             claim,
@@ -228,6 +240,19 @@ def _check_room(claim: LinkClaim) -> None:
             "Too many wrong codes. Closing this room.",
             "Too many wrong codes were typed. Start again to get a new code.",
         )
+
+
+def _tries_left(wrong: int) -> str:
+    left = MAX_WRONG_CODES - wrong
+    return f"{left} {'try' if left == 1 else 'tries'} left."
+
+
+def _wrong_code_note(wrong: int) -> str:
+    """The waiting page's line after a wrong code, or ""."""
+    if not wrong:
+        return ""
+    times = "once" if wrong == 1 else f"{wrong} times"
+    return f"A wrong code was typed {times}. {_tries_left(wrong)} Check the code above."
 
 
 def _end(claim: LinkClaim, status: str, room_message: str, problem: str) -> None:

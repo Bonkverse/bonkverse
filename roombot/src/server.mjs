@@ -71,15 +71,21 @@ export function createServer({ rooms, token, log = console }) {
         }
       }
 
-      const match = /^\/rooms\/([A-Za-z0-9_-]{8,40})(\/close)?$/.exec(url.pathname);
+      const match = /^\/rooms\/([A-Za-z0-9_-]{8,40})(\/close|\/say)?$/.exec(url.pathname);
       if (match) {
         const room = rooms.get(match[1]);
         if (!room) return send(res, 404, { error: "not_found" });
         if (req.method === "GET" && !match[2]) return send(res, 200, room.view());
-        if (req.method === "POST" && match[2]) {
+        if (req.method === "POST" && match[2] === "/close") {
           const { message } = await readJson(req);
           room.close("closed_by_bonkverse", typeof message === "string" ? message.slice(0, 120) : undefined);
           return send(res, 200, { id: room.id, state: "closed" });
+        }
+        if (req.method === "POST" && match[2] === "/say") {
+          const { message } = await readJson(req);
+          if (typeof message !== "string" || !message.trim()) return send(res, 400, { error: "bad_message" });
+          const said = room.say(message.slice(0, 120));
+          return send(res, said ? 200 : 409, said ? { id: room.id, said: true } : { error: "not_open" });
         }
       }
       return send(res, 404, { error: "not_found" });

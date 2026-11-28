@@ -26,6 +26,8 @@
         <li>Type <strong>{{ code }}</strong> in the room's chat. Keep this page open.</li>
       </ol>
       <p class="bv-status" role="status" aria-live="polite" data-claim-message>Waiting for the code · <span data-claim-countdown>10:00</span> left</p>
+      {# After a wrong code: how many tries are left (room_claims._wrong_code_note). friend_request.js keeps it current. #}
+      <p class="bv-notice" role="status" aria-live="polite" data-claim-note {% if not state.note %}hidden{% endif %}>{{ state.note }}</p>
       <div class="bv-notice bv-notice--danger" role="note">
         <i data-lucide="triangle-alert" aria-hidden="true"></i>
         <span><strong>Only type this code in the room linked here, as {{ name }}.</strong> Never give it to anyone, and never type a code someone else sends you.</span>
