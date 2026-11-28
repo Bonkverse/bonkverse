@@ -19,7 +19,8 @@ Work top to bottom; stop when you find it.
    logged by `django.request` with a traceback. Look for:
    - `ImproperlyConfigured: REDIS_URL ...`: bad Redis URL; see below.
    - `Missing staticfiles manifest entry`: the build skipped `collectstatic`,
-     i.e. it didn't use the Dockerfile. Check `railway.json` is present.
+     i.e. it didn't use the Dockerfile. Check Railway → bonkverse → Settings →
+     Build says Dockerfile (see configuration.md, "Railway build and deploy").
    - `search timed out`: a search hit the 3 s limit (harmless alone; many of
      them mean an index stopped being used; see [search.md](../search.md)).
    - `WORKER TIMEOUT`: a request ran 30 s. Find which view.

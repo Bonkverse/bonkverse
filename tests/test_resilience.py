@@ -7,7 +7,6 @@ Railway building from the Dockerfile, and secrets never being printed at startup
 
 import importlib.util
 import io
-import json
 from contextlib import redirect_stdout
 from pathlib import Path
 
@@ -99,13 +98,21 @@ class TestGunicornConfig:
 
 class TestRailwayBuild:
     """Railway must build from the Dockerfile: it is the only build that runs
-    collectstatic and migrate. The builder used to be a dashboard setting only."""
+    collectstatic and migrate. The builder is a dashboard setting (ADR 0027,
+    docs/operations/configuration.md)."""
 
-    def test_railway_json_pins_the_dockerfile_and_a_healthcheck(self):
-        config = json.loads((ROOT / "railway.json").read_text())
+    def test_no_railway_config_file(self):
+        """Railway stops reading railway.json / railway.toml on 2026-12-01;
+        the dashboard holds these settings (ADR 0027). A file added back
+        would look authoritative and do nothing."""
+        found = [
+            str(path.relative_to(ROOT))
+            for pattern in ("railway.json", "railway.toml", "railway.*.json")
+            for path in ROOT.rglob(pattern)
+            if "node_modules" not in path.parts
+        ]
 
-        assert config["build"]["builder"] == "DOCKERFILE"
-        assert config["deploy"]["healthcheckPath"] == "/"
+        assert found == []
 
     def test_dockerfile_collects_static_and_migrates(self):
         text = (ROOT / "Dockerfile").read_text()

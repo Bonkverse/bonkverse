@@ -238,10 +238,10 @@ inline in the web process (scheduled tasks then don't run; call them from
 
 | | Web (`bonkverse`) | Worker (`worker`) |
 |---|---|---|
-| Config file | `railway.json` | `railway.worker.json` (set as the service's config file path) |
-| Image | Dockerfile | the same Dockerfile **(tested)** |
+| Settings | Railway dashboard ([configuration.md](../operations/configuration.md#railway-build-and-deploy)) | Railway dashboard (same table) |
+| Image | Dockerfile | the same Dockerfile |
 | Starts | `migrate`, then gunicorn | `celery -A bonk_skin_search worker --beat` (no migrate) |
-| Healthcheck | `/` | none: it serves no pages **(tested)** |
+| Healthcheck | `/` | none: it serves no pages |
 | Replicas | 1 (media volume) | **exactly 1** (it runs the scheduler) |
 | Variables | all | `SECRET_KEY`, `DATABASE_URL`, `REDIS_URL`, `ENV`, plus whatever its tasks' integrations need, as references to `bonkverse`'s values |
 

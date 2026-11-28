@@ -13,7 +13,7 @@ background work is planned (syncing, data aggregation).
 
 **Decision.**
 - A Railway `worker` service runs `celery -A bonk_skin_search worker --beat`
-  from the same Dockerfile (`railway.worker.json`), with **exactly one
+  from the same Dockerfile (settings in the Railway dashboard, ADR 0027), with **exactly one
   replica** because it also runs the scheduler.
 - Queue work only with `core.background.enqueue`, which never raises (two
   quick retries, then logs and returns `False`). No `.delay()` elsewhere, no

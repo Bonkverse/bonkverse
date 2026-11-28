@@ -310,7 +310,7 @@ if IS_PROD:
         "bonkverse.io",
         "www.bonkverse.io",
         "editor.bonkverse.io",  # add this — the editor subdomain hits Django too
-        # Railway's deploy healthcheck (railway.json) sends this Host header.
+        # Railway's deploy healthcheck (ADR 0004) sends this Host header.
         "healthcheck.railway.app",
         "127.0.0.1",
         "localhost",
@@ -575,7 +575,7 @@ PUBLIC_API_MAX_KEYS_PER_USER = int(os.getenv("PUBLIC_API_MAX_KEYS_PER_USER", "3"
 # =========================================================
 
 # Background work. Standards: docs/architecture/background-work.md (ADR 0010).
-# The worker is the Railway `worker` service (railway.worker.json); it runs the
+# The worker is the Railway `worker` service (ADR 0010, 0027); it runs the
 # beat scheduler too, so there must only ever be one worker replica.
 CELERY_BROKER_URL = REDIS_URL
 # No task returns a result anyone reads; tasks report through logs and rows.
