@@ -10,6 +10,7 @@ import json
 import re
 
 import pytest
+import requests
 import responses
 from django.utils import timezone
 
@@ -232,6 +233,38 @@ def test_each_wrong_code_is_answered_once(client, mocked_http):
 
     assert said() == ["That's not the code. 2 tries left.", "That's not the code. 1 try left."]
     assert "1 try left" in state["note"]
+
+
+def test_overlapping_polls_answer_a_wrong_code_once(client, mocked_http):
+    """Butdoge's review: two polls reading the same old count."""
+    claim, code, room_id = _start(client, mocked_http)
+    said = _says(mocked_http, room_id)
+    _room_says(mocked_http, room_id, messages=[("ButDoge", False, "AAAAAA")])
+    stale = LinkClaim.objects.get(pk=claim.pk)
+    also_stale = LinkClaim.objects.get(pk=claim.pk)
+
+    room_claims._check_room(stale)
+    room_claims._check_room(also_stale)
+
+    assert said() == ["That's not the code. 2 tries left."]
+    assert LinkClaim.objects.get(pk=claim.pk).wrong_codes == 1
+
+
+@pytest.mark.parametrize("trouble", ["409", "500", "down"])
+def test_a_room_that_cant_hear_still_counts_the_code(client, mocked_http, trouble):
+    claim, code, room_id = _start(client, mocked_http)
+    url = f"{ROOMBOT}/rooms/{room_id}/say"
+    if trouble == "down":
+        mocked_http.add(responses.POST, url, body=requests.ConnectionError())
+    else:
+        mocked_http.add(responses.POST, url, json={"error": "x"}, status=int(trouble))
+    _room_says(mocked_http, room_id, messages=[("ButDoge", False, "AAAAAA")])
+
+    state = _status(client, claim)
+
+    assert state["status"] == "pending"
+    assert "2 tries left" in state["note"]
+    assert LinkClaim.objects.get(pk=claim.pk).wrong_codes == 1
 
 
 def test_the_waiting_page_shows_the_note(client, mocked_http):

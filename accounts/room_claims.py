@@ -223,10 +223,15 @@ def _check_room(claim: LinkClaim) -> None:
         wrong += 1
 
     if wrong > claim.wrong_codes:
-        LinkClaim.objects.filter(pk=claim.pk).update(wrong_codes=wrong)
+        # The database decides who answers: of overlapping polls (two tabs,
+        # a reload), only the one that moves the count says anything.
+        moved = LinkClaim.objects.filter(pk=claim.pk, wrong_codes__lt=wrong).update(
+            wrong_codes=wrong
+        )
         claim.wrong_codes = wrong
-        if wrong < MAX_WRONG_CODES:
-            # Answer in the room at once, where the person is typing.
+        if moved and wrong < MAX_WRONG_CODES:
+            # Answer in the room at once, where the person is typing. Best
+            # effort: if roombot misses it, the waiting page still says it.
             roombot.say(claim.room_id, f"That's not the code. {_tries_left(wrong)}")
     if wrong >= MAX_WRONG_CODES:
         _end(

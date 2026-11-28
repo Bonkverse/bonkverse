@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 OPEN_TIMEOUT = (5.0, 25.0)  # opening waits for bonk.io to create the room
 READ_TIMEOUT = (3.0, 5.0)
+SAY_TIMEOUT = (1.0, 2.0)  # said inside the status poll, so keep it short
 
 
 @dataclass(frozen=True)
@@ -136,7 +137,7 @@ def say_in_room(base_url: str, token: str, room_id: str, message: str) -> bool:
             f"{base_url}/rooms/{room_id}/say",
             json={"message": message},
             headers=_headers(token),
-            timeout=READ_TIMEOUT,
+            timeout=SAY_TIMEOUT,
         )
     except requests.RequestException:
         return False
