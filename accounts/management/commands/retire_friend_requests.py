@@ -5,6 +5,7 @@ refuses waiting claims, so until this runs, accounts proven only by friend
 request keep their groups, one-click sign-ins and sessions. A nonzero
 "accounts" count is expected the first time. Safe to repeat.
 
+    python manage.py retire_friend_requests --dry-run   # counts only
     python manage.py retire_friend_requests
 """
 
@@ -16,7 +17,10 @@ from accounts.retire_friend_requests import retire
 class Command(BaseCommand):
     help = "Refuse waiting friend-request claims and sign friend-request-only accounts out."
 
+    def add_arguments(self, parser):
+        parser.add_argument("--dry-run", action="store_true", help="Only count; change nothing.")
+
     def handle(self, *args, **options):
-        counts = retire()
+        counts = retire(dry_run=options["dry_run"])
         for key, value in counts.items():
             self.stdout.write(f"{key}: {value}")
