@@ -25,7 +25,8 @@ KEEP_DAYS = 90
 
 PASSWORD = "password"
 FRIEND_REQUEST = "friend"
-WAYS = (PASSWORD, FRIEND_REQUEST)
+ROOM_CODE = "room"  # experimental, ADR 0026
+WAYS = (PASSWORD, FRIEND_REQUEST, ROOM_CODE)
 
 
 class KnownAccountsMiddleware:

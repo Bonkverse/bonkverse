@@ -30,6 +30,8 @@ label_vocab.csv
 
 # Secrets & credentials
 *.pem
+# Public CA certificate (no key) the room service needs: bonk.io's servers leave it out of their chain.
+!roombot/certs/sectigo-public-server-authentication-ca-dv-r36.pem
 *.key
 *.sqlite3
 *.db

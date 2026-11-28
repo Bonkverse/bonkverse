@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Type the code in bonk.io · Bonkverse{% endblock %}
+{% block content_class %}site-page{% endblock %}
+
+{% block content %}
+{# Waiting for the code; accounts/js/friend_request.js checks every few seconds (accounts/room_claims.py, ADR 0026). Experimental. #}
+<div class="bv-main site-narrow">
+  <div class="bv-page-header">
+    <div class="bv-page-header__text">
+      <h1>Type the code in bonk.io <span class="bv-pill bv-pill--accent">Experimental</span></h1>
+    </div>
+  </div>
+
+  <div class="bv-card site-form-card" data-friend-claim
+       data-status-url="{% url 'accounts:room_code_status' claim_id %}{% if next %}?next={{ next|urlencode }}{% endif %}"
+       data-seconds-left="{{ state.seconds_left|default:0 }}"
+       data-paused="0">
+    {% if state.status == "pending" %}
+      <p class="bv-label">Your code</p>
+      <p class="rc-code" data-room-code>{{ code }}</p>
+      <ol class="site-steps">
+        <li>Open bonk.io and <strong>log in as {{ name }}</strong>. Guests can't sign in.</li>
+        <li>Join the room: <a class="bv-btn" href="{{ room_link }}" target="_blank" rel="noopener noreferrer"><i data-lucide="external-link" aria-hidden="true"></i> Open the bonk.io room</a></li>
+        <li>Type <strong>{{ code }}</strong> in the room's chat. Keep this page open.</li>
+      </ol>
+      <p class="bv-status" role="status" aria-live="polite" data-claim-message>Waiting for the code · <span data-claim-countdown>10:00</span> left</p>
+      <div class="bv-notice bv-notice--danger" role="note">
+        <i data-lucide="triangle-alert" aria-hidden="true"></i>
+        <span><strong>Only type this code in the room linked here, as {{ name }}.</strong> Never give it to anyone, and never type a code someone else sends you.</span>
+      </div>
+      <p class="bv-hint">Signing in with a room code is experimental. If it doesn't work, <a href="{% url 'accounts:login' %}">log in with your password</a> or a <a href="{% url 'accounts:friend_request_login' %}">friend request</a>.</p>
+    {% else %}
+      <p class="bv-status" role="status" data-claim-message>{{ state.message }}</p>
+    {% endif %}
+    <div class="pv-actions">
+      <a class="bv-btn" href="{% url 'accounts:room_code_login' %}">Start over</a>
+      {# Without scripts: check by reloading. #}
+      <noscript><a class="bv-btn" href="">Check now</a></noscript>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="{% static 'accounts/js/friend_request.js' %}" defer></script>
+{% endblock %}

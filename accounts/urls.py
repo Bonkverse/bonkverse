@@ -15,6 +15,10 @@ urlpatterns = [
     path("login/choose/", views.one_click_sign_in, name="one_click_sign_in"),
     # Sign in or add an account with a friend request (RFC-0003 phase 6).
     path("login/friend/", views.friend_request_login, name="friend_request_login"),
+    # Sign in or add an account with a code typed in a bonk.io room (ADR 0026, experimental).
+    path("login/room/", views.room_code_login, name="room_code_login"),
+    path("login/room/<int:claim_id>/", views.room_code_wait, name="room_code_wait"),
+    path("login/room/<int:claim_id>/status/", views.room_code_status, name="room_code_status"),
     path("login/friend/<int:claim_id>/", views.friend_request_wait, name="friend_request_wait"),
     path(
         "login/friend/<int:claim_id>/status/",

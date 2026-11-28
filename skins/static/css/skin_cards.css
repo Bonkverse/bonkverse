@@ -133,6 +133,12 @@ a.bv-chip[aria-current="page"]::before {
   display: grid;
   gap: var(--bv-space-2);
 }
+/* The code to type on the room-code waiting page (accounts/room_code_wait.html). */
+.rc-code {
+  margin: var(--bv-space-1) 0 var(--bv-space-3);
+  font: 700 2rem/1.2 ui-monospace, monospace;
+  letter-spacing: 0.2em;
+}
 /* The login page's "Choose an account" (accounts/choose_account.html). */
 .site-chooser {
   list-style: none;

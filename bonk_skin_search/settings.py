@@ -221,6 +221,12 @@ ONE_CLICK_SIGN_IN_DAYS = int(os.getenv("ONE_CLICK_SIGN_IN_DAYS", "30"))
 BONK_BOT_USERNAME = os.getenv("BONK_BOT_USERNAME", "")
 BONK_BOT_PASSWORD = os.getenv("BONK_BOT_PASSWORD", "")
 
+# Room-code sign-in (experimental, ADR 0026): the room service (roombot/)
+# hosts a bonk.io room where the person types a code shown on Bonkverse. Off
+# until both are set. The token is shared with the room service.
+ROOMBOT_URL = os.getenv("ROOMBOT_URL", "").rstrip("/")
+ROOMBOT_TOKEN = os.getenv("ROOMBOT_TOKEN", "")
+
 CLOUDFLARE_ZONE_ID = os.getenv("CLOUDFLARE_ZONE_ID", "")
 CLOUDFLARE_CACHE_API_TOKEN = os.getenv("CLOUDFLARE_CACHE_API_TOKEN", "")
 
