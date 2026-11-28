@@ -93,13 +93,12 @@ it proves; room codes (ADR 0026) do the same job without that weakness.
   have given someone who wasn't the owner is taken back
   (`manage.py retire_friend_requests`, run once after the deploy; migration
   0014 only refuses waiting claims, since a migration mustn't run today's
-  code): accounts
-  proven only by friend request leave any group they're in (even as its
-  main), lose their one-click sign-ins, and every session holding them ends.
-  The next sign-in needs a room code or the password. ("Proven only by
-  friend request": no password or room-code proof on any link; 0010 marked
-  every earlier link password-proven, and only password and room-code
-  sign-ins make links now.)
+  code): accounts that came in by friend request and were never proven by
+  their owner (a finished friend-request claim for one of their bonk.io ids,
+  and no password or room-code proof on any link) leave any group they're in
+  (even as its main), lose their one-click sign-ins, and every session
+  holding them ends. The next sign-in needs a room code or the password.
+  `--dry-run` shows the counts first.
 - Chooser entries that last signed in by friend request open the room-code
   way.
 - The command runs after the deploy has settled (old processes still run

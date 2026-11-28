@@ -112,8 +112,10 @@ deploy, `railway ssh` into `bonkverse`:
 Bonkverse no longer signs in with friend requests (ADR 0024, "Removed").
 Once the deploy that removed it has settled:
 
-1. In a `railway ssh` shell on `bonkverse`: `python manage.py
-   retire_friend_requests`. Migration 0014 only refused waiting claims; this
+1. Once the old web and worker processes are gone (the new deploy shows
+   Active and the old one Removed), in a `railway ssh` shell on `bonkverse`:
+   `python manage.py retire_friend_requests --dry-run` to see the counts,
+   then `python manage.py retire_friend_requests`. Migration 0014 only refused waiting claims; this
    takes accounts proven only by friend request out of their groups, ends
    their one-click sign-ins and signs them out everywhere (a browser holding
    one is signed out of its other accounts too). It prints counts only (a nonzero

@@ -516,6 +516,29 @@ def _run_migration_0014():
     import_module("accounts.migrations.0014_cancel_friend_request_claims").cancel(state.apps, None)
 
 
+def _came_in_by_friend_request(name, bonk_id):
+    """An account a friend request signed in (before 2026-11-27): its link
+    has no owner's proof, and a finished friend claim names its bonk.io id."""
+    now = timezone.now()
+    user = UserFactory(username=name)
+    BonkAccountLink.objects.create(
+        user=user,
+        bonk_player=BonkPlayer.objects.create(username=name, bonk_id=bonk_id),
+        active=True,
+    )
+    LinkClaim.objects.create(
+        name=name,
+        name_key=name.casefold(),
+        method=LinkClaim.FRIEND_REQUEST,
+        status=LinkClaim.DONE,
+        bonk_id=bonk_id,
+        bonk_name=name,
+        started_at=now,
+        expires_at=now,
+    )
+    return user
+
+
 def _retire():
     """`manage.py retire_friend_requests`, run after the deploy."""
     from accounts.retire_friend_requests import retire
@@ -553,12 +576,7 @@ def test_retiring_signs_friend_request_only_accounts_out(client):
     """Whoever got in by friend request doesn't keep the account."""
     from django.test import Client
 
-    friend_only = UserFactory(username="ByFriend")
-    BonkAccountLink.objects.create(
-        user=friend_only,
-        bonk_player=BonkPlayer.objects.create(username="ByFriend", bonk_id=1),
-        active=True,
-    )
+    friend_only = _came_in_by_friend_request("ByFriend", 1)
     owner = _password_proven("ByPassword", 2)
     theirs, mine = Client(), Client()
     theirs.force_login(friend_only)
@@ -575,12 +593,7 @@ def test_retiring_takes_friend_only_accounts_out_of_groups(client):
     back by signing in as that main (butdoge's review)."""
     from accounts import groups
 
-    claimed = UserFactory(username="ByFriend")
-    BonkAccountLink.objects.create(
-        user=claimed,
-        bonk_player=BonkPlayer.objects.create(username="ByFriend", bonk_id=1),
-        active=True,
-    )
+    claimed = _came_in_by_friend_request("ByFriend", 1)
     mallory_main = _password_proven("MalloryMain", 9)
     groups.join(mallory_main, claimed)
     owners_alt = _password_proven("OwnersAlt", 3)
@@ -600,12 +613,7 @@ def test_it_ends_a_session_holding_the_account_as_an_unlocked_alt():
 
     from accounts import groups
 
-    claimed = UserFactory(username="ByFriend")
-    BonkAccountLink.objects.create(
-        user=claimed,
-        bonk_player=BonkPlayer.objects.create(username="ByFriend", bonk_id=1),
-        active=True,
-    )
+    claimed = _came_in_by_friend_request("ByFriend", 1)
     other = SessionStore()
     other["_auth_user_id"] = "999999"
     other[groups.UNLOCKED_KEY] = [claimed.pk]
@@ -626,12 +634,7 @@ def test_running_it_again_is_harmless():
 def test_retiring_ends_one_click_for_friend_request_only_accounts():
     from accounts.models import RememberedSignIn
 
-    friend_only = UserFactory(username="ByFriend")
-    BonkAccountLink.objects.create(
-        user=friend_only,
-        bonk_player=BonkPlayer.objects.create(username="ByFriend", bonk_id=1),
-        active=True,
-    )
+    friend_only = _came_in_by_friend_request("ByFriend", 1)
     owner = _password_proven("ByPassword", 2)
     for user in (friend_only, owner):
         RememberedSignIn.objects.create(
@@ -653,12 +656,7 @@ def test_a_password_takes_back_an_account_a_friend_request_claimed(
 
     from accounts import groups
 
-    claimed = UserFactory(username="TestPlayer")
-    BonkAccountLink.objects.create(
-        user=claimed,
-        bonk_player=BonkPlayer.objects.create(username="TestPlayer", bonk_id=1234567),
-        active=True,
-    )
+    claimed = _came_in_by_friend_request("TestPlayer", 1234567)
     groups.join(UserFactory(username="MalloryMain"), claimed)
     mallory = Client()
     mallory.force_login(claimed)
@@ -674,12 +672,7 @@ def test_a_password_takes_back_an_account_a_friend_request_claimed(
 def test_a_friend_request_only_account_cant_vote_yet():
     from skins.votes import why_cant_vote
 
-    account = UserFactory(username="ByFriend")
-    BonkAccountLink.objects.create(
-        user=account,
-        bonk_player=BonkPlayer.objects.create(username="ByFriend", bonk_id=7),
-        active=True,
-    )
+    account = _came_in_by_friend_request("ByFriend", 7)
 
     assert "password" in why_cant_vote(account)
 
@@ -1069,12 +1062,7 @@ def test_on_the_groups_own_browser_a_password_keeps_the_alt_in_its_group(client,
     from accounts import groups
 
     main = _password_proven("OwnersMain", 77)
-    alt = UserFactory(username="TestPlayer")
-    BonkAccountLink.objects.create(
-        user=alt,
-        bonk_player=BonkPlayer.objects.create(username="TestPlayer", bonk_id=1234567),
-        active=True,
-    )
+    alt = _came_in_by_friend_request("TestPlayer", 1234567)
     groups.join(main, alt)
     client.force_login(main)
     session = client.session
@@ -1093,12 +1081,7 @@ def test_it_matches_session_lists_holding_ids_as_text():
 
     from accounts import groups
 
-    claimed = UserFactory(username="ByFriend")
-    BonkAccountLink.objects.create(
-        user=claimed,
-        bonk_player=BonkPlayer.objects.create(username="ByFriend", bonk_id=1),
-        active=True,
-    )
+    claimed = _came_in_by_friend_request("ByFriend", 1)
     other = SessionStore()
     other[groups.SIGNED_IN_KEY] = [str(claimed.pk)]
     other.create()
@@ -1121,12 +1104,7 @@ def test_a_trusted_browser_keeps_the_alt_in_its_group(client, mocked_http):
     from accounts import devices, groups
 
     main = _password_proven("OwnersMain", 77)
-    alt = UserFactory(username="TestPlayer")
-    BonkAccountLink.objects.create(
-        user=alt,
-        bonk_player=BonkPlayer.objects.create(username="TestPlayer", bonk_id=1234567),
-        active=True,
-    )
+    alt = _came_in_by_friend_request("TestPlayer", 1234567)
     groups.join(main, alt)
     main.refresh_from_db()
     from django.core.signing import get_cookie_signer
@@ -1148,17 +1126,8 @@ def test_two_retired_accounts_in_one_group_including_its_main():
     """take_out re-reads each account; the second isn't handled from stale data."""
     from accounts import groups
 
-    def friend_only(name, bonk_id):
-        user = UserFactory(username=name)
-        BonkAccountLink.objects.create(
-            user=user,
-            bonk_player=BonkPlayer.objects.create(username=name, bonk_id=bonk_id),
-            active=True,
-        )
-        return user
-
-    claimer_main = friend_only("ClaimedMain", 11)
-    claimed_alt = friend_only("ClaimedAlt", 12)
+    claimer_main = _came_in_by_friend_request("ClaimedMain", 11)
+    claimed_alt = _came_in_by_friend_request("ClaimedAlt", 12)
     keeper = _password_proven("KeeperAlt", 13)
     groups.join(claimer_main, claimed_alt)
     groups.join(claimer_main, keeper)
@@ -1187,3 +1156,35 @@ def test_with_room_codes_off_the_chooser_uses_the_password(client, settings):
     page = client.get("/login/").content.decode()
 
     assert "/login/?username=ByFriend" in page and "With your password" in page
+
+
+def test_a_link_without_proof_or_friend_claim_is_left_alone(client):
+    """Only accounts a friend request actually brought in are retired."""
+    from django.test import Client
+
+    other = UserFactory(username="NoClaimBehindIt")
+    BonkAccountLink.objects.create(
+        user=other,
+        bonk_player=BonkPlayer.objects.create(username="NoClaimBehindIt", bonk_id=21),
+        active=True,
+    )
+    browser = Client()
+    browser.force_login(other)
+
+    assert _retire()["accounts"] == 0
+    assert browser.get("/api/me/").status_code == 200
+
+
+def test_a_dry_run_changes_nothing(client):
+    from django.test import Client
+
+    from accounts.retire_friend_requests import retire
+
+    claimed = _came_in_by_friend_request("ByFriend", 1)
+    browser = Client()
+    browser.force_login(claimed)
+
+    counts = retire(dry_run=True)
+
+    assert counts["accounts"] == 1 and counts["sessions"] == 1
+    assert browser.get("/api/me/").status_code == 200
