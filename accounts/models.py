@@ -232,11 +232,20 @@ class BonkAccountLink(models.Model):
     )
     # Last successful refresh through login_auto.php.
     last_refreshed_at = models.DateTimeField(blank=True, null=True)
-    # When the owner last proved this bonk.io account with its password. A
-    # password login also stores the account's XP (its level); a friend
-    # request doesn't, so voting needs one password login (skins.votes).
-    # Every link from before friend-request linking was made by password.
+    # How the owner proved this bonk.io account themselves, strongest first
+    # (sign_in._reclaim). A password login also stores its XP (its level);
+    # every link from before friend-request linking was made by password. A
+    # friend request proves neither (ADR 0024): an account proven only that
+    # way can't vote, and either proof takes it back.
     password_proven_at = models.DateTimeField(blank=True, null=True)
+    # A code typed in a bot-hosted room (ADR 0026): proves the account was
+    # logged in on bonk.io, but a code can be relayed (someone talked into
+    # typing another person's code), so a password still takes the account
+    # back from it, and on an account that has used its password a code opens
+    # only that account. `room_level`: the level the room showed, for the
+    # vote rule (not written into the player's XP, which other pages show).
+    room_proven_at = models.DateTimeField(blank=True, null=True)
+    room_level = models.PositiveSmallIntegerField(blank=True, null=True)
     scopes = models.JSONField(blank=True, null=True)  # e.g. {"friends": true}
     active = models.BooleanField(default=True)
     connected_at = models.DateTimeField(auto_now_add=True)
@@ -375,6 +384,9 @@ class LinkClaim(models.Model):
     room_id = models.CharField(max_length=40, blank=True)
     room_link = models.URLField(max_length=200, blank=True)
     wrong_codes = models.PositiveSmallIntegerField(default=0)
+    # ROOM_CODE: the bonk.io level the room showed for the player who typed
+    # the right code (null if they'd left the room by then).
+    bonk_level = models.PositiveSmallIntegerField(null=True, blank=True)
 
     class Meta:
         indexes = [models.Index(fields=["status", "expires_at"], name="linkclaim_pending")]

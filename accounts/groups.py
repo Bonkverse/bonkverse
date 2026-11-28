@@ -52,6 +52,10 @@ SIGNED_IN_KEY = "bv_signed_in"
 # Site account ids the group's main unlocked on this browser (only usable
 # while devices.is_trusted says the browser is still trusted).
 UNLOCKED_KEY = "bv_unlocked"
+# Accounts signed in here only by a room code although they've used their
+# password (ADR 0026): a code can be relayed, so they don't count as "the
+# main signed in here" and can't take new accounts into their group.
+CODE_ONLY_KEY = "bv_code_only"
 
 
 class NotAllowed(Exception):
@@ -100,27 +104,41 @@ def bonk_level(user: BonkUser) -> int | None:
 
 
 def voting_standing(user: BonkUser) -> tuple[int | None, bool]:
-    """(bonk.io level or None, proven only by friend request) for the vote
-    rule, in one query. The level comes from the XP stored at the account's
-    last password sign-in (the highest of its links). "Only by friend
-    request": it has links and none was ever proven with the password (which
-    is what tells us the level); accounts from before friend-request linking
-    all came in by password."""
+    """(bonk.io level or None, never proven with its password) for the vote
+    rule, in one query.
+
+    The level is the highest known across its links: from the XP stored at a
+    password sign-in, or the level a room showed at a room-code sign-in.
+    "Never proven with its password": it has links and none has a password
+    proof. Accounts from before friend-request linking all came in by
+    password, so a missing level only blocks voting when there's no
+    password proof either (skins.votes.why_cant_vote)."""
     rows = list(
         BonkAccountLink.objects.filter(user=user, active=True).values_list(
-            "bonk_player__xp", "password_proven_at"
+            "bonk_player__xp", "room_level", "password_proven_at"
         )
     )
-    known = [xp for xp, _ in rows if xp is not None]
-    level = level_for_xp(max(known)) if known else None
-    return level, bool(rows) and all(proven is None for _, proven in rows)
+    levels = [level_for_xp(xp) for xp, _, _ in rows if xp is not None]
+    levels += [level for _, level, _ in rows if level]
+    level = max(levels) if levels else None
+    return level, bool(rows) and all(proven is None for _, _, proven in rows)
 
 
 def main_signed_in_here(request) -> bool:
     """Whether the group's main is signed in on this browser (true for an
     account with no group). Actions that change the other accounts need it."""
     group = request.user.account_group if request.user.account_group_id else None
-    return group is None or group.main_id in signed_in_ids(request)
+    return group is None or _main_here(request, group)
+
+
+def _main_here(request, group) -> bool:
+    """The group's main is signed in on this browser by its own proof, not
+    only by a room code (CODE_ONLY_KEY)."""
+    return group.main_id in signed_in_ids(request) and group.main_id not in code_only_ids(request)
+
+
+def code_only_ids(request) -> list[int]:
+    return [i for i in request.session.get(CODE_ONLY_KEY, []) if isinstance(i, int)]
 
 
 def is_main(user: BonkUser) -> bool:
@@ -173,18 +191,32 @@ def _forget_cache(request) -> None:
         del request._bv_signed_in
 
 
-def browser_lists(request) -> tuple[list[int], list[int]]:
+class BrowserLists(tuple):
+    """(password ids, unlocked ids), with `.code_only` (CODE_ONLY_KEY)
+    carried alongside so it survives login()'s session flush too."""
+
+    code_only: list[int]
+
+
+def _lists(password, unlocked, code_only=()) -> BrowserLists:
+    lists = BrowserLists((password, unlocked))
+    lists.code_only = list(code_only)
+    return lists
+
+
+def browser_lists(request) -> BrowserLists:
     """(password ids, unlocked ids) as stored for this browser, to carry
-    across login()'s session flush. The unlocked list stays separate so a
-    removed or expired trust still ends it. A session from before groups
-    counts its active account as signed in with its password."""
+    across login()'s session flush, plus `.code_only`. The unlocked list
+    stays separate so a removed or expired trust still ends it. A session
+    from before groups counts its active account as signed in with its
+    password."""
     if not request.user.is_authenticated:
-        return [], []
+        return _lists([], [])
     password = _password_ids(request)
     unlocked = [i for i in request.session.get(UNLOCKED_KEY, []) if isinstance(i, int)]
     if request.user.pk not in password and request.user.pk not in unlocked:
         password.append(request.user.pk)
-    return password, unlocked
+    return _lists(password, unlocked, code_only_ids(request))
 
 
 def _store(request, password: list[int], unlocked: list[int]) -> None:
@@ -231,9 +263,10 @@ def _connected_for_wear(account: BonkUser) -> bool:
 def after_login(
     request,
     previous: BonkUser | None,
-    previous_lists: tuple[list[int], list[int]],
+    previous_lists: BrowserLists,
     *,
     add: bool,
+    unlock: bool = True,
 ):
     """Call right after login() put `request.user` in this browser (signed in
     with its password).
@@ -244,21 +277,31 @@ def after_login(
     browser keeps every account it had; a plain login keeps them only when
     the new account is already in the same group, and otherwise starts over.
     If the new account is its group's main, this browser becomes trusted and
-    every account in the group is unlocked here.
+    every account in the group is unlocked here, unless `unlock` is False (a
+    room code for an account that has used its password, ADR 0026): then it
+    opens only itself and is marked code-only here (CODE_ONLY_KEY), so it
+    doesn't count as the main signed in here and adds nothing to its group.
     """
     user = request.user
-    if add and previous is not None and previous.pk != user.pk:
+    was_code_only = list(getattr(previous_lists, "code_only", []))
+    # An account in only by a room code can't take new ones into its group.
+    if add and previous is not None and previous.pk != user.pk and previous.pk not in was_code_only:
         join(previous, user)
         user.refresh_from_db()
         previous.refresh_from_db()
     keep = previous is not None and same_group(previous, user)
     password, unlocked = previous_lists if keep else ([], [])
     password = [i for i in password if i != user.pk] + [user.pk]
-    if user.account_group_id is not None and is_main(user):
+    already_proven_here = keep and user.pk in previous_lists[0] and user.pk not in was_code_only
+    code_only = [i for i in (was_code_only if keep else []) if i != user.pk]
+    if not unlock and not already_proven_here:
+        code_only.append(user.pk)
+    elif user.account_group_id is not None and is_main(user):
         # Only the main unlocks the group, and only on this browser.
         devices.trust(request, user.account_group)
         unlocked = member_ids(user)
     _store(request, password, unlocked)
+    request.session[CODE_ONLY_KEY] = code_only
 
 
 def add_signed_in_here(request, account_ids: list[int]) -> None:
@@ -440,7 +483,7 @@ def remove(request, account_id: int) -> None:
     if account is None or not same_group(current, account) or account.account_group_id is None:
         raise NotAllowed("That account isn't in your group.")
     group = current.account_group
-    if account.pk != current.pk and group.main_id not in signed_in_ids(request):
+    if account.pk != current.pk and not _main_here(request, group):
         main_name = BonkUser.objects.filter(pk=group.main_id).values_list("username", flat=True)
         raise NotAllowed(
             f"Only {main_name.first() or 'the main account'} can remove other accounts. "
@@ -474,7 +517,7 @@ def make_main(request, account_id: int) -> None:
     if account is None or not same_group(current, account) or account.account_group_id is None:
         raise NotAllowed("That account isn't in your group.")
     group = current.account_group
-    if group.main_id not in signed_in_ids(request):
+    if not _main_here(request, group):
         raise NotAllowed("Sign in to the current main account on this browser first.")
     AccountGroup.objects.filter(pk=group.pk).update(main=account)
     log_event(current, "account_group_main_changed", account_id=account.pk, group_id=group.pk)

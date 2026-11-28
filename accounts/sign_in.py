@@ -74,7 +74,8 @@ def sign_in(
     previous_lists = groups.browser_lists(request)
 
     user = site_account_for(result.username, result.bonk_id)
-    reclaimed = _reclaim(request, user, result.bonk_id, previous_lists)
+    links = _links_to(user, name=result.username.value, bonk_id=result.bonk_id)
+    reclaimed = _reclaim(request, user, links, previous_lists, proof=BONK_LOGIN)
     login(request, user)
     groups.after_login(request, previous, previous_lists, add=add)
     if reclaimed:
@@ -120,31 +121,97 @@ def sign_in(
     return user
 
 
-def _reclaim(request, user: BonkUser, bonk_id: int | None, previous_lists) -> bool:
-    """The password beats an earlier friend-request claim (ADR 0024).
+def _links_to(user: BonkUser, *, name: str, bonk_id: int | None = None, active_only=True):
+    """`user`'s links to one bonk.io account, whichever player row holds
+    them: by `bonk_id` when known (then by name only on rows whose id isn't
+    known: a row with another id is another account, even with this name),
+    else by `name` (capitalization only, `same_name`), since a room proves
+    names, not ids."""
+    links = BonkAccountLink.objects.filter(user=user)
+    if active_only:
+        links = links.filter(active=True)
+    match = models.Q(bonk_player__username__iexact=name)
+    if bonk_id is not None:
+        match |= models.Q(bonk_player__bonk_id=bonk_id)
+    rows = links.filter(match).values_list("pk", "bonk_player__bonk_id", "bonk_player__username")
+    keep = [
+        pk
+        for pk, row_id, linked in rows
+        if (
+            row_id == bonk_id
+            if bonk_id is not None and row_id is not None
+            else same_name(linked, name)
+        )
+    ]
+    return links.filter(pk__in=keep)
 
-    A friend request can't show who started the claim it proves, so an
-    account only ever proven that way may have been claimed by someone else.
-    When its password signs in on a browser where its group's main isn't
-    signed in and that the group doesn't trust, it leaves its group and every other browser's hold on it ends: one-click
-    sign-ins here and the other sessions (after login, on the worker).
+
+# The proof a sign-in brings, for `_reclaim`, and the event it logs. (Named
+# for the sign-in, not "password": nothing secret is in them.)
+BONK_LOGIN = "bonk_login"
+ROOM_CODE = "room_code"
+_RECLAIM_EVENT = {
+    BONK_LOGIN: "account_reclaimed_by_password",
+    ROOM_CODE: "account_reclaimed_by_room_code",
+}
+
+
+class NeedsPassword(PermissionDenied):
+    """A room code can't add an account that has signed in with its password
+    to a group: a code can be relayed (ADR 0026)."""
+
+    message = "This account has used its password before. Add it with its bonk.io password."
+
+
+def _proofs(links) -> tuple:
+    """(latest password proof, latest room-code proof) across `links`."""
+    rows = list(links.values_list("password_proven_at", "room_proven_at"))
+    password = max((p for p, _ in rows if p), default=None)
+    room = max((r for _, r in rows if r), default=None)
+    return password, room
+
+
+def _reclaim(request, user: BonkUser, links, previous_lists, *, proof) -> bool:
+    """The owner's proof takes an account back from a weaker one (ADR 0024,
+    0026). Compared across all its `links` (older data can hold two for one
+    name):
+
+    - a password takes it back from a friend request (which can't show who
+      started the claim) and from a room code newer than its last password
+      (a code can be relayed: someone talked into typing another's code);
+    - a room code takes it back only from a friend request.
+
+    Unless this browser is its group's own (the main signed in here, or a
+    browser the group trusts), its one-click sign-ins and every other
+    session holding it end (after login, on the worker). If it never used
+    its password it also leaves its group, even as its main: the claimer may
+    have built that group around it. One that did can't have been moved by a
+    room code (`sign_in_by_room_code`), so it stays. Call before the new
+    proof is recorded on `links`.
 
     Returns:
         Whether it was reclaimed.
     """
-    if bonk_id is None:
-        return False
-    links = BonkAccountLink.objects.filter(user=user, bonk_player__bonk_id=bonk_id, active=True)
-    if not links.exists() or links.filter(password_proven_at__isnull=False).exists():
-        return False  # new here, or its password signed in before
+    if not links.exists():
+        return False  # new here
+    password, room = _proofs(links)
+    if proof == BONK_LOGIN:
+        held = password is not None and (room is None or password >= room)
+    else:
+        held = password is not None or room is not None
+    if held:
+        return False  # already proven at least this strongly
     if user.account_group_id:
         password_ids, _ = previous_lists
         main_id = user.account_group.main_id
-        if main_id in password_ids or devices.is_trusted(request, user.account_group_id):
+        code_only = getattr(previous_lists, "code_only", [])
+        main_here = main_id in password_ids and main_id not in code_only
+        if main_here or devices.is_trusted(request, user.account_group_id):
             return False  # its group's own browser: the owner and their alt
-    groups.take_out(user)
+        if password is None:
+            groups.take_out(user)
     devices.forget_all_sign_ins(user)
-    log_event(user, "account_reclaimed_by_password")
+    log_event(user, _RECLAIM_EVENT[proof])
     return True
 
 
@@ -197,27 +264,55 @@ def sign_in_by_friend_request(request, *, bonk_id: int, bonk_name: str, add: boo
     return user
 
 
-def sign_in_by_room_code(request, *, bonk_name: str, add: bool) -> BonkUser:
+def sign_in_by_room_code(
+    request, *, bonk_name: str, add: bool, level: int | None = None
+) -> BonkUser:
     """Sign the browser in as a bonk.io account proven by a code typed in a
     bot-hosted room (accounts/room_claims.py, ADR 0026, experimental), with
     no password.
 
-    Like `sign_in_by_friend_request`, except that a room proves the name, not
-    the account id: bonk.io's join event doesn't carry it. The player row is
-    found by name (bonk.io names are unique ignoring case) and gets its id
-    later, from a friend list or a password login.
+    Works for accounts already on Bonkverse (owner decision 2026-11-27): it
+    takes back one that only a friend request had claimed (`_reclaim`) and,
+    with the `level` the room showed, lets it vote. A code can be relayed
+    (someone talked into typing another's code), so for an account that has
+    used its password it opens only that account: no group unlock, and
+    `add` raises `NeedsPassword` (owner, 2026-11-27). It gives no tokens
+    (Wear asks for the password once) and no friend lists.
+
+    A room proves the name, not the account id: bonk.io's join event doesn't
+    carry it. The player row is found by name (bonk.io names are unique
+    ignoring case) and gets its id later, from a friend list or a password
+    login.
     """
     previous = request.user if request.user.is_authenticated else None
     previous_lists = groups.browser_lists(request)
 
     username = BonkUsername(bonk_name)
     user = site_account_for(username)
-    player = link_by_room_code(user, bonk_name=username.value)
+    if _staff_like(user):
+        # A room proves only the name, which can change hands on bonk.io:
+        # staff and admin accounts sign in with their password (#198).
+        raise ProtectedSiteAccount(ProtectedSiteAccount.message)
+    links = _links_to(user, name=username.value)
+    player = _player_named(username.value, linked=links)
+    # Inactive links count too: a disconnected link keeps its password proof.
+    used_password = _proofs(_links_to(user, name=username.value, active_only=False))[0] is not None
+    if add and used_password:
+        raise NeedsPassword(NeedsPassword.message)
+    reclaimed = _reclaim(request, user, links, previous_lists, proof=ROOM_CODE)
+    link_by_room_code(user, player=player, level=level)
     login(request, user)
-    groups.after_login(request, previous, previous_lists, add=add)
+    # A code can be relayed: for an account that has used its password it
+    # opens only itself (no group unlock, no trusted browser).
+    groups.after_login(request, previous, previous_lists, add=add, unlock=not used_password)
+    if reclaimed:
+        _end_other_sessions(request, user)
     log_event(user, "user_logged_in", via="room_code", added=add)
     known_accounts.remember(request, user.username, known_accounts.ROOM_CODE)
-    devices.remember_sign_in(request, user)
+    if not used_password:
+        # A one-click sign-in would come back with full powers; a code-only
+        # sign-in of a password account asks for a code (or password) again.
+        devices.remember_sign_in(request, user)
     if not add:
         used_here.offer_after_sign_in(request)
 
@@ -226,24 +321,45 @@ def sign_in_by_room_code(request, *, bonk_name: str, add: bool) -> BonkUser:
     return user
 
 
-def link_by_room_code(user: BonkUser, *, bonk_name: str) -> BonkPlayer:
-    """Link `user` to the BonkPlayer named `bonk_name` (case ignored), made
-    if Bonkverse hasn't seen the name yet. The link has no tokens and keeps
-    any it had. Prefers a row whose bonk.io id is known."""
-    player = (
-        BonkPlayer.objects.filter(username__iexact=bonk_name)
-        .order_by(models.F("bonk_id").asc(nulls_last=True), "pk")
-        .first()
+def _player_named(bonk_name: str, *, linked=None) -> BonkPlayer:
+    """The BonkPlayer named `bonk_name` (capitalization only), made if
+    Bonkverse hasn't seen the name yet. Prefers the row the account already
+    links to (`linked`), so older data with two rows for one name doesn't get
+    a second link; then a row whose bonk.io id is known."""
+    already = linked.select_related("bonk_player").first() if linked is not None else None
+    if already is not None:
+        return already.bonk_player
+    rows = BonkPlayer.objects.filter(username__iexact=bonk_name).order_by(
+        models.F("bonk_id").asc(nulls_last=True), "pk"
     )
+    player = next((row for row in rows if same_name(row.username, bonk_name)), None)
     if player is None:
-        player = BonkPlayer.objects.create(username=bonk_name, bonk_id=None)
-    elif player.username != bonk_name:
+        return BonkPlayer.objects.create(username=bonk_name, bonk_id=None)
+    if player.username != bonk_name:
         player.username = bonk_name
         player.save(update_fields=["username", "updated_at"])
-    BonkAccountLink.objects.update_or_create(
-        user=user, bonk_player=player, defaults={"active": True}
-    )
     return player
+
+
+def link_by_room_code(
+    user: BonkUser, *, player: BonkPlayer, level: int | None = None
+) -> BonkAccountLink:
+    """Link `user` to `player` after a room code proved it (`room_proven_at`,
+    and the room's `level` when it showed one). The link has no tokens and
+    keeps any it had, and the player's XP isn't touched: the vote rule reads
+    `room_level` (groups.voting_standing)."""
+    proof = {"room_proven_at": timezone.now()}
+    if level and level > 0:
+        # Kept when a later room shows no level: bonk.io levels only rise.
+        proof["room_level"] = level
+    # A new link starts active; an existing one keeps its state, so a code
+    # never undoes a disconnect.
+    link, created = BonkAccountLink.objects.get_or_create(
+        user=user, bonk_player=player, defaults={"active": True, **proof}
+    )
+    if not created:
+        BonkAccountLink.objects.filter(pk=link.pk).update(**proof)
+    return link
 
 
 def sign_in_with_one_click(request, user: BonkUser) -> None:
@@ -292,6 +408,14 @@ class ProtectedSiteAccount(PermissionDenied):
     message = "This account can't be signed in to this way. If it's yours, ask the Bonkverse team."
 
 
+def _staff_like(user: BonkUser) -> bool:
+    """Staff, superuser, or a site account with its own password (made
+    outside bonk.io). An empty password field isn't a password: rows made
+    without create_user have one, and Django calls it "usable"."""
+    has_password = bool(user.password) and user.has_usable_password()
+    return user.is_staff or user.is_superuser or has_password
+
+
 def _protected(user: BonkUser, name: str, bonk_id: int | None = None) -> bool:
     """Whether `user` is a site account Bonkverse made or keeps outside
     bonk.io (staff, superuser, or one with its own password, which bonk.io
@@ -302,10 +426,7 @@ def _protected(user: BonkUser, name: str, bonk_id: int | None = None) -> bool:
     is right for accounts bonk.io made; for one made with `createsuperuser`
     (say "admin") it would hand the account to whoever registers or already
     owns that name on bonk.io."""
-    # An empty password field isn't a password: rows made without
-    # create_user have one, and Django calls it "usable".
-    has_password = bool(user.password) and user.has_usable_password()
-    if not (user.is_staff or user.is_superuser or has_password):
+    if not _staff_like(user):
         return False
     # Linked to this bonk.io account: by id when the sign-in knows it (a name
     # could change hands on bonk.io; an id can't), else by name on a row
@@ -320,6 +441,24 @@ def _protected(user: BonkUser, name: str, bonk_id: int | None = None) -> bool:
         elif same_name(linked_name, name):
             return False
     return True
+
+
+def refuses_bonk_sign_in(name: str) -> bool:
+    """Whether a room-code sign-in as `name` would be refused: any staff,
+    superuser or password-holding site account by that name, linked or not
+    (a room proves only the name). Checked before a room opens for it."""
+    candidates = BonkUser.objects.filter(username__iexact=name)
+    return any(same_name(user.username, name) and _staff_like(user) for user in candidates)
+
+
+def used_its_password(name: str) -> bool:
+    """Whether the site account for `name` has signed in with its bonk.io
+    password: then a room code can't add it to a group (`NeedsPassword`),
+    checked before a room opens."""
+    links = BonkAccountLink.objects.filter(
+        bonk_player__username__iexact=name, password_proven_at__isnull=False
+    ).values_list("bonk_player__username", flat=True)
+    return any(same_name(linked, name) for linked in links)
 
 
 def site_account_for(username: BonkUsername, bonk_id: int | None = None) -> BonkUser:

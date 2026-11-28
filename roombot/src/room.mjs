@@ -124,7 +124,7 @@ export class BonkRoom {
       this._say(`This room is for ${this.expectedName}.`);
       this._kick(id);
     } else {
-      this._say(`Hi ${player.username}! Type the code shown on Bonkverse.`);
+      this._say(`Hi ${player.username}! Type the code on YOUR Bonkverse screen. Never type a code someone sent you.`);
     }
   }
 
