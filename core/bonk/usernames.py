@@ -18,11 +18,37 @@ new-account rules.
 
 from __future__ import annotations
 
+import string
 from dataclasses import dataclass
 
 # Longest name seen in real data is 35; leave headroom rather than reject a
 # real account. BonkPlayer.username is 255 wide.
 MAX_LENGTH = 64
+
+_ASCII_LOWER = str.maketrans(string.ascii_uppercase, string.ascii_lowercase)
+
+
+def fold(name: str) -> str:
+    """`name` with A-Z lowercased and every other character left as it is.
+
+    The one rule for "are these two spellings the same bonk.io account":
+    capitalization of the 26 English letters is ignored, nothing else.
+
+    Not str.lower(), str.casefold() or the database's UPPER()/LOWER(): each
+    of those also turns some non-English letters into English ones, and they
+    disagree about which. Postgres's UPPER() (what `__iexact` compares with)
+    makes "ı" (dotless i, U+0131) an "I" and "ſ" (long s, U+017F) an "S", so
+    "admın" matched the account "admin". Python's lower() makes the Kelvin
+    sign (U+212A, drawn like a capital K) a "k", so a name written with it
+    matched a player the account lookup didn't. A name that is only *almost*
+    someone's must never be treated as theirs.
+    """
+    return name.translate(_ASCII_LOWER)
+
+
+def same_name(a: str | None, b: str | None) -> bool:
+    """Whether two spellings name the same bonk.io account (see `fold`)."""
+    return a is not None and b is not None and fold(a) == fold(b)
 
 
 class InvalidUsername(ValueError):
@@ -65,8 +91,10 @@ class BonkUsername:
         # BONK: usernames are unique case-insensitively: registering
         # "the saucy tulip" fails as taken when "The Saucy Tulip" exists
         # (verified 2026-11-03). Spaces are kept: they distinguish accounts.
+
+        Only A-Z are folded (see `fold`).
         """
-        return self.value.casefold()
+        return fold(self.value)
 
     def __str__(self) -> str:
         return self.value

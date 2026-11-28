@@ -117,6 +117,24 @@ def test_bulk_delete_removes_only_own_skins(client, tulip):
     assert list(Skin.objects.values_list("id", flat=True)) == [theirs.id]
 
 
+# "ſ" (long s): casefold() makes it "s" (the old is_owned_by) and Postgres
+# UPPER() makes it "S" (made_by, which bulk delete trusted on its own).
+LOOKALIKE = "The \u017faucy Tulip"
+
+
+def test_a_lookalike_name_cant_edit_or_delete_the_real_creators_skins(client):
+    client.force_login(UserFactory(username=LOOKALIKE))
+    skin = SkinFactory(creator="The Saucy Tulip", name="Hot Dog")
+
+    assert _edit(client, skin).status_code == 403
+    assert _delete(client, skin).status_code == 403
+    bulk = client.post("/skins/bulk-delete/", {"skin_ids": [skin.id]}, headers=AJAX)
+
+    assert bulk.json() == {"ok": True, "data": {"deleted_ids": []}}
+    skin.refresh_from_db()
+    assert skin.name == "Hot Dog"
+
+
 def test_profile_skins_tab_lists_own_skins_in_any_case(client, tulip):
     SkinFactory(creator="the saucy tulip", name="Hot Dog")
     SkinFactory(creator="Somepoop", name="Reality.exe")

@@ -24,6 +24,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
+from core.bonk import fold
 from core.ratelimits import limit
 from players import selectors as player_selectors
 
@@ -164,7 +165,7 @@ def _account_chooser(request) -> list[dict]:
     ids = _site_ids(names)
     one_click = devices.one_click_ids(request, ids.values())
     for account in known:
-        code = codes.get(account["username"].lower())
+        code = codes.get(fold(account["username"]))
         account["thumbnail"] = (
             player_selectors.skin_avatar_url(account["username"], code) if code else None
         )

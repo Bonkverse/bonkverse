@@ -53,7 +53,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
 
-from core.bonk import AvatarSlot
+from core.bonk import AvatarSlot, same_name
 from core.token_crypto import bonk_session
 from core.logs import mark_expected_error
 from core.ratelimits import describe_wait, limit
@@ -302,7 +302,7 @@ def bonk_login_for_wear(request):
     result = attempt.result
     active_slot = result.active_slot.number if result.active_slot else None
 
-    if result.username.value.casefold() != request.user.username.casefold():
+    if not same_name(result.username.value, request.user.username):
         # Another of the player's bonk.io accounts: the password proves it's
         # theirs, so it joins their group and becomes the account in use, as
         # "Add account" does (RFC-0003 phase 5). Never linked to this site
