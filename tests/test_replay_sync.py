@@ -289,8 +289,12 @@ def test_names_with_invisible_marks_are_spotted():
     assert replay_sync.has_invisible_marks("YuZuuuuu" + LRM)
     assert replay_sync.has_invisible_marks("a​b")  # zero-width space
     assert replay_sync.has_invisible_marks("x﻿")
+    assert replay_sync.has_invisible_marks("a\u200db")  # zero-width joiner
     for name in ("YuZuuuuu", "  spaced  ", "(%)", "admın", "ñandú"):
         assert not replay_sync.has_invisible_marks(name)
+    # Other format characters are left alone: a soft hyphen, an Arabic mark.
+    assert not replay_sync.has_invisible_marks("soft\u00adhyphen")
+    assert not replay_sync.has_invisible_marks("\u0600x")
 
 
 @pytest.mark.django_db
@@ -358,3 +362,18 @@ def test_cleanup_with_nothing_to_do():
     BonkPlayer.objects.create(bonk_id=None, username="B")
     _run_cleanup()
     assert BonkPlayer.objects.count() == 2
+
+
+def test_cleanup_checks_every_relation_to_bonkplayer():
+    """The cleanup migration skips rows these point at; a new relation must
+    be added there too, or deleting a row would cascade into it."""
+    relations = {
+        (r.related_model._meta.label, r.field.name) for r in BonkPlayer._meta.related_objects
+    }
+    assert relations == {
+        ("players.Friendship", "player_low"),
+        ("players.Friendship", "player_high"),
+        ("players.FriendCountHistory", "player"),
+        ("players.FlashFriend", "bonk_player"),
+        ("accounts.BonkAccountLink", "bonk_player"),
+    }

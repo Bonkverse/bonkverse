@@ -1,6 +1,6 @@
 """Remove BonkPlayers that the replay sync copied in by mistake.
 
-1. Names with invisible marks: the first replay sync (2026-11-08) copied in
+1. Names with invisible marks (players.replay_sync.INVISIBLE_MARKS): the first replay sync (2026-11-08) copied in
    "YuZuuuuu" followed by 1, 2, 3 ... left-to-right marks (U+200E), one row
    each, and the Players list showed every one as "YuZuuuuu". The sync now
    skips such names (players.replay_sync.has_invisible_marks).
@@ -13,8 +13,6 @@ edge or link is touched. Not reversible: the rows were only copies of
 replay names, and the next sync doesn't bring them back.
 """
 
-import unicodedata
-
 from django.db import migrations
 
 ASCII_LOWER = str.maketrans("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz")
@@ -25,9 +23,16 @@ def _fold(name):
     return name.translate(ASCII_LOWER)
 
 
+# players.replay_sync.INVISIBLE_MARKS, copied for the same reason.
+INVISIBLE_MARKS = frozenset(
+    [*range(0x200B, 0x2010), *range(0x202A, 0x202F), *range(0x2060, 0x2065), 0xFEFF]
+)
+CHUNK = 5000
+
+
 def _has_invisible_marks(name):
     """players.replay_sync.has_invisible_marks, copied for the same reason."""
-    return any(unicodedata.category(ch) == "Cf" for ch in name)
+    return any(ord(ch) in INVISIBLE_MARKS for ch in name)
 
 
 def remove_bad_replay_copies(apps, schema_editor):
@@ -43,7 +48,7 @@ def remove_bad_replay_copies(apps, schema_editor):
     nameless_first = {}
     doomed = []
     rows = BonkPlayer.objects.order_by("pk").values_list("pk", "bonk_id", "username")
-    for pk, bonk_id, username in rows.iterator(chunk_size=5000):
+    for pk, bonk_id, username in rows.iterator(chunk_size=CHUNK):
         key = _fold(username)
         if bonk_id is not None:
             with_dbid.add(key)
@@ -57,6 +62,8 @@ def remove_bad_replay_copies(apps, schema_editor):
     if not doomed:
         return
 
+    # Every relation to BonkPlayer (tests/test_replay_sync.py checks this
+    # list is complete), so a delete never cascades into anything.
     referenced = set()
     for model, fields in (
         (Friendship, ("player_low_id", "player_high_id")),
@@ -65,12 +72,14 @@ def remove_bad_replay_copies(apps, schema_editor):
         (BonkAccountLink, ("bonk_player_id",)),
     ):
         for field in fields:
-            referenced.update(
-                model.objects.filter(**{f"{field}__in": doomed}).values_list(field, flat=True)
-            )
+            for start in range(0, len(doomed), CHUNK):
+                chunk = doomed[start : start + CHUNK]
+                referenced.update(
+                    model.objects.filter(**{f"{field}__in": chunk}).values_list(field, flat=True)
+                )
     gone = [pk for pk in doomed if pk not in referenced]
-    for start in range(0, len(gone), 5000):
-        BonkPlayer.objects.filter(pk__in=gone[start : start + 5000], bonk_id__isnull=True).delete()
+    for start in range(0, len(gone), CHUNK):
+        BonkPlayer.objects.filter(pk__in=gone[start : start + CHUNK], bonk_id__isnull=True).delete()
 
 
 class Migration(migrations.Migration):
