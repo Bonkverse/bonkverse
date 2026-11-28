@@ -21,9 +21,8 @@ Names are in the `accounts` namespace (`app_name` in `accounts/urls.py`): `{% ur
 | `/accounts/switch/` | `switch_account` | POST `account`: use another account signed in on this browser |
 | `/accounts/remove/` | `remove_account` | POST `account`: take it out of the group (it keeps its own history) |
 | `/accounts/main/` | `make_main_account` | POST `account`: make it the group's main |
-| `/login/friend/` | `friend_request_login` | Sign in (or `?add=1` add an account) with a friend request: GET the name form, POST start a claim (`login` rate tier) |
-| `/login/friend/<id>/` | `friend_request_wait` | The waiting page; this browser's claims only |
-| `/login/friend/<id>/status/` | `friend_request_status` | POST, polled: pending / done (signs in or adds) / expired / refused |
+| `/login/friend/`, `/login/friend/<id>/` | `friend_request_login`, `friend_request_wait` | Removed 2026-11-27: send people to room codes (keeping `add`, the name and `next`) |
+| `/login/friend/<id>/status/` | `friend_request_status` | Removed: answers `410` "refused" so an open waiting page says friend requests are gone |
 | `/accounts/browsers/remove/` | `remove_trusted_browser` | POST `device`: stop trusting one of the group's browsers (main signed in here) |
 | `/accounts/show-on-profiles/` | `show_on_profiles` | POST `show=1/0`: "Also plays as…" on the group's profiles (main signed in here) |
 
@@ -33,8 +32,8 @@ RFC-0003 phase 5, [ADR 0023](../adr/0023-account-groups-of-site-accounts.md), `a
 
 - **The account in use** is `request.user`. It decides Wear (its link's tokens), upload credit, votes, favorites, and the header on every Bonkverse site (they share the session cookie).
 - **Switching** needs no password, but only between accounts signed in on this browser: with their own password (`groups.SIGNED_IN_KEY`), or unlocked by the main (`groups.UNLOCKED_KEY`). The group's other accounts show "Sign in".
-- **Friend-request sign-in (phase 6):** `/login/friend/` (`?add=1` to add an account): the person names a bonk.io account and sends a friend request from it to the bot's account (`bot_account.py`, `BONK_BOT_USERNAME`) within 10 minutes. `link_claims.py`: `LinkClaim` (pending → proven → done, or expired/refused); the worker (`tasks.check_link_claims`, every 30 s) reads the bot's requests only while a claim is pending, with BonxBot's matching rules (same bot account until phase 7); the browser that started the claim finishes it once (`sign_in.sign_in_by_friend_request`: a link without tokens). Such an account can't vote until its owner proves it with the password or a room code (`BonkAccountLink.password_proven_at` / `room_proven_at`, `groups.voting_standing`).
-- **Only accounts no one has here yet** (ADR 0024, 2026-11-25): a friend request can't show who started the claim it proves, so `link_claims.already_on_site` refuses claims for a name or id already on Bonkverse, at the start and again when proven. A password or room-code sign-in to an account only ever proven by friend request takes it back (`sign_in._reclaim`): out of its group, one-click sign-ins ended, other sessions ended on the worker (`tasks.end_other_sessions`), unless its group's main is signed in on that browser or the group trusts it.
+- **Friend-request sign-in (phase 6) was removed on 2026-11-27** (ADR 0024): a friend request can't show who started the claim it proves. Accounts that came in that way are left as they are (voting needs a password or room code); old `LinkClaim` rows with `method="friend"` are history.
+- **The owner's proof takes an account back** (`sign_in._reclaim`): a password from a friend-request claim or from a room code newer than its last password; a room code from a friend-request claim. Out of its group (if it never used its password), one-click sign-ins ended, other sessions ended on the worker (`tasks.end_other_sessions`), unless its group's main is signed in on that browser or the group trusts it.
 - **Room-code sign-in** (ADR 0026, experimental): `/login/room/` (`?add=1` to add). `room_claims.py` opens a hidden bonk.io room through roombot (`integrations/roombot.py`); the person types a code shown only in their browser. Works for any account, on Bonkverse already or not (2026-11-27): it counts like a password (`room_proven_at`, `sign_in.sign_in_by_room_code`), records the room's level for voting (`room_level`), and takes back friend-request-only claims. A code can be relayed, so on an account that has used its password a code opens only that account (no group unlock, can't be added to a group), and a password sign-in takes an account back from a room code newer than its last password (ADR 0026).
 - **Only the main unlocks:** a password sign-in to the main unlocks every account in the group on that browser and trusts it (`devices.py`: `TrustedDevice`, cookie `bv_device`, hash only; 90 days from last use). Other accounts open only themselves. Settings lists "Trusted browsers" with Remove (main signed in here); "Sign out of all accounts" has "Also forget this device"; `groups.UnlockedAccountMiddleware` signs out of an unlocked account once its browser isn't trusted.
 - **Adding:** "Add account" (`/login/?add=1`) or a Wear popup login with another account joins the group and keeps both signed in. A plain login while signed in replaces the session, so logging in to a friend's account never groups it. An account in another group moves (the password proves who controls it now).
@@ -87,8 +86,8 @@ A bonk.io name signs in to the site account with the same name (`site_account_fo
 
 After signing out, the login page lists the accounts that signed in on this browser, newest first, like Google's chooser (`known_accounts.py`: a signed HttpOnly `bv_known` cookie of names, the way in and when, at most 8, each dropped after 90 days unused; nothing stored on our side).
 
-- **One click** (ADR 0025): an account that proved itself on this browser (password or friend request) in the last `ONE_CLICK_SIGN_IN_DAYS` (30) signs straight back in, with no bonk.io call (`devices.remember_sign_in` / `one_click_ids`, `RememberedSignIn`, `sign_in.sign_in_with_one_click`). One-click sign-ins don't extend the window.
-- **After that**, it opens the way it last signed in, password or friend request, with the name filled in.
+- **One click** (ADR 0025): an account that proved itself on this browser (password or room code) in the last `ONE_CLICK_SIGN_IN_DAYS` (30) signs straight back in, with no bonk.io call (`devices.remember_sign_in` / `one_click_ids`, `RememberedSignIn`, `sign_in.sign_in_with_one_click`). One-click sign-ins don't extend the window.
+- **After that**, it opens the way it last signed in, password or room code (accounts that last used a friend request: room code), with the name filled in.
 - **Used on this browser** (`used_here.py`): signed in, accounts proven here within the window and in no group can join your group after you tick them and confirm they're yours, with no password. Offered on "Add a bonk.io account", in Settings, and once after a sign-in (`used_here_offer` context processor, session flag `bv_offer_used_here`).
 - Remove takes one off (and ends its one-click here); "Also forget this device" on sign-out clears the list and every one-click here; Settings → "One-click sign-in" lists the account's browsers with Remove.
 
@@ -107,9 +106,8 @@ accounts/
   devices.py            # the device cookie; TrustedDevice (group) and RememberedSignIn (one click)
   known_accounts.py     # "Choose an account": the bv_known cookie
   used_here.py          # add accounts used on this browser to your group
-  link_claims.py        # friend-request sign-in: claims, matching, finishing
-  bot_account.py        # the bot's bonk.io session (remember-me, encrypted in the cache)
-  tasks.py              # check_link_claims
+  link_claims.py        # what claims share: per-name limit, name checks, ClaimProblem
+  tasks.py              # end_other_sessions
   context_processors.py # viewer_accounts: the header's account switcher
   sessions.py           # 90-day sign-ins, renewed at most once a day
   forms.py              # LoginForm (username and password never stripped)
@@ -129,7 +127,7 @@ accounts/
 |---|---|---|
 | `BonkUser` | `skins_bonkuser` (+ `skins_bonkuser_groups`, `skins_bonkuser_user_permissions`) | The site account: `AUTH_USER_MODEL`, a bonk.io username, no usable password (sign-in is through bonk.io). Admin: `/admin/accounts/bonkuser/` |
 | `AccountGroup` | `accounts_accountgroup` | A person's bonk.io accounts: `main`, `show_on_profiles` ("Also plays as…"), and `BonkUser.account_group` / `joined_group_at` on each member. Never one member (groups.py deletes it) |
-| `LinkClaim` | `accounts_linkclaim` | A friend-request claim: `name`/`name_key`, `purpose` (sign_in/add), `requested_by`, `status`, `started_at`/`expires_at`, `bonk_id`/`bonk_name` when proven |
+| `LinkClaim` | `accounts_linkclaim` | A sign-in claim, now always a room code (`method="room"`; `"friend"` rows are history): `name`/`name_key`, `purpose` (sign_in/add), `requested_by`, `status`, `started_at`/`expires_at`, `bonk_name`/`bonk_level` when proven, `room_id`, `wrong_codes` |
 | `TrustedDevice` | `accounts_trusteddevice` | A browser where the group's main signed in: `group`, `device_hash` (SHA-256 of the `bv_device` cookie), `label`, `created_at`, `last_used_at` |
 | `UserEvent` | `skins_userevent` | The event log: one row per thing a person (or the site for them) did. Written only by `log_event`. Moved from `skins` in 5.6c, no data moved (`accounts.0003`, `skins.0035`) |
 | `BonkAccountLink` | `skins_bonkaccountlink` | A site account ↔ a `players.BonkPlayer`, with the bonk.io session token from the latest login, encrypted (`encrypt_token()` / `bonk_token()`, [ADR 0016](../adr/0016-bonk-tokens-encrypted-at-rest.md)), when it stops being usable (`token_expires_at`, from the token's `exp`; `bonk_token()` returns None after it) the account's active slot (`active_slot`), and with "Keep me connected" bonk.io's remember-me token, encrypted the same way (`remember_token_encrypted`, `remember_token()`; `remember_status`: none, active or revoked; `last_refreshed_at`) |

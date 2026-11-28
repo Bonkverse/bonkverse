@@ -61,19 +61,13 @@
       <button type="submit" class="bv-btn bv-btn--primary" id="login-submit">{% if adding %}Add account{% else %}Log in{% endif %}</button>
     {% endif %}
   </form>
-  {% if friend_requests %}
-    {# Passwordless: prove the account with a friend request to the bot account (RFC-0003 phase 6). #}
+  {% if room_codes %}
+    {# Passwordless with a code typed in a bonk.io room the bot hosts (ADR 0026). Experimental. Friend requests were removed 2026-11-27. #}
     <p class="bv-muted site-form-alt">
       Rather not type your password?
-      <a href="{% url 'accounts:friend_request_login' %}?{% if adding %}add=1&amp;{% endif %}next={{ request.GET.next|default:''|urlencode }}">{% if adding %}Add it{% else %}Log in{% endif %} with a friend request instead</a>.
-      Wear asks for the password once, later.
-    </p>
-  {% endif %}
-  {% if room_codes %}
-    {# Passwordless with a code typed in a bonk.io room the bot hosts (ADR 0026). Experimental. #}
-    <p class="bv-muted site-form-alt">
-      Or <a href="{% url 'accounts:room_code_login' %}?{% if adding %}add=1&amp;{% endif %}next={{ request.GET.next|default:''|urlencode }}">{% if adding %}add it{% else %}log in{% endif %} with a room code</a>
+      <a href="{% url 'accounts:room_code_login' %}?{% if adding %}add=1&amp;{% endif %}next={{ request.GET.next|default:''|urlencode }}">{% if adding %}Add it{% else %}Log in{% endif %} with a room code instead</a>.
       <span class="bv-pill bv-pill--accent">Experimental</span>
+      Wear asks for the password once, later.
     </p>
   {% endif %}
 </div>

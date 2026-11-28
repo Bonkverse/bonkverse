@@ -1,7 +1,7 @@
 """The login page's "Choose an account": accounts used on this browser.
 
 Owns: the list of bonk.io accounts that signed in on this browser and how
-each last did (password or friend request), kept after signing out so the
+each last did (password or room code; "friend" from before 2026-11-27), kept after signing out so the
 login page can offer them, like Google's account chooser.
 Does not own: signing in (choosing one still needs its password or a
 friend request; see login.html, friend_request_login.html).

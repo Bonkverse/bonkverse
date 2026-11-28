@@ -458,27 +458,72 @@ def test_room_service_down_keeps_waiting(client, mocked_http):
     assert _status(client, claim)["status"] == "pending"
 
 
-# ── Kept apart from friend requests ──────────────────────────────────
+# ── Friend requests are gone (2026-11-27) ────────────────────────────
 
 
-def test_the_friend_request_worker_never_sees_room_code_claims(client, mocked_http):
-    """A friend request from the name must never stand in for the code."""
-    from accounts import link_claims
+def test_old_friend_request_links_go_to_room_codes(client):
+    response = client.get("/login/friend/?username=ButDoge&next=/skins/")
 
-    claim, code, room_id = _start(client, mocked_http)
+    assert response.status_code == 302
+    assert response["Location"].startswith("/login/room/?")
+    assert "username=ButDoge" in response["Location"] and "next=%2Fskins%2F" in response["Location"]
 
-    assert not link_claims._friend_claims().filter(pk=claim.pk).exists()
+
+def test_adding_by_friend_request_goes_to_adding_by_room_code(client):
+    client.force_login(UserFactory(username="Someone"))
+
+    response = client.get("/login/friend/?add=1")
+
+    assert "add=1" in response["Location"]
 
 
-def test_the_friend_request_status_page_wont_finish_a_room_code_claim(client, mocked_http):
-    claim, code, room_id = _start(client, mocked_http)
-    LinkClaim.objects.filter(pk=claim.pk).update(status=LinkClaim.PROVEN, bonk_name="ButDoge")
-    session = client.session
-    session["bv_link_claims"] = [claim.pk]  # as if this browser had a friend claim with this id
-    session.save()
+def test_an_open_friend_request_page_says_its_gone(client):
+    page = client.get("/login/friend/12/", follow=True).content.decode()
+    status = client.post("/login/friend/12/status/")
 
-    assert client.post(f"/login/friend/{claim.pk}/status/").status_code == 403
-    assert not client.session.get("_auth_user_id")
+    assert "replaced by room codes" in page
+    assert status.status_code == 410
+    assert status.json()["status"] == "refused"
+    assert "room code" in status.json()["message"]
+
+
+def test_the_login_page_offers_room_codes_not_friend_requests(client):
+    page = client.get("/login/?other=1").content.decode()
+
+    assert "friend request" not in page.lower()
+    assert "with a room code" in page
+
+
+def test_waiting_friend_claims_are_cancelled_by_the_migration():
+    from importlib import import_module
+
+    from django.apps import apps as live_apps
+
+    cancel = import_module("accounts.migrations.0014_cancel_friend_request_claims").cancel
+    now = timezone.now()
+    waiting = LinkClaim.objects.create(
+        name="ButDoge",
+        name_key="butdoge",
+        method=LinkClaim.FRIEND_REQUEST,
+        status=LinkClaim.PENDING,
+        started_at=now,
+        expires_at=now + datetime.timedelta(minutes=5),
+    )
+    finished = LinkClaim.objects.create(
+        name="Other",
+        name_key="other",
+        method=LinkClaim.FRIEND_REQUEST,
+        status=LinkClaim.DONE,
+        started_at=now,
+        expires_at=now,
+    )
+
+    cancel(live_apps, None)
+
+    waiting.refresh_from_db()
+    finished.refresh_from_db()
+    assert waiting.status == LinkClaim.REFUSED and "room codes" in waiting.problem
+    assert finished.status == LinkClaim.DONE
 
 
 # ── A relayed code (butdoge's reviews of #197) ──────────────────────────

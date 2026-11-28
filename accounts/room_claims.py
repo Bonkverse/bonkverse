@@ -8,7 +8,7 @@ Bonkverse already or not: a room code is the owner's proof, like a password
 (owner decision 2026-11-27; sign_in.sign_in_by_room_code).
 Does not own: hosting the room (roombot/, via integrations/roombot.py),
 signing in and grouping (sign_in.py, groups.py), friend-request claims
-(link_claims.py, which shares the LinkClaim table and the per-name limit).
+(link_claims.py holds what claims share: the per-name limit, name checks).
 
 How it works:
 1. The person types NAME. A claim is stored for CLAIM_MINUTES with a hash of

@@ -32,7 +32,7 @@
         <i data-lucide="triangle-alert" aria-hidden="true"></i>
         <span><strong>Only type this code in the room linked here, as {{ name }}.</strong> Never give it to anyone, and never type a code someone else sends you.</span>
       </div>
-      <p class="bv-hint">Signing in with a room code is experimental. If it doesn't work, <a href="{% url 'accounts:login' %}">log in with your password</a> or a <a href="{% url 'accounts:friend_request_login' %}">friend request</a>.</p>
+      <p class="bv-hint">Signing in with a room code is experimental. If it doesn't work, <a href="{% url 'accounts:login' %}">log in with your password</a>.</p>
     {% else %}
       <p class="bv-status" role="status" data-claim-message>{{ state.message }}</p>
     {% endif %}

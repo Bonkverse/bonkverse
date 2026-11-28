@@ -320,14 +320,14 @@ class UserEvent(models.Model):
 
 
 class LinkClaim(models.Model):
-    """ "I own bonk.io account NAME": proven by a friend request from NAME to
-    the bot's bonk.io account within CLAIM_MINUTES (accounts/link_claims.py,
-    RFC-0003 phase 6).
+    """ "I own bonk.io account NAME": proven within CLAIM_MINUTES by a code
+    typed in a bot-hosted bonk.io room (method ROOM_CODE, room_claims.py,
+    ADR 0026).
 
     Made by a browser that wants to sign in as NAME without its password, or
-    by a signed-in person adding NAME to their accounts. The worker marks it
-    proven when the request arrives; the browser that made it then finishes
-    it (signs in, or adds the account) once.
+    by a signed-in person adding NAME to their accounts; the browser that
+    made it finishes it (signs in, or adds the account) once. FRIEND_REQUEST
+    rows are history: that way in was removed on 2026-11-27 (ADR 0024).
     """
 
     SIGN_IN = "sign_in"
