@@ -289,8 +289,12 @@ def test_names_with_invisible_marks_are_spotted():
     assert replay_sync.has_invisible_marks("YuZuuuuu" + LRM)
     assert replay_sync.has_invisible_marks("a​b")  # zero-width space
     assert replay_sync.has_invisible_marks("x﻿")
+    assert replay_sync.has_invisible_marks("a\u200db")  # zero-width joiner
     for name in ("YuZuuuuu", "  spaced  ", "(%)", "admın", "ñandú"):
         assert not replay_sync.has_invisible_marks(name)
+    # Other format characters are left alone: a soft hyphen, an Arabic mark.
+    assert not replay_sync.has_invisible_marks("soft\u00adhyphen")
+    assert not replay_sync.has_invisible_marks("\u0600x")
 
 
 @pytest.mark.django_db
