@@ -13,9 +13,12 @@ who wasn't the owner:
   sessions).
 
 The accounts themselves stay; the next sign-in needs a room code or the
-password. Run by migration 0014, and again with `manage.py
-retire_friend_requests` once the deploy has settled (old processes still ran
-friend requests for that minute). Safe to repeat.
+password. Ending a session also signs that browser out of the other
+accounts it held; that's the price of making sure the claimer is out.
+
+Run with `manage.py retire_friend_requests` once the deploy has settled (old
+processes still ran friend requests for that minute; migration 0014 only
+refuses waiting claims). Safe to repeat; one transaction.
 """
 
 from __future__ import annotations
@@ -23,6 +26,7 @@ from __future__ import annotations
 import logging
 
 from django.contrib.sessions.models import Session
+from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
@@ -34,7 +38,9 @@ logger = logging.getLogger(__name__)
 
 
 def friend_only_ids() -> list[int]:
-    """Accounts with an active link and no owner's proof on any link."""
+    """Accounts with an active link and no owner's proof on any link. One
+    proof on any of an account's links clears it: the owner proved that
+    account, so whatever else it links is theirs to keep."""
     linked = set(BonkAccountLink.objects.filter(active=True).values_list("user_id", flat=True))
     proven = set(
         BonkAccountLink.objects.filter(
@@ -44,6 +50,7 @@ def friend_only_ids() -> list[int]:
     return sorted(linked - proven)
 
 
+@transaction.atomic
 def retire() -> dict:
     """See the module docstring. Returns counts (no names)."""
     claims = LinkClaim.objects.filter(
@@ -76,14 +83,18 @@ def _end_sessions(ids: set[int]) -> int:
     if not ids:
         return 0
     ended = 0
-    keys = {str(i) for i in ids}
+    keys = {str(i) for i in ids}  # compared as text: however a list stored them
     for session in Session.objects.filter(expire_date__gt=timezone.now()).iterator():
         try:
             data = session.get_decoded()
         except Exception:  # an unreadable session can't hold the account
             continue
-        held = {*(data.get(groups.SIGNED_IN_KEY) or []), *(data.get(groups.UNLOCKED_KEY) or [])}
-        if str(data.get("_auth_user_id")) in keys or held & ids:
+        held = {
+            str(i)
+            for key in (groups.SIGNED_IN_KEY, groups.UNLOCKED_KEY)
+            for i in (data.get(key) or [])
+        }
+        if str(data.get("_auth_user_id")) in keys or held & keys:
             session.delete()
             ended += 1
     return ended

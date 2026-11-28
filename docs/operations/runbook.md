@@ -113,15 +113,21 @@ Bonkverse no longer signs in with friend requests (ADR 0024, "Removed").
 Once the deploy that removed it has settled:
 
 1. In a `railway ssh` shell on `bonkverse`: `python manage.py
-   retire_friend_requests` (migration 0014 already ran it; this catches the
-   minute old processes still ran friend requests). It prints counts only.
+   retire_friend_requests`. Migration 0014 only refused waiting claims; this
+   takes accounts proven only by friend request out of their groups, ends
+   their one-click sign-ins and signs them out everywhere (a browser holding
+   one is signed out of its other accounts too). It prints counts only and is
+   safe to repeat.
 2. Delete `BONK_BOT_USERNAME` and `BONK_BOT_PASSWORD` from the `bonkverse`
    and `worker` services. BonxBot keeps its own copy for `/link` until
    phase 7.
-3. Optional: `python manage.py shell -c "from django.core.cache import
-   cache; cache.delete_many(['bonk_bot:token', 'bonk_bot:remember',
-   'bonk_bot:password_hold'])"` drops the cached bot session (encrypted;
-   otherwise it lingers until it expires).
+3. Drop the cached bot session (encrypted, but nothing uses it now):
+   `python manage.py shell -c "from django.core.cache import cache;
+   cache.delete_many(['bonk_bot:token', 'bonk_bot:remember',
+   'bonk_bot:password_hold'])"`.
+
+Rolling back past this deploy brings friend requests back, but not what step 1
+took away: those accounts stay out of their groups and signed out.
 
 ## Rotating the Redis password
 

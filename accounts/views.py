@@ -65,7 +65,11 @@ def login_view(request):
             return render(
                 request,
                 "accounts/choose_account.html",
-                {"choices": chooser, "next": request.GET.get("next", "")},
+                {
+                    "choices": chooser,
+                    "next": request.GET.get("next", ""),
+                    "room_codes": room_claims.configured(),
+                },
             )
         initial = {"username": request.GET.get("username", "")[:100]}
         return _render_login(request, LoginForm(initial=initial), adding=adding)
@@ -199,8 +203,8 @@ def one_click_sign_in(request):
     if user is None or user.pk not in devices.one_click_ids(request, [user.pk]):
         way = known_accounts.way_in(request, name)
         target = {
-            known_accounts.FRIEND_REQUEST: "accounts:room_code_login",  # removed 2026-11-27
-            known_accounts.ROOM_CODE: "accounts:room_code_login",
+            known_accounts.FRIEND_REQUEST: _passwordless_or_password(),  # removed 2026-11-27
+            known_accounts.ROOM_CODE: _passwordless_or_password(),
         }.get(way, "accounts:login")
         query = {"username": name}
         if _safe_next(request):
@@ -229,6 +233,12 @@ def _next_query(request) -> str:
     return f"?next={next_url}" if next_url else ""
 
 
+def _passwordless_or_password() -> str:
+    """Where a friend-request way in goes now: room codes, or the password
+    form while room codes are off."""
+    return "accounts:room_code_login" if room_claims.configured() else "accounts:login"
+
+
 @limit("browse")
 def friend_request_login(request):
     """Friend-request sign-in was removed (2026-11-27, ADR 0024): old links
@@ -241,7 +251,7 @@ def friend_request_login(request):
     if next_url := _safe_next(request):
         params["next"] = next_url
     messages.info(request, link_claims.FRIEND_REQUESTS_GONE)
-    url = reverse("accounts:room_code_login")
+    url = reverse(_passwordless_or_password())
     return redirect(f"{url}?{urlencode(params)}" if params else url)
 
 
@@ -249,10 +259,9 @@ def friend_request_login(request):
 def friend_request_wait(request, claim_id):
     """An open friend-request waiting page: room codes now (keeping `next`)."""
     messages.info(request, link_claims.FRIEND_REQUESTS_GONE)
-    url = reverse("accounts:room_code_login")
-    return redirect(
-        f"{url}?{urlencode({'next': _safe_next(request)})}" if _safe_next(request) else url
-    )
+    url = reverse(_passwordless_or_password())
+    next_url = _safe_next(request)
+    return redirect(f"{url}?{urlencode({'next': next_url})}" if next_url else url)
 
 
 @require_POST
