@@ -766,28 +766,9 @@ def _exact_first(qs, name_field, text):
     )
 
 
-def _one_row_per_name(qs):
-    """`qs` without DBID-less copies of a name that has another row.
-
-    Replay names come in with no DBID (players.replay_sync), and a name can
-    end up with several such rows; the list showed each one as its own card.
-    A DBID-less row is left out when another row has the same name (core.bonk.fold:
-    A-Z capitalization only, so a look-alike name stays) and either has a
-    DBID or is older. Rows with a DBID are real accounts and always stay.
-    """
-    better_copy = (
-        BonkPlayer.objects.annotate(fname=folded("username"))
-        .filter(fname=folded(OuterRef("username")))
-        .exclude(pk=OuterRef("pk"))
-        .filter(Q(bonk_id__isnull=False) | Q(pk__lt=OuterRef("pk")))
-    )
-    return qs.filter(Q(bonk_id__isnull=False) | ~Exists(better_copy))
-
-
 def _players_base(f):
-    """BonkPlayers with `linked`, an exact name first when there is one, each
-    name once (_one_row_per_name)."""
-    qs = _one_row_per_name(BonkPlayer.objects.all()).annotate(
+    """BonkPlayers with `linked`, an exact name first when there is one."""
+    qs = BonkPlayer.objects.annotate(
         linked=Exists(BonkAccountLink.objects.filter(bonk_player=OuterRef("pk"), active=True))
     )
     if f.text:

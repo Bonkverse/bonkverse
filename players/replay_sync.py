@@ -25,6 +25,7 @@ BONKVERSE_SYNC_TOKEN is set. HTTP lives in integrations/replay_sync.py.
 from __future__ import annotations
 
 import logging
+import unicodedata
 from datetime import datetime
 
 from django.conf import settings
@@ -69,12 +70,32 @@ def enabled():
 # ── Replay names in ──────────────────────────────────────────────────
 
 
+def has_invisible_marks(name: str) -> bool:
+    """Whether `name` holds an invisible formatting character (Unicode
+    category Cf: U+200E left-to-right mark, zero-width space and joiners,
+    U+FEFF ...).
+
+    The replay archive has names like "YuZuuuuu" followed by 1, 2, 3 ...
+    left-to-right marks: each looks exactly like the real name, and copying
+    them in filled the Players list with one "YuZuuuuu" per copy. No bonk.io
+    account we know of has one, so the replay sync skips them; a real
+    account with one would still get its row from a friend list or login.
+    """
+    return any(unicodedata.category(ch) == "Cf" for ch in name)
+
+
 def add_names(names):
     """Add BonkPlayers (no DBID) for names Bonkverse doesn't have yet,
-    matching case-insensitively. Returns how many were added."""
+    matching case-insensitively. Names with invisible marks are skipped
+    (has_invisible_marks). Returns how many were added."""
     fresh = {}
     for name in names:
-        if isinstance(name, str) and name and len(name) <= MAX_NAME_LENGTH:
+        if (
+            isinstance(name, str)
+            and name
+            and len(name) <= MAX_NAME_LENGTH
+            and not has_invisible_marks(name)
+        ):
             fresh.setdefault(name.lower(), name)
     if not fresh:
         return 0
