@@ -469,6 +469,12 @@ def test_old_friend_request_links_go_to_room_codes(client):
     assert "username=ButDoge" in response["Location"] and "next=%2Fskins%2F" in response["Location"]
 
 
+def test_an_offsite_next_is_dropped(client):
+    response = client.get("/login/friend/?next=https://evil.example/")
+
+    assert "evil" not in response["Location"]
+
+
 def test_adding_by_friend_request_goes_to_adding_by_room_code(client):
     client.force_login(UserFactory(username="Someone"))
 
@@ -478,9 +484,12 @@ def test_adding_by_friend_request_goes_to_adding_by_room_code(client):
 
 
 def test_an_open_friend_request_page_says_its_gone(client):
-    page = client.get("/login/friend/12/", follow=True).content.decode()
+    redirect = client.get("/login/friend/12/?next=/skins/")
+    page = client.get(redirect["Location"]).content.decode()
     status = client.post("/login/friend/12/status/")
 
+    assert redirect.status_code == 302
+    assert redirect["Location"] == "/login/room/?next=%2Fskins%2F"
     assert "replaced by room codes" in page
     assert status.status_code == 410
     assert status.json()["status"] == "refused"
@@ -494,36 +503,104 @@ def test_the_login_page_offers_room_codes_not_friend_requests(client):
     assert "with a room code" in page
 
 
-def test_waiting_friend_claims_are_cancelled_by_the_migration():
+def _run_migration_0014():
+    """Run 0014's data step against the models as they were at 0013."""
     from importlib import import_module
 
-    from django.apps import apps as live_apps
+    from django.db import connection
+    from django.db.migrations.executor import MigrationExecutor
 
-    cancel = import_module("accounts.migrations.0014_cancel_friend_request_claims").cancel
+    state = MigrationExecutor(connection).loader.project_state(
+        ("accounts", "0013_room_proof_and_claim_level")
+    )
+    import_module("accounts.migrations.0014_cancel_friend_request_claims").cancel(state.apps, None)
+
+
+def _friend_claim(name, status):
     now = timezone.now()
-    waiting = LinkClaim.objects.create(
-        name="ButDoge",
-        name_key="butdoge",
+    return LinkClaim.objects.create(
+        name=name,
+        name_key=name.casefold(),
         method=LinkClaim.FRIEND_REQUEST,
-        status=LinkClaim.PENDING,
+        status=status,
         started_at=now,
         expires_at=now + datetime.timedelta(minutes=5),
     )
-    finished = LinkClaim.objects.create(
-        name="Other",
-        name_key="other",
-        method=LinkClaim.FRIEND_REQUEST,
-        status=LinkClaim.DONE,
-        started_at=now,
-        expires_at=now,
+
+
+def test_waiting_and_proven_friend_claims_are_cancelled_by_the_migration():
+    waiting = _friend_claim("ButDoge", LinkClaim.PENDING)
+    proven = _friend_claim("Other", LinkClaim.PROVEN)
+    finished = _friend_claim("Third", LinkClaim.DONE)
+
+    _run_migration_0014()
+
+    for claim in (waiting, proven, finished):
+        claim.refresh_from_db()
+    assert waiting.status == proven.status == LinkClaim.REFUSED
+    assert "room codes" in waiting.problem
+    assert finished.status == LinkClaim.DONE
+
+
+def test_the_migration_ends_one_click_for_friend_request_only_accounts():
+    from accounts.models import RememberedSignIn
+
+    friend_only = UserFactory(username="ByFriend")
+    BonkAccountLink.objects.create(
+        user=friend_only,
+        bonk_player=BonkPlayer.objects.create(username="ByFriend", bonk_id=1),
+        active=True,
+    )
+    owner = _password_proven("ByPassword", 2)
+    for user in (friend_only, owner):
+        RememberedSignIn.objects.create(
+            user=user, device_hash="d" * 64, label="x", proven_at=timezone.now()
+        )
+
+    _run_migration_0014()
+
+    assert not RememberedSignIn.objects.filter(user=friend_only).exists()
+    assert RememberedSignIn.objects.filter(user=owner).exists()
+
+
+def test_a_password_takes_back_an_account_a_friend_request_claimed(
+    client, mocked_http, django_capture_on_commit_callbacks
+):
+    """Friend requests are gone, but accounts claimed that way stay; the
+    owner's password still takes one back (ADR 0024)."""
+    from django.test import Client
+
+    from accounts import groups
+
+    claimed = UserFactory(username="TestPlayer")
+    BonkAccountLink.objects.create(
+        user=claimed,
+        bonk_player=BonkPlayer.objects.create(username="TestPlayer", bonk_id=1234567),
+        active=True,
+    )
+    groups.join(UserFactory(username="MalloryMain"), claimed)
+    mallory = Client()
+    mallory.force_login(claimed)
+
+    with django_capture_on_commit_callbacks(execute=True):
+        _password_login(client, mocked_http)
+
+    claimed.refresh_from_db()
+    assert claimed.account_group_id is None
+    assert mallory.get("/api/me/").status_code == 401
+
+
+def test_a_friend_request_only_account_cant_vote_yet():
+    from skins.votes import why_cant_vote
+
+    account = UserFactory(username="ByFriend")
+    BonkAccountLink.objects.create(
+        user=account,
+        bonk_player=BonkPlayer.objects.create(username="ByFriend", bonk_id=7),
+        active=True,
     )
 
-    cancel(live_apps, None)
-
-    waiting.refresh_from_db()
-    finished.refresh_from_db()
-    assert waiting.status == LinkClaim.REFUSED and "room codes" in waiting.problem
-    assert finished.status == LinkClaim.DONE
+    assert "password" in why_cant_vote(account)
 
 
 # ── A relayed code (butdoge's reviews of #197) ──────────────────────────

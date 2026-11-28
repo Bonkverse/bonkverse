@@ -234,10 +234,12 @@ def friend_request_login(request):
     """Friend-request sign-in was removed (2026-11-27, ADR 0024): old links
     go to room codes, keeping "add" and the name."""
     params = {
-        key: value
-        for key in ("add", "username", "next")
+        key: value[:100]
+        for key in ("add", "username")
         if (value := request.GET.get(key) or request.POST.get(key))
     }
+    if _safe_next(request):
+        params["next"] = _safe_next(request)
     messages.info(request, link_claims.FRIEND_REQUESTS_GONE)
     url = reverse("accounts:room_code_login")
     return redirect(f"{url}?{urlencode(params)}" if params else url)
@@ -245,9 +247,12 @@ def friend_request_login(request):
 
 @limit("browse")
 def friend_request_wait(request, claim_id):
-    """An open friend-request waiting page: room codes now."""
+    """An open friend-request waiting page: room codes now (keeping `next`)."""
     messages.info(request, link_claims.FRIEND_REQUESTS_GONE)
-    return redirect("accounts:room_code_login")
+    url = reverse("accounts:room_code_login")
+    return redirect(
+        f"{url}?{urlencode({'next': _safe_next(request)})}" if _safe_next(request) else url
+    )
 
 
 @require_POST

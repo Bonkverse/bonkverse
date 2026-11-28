@@ -1,10 +1,12 @@
 """The login page's "Choose an account": accounts used on this browser.
 
 Owns: the list of bonk.io accounts that signed in on this browser and how
-each last did (password or room code; "friend" from before 2026-11-27), kept after signing out so the
-login page can offer them, like Google's account chooser.
-Does not own: signing in (choosing one still needs its password or a
-friend request; see login.html, friend_request_login.html).
+each last did (password or room code; "friend" entries are from before
+friend requests were removed on 2026-11-27 and open the room-code way),
+kept after signing out so the login page can offer them, like Google's
+account chooser.
+Does not own: signing in (past the one-click window, choosing one still
+needs its password or a room code; see choose_account.html).
 
 The list is a signed, HttpOnly cookie in the browser (no server copy): at
 most MAX_ACCOUNTS names, newest first, each dropped after KEEP_DAYS unused.
