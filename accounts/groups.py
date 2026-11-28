@@ -292,8 +292,9 @@ def after_login(
     keep = previous is not None and same_group(previous, user)
     password, unlocked = previous_lists if keep else ([], [])
     password = [i for i in password if i != user.pk] + [user.pk]
+    already_proven_here = keep and user.pk in previous_lists[0] and user.pk not in was_code_only
     code_only = [i for i in (was_code_only if keep else []) if i != user.pk]
-    if not unlock:
+    if not unlock and not already_proven_here:
         code_only.append(user.pk)
     elif user.account_group_id is not None and is_main(user):
         # Only the main unlocks the group, and only on this browser.

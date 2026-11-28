@@ -813,3 +813,48 @@ def test_a_row_with_another_bonk_id_isnt_this_account(
         _password_login(client, mocked_http)  # TestPlayer is id 1234567
 
     assert other.get("/api/me/").status_code == 401  # the code-only hold ended
+
+
+# ── Butdoge's review of fac12f3 ──────────────────────────────────────
+
+
+def test_a_code_doesnt_undo_a_disconnect(client, mocked_http):
+    account = _password_proven()
+    BonkAccountLink.objects.filter(user=account).update(active=False)
+
+    _prove_in_room(client, mocked_http)
+
+    link = BonkAccountLink.objects.get(user=account)
+    assert link.active is False and link.room_proven_at is not None
+
+
+def test_a_refused_claim_ends_refused(client, mocked_http):
+    import secrets
+
+    claim, code, room_id = _start(client, mocked_http)
+    BonkUser.objects.create_superuser(username="ButDoge", password=secrets.token_urlsafe(16))
+    _room_says(
+        mocked_http, room_id, players=[("ButDoge", False)], messages=[("ButDoge", False, code)]
+    )
+    client.post(f"/login/room/{claim.pk}/status/")
+
+    claim.refresh_from_db()
+    assert claim.status == LinkClaim.REFUSED
+
+
+def test_your_own_code_on_a_password_browser_keeps_main_powers(client, mocked_http):
+    """The owner, signed in with the password here, types a code here too:
+    this browser stays the main's."""
+    from accounts import groups
+
+    main = _password_proven()
+    alt = UserFactory(username="ButDogeAlt")
+    groups.join(main, alt)
+    client.force_login(main)
+    session = client.session
+    session[groups.SIGNED_IN_KEY] = [main.pk]
+    session.save()
+
+    _prove_in_room(client, mocked_http)
+
+    assert main.pk not in client.session.get(groups.CODE_ONLY_KEY, [])

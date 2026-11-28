@@ -148,7 +148,18 @@ harmless. So (owner, 2026-11-27, after butdoge's reviewer bot on #197):
   hands on bonk.io (#198 refuses unlinked ones for every way in). A room
   isn't even opened for such a name.
 
-Left as is: claims for any name count toward that name's hourly limit, so
+Accepted with it (owner's choice that a code signs in):
+
+- A code-only session is still a session for that one account: it can
+  favorite, vote, upload and change that account's own settings until the
+  owner's next password sign-in ends it. It gets no tokens (no Wear), no
+  group powers, and no one-click comeback.
+- A room proves the name, not the bonk.io id. This relies on bonk.io names
+  never changing hands (bonk.io has no rename, and names are unique ignoring
+  case). If that ever changes, room codes must refuse accounts whose linked
+  row has a known id.
+
+Also left as is: claims for any name count toward that name's hourly limit, so
 someone can use up a name's room-code tries for an hour; its password still
 works. A legitimate owner who used a room code and then signs in with the
 password on a browser their group doesn't trust has their other sessions

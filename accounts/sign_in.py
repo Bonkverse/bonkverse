@@ -199,7 +199,8 @@ def _reclaim(request, user: BonkUser, links, previous_lists, *, proof) -> bool:
     if user.account_group_id:
         password_ids, _ = previous_lists
         main_id = user.account_group.main_id
-        main_here = main_id in password_ids and main_id not in previous_lists.code_only
+        code_only = getattr(previous_lists, "code_only", [])
+        main_here = main_id in password_ids and main_id not in code_only
         if main_here or devices.is_trusted(request, user.account_group_id):
             return False  # its group's own browser: the owner and their alt
         if password is None:
@@ -342,13 +343,17 @@ def link_by_room_code(
     and the room's `level` when it showed one). The link has no tokens and
     keeps any it had, and the player's XP isn't touched: the vote rule reads
     `room_level` (groups.voting_standing)."""
-    defaults = {"active": True, "room_proven_at": timezone.now()}
+    proof = {"room_proven_at": timezone.now()}
     if level and level > 0:
         # Kept when a later room shows no level: bonk.io levels only rise.
-        defaults["room_level"] = level
-    link, _ = BonkAccountLink.objects.update_or_create(
-        user=user, bonk_player=player, defaults=defaults
+        proof["room_level"] = level
+    # A new link starts active; an existing one keeps its state, so a code
+    # never undoes a disconnect.
+    link, created = BonkAccountLink.objects.get_or_create(
+        user=user, bonk_player=player, defaults={"active": True, **proof}
     )
+    if not created:
+        BonkAccountLink.objects.filter(pk=link.pk).update(**proof)
     return link
 
 
