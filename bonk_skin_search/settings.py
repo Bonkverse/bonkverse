@@ -209,17 +209,10 @@ BONK_LOGIN_LIMITS = {
 TURNSTILE_SITE_KEY = os.getenv("TURNSTILE_SITE_KEY", "0x4AAAAAAGP08z9bSQTcL_Xu")
 TURNSTILE_SECRET_KEY = os.getenv("TURNSTILE_SECRET_KEY", "")
 
-# The bot's bonk.io account people send friend requests to, to sign in or
-# add an account without a password (accounts/link_claims.py, RFC-0003
-# phase 6). The same account BonxBot uses for /link. Friend-request linking
-# is off until both are set (on the web service for the name, and on the
-# worker, which reads the requests).
 # "Choose an account" signs an account back in with one click, without
 # bonk.io, for this many days after it last proved itself on that browser
-# (password or friend request). accounts/devices.py, ADR 0025.
+# (password or room code). accounts/devices.py, ADR 0025.
 ONE_CLICK_SIGN_IN_DAYS = int(os.getenv("ONE_CLICK_SIGN_IN_DAYS", "30"))
-BONK_BOT_USERNAME = os.getenv("BONK_BOT_USERNAME", "")
-BONK_BOT_PASSWORD = os.getenv("BONK_BOT_PASSWORD", "")
 
 # Room-code sign-in (experimental, ADR 0026): the room service (roombot/)
 # hosts a bonk.io room where the person types a code shown on Bonkverse. Off
@@ -645,12 +638,6 @@ CELERY_BEAT_SCHEDULE = {
     "prune-api-usage": {
         "task": "public_api.tasks.prune_api_usage",
         "schedule": 24 * 60 * 60,
-    },
-    # Friend-request linking (accounts/link_claims.py): reads the bot's
-    # requests only while a claim is pending; otherwise one database query.
-    "check-link-claims": {
-        "task": "accounts.tasks.check_link_claims",
-        "schedule": 30,
     },
 }
 

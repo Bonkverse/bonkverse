@@ -1,5 +1,5 @@
-// friend_request.js: the friend-request waiting page
-// (accounts/friend_request_wait.html, accounts/link_claims.py).
+// friend_request.js: the room-code waiting page (the name is from when
+// friend requests used it too): accounts/room_code_wait.html, room_claims.py.
 // Checks the claim every few seconds; when it's done, goes where the server
 // says (now signed in, or the account added). Shows the time left, and while
 // bonk.io pauses Bonkverse's calls ("paused" seconds in the answer), when

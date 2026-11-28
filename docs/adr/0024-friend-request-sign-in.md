@@ -78,3 +78,20 @@ the account to a bot bonk.io account, which only its owner can do.
 - The bot account's password is now on the site (`BONK_BOT_PASSWORD`),
   as it is on BonxBot. Its remember-me token is encrypted under
   `BONK_TOKEN_KEYS`.
+
+**Removed 2026-11-27.** Friend-request sign-in is gone from Bonkverse
+(owner: "I'd rather not have people's accounts be in danger even if there's
+a small chance of risk"). A friend request can't show who started the claim
+it proves; room codes (ADR 0026) do the same job without that weakness.
+
+- `/login/friend/…` addresses send people to room codes (keeping `add`, the
+  name and `next`); an open waiting page is told friend requests are gone
+  (`410`). Claims still waiting at deploy were refused (migration
+  `accounts.0014`). Old rows stay as history.
+- Accounts that came in by friend request are left as they are; voting
+  still needs a password or room code. Chooser entries that last signed in
+  by friend request now open the room-code way.
+- Removed: `link_claims` matching and the worker's `check-link-claims`,
+  `bot_account.py`, `BonkClient.delete_friend_request`, the
+  `BONK_BOT_USERNAME` / `BONK_BOT_PASSWORD` settings. BonxBot still uses the
+  same bot account for its own `/link` until phase 7.

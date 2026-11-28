@@ -16,7 +16,7 @@
 
   <div class="bv-notice" role="note">
     <i data-lucide="flask-conical" aria-hidden="true"></i>
-    <span><strong>This is experimental.</strong> It depends on how bonk.io's rooms work today and may stop working or change. If it doesn't work for you, log in with your password or a friend request instead.</span>
+    <span><strong>This is experimental.</strong> It depends on how bonk.io's rooms work today and may stop working or change. If it doesn't work for you, log in with your password instead.</span>
   </div>
 
   {% if available %}
@@ -45,8 +45,7 @@
   {% endif %}
 
   <p class="bv-muted site-form-alt">
-    <a href="{% url 'accounts:login' %}{% if adding %}?add=1{% endif %}">Use your password instead</a>
-    · <a href="{% url 'accounts:friend_request_login' %}{% if adding %}?add=1{% endif %}">Use a friend request</a>.
+    <a href="{% url 'accounts:login' %}{% if adding %}?add=1{% endif %}">Use your password instead</a>.
   </p>
 </div>
 {% endblock %}

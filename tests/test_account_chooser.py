@@ -2,7 +2,7 @@
 one-click sign-in (accounts/devices.py, ADR 0025).
 
 Accounts that signed in on this browser stay listed after signing out, like
-Google's chooser. One that proved itself here (password or friend request)
+Google's chooser. One that proved itself here (password or room code)
 in the last ONE_CLICK_SIGN_IN_DAYS signs straight back in, with no bonk.io
 call; after that it opens the way it last signed in, name filled in.
 """
@@ -26,9 +26,9 @@ LOGIN_URL = "https://bonk2.io/scripts/login_legacy.php"
 
 
 @pytest.fixture(autouse=True)
-def bot(settings):
-    settings.BONK_BOT_USERNAME = "Bonkverse Bot"
-    settings.BONK_BOT_PASSWORD = "bot-password"
+def roombot_on(settings):
+    settings.ROOMBOT_URL = "http://roombot.internal"
+    settings.ROOMBOT_TOKEN = "r" * 40
 
 
 def _password_login(client, mocked_http, name="TestPlayer"):
@@ -38,13 +38,35 @@ def _password_login(client, mocked_http, name="TestPlayer"):
     client.post("/login/", {"username": name, "password": "pw"})
 
 
-def _friend_login(client, name="AltOne", bonk_id=555):
-    client.post("/login/friend/", {"username": name})
-    claim = LinkClaim.objects.latest("pk")
-    LinkClaim.objects.filter(pk=claim.pk).update(
-        status=LinkClaim.PROVEN, bonk_id=bonk_id, bonk_name=name, proven_at=timezone.now()
+def _room_login(client, mocked_http, name="AltOne"):
+    """Sign in with a room code (room_claims.py): the code typed in the room."""
+    import responses
+
+    from accounts import room_claims
+
+    base = "http://roombot.internal"
+    room_id = f"room-{name.lower().replace(' ', '')}-x1"
+    mocked_http.add(
+        responses.POST,
+        f"{base}/rooms",
+        json={"id": room_id, "link": "https://bonk.io/1"},
+        status=201,
     )
-    client.post(f"/login/friend/{claim.pk}/status/")
+    mocked_http.add(responses.POST, f"{base}/rooms/{room_id}/close", json={"state": "closed"})
+    client.post("/login/room/", {"username": name})
+    claim = LinkClaim.objects.latest("pk")
+    code = client.session[room_claims.SESSION_KEY][str(claim.pk)]
+    mocked_http.add(
+        responses.GET,
+        f"{base}/rooms/{room_id}",
+        json={
+            "id": room_id,
+            "state": "open",
+            "players": [{"username": name, "guest": False, "level": 10}],
+            "messages": [{"username": name, "guest": False, "text": code}],
+        },
+    )
+    client.post(f"/login/room/{claim.pk}/status/")
 
 
 def _page(client, url="/login/"):
@@ -78,18 +100,30 @@ class TestTheChooser:
         assert "TestPlayer" in page and "With your password" in page
         assert "/login/?username=TestPlayer" in page
 
-    def test_a_friend_request_account_opens_the_friend_request_way(self, client):
-        _friend_login(client)
+    def test_a_room_code_account_opens_the_room_code_way(self, client, mocked_http):
+        _room_login(client, mocked_http)
         client.post("/logout/")
         _expire_one_click()
 
         page = _page(client)
 
-        assert "With a friend request" in page
-        assert "/login/friend/?username=AltOne" in page
+        assert "With a room code" in page
+        assert "/login/room/?username=AltOne" in page
+
+    def test_a_friend_request_account_now_opens_the_room_code_way(self, client):
+        """Friend requests were removed (2026-11-27): those come back by code."""
+        from django.core.signing import get_cookie_signer
+
+        known = [{"u": "AltOne", "via": known_accounts.FRIEND_REQUEST, "at": int(time.time())}]
+        signer = get_cookie_signer(salt=known_accounts.COOKIE + known_accounts.COOKIE_SALT)
+        client.cookies[known_accounts.COOKIE] = signer.sign(json.dumps(known))
+
+        page = _page(client)
+
+        assert "With a room code" in page and "friend request" not in page.lower()
 
     def test_the_way_it_last_signed_in_wins(self, client, mocked_http):
-        _friend_login(client, name="TestPlayer", bonk_id=1234567)
+        _room_login(client, mocked_http, name="TestPlayer")
         client.post("/logout/")
         _password_login(client, mocked_http)
         client.post("/logout/")
@@ -98,10 +132,10 @@ class TestTheChooser:
         page = _page(client)
 
         assert "/login/?username=TestPlayer" in page
-        assert "/login/friend/?username=TestPlayer" not in page
+        assert "/login/room/?username=TestPlayer" not in page
 
     def test_every_account_is_listed_newest_first(self, client, mocked_http):
-        _friend_login(client, name="AltOne", bonk_id=1)
+        _room_login(client, mocked_http, name="AltOne")
         _password_login(client, mocked_http)
         client.post("/logout/")
 
@@ -145,8 +179,8 @@ class TestOneClick:
         assert client.get("/api/me/").json()["user"]["username"] == "TestPlayer"
         assert len(mocked_http.calls) == calls  # no bonk.io call
 
-    def test_a_friend_request_sign_in_counts_too(self, client):
-        _friend_login(client)
+    def test_a_room_code_sign_in_counts_too(self, client, mocked_http):
+        _room_login(client, mocked_http)
         client.post("/logout/")
 
         client.post("/login/choose/", {"username": "AltOne"})
@@ -240,7 +274,7 @@ class TestOneClick:
 
 class TestForgetting:
     def test_remove_takes_one_off(self, client, mocked_http):
-        _friend_login(client, name="AltOne", bonk_id=1)
+        _room_login(client, mocked_http, name="AltOne")
         _password_login(client, mocked_http)
         client.post("/logout/")
 
@@ -317,7 +351,7 @@ class TestTheCookie:
 
 
 def test_user_factory_accounts_are_not_listed_by_force_login(client):
-    """Only real sign-ins (password or friend request) add to the list."""
+    """Only real sign-ins (password or room code) add to the list."""
     client.force_login(UserFactory())
     client.post("/logout/")
 

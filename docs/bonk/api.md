@@ -257,8 +257,8 @@ assumption the scripts share token checking.
 Incoming requests also carry `date`, when the request was sent:
 `"2026-11-10 21:39:07"`, US Eastern server time with no zone (owner's capture
 2026-11-10; BonxBot has matched on it since 2026-11-18). The client keeps it
-as `BonkFriend.date`; friend-request linking reads it
-(`accounts/link_claims.py`).
+as `BonkFriend.date`. (Bonkverse's friend-request sign-in read it until it
+was removed on 2026-11-27; BonxBot's `/link` still does.)
 
 ### `task=deleterequest`
 
@@ -266,8 +266,8 @@ Deletes (declines) one incoming request: `token`, `task=deleterequest`,
 `theirid` (the sender's id). Answers `{"r": "success"}` as BonxBot sees it in
 production; the client also accepts `delete_success` and
 `deleterequest_success` in case it's spelled like `send_success`.
-`BonkClient.delete_friend_request`. Never `accept`: the bot account doesn't
-need friends.
+BonxBot uses it; Bonkverse's client dropped it with friend-request sign-in
+(2026-11-27). Never `accept`: the bot account doesn't need friends.
 
 ## `avatar_update.php`
 
