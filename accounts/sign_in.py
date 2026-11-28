@@ -75,7 +75,7 @@ def sign_in(
 
     user = site_account_for(result.username, result.bonk_id)
     links = _links_to(user, name=result.username.value, bonk_id=result.bonk_id)
-    reclaimed = _reclaim(request, user, links, previous_lists, proof=PASSWORD)
+    reclaimed = _reclaim(request, user, links, previous_lists, proof=BONK_LOGIN)
     login(request, user)
     groups.after_login(request, previous, previous_lists, add=add)
     if reclaimed:
@@ -146,9 +146,14 @@ def _links_to(user: BonkUser, *, name: str, bonk_id: int | None = None, active_o
     return links.filter(pk__in=keep)
 
 
-# The proof a sign-in brings, for `_reclaim`.
-PASSWORD = "password"
+# The proof a sign-in brings, for `_reclaim`, and the event it logs. (Named
+# for the sign-in, not "password": nothing secret is in them.)
+BONK_LOGIN = "bonk_login"
 ROOM_CODE = "room_code"
+_RECLAIM_EVENT = {
+    BONK_LOGIN: "account_reclaimed_by_password",
+    ROOM_CODE: "account_reclaimed_by_room_code",
+}
 
 
 class NeedsPassword(PermissionDenied):
@@ -190,7 +195,7 @@ def _reclaim(request, user: BonkUser, links, previous_lists, *, proof) -> bool:
     if not links.exists():
         return False  # new here
     password, room = _proofs(links)
-    if proof == PASSWORD:
+    if proof == BONK_LOGIN:
         held = password is not None and (room is None or password >= room)
     else:
         held = password is not None or room is not None
@@ -206,7 +211,7 @@ def _reclaim(request, user: BonkUser, links, previous_lists, *, proof) -> bool:
         if password is None:
             groups.take_out(user)
     devices.forget_all_sign_ins(user)
-    log_event(user, f"account_reclaimed_by_{proof}")
+    log_event(user, _RECLAIM_EVENT[proof])
     return True
 
 
