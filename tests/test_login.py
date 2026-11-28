@@ -342,3 +342,69 @@ def test_login_required_pages_send_visitors_to_the_login_page(client):
     response = client.get(reverse("players:profile_settings"))
     assert response.status_code == 302
     assert response["Location"] == "/login/?next=/settings/profile/"
+
+
+class TestStaffAccountsAreNotSignedInByName:
+    """A bonk.io name never signs in to a staff, superuser or password-holding
+    site account it isn't linked to (sign_in._protected). Anyone can register
+    a free bonk.io name, so `createsuperuser admin` must not be reachable by
+    whoever owns bonk.io's "admin"."""
+
+    @pytest.fixture(autouse=True)
+    def _bonk_accepts(self, mocked_http):
+        mocked_http.post(BONK_LOGIN_URL, json=load_bonk_fixture("login_success"))
+
+    @pytest.mark.parametrize(
+        "make",
+        [
+            lambda: BonkUser.objects.create_superuser(username="TestPlayer", password="x9-local"),
+            lambda: UserFactory(username="TestPlayer", is_staff=True),
+            lambda: _with_password(UserFactory(username="testplayer")),
+        ],
+        ids=["superuser", "staff", "own-password"],
+    )
+    def test_refused_and_nothing_changes(self, client, make, caplog):
+        protected = make()
+
+        with caplog.at_level(logging.WARNING, logger="accounts.sign_in"):
+            response = _post_login(client)
+
+        assert response.status_code == 200
+        assert "staff account" in response.content.decode()
+        assert "_auth_user_id" not in client.session
+        assert not BonkAccountLink.objects.filter(user=protected).exists()
+        assert "TestPlayer" not in caplog.text  # ids only
+        assert str(protected.pk) in caplog.text
+
+    def test_a_staff_account_linked_to_that_bonk_account_signs_in(self, client):
+        staff = UserFactory(username="TestPlayer", is_staff=True)
+        player = BonkPlayer.objects.create(username="TestPlayer", bonk_id=1234567)
+        BonkAccountLink.objects.create(user=staff, bonk_player=player)
+
+        _post_login(client)
+
+        assert client.session["_auth_user_id"] == str(staff.pk)
+
+    def test_an_ordinary_account_still_signs_in(self, client):
+        player = UserFactory(username="TestPlayer")
+
+        _post_login(client)
+
+        assert client.session["_auth_user_id"] == str(player.pk)
+
+
+def _with_password(user):
+    user.set_password("x9-local")
+    user.save(update_fields=["password"])
+    return user
+
+
+def test_bonxbot_collect_for_a_protected_name_is_refused(client, settings):
+    from accounts.services import site_account_for
+    from accounts.sign_in import ProtectedSiteAccount
+    from core.bonk import BonkUsername
+
+    BonkUser.objects.create_superuser(username="admin", password="x9-local")
+
+    with pytest.raises(ProtectedSiteAccount):
+        site_account_for(BonkUsername("ADMIN"))
