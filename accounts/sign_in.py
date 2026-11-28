@@ -73,7 +73,7 @@ def sign_in(
     previous = request.user if request.user.is_authenticated else None
     previous_lists = groups.browser_lists(request)
 
-    user = site_account_for(result.username)
+    user = site_account_for(result.username, result.bonk_id)
     reclaimed = _reclaim(request, user, result.bonk_id, previous_lists)
     login(request, user)
     groups.after_login(request, previous, previous_lists, add=add)
@@ -180,7 +180,7 @@ def sign_in_by_friend_request(request, *, bonk_id: int, bonk_name: str, add: boo
     previous_lists = groups.browser_lists(request)
 
     username = BonkUsername(bonk_name)
-    user = site_account_for(username)
+    user = site_account_for(username, bonk_id)
     link_by_friend_request(user, bonk_id=bonk_id, bonk_name=username.value)
     login(request, user)
     groups.after_login(request, previous, previous_lists, add=add)
@@ -289,13 +289,10 @@ class ProtectedSiteAccount(PermissionDenied):
     sign anyone in to it by bonk.io name (a PermissionDenied, so a caller
     that doesn't catch it answers 403)."""
 
-    message = (
-        "That name belongs to a Bonkverse staff account, so it can't be signed in "
-        "to with bonk.io. If it's yours, ask the Bonkverse team."
-    )
+    message = "This account can't be signed in to this way. If it's yours, ask the Bonkverse team."
 
 
-def _protected(user: BonkUser, name: str) -> bool:
+def _protected(user: BonkUser, name: str, bonk_id: int | None = None) -> bool:
     """Whether `user` is a site account Bonkverse made or keeps outside
     bonk.io (staff, superuser, or one with its own password, which bonk.io
     accounts never have) and isn't linked to the bonk.io account `name`.
@@ -310,13 +307,22 @@ def _protected(user: BonkUser, name: str) -> bool:
     has_password = bool(user.password) and user.has_usable_password()
     if not (user.is_staff or user.is_superuser or has_password):
         return False
-    linked = BonkAccountLink.objects.filter(
-        user=user, bonk_player__username__iexact=name
-    ).values_list("bonk_player__username", flat=True)
-    return not any(same_name(linked_name, name) for linked_name in linked)
+    # Linked to this bonk.io account: by id when the sign-in knows it (a name
+    # could change hands on bonk.io; an id can't), else by name on a row
+    # whose id isn't known.
+    linked = BonkAccountLink.objects.filter(user=user).values_list(
+        "bonk_player__bonk_id", "bonk_player__username"
+    )
+    for linked_id, linked_name in linked:
+        if bonk_id is not None and linked_id is not None:
+            if linked_id == bonk_id:
+                return False
+        elif same_name(linked_name, name):
+            return False
+    return True
 
 
-def site_account_for(username: BonkUsername) -> BonkUser:
+def site_account_for(username: BonkUsername, bonk_id: int | None = None) -> BonkUser:
     """The site account for a bonk.io name, created on first login.
 
     Matched case-insensitively because bonk.io names are unique that way
@@ -357,7 +363,7 @@ def site_account_for(username: BonkUsername) -> BonkUser:
     user = (exact or matches or [None])[0]
     if user is None:
         return BonkUser.objects.create_user(username=username.value)
-    if _protected(user, username.value):
+    if _protected(user, username.value, bonk_id):
         # Ids only, never names.
         logger.warning("bonk.io sign-in refused for unlinked staff site account %s", user.pk)
         raise ProtectedSiteAccount(ProtectedSiteAccount.message)

@@ -329,3 +329,19 @@ def test_latest_after_an_id_oldest_first(client):
 
 def test_latest_on_an_empty_site(client):
     assert get(client, "skins/latest/").json()["data"] == {"newest_id": 0, "skins": []}
+
+
+def test_collecting_for_a_staff_name_is_refused_and_credits_nothing(client, mocked_http):
+    """A staff or admin site account not linked to that bonk.io account is
+    never reached by name (accounts.sign_in._protected, #198)."""
+    import secrets
+
+    from accounts.models import BonkUser
+
+    admin = BonkUser.objects.create_superuser(username="admin", password=secrets.token_urlsafe(16))
+    skin = SkinFactory(link=LINK)
+
+    reply = collect(client, bonk_username="ADMIN", skin_id=skin.id)
+
+    assert (reply.status_code, reply.json()["error"]) == (403, "account_protected")
+    assert not skin.favorited_by.filter(pk=admin.pk).exists()
