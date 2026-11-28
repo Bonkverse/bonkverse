@@ -89,13 +89,18 @@ it proves; room codes (ADR 0026) do the same job without that weakness.
   (`410`). Claims still waiting at deploy were refused (migration
   `accounts.0014`). Old rows stay as history.
 - Accounts that came in by friend request are left as they are; voting
-  still needs a password or room code. Their one-click sign-ins end (the
-  same migration), so whoever got in that way doesn't keep a month of
-  one-click access; the next sign-in needs a room code or the password.
+  still needs a password or room code. The same migration signs them out
+  everywhere and ends their one-click sign-ins, so whoever got in that way
+  doesn't keep the account; the next sign-in needs a room code or the
+  password. ("Proven only by friend request" means no password or room-code
+  proof on any link: links from before friend requests were all marked
+  password-proven in 0010.)
   Chooser entries that last signed in by friend request open the room-code
   way.
-- Accepted: during the deploy, an old web process could still start a
-  friend claim; it can't be finished by the new code and stays inert.
+- Accepted: for the minute or two of the deploy, old web and worker
+  processes still run friend requests, so a claim could still be started,
+  proven and finished there. Keep `BONK_BOT_*` on Railway until the deploy
+  has settled, then delete them.
 - Removed: `link_claims` matching and the worker's `check-link-claims`,
   `bot_account.py`, `BonkClient.delete_friend_request`, the
   `BONK_BOT_USERNAME` / `BONK_BOT_PASSWORD` settings. BonxBot still uses the
