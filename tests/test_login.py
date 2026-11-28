@@ -357,7 +357,7 @@ class TestStaffAccountsAreNotSignedInByName:
     @pytest.mark.parametrize(
         "make",
         [
-            lambda: BonkUser.objects.create_superuser(username="TestPlayer", password="x9-local"),
+            lambda: BonkUser.objects.create_superuser(username="TestPlayer", password=_throwaway()),
             lambda: UserFactory(username="TestPlayer", is_staff=True),
             lambda: _with_password(UserFactory(username="testplayer")),
         ],
@@ -393,8 +393,15 @@ class TestStaffAccountsAreNotSignedInByName:
         assert client.session["_auth_user_id"] == str(player.pk)
 
 
+def _throwaway() -> str:
+    """A random local-only password, so no fixed one sits in the repo."""
+    import secrets
+
+    return secrets.token_urlsafe(16)
+
+
 def _with_password(user):
-    user.set_password("x9-local")
+    user.set_password(_throwaway())
     user.save(update_fields=["password"])
     return user
 
@@ -404,7 +411,7 @@ def test_bonxbot_collect_for_a_protected_name_is_refused(client, settings):
     from accounts.sign_in import ProtectedSiteAccount
     from core.bonk import BonkUsername
 
-    BonkUser.objects.create_superuser(username="admin", password="x9-local")
+    BonkUser.objects.create_superuser(username="admin", password=_throwaway())
 
     with pytest.raises(ProtectedSiteAccount):
         site_account_for(BonkUsername("ADMIN"))
