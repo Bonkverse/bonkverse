@@ -342,3 +342,82 @@ def test_login_required_pages_send_visitors_to_the_login_page(client):
     response = client.get(reverse("players:profile_settings"))
     assert response.status_code == 302
     assert response["Location"] == "/login/?next=/settings/profile/"
+
+
+class TestStaffAccountsAreNotSignedInByName:
+    """A bonk.io name never signs in to a staff, superuser or password-holding
+    site account it isn't linked to (sign_in._protected). Anyone can register
+    a free bonk.io name, so `createsuperuser admin` must not be reachable by
+    whoever owns bonk.io's "admin"."""
+
+    @pytest.fixture(autouse=True)
+    def _bonk_accepts(self, mocked_http):
+        # login_success is TestPlayer, bonk.io id 1234567.
+        mocked_http.post(BONK_LOGIN_URL, json=load_bonk_fixture("login_success"))
+
+    @pytest.mark.parametrize(
+        "make",
+        [
+            lambda: BonkUser.objects.create_superuser(username="TestPlayer", password=_throwaway()),
+            lambda: UserFactory(username="TestPlayer", is_staff=True),
+            lambda: _with_password(UserFactory(username="testplayer")),
+        ],
+        ids=["superuser", "staff", "own-password"],
+    )
+    def test_refused_and_nothing_changes(self, client, make, caplog):
+        protected = make()
+
+        with caplog.at_level(logging.WARNING, logger="accounts.sign_in"):
+            response = _post_login(client)
+
+        assert response.status_code == 200
+        assert "can&#x27;t be signed in to this way" in response.content.decode()
+        assert "_auth_user_id" not in client.session
+        assert not BonkAccountLink.objects.filter(user=protected).exists()
+        assert not BonkPlayer.objects.filter(bonk_id=1234567).exists()
+        assert "TestPlayer" not in caplog.text  # ids only
+        assert (
+            f"bonk.io sign-in refused for unlinked staff site account {protected.pk}"
+            in caplog.messages
+        )
+
+    def test_a_staff_account_linked_to_that_bonk_account_signs_in(self, client):
+        staff = UserFactory(username="TestPlayer", is_staff=True)
+        player = BonkPlayer.objects.create(username="TestPlayer", bonk_id=1234567)
+        BonkAccountLink.objects.create(user=staff, bonk_player=player)
+
+        _post_login(client)
+
+        assert client.session["_auth_user_id"] == str(staff.pk)
+
+    def test_a_link_to_another_bonk_account_with_that_name_doesnt_count(self, client):
+        """By id when known: a name that changed hands on bonk.io isn't the
+        account the staff member linked."""
+        staff = UserFactory(username="TestPlayer", is_staff=True)
+        old = BonkPlayer.objects.create(username="TestPlayer", bonk_id=999)
+        BonkAccountLink.objects.create(user=staff, bonk_player=old)
+
+        _post_login(client)
+
+        assert "_auth_user_id" not in client.session
+
+    def test_an_ordinary_account_still_signs_in(self, client):
+        player = UserFactory(username="TestPlayer")
+        assert not (player.password and player.has_usable_password())  # what makes it ordinary
+
+        _post_login(client)
+
+        assert client.session["_auth_user_id"] == str(player.pk)
+
+
+def _throwaway() -> str:
+    """A random local-only password, so no fixed one sits in the repo."""
+    import secrets
+
+    return secrets.token_urlsafe(16)
+
+
+def _with_password(user):
+    user.set_password(_throwaway())
+    user.save(update_fields=["password"])
+    return user

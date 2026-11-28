@@ -80,6 +80,8 @@ Wear asks again with `force_refresh=True` once if bonk.io refuses a token before
 2. `sign_in.sign_in`: only the session and the site login are required; a failure in a later step is logged and the player stays signed in.
 3. `views.login_view`: shows the message, or redirects to `next` (same host only) or My Profile.
 
+A bonk.io name signs in to the site account with the same name (`site_account_for`, capitalization ignored, look-alike letters refused). It never lands in a **staff, superuser or password-holding** site account that isn't linked to that bonk.io account (`ProtectedSiteAccount`, 2026-11-27): anyone can register a free bonk.io name, so an account made with `createsuperuser admin` would otherwise go to whoever owns bonk.io's "admin". Linked means a link to that bonk.io id when the sign-in knows it (a name can change hands; an id can't), else to that name. This covers every way in (password, friend request, room code; BonxBot's collect answers `403 account_protected`). If a real staff member is ever refused (their link row was never written), untick **Staff status** in the admin, let them sign in once with their bonk.io password (that writes the link), then tick it again.
+
 ## Choose an account
 
 After signing out, the login page lists the accounts that signed in on this browser, newest first, like Google's chooser (`known_accounts.py`: a signed HttpOnly `bv_known` cookie of names, the way in and when, at most 8, each dropped after 90 days unused; nothing stored on our side).

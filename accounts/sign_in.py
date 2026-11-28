@@ -18,6 +18,7 @@ import logging
 
 from django.conf import settings
 from django.contrib.auth import login
+from django.core.exceptions import PermissionDenied
 from django.db import models, transaction
 from django.utils import timezone
 
@@ -72,7 +73,7 @@ def sign_in(
     previous = request.user if request.user.is_authenticated else None
     previous_lists = groups.browser_lists(request)
 
-    user = site_account_for(result.username)
+    user = site_account_for(result.username, result.bonk_id)
     reclaimed = _reclaim(request, user, result.bonk_id, previous_lists)
     login(request, user)
     groups.after_login(request, previous, previous_lists, add=add)
@@ -179,7 +180,7 @@ def sign_in_by_friend_request(request, *, bonk_id: int, bonk_name: str, add: boo
     previous_lists = groups.browser_lists(request)
 
     username = BonkUsername(bonk_name)
-    user = site_account_for(username)
+    user = site_account_for(username, bonk_id)
     link_by_friend_request(user, bonk_id=bonk_id, bonk_name=username.value)
     login(request, user)
     groups.after_login(request, previous, previous_lists, add=add)
@@ -282,7 +283,46 @@ def link_by_friend_request(user: BonkUser, *, bonk_id: int, bonk_name: str) -> B
     return link
 
 
-def site_account_for(username: BonkUsername) -> BonkUser:
+class ProtectedSiteAccount(PermissionDenied):
+    """The bonk.io name matches a staff, superuser or password-holding site
+    account that was never linked to that bonk.io account. Bonkverse doesn't
+    sign anyone in to it by bonk.io name (a PermissionDenied, so a caller
+    that doesn't catch it answers 403)."""
+
+    message = "This account can't be signed in to this way. If it's yours, ask the Bonkverse team."
+
+
+def _protected(user: BonkUser, name: str, bonk_id: int | None = None) -> bool:
+    """Whether `user` is a site account Bonkverse made or keeps outside
+    bonk.io (staff, superuser, or one with its own password, which bonk.io
+    accounts never have) and isn't linked to the bonk.io account `name`.
+
+    A bonk.io name proves only that someone owns that name on bonk.io, and
+    anyone can register a free one. Signing it in to a site account by name
+    is right for accounts bonk.io made; for one made with `createsuperuser`
+    (say "admin") it would hand the account to whoever registers or already
+    owns that name on bonk.io."""
+    # An empty password field isn't a password: rows made without
+    # create_user have one, and Django calls it "usable".
+    has_password = bool(user.password) and user.has_usable_password()
+    if not (user.is_staff or user.is_superuser or has_password):
+        return False
+    # Linked to this bonk.io account: by id when the sign-in knows it (a name
+    # could change hands on bonk.io; an id can't), else by name on a row
+    # whose id isn't known.
+    linked = BonkAccountLink.objects.filter(user=user).values_list(
+        "bonk_player__bonk_id", "bonk_player__username"
+    )
+    for linked_id, linked_name in linked:
+        if bonk_id is not None and linked_id is not None:
+            if linked_id == bonk_id:
+                return False
+        elif same_name(linked_name, name):
+            return False
+    return True
+
+
+def site_account_for(username: BonkUsername, bonk_id: int | None = None) -> BonkUser:
     """The site account for a bonk.io name, created on first login.
 
     Matched case-insensitively because bonk.io names are unique that way
@@ -296,6 +336,11 @@ def site_account_for(username: BonkUsername) -> BonkUser:
     and "ſ" into "S": a bonk.io account named "admın" would be signed in to
     the site account "admin". `__iexact` narrows the search; `same_name`
     decides.
+
+    Raises:
+        ProtectedSiteAccount: the name matches a staff, superuser or
+            password-holding site account not linked to that bonk.io account
+            (`_protected`). Nothing has changed when it's raised.
     """
     candidates = list(BonkUser.objects.filter(username__iexact=username.value).order_by("pk"))
     matches = [user for user in candidates if same_name(user.username, username.value)]
@@ -314,12 +359,15 @@ def site_account_for(username: BonkUsername) -> BonkUser:
             "site accounts %s match one bonk.io name case-insensitively",
             [user.pk for user in matches],
         )
-    for user in matches:
-        if user.username == username.value:
-            return user
-    if matches:
-        return matches[0]
-    return BonkUser.objects.create_user(username=username.value)
+    exact = [user for user in matches if user.username == username.value]
+    user = (exact or matches or [None])[0]
+    if user is None:
+        return BonkUser.objects.create_user(username=username.value)
+    if _protected(user, username.value, bonk_id):
+        # Ids only, never names.
+        logger.warning("bonk.io sign-in refused for unlinked staff site account %s", user.pk)
+        raise ProtectedSiteAccount(ProtectedSiteAccount.message)
+    return user
 
 
 def link_bonk_player(

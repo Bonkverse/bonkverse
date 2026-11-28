@@ -24,7 +24,7 @@ from django.db import OperationalError
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
-from accounts.services import log_event, site_account_for
+from accounts.services import ProtectedSiteAccount, log_event, site_account_for
 from core.bonk import BonkUsername, InvalidUsername
 from core.bot_auth import bot_authorized
 from core.ratelimits import limit
@@ -227,7 +227,11 @@ def collect(request):
     except (ValueError, UnicodeDecodeError, AttributeError, InvalidUsername):
         return fail("invalid_username", 400)
 
-    user = site_account_for(player)
+    try:
+        user = site_account_for(player)
+    except ProtectedSiteAccount:
+        # A staff or admin site account by that name: never credited by name.
+        return fail("account_protected", 403)
     result = collect_skin(
         user,
         link=body.get("link"),
