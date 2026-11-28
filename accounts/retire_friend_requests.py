@@ -9,7 +9,8 @@ who wasn't the owner:
   owner (a finished friend-request claim for one of their bonk.io ids, and no
   password or room-code proof on any link) leave any group they're in, lose
   their one-click sign-ins, and every session holding them ends (one pass
-  over the live sessions).
+  over the live sessions); browsers trusted for their groups are forgotten
+  (a friend-request sign-in to a main trusted the browser).
 
 The accounts themselves stay; the next sign-in needs a room code or the
 password. Ending a session also signs that browser out of the other
@@ -26,6 +27,7 @@ from __future__ import annotations
 
 import logging
 
+from django.conf import settings
 from django.contrib.sessions.models import Session
 from django.db import transaction
 from django.db.models import Q
@@ -33,7 +35,7 @@ from django.utils import timezone
 
 from . import groups
 from .link_claims import FRIEND_REQUESTS_GONE
-from .models import BonkAccountLink, BonkUser, LinkClaim, RememberedSignIn
+from .models import BonkAccountLink, BonkUser, LinkClaim, RememberedSignIn, TrustedDevice
 
 logger = logging.getLogger(__name__)
 
@@ -61,40 +63,57 @@ def friend_only_ids() -> list[int]:
     return sorted(linked - proven)
 
 
+DB_SESSIONS = "django.contrib.sessions.backends.db"
+
+
 def retire(*, dry_run: bool = False) -> dict:
     """See the module docstring. Returns counts (no names). With `dry_run`,
-    only counts what it would do."""
+    only counts what it would do.
+
+    Raises:
+        RuntimeError: sessions aren't Django's plain database sessions, so
+            deleting rows wouldn't end them.
+    """
+    if settings.SESSION_ENGINE != DB_SESSIONS:
+        raise RuntimeError(f"Needs SESSION_ENGINE={DB_SESSIONS}; it can't end other sessions.")
     ids = friend_only_ids()
     waiting = LinkClaim.objects.filter(
         method=LinkClaim.FRIEND_REQUEST, status__in=[LinkClaim.PENDING, LinkClaim.PROVEN]
     )
     grouped = BonkUser.objects.filter(pk__in=ids, account_group__isnull=False)
+    # A friend-request sign-in to a main trusted that browser for the group:
+    # forget every browser trusted for a group a retired account is in.
+    group_ids = set(grouped.values_list("account_group_id", flat=True))
+    trusted = TrustedDevice.objects.filter(group_id__in=group_ids)
     if dry_run:
         return {
             "claims_to_refuse": waiting.count(),
             "accounts": len(ids),
             "in_groups": grouped.count(),
+            "trusted_browsers": trusted.count(),
             "one_click": RememberedSignIn.objects.filter(user_id__in=ids).count(),
             "sessions": _end_sessions(set(ids), dry_run=True),
         }
 
+    # Sessions first, so the claimer is out before anything else changes; a
+    # long scan stays outside the transaction (run again if interrupted).
+    sessions = _end_sessions(set(ids))
     with transaction.atomic():
         claims = waiting.update(status=LinkClaim.REFUSED, problem=FRIEND_REQUESTS_GONE)
+        forgotten = trusted.delete()[0]
         taken_out = 0
         for account in grouped:
             groups.take_out(account)  # even as a main: the claimer may have built the group
             taken_out += 1
         one_click = RememberedSignIn.objects.filter(user_id__in=ids).delete()[0]
-    # Outside the transaction: a long scan mustn't hold it, and what's done
-    # above stays done even if this is interrupted (run it again).
-    sessions = _end_sessions(set(ids))
 
     counts = {
         "claims_refused": claims,
         "accounts": len(ids),
+        "sessions_ended": sessions,
+        "trusted_browsers_forgotten": forgotten,
         "taken_out_of_groups": taken_out,
         "one_click_ended": one_click,
-        "sessions_ended": sessions,
     }
     logger.info("retire friend requests | %s", counts)
     return counts

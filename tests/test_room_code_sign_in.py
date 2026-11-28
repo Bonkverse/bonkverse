@@ -1188,3 +1188,33 @@ def test_a_dry_run_changes_nothing(client):
 
     assert counts["accounts"] == 1 and counts["sessions"] == 1
     assert browser.get("/api/me/").status_code == 200
+
+
+def test_retiring_forgets_browsers_trusted_for_a_claimers_group():
+    """A friend-request sign-in to a main trusted that browser for the group."""
+    from accounts import groups
+
+    claimed_main = _came_in_by_friend_request("ClaimedMain", 31)
+    keeper = _password_proven("KeeperAlt", 32)
+    groups.join(claimed_main, keeper)
+    claimed_main.refresh_from_db()
+    TrustedDevice.objects.create(
+        group_id=claimed_main.account_group_id,
+        device_hash="c" * 64,
+        label="claimer's browser",
+        last_used_at=timezone.now(),
+    )
+
+    counts = _retire()
+
+    assert not TrustedDevice.objects.exists()
+    assert counts["trusted_browsers_forgotten"] == 1
+
+
+def test_it_refuses_to_run_on_other_session_engines(settings):
+    from accounts.retire_friend_requests import retire
+
+    settings.SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+
+    with pytest.raises(RuntimeError):
+        retire(dry_run=True)
