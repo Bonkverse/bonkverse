@@ -5,6 +5,7 @@ from django.contrib.postgres.search import SearchVector, SearchVectorField
 import uuid
 from django.urls import reverse
 
+from core.bonk import same_name
 from core.validators import validate_bonk_username
 
 
@@ -124,12 +125,14 @@ class Skin(models.Model):
         """Whether `user` may edit or delete this skin: only its creator may.
 
         Matches the creator name ignoring case but not spaces, like bonk.io
-        usernames (ADR 0007) and `Skin.objects.made_by`. Submitting someone
-        else's skin gives no rights over it.
+        usernames (ADR 0007). Only A-Z fold (core.bonk.usernames.fold):
+        casefold() also made "ſ" an "s" and "ß" an "ss", which would hand an
+        account with a look-alike name someone else's skins. Submitting
+        someone else's skin gives no rights over it.
         """
         if not getattr(user, "is_authenticated", False) or not self.creator:
             return False
-        return self.creator.casefold() == user.username.casefold()
+        return same_name(self.creator, user.username)
 
 
 class SkinVote(models.Model):

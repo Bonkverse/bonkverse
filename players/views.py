@@ -8,7 +8,7 @@ from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 from django.urls import reverse
 
-from core.bonk import dbid, levels
+from core.bonk import dbid, fold, levels
 from core.ratelimits import limit
 from accounts.services import (
     account_rows,
@@ -62,7 +62,7 @@ def skin_avatar(request, username, kind):
     404 when we know no skin for them or its image isn't ready (pages then
     show initials). The image is rendered on first request.
     """
-    skin_code = selectors.worn_skin_codes([username]).get(username.lower())
+    skin_code = selectors.worn_skin_codes([username]).get(fold(username))
     rel_path = code_image(skin_code, kind) if skin_code else None
     if rel_path is None:
         raise Http404("no skin image")

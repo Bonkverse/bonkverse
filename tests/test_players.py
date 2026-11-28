@@ -428,6 +428,153 @@ def test_hidden_sections_lose_their_tab_and_card(client, mocked_http):
     assert "Back after" not in html  # activity milestones go too
 
 
+# Letters that some case rule turns into an English one, written in place of
+# it: Python's lower() makes the Kelvin sign "k" (the profile cache key and
+# the player lookup used it), the replay site's database lower() makes both
+# that and the dotted capital I English letters, while the account lookup
+# (Postgres UPPER()) matched neither. So the profile and friend list were
+# found, the account with the privacy switches wasn't, and every hidden
+# section was shown to anyone (audit, 2026-11-25).
+KELVIN_SIGN = "\u212a"
+DOTTED_CAPITAL_I = "\u0130"
+HIDDEN_TABS = ["player_people", "player_friends", "player_level", "player_activity", "player_maps"]
+
+
+def _member_who_hid_everything(name):
+    """A member with every section hidden, a bonk.io friend, and replays."""
+    from players.models import BonkPlayer, Friendship
+
+    owner = UserFactory(username=name)
+    ProfileVisibility.objects.create(
+        user=owner,
+        level_history=False,
+        activity=False,
+        maps_and_modes=False,
+        play_partners=False,
+        friends=False,
+        skins=False,
+        favorites=False,
+    )
+    me = BonkPlayer.objects.create(bonk_id=4242, username=name)
+    pal = BonkPlayer.objects.create(bonk_id=4343, username="Secret Pal")
+    Friendship.objects.create(player_low=me, player_high=pal)
+    return owner
+
+
+def _assert_nothing_hidden_is_shown(client, spelling):
+    for tab in ["player_profile", *HIDDEN_TABS]:
+        html = client.get(reverse(f"players:{tab}", args=[spelling])).content.decode()
+        for private in ("Friend One", "Rival Two", "Secret Pal", "Level explorer", "Snipers Spot"):
+            assert private not in html, f"{tab} shows {private!r} under {spelling!r}"
+    # One map's detail (replay_map) is only reached through the Maps tab.
+    one_map = client.get(reverse("players:player_maps", args=[spelling]), {"map": "777"})
+    assert one_map.status_code == 404
+    assert "Map Buddy" not in one_map.content.decode()
+    calculator = client.get(reverse("players:xp_calculator_player"), {"name": spelling})
+    assert calculator.json()["ok"] is False
+
+
+@pytest.mark.django_db
+def test_lookalike_spelling_in_the_url_cant_read_a_cached_private_profile(client, mocked_http):
+    _member_who_hid_everything("Fook")
+    mock_player(mocked_http, "Fook")
+    spelling = "Foo" + KELVIN_SIGN
+    mock_player(mocked_http, spelling, status=404, body={"error": "No replays"})
+
+    # Anyone's visit caches the replay profile, hidden sections or not.
+    hidden = client.get(reverse("players:player_people", args=["Fook"])).content.decode()
+    assert "keeps this part of their profile private" in hidden
+
+    _assert_nothing_hidden_is_shown(client, spelling)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "name,spelling",
+    [("Fook", "Foo" + KELVIN_SIGN), ("Fooi", "Foo" + DOTTED_CAPITAL_I)],
+)
+def test_lookalike_spelling_the_replay_site_accepts_cant_read_a_private_profile(
+    client, mocked_http, name, spelling
+):
+    """The replay site matches with its database's lower(), so it answers a
+    look-alike spelling with the real player's profile."""
+    _member_who_hid_everything(name)
+    mock_player(mocked_http, spelling, body=profile_json(name))
+
+    _assert_nothing_hidden_is_shown(client, spelling)
+
+
+@pytest.mark.django_db
+def test_a_replay_profile_that_doesnt_say_whose_it_is_is_refused(client, mocked_http):
+    """The check compares the profile's `username` with the name asked for.
+    An answer without one must not pass it by default."""
+    _member_who_hid_everything("Fooi")
+    spelling = "Foo" + DOTTED_CAPITAL_I
+    nameless = {k: v for k, v in profile_json("Fooi").items() if k != "username"}
+    mock_player(mocked_http, spelling, body=nameless)
+
+    _assert_nothing_hidden_is_shown(client, spelling)
+
+
+@pytest.mark.django_db
+def test_a_lookalike_player_doesnt_stand_in_for_or_hide_the_real_one(client, mocked_http):
+    """Both spellings lower() to the same text, and the newer row used to win
+    the shared key."""
+    from players.models import BonkPlayer
+    from skins.selectors import bonk_players_named
+
+    real = BonkPlayer.objects.create(bonk_id=1, username="Fook")
+    fake = BonkPlayer.objects.create(bonk_id=2, username="Foo" + KELVIN_SIGN)
+
+    found = bonk_players_named(["fOOK", fake.username])
+
+    assert found == {"fook": real, "foo" + KELVIN_SIGN: fake}
+
+
+@pytest.mark.django_db
+def test_a_lookalike_player_doesnt_take_the_real_ones_skin_or_member_badge(client, mocked_http):
+    from players import selectors
+    from players.models import BonkPlayer, WornSkinSource
+    from players.services import record_worn_skin
+    from tests.factories import SKIN_CODE
+
+    lookalike = "Foo" + KELVIN_SIGN
+    BonkPlayer.objects.create(bonk_id=1, username="Fook")
+    BonkPlayer.objects.create(bonk_id=2, username=lookalike)
+    record_worn_skin(1, SKIN_CODE, WornSkinSource.LOGIN)
+    UserFactory(username="Fook")
+
+    assert set(selectors.worn_skin_codes(["fOOK", lookalike])) == {"fook"}
+    assert selectors._accounts_named(["fOOK", lookalike]) == {"fook"}
+
+
+@pytest.mark.django_db
+def test_names_with_spaces_at_the_end_still_open(client, mocked_http):
+    """The replay site sends names exactly as stored; the check that a
+    profile is the one asked for must not trip over spaces."""
+    name = "ako   "
+    mock_player(mocked_http, name)
+
+    response = client.get(reverse("players:player_level", args=[name]))
+
+    # 404 is "no such player"; the Level tab's script means its tab rendered.
+    assert response.status_code == 200
+    assert "players/js/player_level.js" in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_other_capitalization_still_opens_the_profile_with_its_privacy(client, mocked_http):
+    owner = _member_who_hid_everything("Fook")
+    mock_player(mocked_http, "fOOK", body=profile_json("Fook"))
+
+    hidden = client.get(reverse("players:player_people", args=["fOOK"])).content.decode()
+    assert "keeps this part of their profile private" in hidden
+
+    client.force_login(owner)
+    mine = client.get(reverse("players:player_people", args=["fOOK"])).content.decode()
+    assert "Friend One" in mine
+
+
 @pytest.mark.django_db
 def test_owner_sees_everything_and_what_is_hidden(client, mocked_http):
     owner = UserFactory(username="Saucy Tulip")

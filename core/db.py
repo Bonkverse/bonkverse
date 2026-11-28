@@ -1,13 +1,24 @@
 """Database helpers shared across apps.
 
 Owns: running a block of queries under a Postgres time limit (and other
-temporary Postgres settings).
+temporary Postgres settings), and the SQL form of the rule for comparing
+bonk.io names (`folded`).
 Does not own: any queries themselves.
 """
 
 from contextlib import contextmanager
 
 from django.db import connection, transaction
+from django.db.models.functions import Collate, Lower
+
+
+def folded(field: str):
+    """`field` lowercased A-Z only, in SQL: the same rule as core.bonk.fold,
+    so `folded("username")` equals `fold(name)` exactly when the two are the
+    same bonk.io name. Under the "C" collation Postgres's lower() changes no
+    other letter; under the database's own it also turns some look-alike
+    letters into English ones (docs/bonk/accounts.md)."""
+    return Lower(Collate(field, "C"))
 
 
 def _set_local(cursor, name: str, value: str) -> None:

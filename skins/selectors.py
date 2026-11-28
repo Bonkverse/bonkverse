@@ -19,6 +19,7 @@ import random
 from django.conf import settings
 from django.db.models import Count, F, Max, Min, Q, Sum
 
+from core.bonk import fold
 from core.db import time_limited_queries
 
 from .editing import tags_of
@@ -179,16 +180,20 @@ def creator_stats(username):
 
 
 def bonk_players_named(names):
-    """{lower name: BonkPlayer} for exact (case-insensitive) names."""
-    lowered = {n.lower() for n in names}
+    """{fold(name): BonkPlayer} for these names, ignoring capitalization only
+    (core.bonk.fold): look a name up with `.get(fold(name))`. `__iexact`
+    narrows the search and also matches a few look-alike letters; a player
+    spelled with one gets its own key, so it is never returned for the name
+    it resembles and never hides the player really called that."""
+    wanted = {fold(n) for n in names}
     found = {}
     q = Q()
-    for n in lowered:
+    for n in wanted:
         q |= Q(username__iexact=n)
-    if not lowered:
+    if not wanted:
         return found
     for p in BonkPlayer.objects.filter(q).order_by("-last_seen"):
-        found.setdefault(p.username.lower(), p)
+        found.setdefault(fold(p.username), p)
     return found
 
 

@@ -165,6 +165,73 @@ class TestSiteAccountMatching:
         assert BonkUser.objects.filter(username="TestPlayer").exists()
         assert BonkUser.objects.count() == 2
 
+    @pytest.mark.parametrize(
+        "bonk_name,existing_name",
+        [
+            # Postgres UPPER(), which `__iexact` compares with, turns the
+            # dotless i into "I" and the long s into "S".
+            ("adm\u0131n", "admin"),
+            ("Te\u017ftPlayer", "TestPlayer"),
+        ],
+    )
+    def test_a_lookalike_bonk_name_is_never_signed_in_to_the_real_account(
+        self, client, mocked_http, bonk_name, existing_name
+    ):
+        """Only capitalization is ignored when a login finds its site
+        account. A bonk.io account whose name differs by a look-alike letter
+        gets its own account, never the (possibly staff) one it resembles
+        (audit, 2026-11-25)."""
+        real = UserFactory(username=existing_name, is_staff=True)
+        mocked_http.replace(
+            "POST",
+            BONK_LOGIN_URL,
+            json={**load_bonk_fixture("login_success"), "username": bonk_name, "id": 7654321},
+        )
+
+        _post_login(client, username=bonk_name)
+
+        signed_in = BonkUser.objects.get(pk=client.session["_auth_user_id"])
+        assert signed_in.pk != real.pk
+        assert signed_in.username == bonk_name
+        assert not signed_in.is_staff
+        assert not BonkAccountLink.objects.filter(user=real).exists()
+
+    def test_a_lookalike_login_is_logged_by_id_never_by_name(self, client, mocked_http, caplog):
+        """So someone notices: it's either an attempt, or a real player that
+        bonk.io counts as one account and Bonkverse just split in two."""
+        real = UserFactory(username="TestPlayer")
+        lookalike = "Te\u017ftPlayer"
+        mocked_http.replace(
+            "POST",
+            BONK_LOGIN_URL,
+            json={**load_bonk_fixture("login_success"), "username": lookalike, "id": 7654321},
+        )
+
+        with caplog.at_level(logging.WARNING, logger="accounts.sign_in"):
+            _post_login(client, username=lookalike)
+
+        [line] = [r.getMessage() for r in caplog.records if "look-alike" in r.getMessage()]
+        assert str(real.pk) in line
+        assert "TestPlayer" not in line and lookalike not in line
+
+    def test_another_capitalization_logs_nothing(self, client, caplog):
+        UserFactory(username="testplayer")
+
+        with caplog.at_level(logging.WARNING, logger="accounts.sign_in"):
+            _post_login(client)
+
+        assert not [r for r in caplog.records if "look-alike" in r.getMessage()]
+
+    def test_a_new_site_account_keeps_the_name_exactly(self):
+        """Django's own create_user would NFKC-normalize the name
+        (AbstractBaseUser.normalize_username: "ſ" becomes "s", the Kelvin sign
+        "K"), which would turn a look-alike back into the name it resembles.
+        BonkUserManager.create_user doesn't, and nothing here signs in through
+        authenticate() or get_by_natural_key, which normalize too."""
+        for name in ("Te\u017ftPlayer", "Foo\u212a", "adm\u0131n"):
+            assert BonkUser.objects.create_user(username=name).username == name
+            assert BonkUser.objects.get(username=name).username == name
+
 
 class TestFailedLogin:
     def test_wrong_password_rerenders_form_without_logging_in(self, client, mocked_http):
