@@ -100,20 +100,24 @@ def bonk_level(user: BonkUser) -> int | None:
 
 
 def voting_standing(user: BonkUser) -> tuple[int | None, bool]:
-    """(bonk.io level or None, proven only by friend request) for the vote
-    rule, in one query. The level comes from the XP stored at the account's
-    last password or room-code sign-in (the highest of its links). "Only by
-    friend request": it has links and none was ever proven by its owner
-    (password or room code, `owner_proven_at`); accounts from before
-    friend-request linking all came in by password."""
+    """(bonk.io level or None, never proven with its password) for the vote
+    rule, in one query.
+
+    The level is the highest known across its links: from the XP stored at a
+    password sign-in, or the level a room showed at a room-code sign-in.
+    "Never proven with its password": it has links and none has a password
+    proof. Accounts from before friend-request linking all came in by
+    password, so a missing level only blocks voting when there's no
+    password proof either (skins.votes.why_cant_vote)."""
     rows = list(
         BonkAccountLink.objects.filter(user=user, active=True).values_list(
-            "bonk_player__xp", "owner_proven_at"
+            "bonk_player__xp", "room_level", "password_proven_at"
         )
     )
-    known = [xp for xp, _ in rows if xp is not None]
-    level = level_for_xp(max(known)) if known else None
-    return level, bool(rows) and all(proven is None for _, proven in rows)
+    levels = [level_for_xp(xp) for xp, _, _ in rows if xp is not None]
+    levels += [level for _, level, _ in rows if level]
+    level = max(levels) if levels else None
+    return level, bool(rows) and all(proven is None for _, _, proven in rows)
 
 
 def main_signed_in_here(request) -> bool:

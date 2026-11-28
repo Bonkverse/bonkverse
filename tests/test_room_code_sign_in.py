@@ -152,7 +152,7 @@ def test_an_account_already_on_bonkverse_signs_in(client, mocked_http):
     assert BonkUser.objects.filter(username__iexact="ButDoge").count() == 1
 
 
-def test_it_counts_as_the_owners_proof_and_records_the_level(client, mocked_http):
+def test_it_records_a_room_proof_and_the_level(client, mocked_http):
     from accounts.groups import voting_standing
     from skins.votes import why_cant_vote
 
@@ -160,8 +160,9 @@ def test_it_counts_as_the_owners_proof_and_records_the_level(client, mocked_http
 
     user = BonkUser.objects.get(username="ButDoge")
     link = BonkAccountLink.objects.get(user=user)
-    assert link.owner_proven_at is not None
-    assert voting_standing(user) == (12, False)
+    assert link.room_proven_at is not None and link.room_level == 12
+    assert link.password_proven_at is None  # kept apart: a password still beats it
+    assert voting_standing(user) == (12, True)
     assert why_cant_vote(user) is None
 
 
@@ -173,14 +174,47 @@ def test_a_low_level_from_the_room_cant_vote(client, mocked_http):
     assert "level 5" in why_cant_vote(BonkUser.objects.get(username="ButDoge"))
 
 
-def test_the_room_level_never_lowers_what_a_password_login_stored(client, mocked_http):
-    from core.bonk.levels import level_for_xp, xp_for_level
+def test_no_level_from_the_room_cant_vote_yet(client, mocked_http):
+    """Butdoge's review: bonk.io didn't show a level (0), so it's unknown."""
+    from skins.votes import why_cant_vote
 
-    BonkPlayer.objects.create(username="ButDoge", bonk_id=4242, xp=xp_for_level(40) + 50)
+    _prove_in_room(client, mocked_http, level=0)
+
+    assert "password" in why_cant_vote(BonkUser.objects.get(username="ButDoge"))
+
+
+def test_the_room_level_never_touches_the_players_xp(client, mocked_http):
+    """Other pages show XP; the room's level lives on the link."""
+    BonkPlayer.objects.create(username="ButDoge", bonk_id=4242, xp=None)
 
     _prove_in_room(client, mocked_http, level=12)
 
-    assert level_for_xp(BonkPlayer.objects.get(username="ButDoge").xp) == 40
+    assert BonkPlayer.objects.get(username="ButDoge").xp is None
+
+
+def test_it_uses_the_player_row_the_account_already_links_to(client, mocked_http):
+    """Butdoge's review: older data can hold two rows for one name."""
+    owner = UserFactory(username="ButDoge")
+    linked = BonkPlayer.objects.create(username="ButDoge", bonk_id=4242)
+    BonkPlayer.objects.create(username="butdoge", bonk_id=None)
+    BonkAccountLink.objects.create(
+        user=owner, bonk_player=linked, active=True, password_proven_at=timezone.now()
+    )
+
+    _prove_in_room(client, mocked_http)
+
+    assert BonkAccountLink.objects.filter(user=owner).count() == 1
+    assert BonkAccountLink.objects.get(user=owner).room_proven_at is not None
+
+
+def test_a_staff_name_is_refused_before_a_room_opens(client, mocked_http):
+    BonkUser.objects.create_superuser(username="ButDoge", password="x9-local")
+
+    response = client.post("/login/room/", {"username": "butdoge"}, follow=True)
+
+    assert "staff account" in response.content.decode()
+    assert not LinkClaim.objects.exists()
+    assert not [c for c in mocked_http.calls if c.request.url.endswith("/rooms")]
 
 
 def test_it_takes_back_an_account_only_a_friend_request_claimed(
@@ -214,7 +248,7 @@ def test_an_owner_proven_account_isnt_taken_out_of_its_group(client, mocked_http
     account = UserFactory(username="ButDoge")
     player = BonkPlayer.objects.create(username="ButDoge", bonk_id=4242)
     BonkAccountLink.objects.create(
-        user=account, bonk_player=player, active=True, owner_proven_at=timezone.now()
+        user=account, bonk_player=player, active=True, password_proven_at=timezone.now()
     )
     groups.join(UserFactory(username="MainOne"), account)
     group_id = BonkUser.objects.get(pk=account.pk).account_group_id
@@ -443,3 +477,85 @@ def test_the_friend_request_status_page_wont_finish_a_room_code_claim(client, mo
 
     assert client.post(f"/login/friend/{claim.pk}/status/").status_code == 403
     assert not client.session.get("_auth_user_id")
+
+
+# ── A password beats a relayed code (butdoge's review of #197) ─────────
+
+
+def test_a_password_takes_back_an_account_pulled_in_by_a_relayed_code(
+    client, mocked_http, django_capture_on_commit_callbacks
+):
+    """Mallory talks the owner into typing her code with "Add account": the
+    owner's password-proven account moves into Mallory's group. The owner's
+    next password sign-in takes it back and ends Mallory's hold on it."""
+    from django.test import Client
+
+    from accounts import groups
+    from tests.conftest import load_bonk_fixture
+
+    owner = UserFactory(username="TestPlayer")
+    player = BonkPlayer.objects.create(username="TestPlayer", bonk_id=1234567)
+    link = BonkAccountLink.objects.create(user=owner, bonk_player=player, active=True)
+    BonkAccountLink.objects.filter(pk=link.pk).update(
+        password_proven_at=timezone.now() - timezone.timedelta(days=3)
+    )
+    groups.join(UserFactory(username="MalloryMain"), owner)  # the relayed "add"
+    BonkAccountLink.objects.filter(pk=link.pk).update(room_proven_at=timezone.now())
+    mallory = Client()
+    mallory.force_login(owner)
+
+    mocked_http.post(
+        "https://bonk2.io/scripts/login_legacy.php", json=load_bonk_fixture("login_success")
+    )
+    with django_capture_on_commit_callbacks(execute=True):
+        client.post("/login/", {"username": "TestPlayer", "password": "hunter2"})
+
+    owner.refresh_from_db()
+    assert owner.account_group_id is None
+    assert mallory.get("/api/me/").status_code == 401
+    assert client.get("/api/me/").json()["user"]["username"] == "TestPlayer"
+
+
+def test_a_room_code_cant_take_back_a_password_proven_account(client, mocked_http):
+    from accounts import groups
+    from django.test import Client
+
+    owner = UserFactory(username="ButDoge")
+    player = BonkPlayer.objects.create(username="ButDoge", bonk_id=4242)
+    BonkAccountLink.objects.create(
+        user=owner, bonk_player=player, active=True, password_proven_at=timezone.now()
+    )
+    groups.join(UserFactory(username="MainOne"), owner)
+    other = Client()
+    other.force_login(owner)
+
+    _prove_in_room(client, mocked_http)
+
+    owner.refresh_from_db()
+    assert owner.account_group_id is not None
+    assert other.get("/api/me/").status_code == 200
+
+
+def test_a_password_after_the_last_room_code_keeps_everything(client, mocked_http):
+    """Proven by password after the room code: nothing to take back."""
+    from accounts import groups
+    from tests.conftest import load_bonk_fixture
+
+    owner = UserFactory(username="TestPlayer")
+    player = BonkPlayer.objects.create(username="TestPlayer", bonk_id=1234567)
+    BonkAccountLink.objects.create(
+        user=owner,
+        bonk_player=player,
+        active=True,
+        room_proven_at=timezone.now() - timezone.timedelta(days=1),
+        password_proven_at=timezone.now(),
+    )
+    groups.join(UserFactory(username="MainOne"), owner)
+
+    mocked_http.post(
+        "https://bonk2.io/scripts/login_legacy.php", json=load_bonk_fixture("login_success")
+    )
+    client.post("/login/", {"username": "TestPlayer", "password": "hunter2"})
+
+    owner.refresh_from_db()
+    assert owner.account_group_id is not None

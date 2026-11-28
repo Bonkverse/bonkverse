@@ -31,7 +31,7 @@ the account to a bot bonk.io account, which only its owner can do.
   times an hour, and starting claims is in the `login` rate tier.
 - **A friend request proves control, not level.** Such an account gets no
   tokens (Wear asks for the password once) and can't vote until it logs in
-  once with its password (`BonkAccountLink.owner_proven_at`, column `password_proven_at`; every link
+  once with its password (`BonkAccountLink.password_proven_at`; every link
   from before this ADR was made by password).
 
 **Alternatives considered.**

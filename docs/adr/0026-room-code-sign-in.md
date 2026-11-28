@@ -110,20 +110,33 @@ and on the waiting page; before, nothing was said until the third wrong code
 ended the claim.
 
 **Added 2026-11-27: accounts already on Bonkverse.** A room code now works
-for any account, not only names no one has here yet (owner decision). The
-code exists only in the browser that asked, so the proof is the owner's, the
-same as a password:
+for any account, not only names no one has here yet, and counts like a
+password (owner decision): it signs in, adds, unlocks the group from its
+main, and lets the account vote with the level the room showed. It still
+gives no tokens (Wear asks for the password once).
 
-- it's recorded as `BonkAccountLink.owner_proven_at` (the column
-  `password_proven_at`, renamed in code only, so the deploy changes nothing
-  in the database);
-- it takes back an account that only a friend request had claimed
-  (`sign_in._reclaim`, as the password does since ADR 0024's fix);
-- the level bonk.io shows for the player in the room
-  (`LinkClaim.bonk_level`) lifts the stored XP to at least that level's
-  start, so the vote rule can see it; it never lowers XP a password login
-  stored.
+**A code can be relayed.** It proves that the named account typed it, not
+that the browser that asked belongs to that person: someone can start a
+claim for your name and talk you into typing their code ("type this to
+enter the giveaway"). A password can be phished too, but a code looks
+harmless. So:
 
-It still gives no tokens (Wear asks for the password once). Friend-request
-sign-in is to be removed next; see ADR 0024.
+- The room greets the player with a warning ("Type the code on YOUR
+  Bonkverse screen. Never type a code someone sent you."), as the waiting
+  page already does.
+- The proof is kept apart from the password's
+  (`BonkAccountLink.room_proven_at`, `room_level`). **A password beats a
+  room code newer than the last password** (`sign_in._reclaim`): the
+  account leaves whatever group it's in, its one-click sign-ins and other
+  sessions end, unless the browser is its group's own. So a phished code
+  never locks the owner out: their password takes the account back. A room
+  code takes an account back only from a friend request.
+- The room's level is stored on the link, not written into the player's XP
+  (other pages show XP). No known level and no password proof: no vote yet.
+- Staff, superuser and password-holding site accounts can't be reached by a
+  bonk.io name unless already linked (`ProtectedSiteAccount`, #198); a room
+  isn't even opened for such a name.
 
+Left as is: claims for any name count toward that name's hourly limit, so
+someone can use up a name's room-code tries for an hour; its password still
+works. Friend-request sign-in is to be removed next (ADR 0024).

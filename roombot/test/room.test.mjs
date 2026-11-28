@@ -111,7 +111,7 @@ test("records players' messages trimmed, never the bot's own echo", async () => 
   try {
     const { room, socket } = await openRoom();
     socket.receive(4, 1, "peer", "ButDoge", false, 52, 1, {});
-    socket.receive(20, 0, "Hi ButDoge! Type the code shown on Bonkverse.");
+    socket.receive(20, 0, "Hi ButDoge! Type the code on YOUR Bonkverse screen. Never type a code someone sent you.");
     socket.receive(20, 1, "W8NMFD ");
     const { messages } = room.view();
     assert.equal(messages.length, 1);

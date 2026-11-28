@@ -40,7 +40,7 @@ from integrations import roombot
 from .events import log_event
 from .link_claims import CLAIM_MINUTES, CLAIMS_PER_NAME_PER_HOUR, ClaimProblem, name_problem
 from .models import LinkClaim
-from .sign_in import sign_in_by_room_code
+from .sign_in import ProtectedSiteAccount, refuses_bonk_sign_in, sign_in_by_room_code
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +102,8 @@ def start(request, name: str, *, add: bool) -> LinkClaim:
     ).count()
     if recent >= CLAIMS_PER_NAME_PER_HOUR:
         raise ClaimProblem("Too many tries for that name. Wait a while and try again.")
+    if refuses_bonk_sign_in(name):
+        raise ClaimProblem(ProtectedSiteAccount.message)
 
     opened = roombot.open_room_for(name)
     if opened.error == "busy":
@@ -270,7 +272,13 @@ def _finish(request, claim: LinkClaim) -> None:
         )
     if not taken:
         return  # finished by another request from this browser
-    user = sign_in_by_room_code(
-        request, bonk_name=claim.bonk_name, add=adding, level=claim.bonk_level
-    )
+    try:
+        user = sign_in_by_room_code(
+            request, bonk_name=claim.bonk_name, add=adding, level=claim.bonk_level
+        )
+    except ProtectedSiteAccount as refused:
+        LinkClaim.objects.filter(pk=claim.pk).update(
+            status=LinkClaim.REFUSED, problem=refused.message
+        )
+        raise ClaimProblem(refused.message) from refused
     log_event(user, "account_proven_by_room_code", claim_id=claim.pk, added=adding)
