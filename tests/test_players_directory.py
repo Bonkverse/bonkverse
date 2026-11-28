@@ -205,3 +205,38 @@ def test_cards_are_one_link_with_level_and_member_pills(client, mocked_http):
     assert '<a class="pv-pcard" href="/player/solo/">' in html
     assert "Profile <i" not in html
     assert 'placeholder="Search players"' in html
+
+
+@pytest.mark.django_db
+def test_a_name_shows_once_even_with_several_rows(client, mocked_http):
+    """Several DBID-less copies of one replay name (any capitalization) are
+    one card, and the row with a bonk.io ID wins when there is one."""
+    for _ in range(5):
+        BonkPlayer.objects.create(bonk_id=None, username="YuZuuuuu")
+    BonkPlayer.objects.create(bonk_id=None, username="yuzuuuuu")
+    BonkPlayer.objects.create(bonk_id=None, username="ButteredToast55")
+    real = BonkPlayer.objects.create(bonk_id=7, username="ButteredToast55")
+    BonkPlayer.objects.create(bonk_id=None, username="ButteredToast55")
+    mock_lookup(mocked_http, [])
+
+    response = client.get(reverse("players:players_directory"))
+    cards = response.context["cards"]
+    names = [c["username"].lower() for c in cards]
+    assert sorted(names) == ["butteredtoast55", "yuzuuuuu"]
+    assert response.context["page_obj"].paginator.count == 2
+    assert next(c for c in cards if c["username"] == "ButteredToast55")["bonk_id"] == real.bonk_id
+
+    response = client.get(reverse("players:players_directory") + "?q=yuzu")
+    assert len(response.context["cards"]) == 1
+
+
+@pytest.mark.django_db
+def test_a_look_alike_name_is_not_hidden_as_a_copy(client, mocked_http):
+    """Only A-Z capitalization makes two rows the same name (core.bonk.fold):
+    "admın" (dotless i) is its own player, not a copy of "admin"."""
+    BonkPlayer.objects.create(bonk_id=1, username="admin")
+    BonkPlayer.objects.create(bonk_id=None, username="admın")
+    mock_lookup(mocked_http, [])
+
+    response = client.get(reverse("players:players_directory") + "?q=adm")
+    assert len(response.context["cards"]) == 2
