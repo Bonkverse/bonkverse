@@ -504,16 +504,10 @@ def test_the_login_page_offers_room_codes_not_friend_requests(client):
 
 
 def _run_migration_0014():
-    """Run 0014's data step against the models as they were at 0013."""
-    from importlib import import_module
+    """Migration 0014 runs accounts.retire_friend_requests.retire()."""
+    from accounts.retire_friend_requests import retire
 
-    from django.db import connection
-    from django.db.migrations.executor import MigrationExecutor
-
-    state = MigrationExecutor(connection).loader.project_state(
-        ("accounts", "0013_room_proof_and_claim_level")
-    )
-    import_module("accounts.migrations.0014_cancel_friend_request_claims").cancel(state.apps, None)
+    return retire()
 
 
 def _friend_claim(name, status):
@@ -561,6 +555,59 @@ def test_the_migration_signs_friend_request_only_accounts_out(client):
 
     assert theirs.get("/api/me/").status_code == 401
     assert mine.get("/api/me/").status_code == 200
+
+
+def test_the_migration_takes_friend_only_accounts_out_of_groups(client):
+    """A claimer who grouped the account under their main mustn't get it
+    back by signing in as that main (butdoge's review)."""
+    from accounts import groups
+
+    claimed = UserFactory(username="ByFriend")
+    BonkAccountLink.objects.create(
+        user=claimed,
+        bonk_player=BonkPlayer.objects.create(username="ByFriend", bonk_id=1),
+        active=True,
+    )
+    mallory_main = _password_proven("MalloryMain", 9)
+    groups.join(mallory_main, claimed)
+    owners_alt = _password_proven("OwnersAlt", 3)
+    groups.join(_password_proven("OwnersMain", 4), owners_alt)
+
+    counts = _run_migration_0014()
+
+    claimed.refresh_from_db()
+    owners_alt.refresh_from_db()
+    assert claimed.account_group_id is None
+    assert owners_alt.account_group_id is not None
+    assert counts["taken_out_of_groups"] == 1
+
+
+def test_it_ends_a_session_holding_the_account_as_an_unlocked_alt():
+    from django.contrib.sessions.backends.db import SessionStore
+
+    from accounts import groups
+
+    claimed = UserFactory(username="ByFriend")
+    BonkAccountLink.objects.create(
+        user=claimed,
+        bonk_player=BonkPlayer.objects.create(username="ByFriend", bonk_id=1),
+        active=True,
+    )
+    other = SessionStore()
+    other["_auth_user_id"] = "999999"
+    other[groups.UNLOCKED_KEY] = [claimed.pk]
+    other.create()
+
+    _run_migration_0014()
+
+    assert not SessionStore().exists(other.session_key)
+
+
+def test_running_it_again_is_harmless():
+    from django.core.management import call_command
+
+    _run_migration_0014()
+    call_command("retire_friend_requests", stdout=__import__("io").StringIO())
 
 
 def test_the_migration_ends_one_click_for_friend_request_only_accounts():

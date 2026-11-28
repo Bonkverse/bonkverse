@@ -238,8 +238,8 @@ def friend_request_login(request):
         for key in ("add", "username")
         if (value := request.GET.get(key) or request.POST.get(key))
     }
-    if _safe_next(request):
-        params["next"] = _safe_next(request)
+    if next_url := _safe_next(request):
+        params["next"] = next_url
     messages.info(request, link_claims.FRIEND_REQUESTS_GONE)
     url = reverse("accounts:room_code_login")
     return redirect(f"{url}?{urlencode(params)}" if params else url)
