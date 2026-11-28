@@ -32,8 +32,8 @@ way they last signed in, with the name filled in.{% endcomment %}
             </form>
           {% else %}
             <a class="site-chooser__pick"
-               href="{% if room_codes and account.via == 'friend' or room_codes and account.via == 'room' %}{% url 'accounts:room_code_login' %}{% else %}{% url 'accounts:login' %}{% endif %}?username={{ account.username|urlencode }}{% if next %}&amp;next={{ next|urlencode }}{% endif %}">
-              {% if room_codes and account.via == 'friend' or room_codes and account.via == 'room' %}
+               href="{% if account.by_room_code %}{% url 'accounts:room_code_login' %}{% else %}{% url 'accounts:login' %}{% endif %}?username={{ account.username|urlencode }}{% if next %}&amp;next={{ next|urlencode }}{% endif %}">
+              {% if account.by_room_code %}
                 {# Friend requests were removed (2026-11-27): those accounts come back with a room code. #}
                 {% include "accounts/_chooser_identity.html" with hint="With a room code" %}
               {% else %}

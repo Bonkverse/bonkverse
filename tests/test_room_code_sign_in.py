@@ -1142,3 +1142,48 @@ def test_a_trusted_browser_keeps_the_alt_in_its_group(client, mocked_http):
 
     alt.refresh_from_db()
     assert alt.account_group_id == main.account_group_id
+
+
+def test_two_retired_accounts_in_one_group_including_its_main():
+    """take_out re-reads each account; the second isn't handled from stale data."""
+    from accounts import groups
+
+    def friend_only(name, bonk_id):
+        user = UserFactory(username=name)
+        BonkAccountLink.objects.create(
+            user=user,
+            bonk_player=BonkPlayer.objects.create(username=name, bonk_id=bonk_id),
+            active=True,
+        )
+        return user
+
+    claimer_main = friend_only("ClaimedMain", 11)
+    claimed_alt = friend_only("ClaimedAlt", 12)
+    keeper = _password_proven("KeeperAlt", 13)
+    groups.join(claimer_main, claimed_alt)
+    groups.join(claimer_main, keeper)
+
+    counts = _retire()
+
+    for user in (claimer_main, claimed_alt, keeper):
+        user.refresh_from_db()
+    assert claimer_main.account_group_id is None and claimed_alt.account_group_id is None
+    assert counts["taken_out_of_groups"] == 2
+
+
+def test_with_room_codes_off_the_chooser_uses_the_password(client, settings):
+    import json
+    import time
+
+    from django.core.signing import get_cookie_signer
+
+    from accounts import known_accounts
+
+    settings.ROOMBOT_URL = ""
+    known = [{"u": "ByFriend", "via": known_accounts.FRIEND_REQUEST, "at": int(time.time())}]
+    signer = get_cookie_signer(salt=known_accounts.COOKIE + known_accounts.COOKIE_SALT)
+    client.cookies[known_accounts.COOKIE] = signer.sign(json.dumps(known))
+
+    page = client.get("/login/").content.decode()
+
+    assert "/login/?username=ByFriend" in page and "With your password" in page
