@@ -110,10 +110,18 @@ deploy, `railway ssh` into `bonkverse`:
 ## Friend-request sign-in (removed 2026-11-27)
 
 Bonkverse no longer signs in with friend requests (ADR 0024, "Removed").
-`BONK_BOT_USERNAME` and `BONK_BOT_PASSWORD` are no longer read by the site:
-delete them from the `bonkverse` and `worker` services. BonxBot keeps its
-own copy for `/link` until phase 7. The `bonk_bot:*` cache keys expire on
-their own.
+Once the deploy that removed it has settled:
+
+1. In a `railway ssh` shell on `bonkverse`: `python manage.py
+   retire_friend_requests` (migration 0014 already ran it; this catches the
+   minute old processes still ran friend requests). It prints counts only.
+2. Delete `BONK_BOT_USERNAME` and `BONK_BOT_PASSWORD` from the `bonkverse`
+   and `worker` services. BonxBot keeps its own copy for `/link` until
+   phase 7.
+3. Optional: `python manage.py shell -c "from django.core.cache import
+   cache; cache.delete_many(['bonk_bot:token', 'bonk_bot:remember',
+   'bonk_bot:password_hold'])"` drops the cached bot session (encrypted;
+   otherwise it lingers until it expires).
 
 ## Rotating the Redis password
 
