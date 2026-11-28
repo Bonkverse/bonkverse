@@ -125,8 +125,12 @@ harmless. So (owner, 2026-11-27, after butdoge's reviewer bot on #197):
   account.** It doesn't unlock the group or trust the browser, even on the
   main (`groups.after_login(unlock=False)`), and it can't add the account to
   a group (`NeedsPassword`, refused before a room opens and again at the
-  finish). Accounts that never used a password keep the full powers: there's
-  no stronger proof to protect.
+  finish). It's marked code-only on that browser (`groups.CODE_ONLY_KEY`):
+  it doesn't count as "the main signed in here" (removing accounts, "apply
+  to all", trusted browsers, changing the main), it can't take other
+  accounts into its group, and it leaves no one-click sign-in. A password
+  proof counts even on a disconnected link. Accounts that never used a
+  password keep the full powers: there's no stronger proof to protect.
 - **The proof is kept apart** (`BonkAccountLink.room_proven_at`,
   `room_level`). **A password beats a room code newer than its last
   password**, compared across all the account's links (`sign_in._reclaim`):
@@ -139,8 +143,9 @@ harmless. So (owner, 2026-11-27, after butdoge's reviewer bot on #197):
   page already does.
 - The room's level is stored on the link, not written into the player's XP
   (other pages show XP). No known level and no password proof: no vote yet.
-- Staff, superuser and password-holding site accounts can't be reached by a
-  bonk.io name unless already linked (`ProtectedSiteAccount`, #198); a room
+- Staff, superuser and password-holding site accounts can't use room codes
+  at all, linked or not: a room proves only the name, and a name can change
+  hands on bonk.io (#198 refuses unlinked ones for every way in). A room
   isn't even opened for such a name.
 
 Left as is: claims for any name count toward that name's hourly limit, so

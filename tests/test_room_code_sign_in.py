@@ -714,3 +714,102 @@ def test_a_password_after_the_last_room_code_keeps_everything(client, mocked_htt
     owner.refresh_from_db()
     assert owner.account_group_id is not None
     assert other.get("/api/me/").status_code == 200
+
+
+# ── Butdoge's review of 7f8a64c ──────────────────────────────────────
+
+
+def test_a_disconnected_link_still_counts_as_having_used_the_password(client, mocked_http):
+    """An inactive link keeps its password proof: the limit still applies."""
+    from accounts import groups
+
+    main = _password_proven()
+    BonkAccountLink.objects.filter(user=main).update(active=False)
+    alt = UserFactory(username="ButDogeAlt")
+    groups.join(main, alt)
+
+    assert _prove_in_room(client, mocked_http)["status"] == "done"
+
+    assert alt.pk not in client.session.get(groups.UNLOCKED_KEY, [])
+    assert main.pk in client.session.get(groups.CODE_ONLY_KEY, [])
+
+
+def test_a_linked_staff_account_cant_use_a_room_code(client, mocked_http):
+    """A room proves only the name, which can change hands on bonk.io."""
+    staff = UserFactory(username="ButDoge", is_staff=True)
+    row = BonkPlayer.objects.create(username="ButDoge", bonk_id=4242)
+    BonkAccountLink.objects.create(user=staff, bonk_player=row, active=True)
+
+    response = client.post("/login/room/", {"username": "ButDoge"}, follow=True)
+
+    assert "can&#x27;t be signed in to this way" in response.content.decode()
+    assert not LinkClaim.objects.exists()
+
+
+def test_a_code_only_main_isnt_the_main_signed_in_here(client, mocked_http):
+    """Removing accounts, "apply to all" and trusted browsers need the main
+    signed in here; a relayed code mustn't pass for it."""
+    from accounts import groups
+
+    main = _password_proven()
+    alt = UserFactory(username="ButDogeAlt")
+    groups.join(main, alt)
+    _prove_in_room(client, mocked_http)
+
+    client.post("/accounts/remove/", {"account": alt.pk})
+
+    alt.refresh_from_db()
+    assert alt.account_group_id == BonkUser.objects.get(pk=main.pk).account_group_id
+
+
+def test_a_code_only_account_cant_take_others_into_its_group(client, mocked_http):
+    """Signed in to the owner's main by a relayed code, Mallory adds her
+    own account with its password: it doesn't join the owner's group."""
+    from tests.conftest import load_bonk_fixture
+
+    main = _password_proven()
+    _prove_in_room(client, mocked_http)
+    mocked_http.post(
+        "https://bonk2.io/scripts/login_legacy.php", json=load_bonk_fixture("login_success")
+    )
+
+    client.post("/login/?add=1", {"username": "TestPlayer", "password": "hunter2"})
+
+    mallory = BonkUser.objects.get(username="TestPlayer")
+    main.refresh_from_db()
+    assert mallory.account_group_id is None or mallory.account_group_id != main.account_group_id
+
+
+def test_a_limited_code_sign_in_leaves_no_one_click(client, mocked_http):
+    """One click would come back with full powers."""
+    from accounts.models import RememberedSignIn
+
+    main = _password_proven()
+    _prove_in_room(client, mocked_http)
+
+    assert not RememberedSignIn.objects.filter(user=main).exists()
+
+
+def test_a_row_with_another_bonk_id_isnt_this_account(
+    client, mocked_http, django_capture_on_commit_callbacks
+):
+    """A stale row for a name that changed hands on bonk.io can't lend its
+    password proof to the new owner's account."""
+    from django.test import Client
+
+    account = UserFactory(username="TestPlayer")
+    stale = BonkPlayer.objects.create(username="TestPlayer", bonk_id=999)
+    BonkAccountLink.objects.create(
+        user=account, bonk_player=stale, active=True, password_proven_at=timezone.now()
+    )
+    code_row = BonkPlayer.objects.create(username="testplayer", bonk_id=None)
+    BonkAccountLink.objects.create(
+        user=account, bonk_player=code_row, active=True, room_proven_at=timezone.now()
+    )
+    other = Client()
+    other.force_login(account)
+
+    with django_capture_on_commit_callbacks(execute=True):
+        _password_login(client, mocked_http)  # TestPlayer is id 1234567
+
+    assert other.get("/api/me/").status_code == 401  # the code-only hold ended
