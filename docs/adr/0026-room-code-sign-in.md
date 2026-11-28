@@ -108,3 +108,22 @@ keeps the claims, codes and sign-in, as in ADR 0024.
 ("That's not the code. 2 tries left.", through roombot's `POST /rooms/:id/say`)
 and on the waiting page; before, nothing was said until the third wrong code
 ended the claim.
+
+**Added 2026-11-27: accounts already on Bonkverse.** A room code now works
+for any account, not only names no one has here yet (owner decision). The
+code exists only in the browser that asked, so the proof is the owner's, the
+same as a password:
+
+- it's recorded as `BonkAccountLink.owner_proven_at` (the column
+  `password_proven_at`, renamed in code only, so the deploy changes nothing
+  in the database);
+- it takes back an account that only a friend request had claimed
+  (`sign_in._reclaim`, as the password does since ADR 0024's fix);
+- the level bonk.io shows for the player in the room
+  (`LinkClaim.bonk_level`) lifts the stored XP to at least that level's
+  start, so the vote rule can see it; it never lowers XP a password login
+  stored.
+
+It still gives no tokens (Wear asks for the password once). Friend-request
+sign-in is to be removed next; see ADR 0024.
+

@@ -102,13 +102,13 @@ def bonk_level(user: BonkUser) -> int | None:
 def voting_standing(user: BonkUser) -> tuple[int | None, bool]:
     """(bonk.io level or None, proven only by friend request) for the vote
     rule, in one query. The level comes from the XP stored at the account's
-    last password sign-in (the highest of its links). "Only by friend
-    request": it has links and none was ever proven with the password (which
-    is what tells us the level); accounts from before friend-request linking
-    all came in by password."""
+    last password or room-code sign-in (the highest of its links). "Only by
+    friend request": it has links and none was ever proven by its owner
+    (password or room code, `owner_proven_at`); accounts from before
+    friend-request linking all came in by password."""
     rows = list(
         BonkAccountLink.objects.filter(user=user, active=True).values_list(
-            "bonk_player__xp", "password_proven_at"
+            "bonk_player__xp", "owner_proven_at"
         )
     )
     known = [xp for xp, _ in rows if xp is not None]

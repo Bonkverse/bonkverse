@@ -122,10 +122,107 @@ def test_non_ascii_names_are_refused_before_any_room_opens(client, mocked_http, 
     assert not mocked_http.calls
 
 
-def test_accounts_already_on_bonkverse_cant_use_it(client, mocked_http):
-    UserFactory(username="ButDoge")
-    client.post("/login/room/", {"username": "ButDoge"})
-    assert not LinkClaim.objects.exists()
+# ── Accounts already on Bonkverse (owner decision 2026-11-27) ────────
+
+
+def _prove_in_room(client, mocked_http, name="ButDoge", level=10):
+    claim, code, room_id = _start(client, mocked_http, name=name)
+    mocked_http.add(
+        responses.GET,
+        f"{ROOMBOT}/rooms/{room_id}",
+        json={
+            "id": room_id,
+            "state": "open",
+            "link": LINK,
+            "players": [{"username": name, "guest": False, "level": level}],
+            "messages": [{"username": name, "guest": False, "text": code}],
+        },
+    )
+    return _status(client, claim)
+
+
+def test_an_account_already_on_bonkverse_signs_in(client, mocked_http):
+    owner = UserFactory(username="ButDoge")
+    player = BonkPlayer.objects.create(username="ButDoge", bonk_id=4242, xp=None)
+    BonkAccountLink.objects.create(user=owner, bonk_player=player, active=True)
+
+    assert _prove_in_room(client, mocked_http)["status"] == "done"
+
+    assert int(client.session["_auth_user_id"]) == owner.pk
+    assert BonkUser.objects.filter(username__iexact="ButDoge").count() == 1
+
+
+def test_it_counts_as_the_owners_proof_and_records_the_level(client, mocked_http):
+    from accounts.groups import voting_standing
+    from skins.votes import why_cant_vote
+
+    _prove_in_room(client, mocked_http, level=12)
+
+    user = BonkUser.objects.get(username="ButDoge")
+    link = BonkAccountLink.objects.get(user=user)
+    assert link.owner_proven_at is not None
+    assert voting_standing(user) == (12, False)
+    assert why_cant_vote(user) is None
+
+
+def test_a_low_level_from_the_room_cant_vote(client, mocked_http):
+    from skins.votes import why_cant_vote
+
+    _prove_in_room(client, mocked_http, level=3)
+
+    assert "level 5" in why_cant_vote(BonkUser.objects.get(username="ButDoge"))
+
+
+def test_the_room_level_never_lowers_what_a_password_login_stored(client, mocked_http):
+    from core.bonk.levels import level_for_xp, xp_for_level
+
+    BonkPlayer.objects.create(username="ButDoge", bonk_id=4242, xp=xp_for_level(40) + 50)
+
+    _prove_in_room(client, mocked_http, level=12)
+
+    assert level_for_xp(BonkPlayer.objects.get(username="ButDoge").xp) == 40
+
+
+def test_it_takes_back_an_account_only_a_friend_request_claimed(
+    client, mocked_http, django_capture_on_commit_callbacks
+):
+    """Like a password (ADR 0024): Mallory claimed ButDoge by friend request
+    and grouped it with her account; the owner proves it with a room code."""
+    from django.test import Client
+
+    from accounts import groups
+
+    account = UserFactory(username="ButDoge")
+    player = BonkPlayer.objects.create(username="ButDoge", bonk_id=4242)
+    BonkAccountLink.objects.create(user=account, bonk_player=player, active=True)
+    groups.join(UserFactory(username="MalloryAlt"), account)
+    mallory = Client()
+    mallory.force_login(account)
+
+    with django_capture_on_commit_callbacks(execute=True):
+        assert _prove_in_room(client, mocked_http)["status"] == "done"
+
+    account.refresh_from_db()
+    assert account.account_group_id is None
+    assert mallory.get("/api/me/").status_code == 401  # her session ended
+    assert client.get("/api/me/").json()["user"]["username"] == "ButDoge"
+
+
+def test_an_owner_proven_account_isnt_taken_out_of_its_group(client, mocked_http):
+    from accounts import groups
+
+    account = UserFactory(username="ButDoge")
+    player = BonkPlayer.objects.create(username="ButDoge", bonk_id=4242)
+    BonkAccountLink.objects.create(
+        user=account, bonk_player=player, active=True, owner_proven_at=timezone.now()
+    )
+    groups.join(UserFactory(username="MainOne"), account)
+    group_id = BonkUser.objects.get(pk=account.pk).account_group_id
+
+    _prove_in_room(client, mocked_http)
+
+    account.refresh_from_db()
+    assert account.account_group_id == group_id
 
 
 # ── Proving ──────────────────────────────────────────────────────────

@@ -232,11 +232,15 @@ class BonkAccountLink(models.Model):
     )
     # Last successful refresh through login_auto.php.
     last_refreshed_at = models.DateTimeField(blank=True, null=True)
-    # When the owner last proved this bonk.io account with its password. A
-    # password login also stores the account's XP (its level); a friend
-    # request doesn't, so voting needs one password login (skins.votes).
-    # Every link from before friend-request linking was made by password.
-    password_proven_at = models.DateTimeField(blank=True, null=True)
+    # When the owner last proved this bonk.io account themselves: with its
+    # password, or with a room code (ADR 0026), which ties the proof to the
+    # browser that asked. Both also record its level (a password login stores
+    # XP; a room shows the level). A friend request proves neither, so an
+    # account proven only that way can't vote (skins.votes) and the next
+    # owner's proof takes it back (sign_in._reclaim). Every link from before
+    # friend-request linking was made by password. The column keeps its old
+    # name, from when only a password counted.
+    owner_proven_at = models.DateTimeField(blank=True, null=True, db_column="password_proven_at")
     scopes = models.JSONField(blank=True, null=True)  # e.g. {"friends": true}
     active = models.BooleanField(default=True)
     connected_at = models.DateTimeField(auto_now_add=True)
@@ -375,6 +379,9 @@ class LinkClaim(models.Model):
     room_id = models.CharField(max_length=40, blank=True)
     room_link = models.URLField(max_length=200, blank=True)
     wrong_codes = models.PositiveSmallIntegerField(default=0)
+    # ROOM_CODE: the bonk.io level the room showed for the player who typed
+    # the right code (null if they'd left the room by then).
+    bonk_level = models.PositiveSmallIntegerField(null=True, blank=True)
 
     class Meta:
         indexes = [models.Index(fields=["status", "expires_at"], name="linkclaim_pending")]

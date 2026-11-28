@@ -3,7 +3,9 @@
 
 Owns: starting a room-code claim (a code for this browser and a room from the
 room service), checking what was typed in the room, and finishing a proven
-claim: signing in, or adding the account.
+claim: signing in, or adding the account. Works for any account, on
+Bonkverse already or not: a room code is the owner's proof, like a password
+(owner decision 2026-11-27; sign_in.sign_in_by_room_code).
 Does not own: hosting the room (roombot/, via integrations/roombot.py),
 signing in and grouping (sign_in.py, groups.py), friend-request claims
 (link_claims.py, which shares the LinkClaim table and the per-name limit).
@@ -36,13 +38,7 @@ from django.utils import timezone
 from integrations import roombot
 
 from .events import log_event
-from .link_claims import (
-    CLAIM_MINUTES,
-    CLAIMS_PER_NAME_PER_HOUR,
-    ClaimProblem,
-    already_on_site,
-    name_problem,
-)
+from .link_claims import CLAIM_MINUTES, CLAIMS_PER_NAME_PER_HOUR, ClaimProblem, name_problem
 from .models import LinkClaim
 from .sign_in import sign_in_by_room_code
 
@@ -75,14 +71,6 @@ def _code_hash(code: str) -> str:
     ).hexdigest()
 
 
-def _owned_message(name: str) -> str:
-    return (
-        f"{name} is already on Bonkverse, so it can't sign in with a room code yet. "
-        "Log in with its bonk.io password, or choose it under “Choose an account” "
-        "on a browser it used before."
-    )
-
-
 def _session_codes(request) -> dict[int, str]:
     stored = request.session.get(SESSION_KEY, {})
     return {int(k): v for k, v in stored.items() if str(k).isdigit() and isinstance(v, str)}
@@ -97,8 +85,8 @@ def start(request, name: str, *, add: bool) -> LinkClaim:
     """Start a room-code claim for `name` from this browser.
 
     Raises:
-        ClaimProblem: not set up, a bad name, too many claims for it, an
-            account already on Bonkverse, or no room available right now.
+        ClaimProblem: not set up, a bad name, too many claims for it, or no
+            room available right now.
     """
     if not configured():
         raise ClaimProblem("Signing in with a room code isn't available right now.")
@@ -114,8 +102,6 @@ def start(request, name: str, *, add: bool) -> LinkClaim:
     ).count()
     if recent >= CLAIMS_PER_NAME_PER_HOUR:
         raise ClaimProblem("Too many tries for that name. Wait a while and try again.")
-    if already_on_site(name=name):
-        raise ClaimProblem(_owned_message(name))
 
     opened = roombot.open_room_for(name)
     if opened.error == "busy":
@@ -182,12 +168,6 @@ def status(request, claim_id: int) -> dict:
         }
     if claim.status == LinkClaim.REFUSED:
         return {"status": "refused", "message": claim.problem or "That didn't work. Try again."}
-    if claim.status == LinkClaim.PROVEN and already_on_site(name=claim.bonk_name or claim.name):
-        problem = _owned_message(claim.bonk_name or claim.name)
-        LinkClaim.objects.filter(pk=claim.pk, status=LinkClaim.PROVEN).update(
-            status=LinkClaim.REFUSED, problem=problem
-        )
-        return {"status": "refused", "message": problem}
     if claim.status == LinkClaim.PROVEN:
         _finish(request, claim)
     return {"status": "done", "username": claim.bonk_name or claim.name}
@@ -212,11 +192,16 @@ def _check_room(claim: LinkClaim) -> None:
         if wrong >= MAX_WRONG_CODES:
             break  # tries used up: a later right code doesn't count
         if hmac.compare_digest(_code_hash(message.text), claim.code_hash):
+            level = _level_of(result.room.players, key)
             proven = LinkClaim.objects.filter(pk=claim.pk, status=LinkClaim.PENDING).update(
-                status=LinkClaim.PROVEN, bonk_name=message.username, proven_at=timezone.now()
+                status=LinkClaim.PROVEN,
+                bonk_name=message.username,
+                bonk_level=level,
+                proven_at=timezone.now(),
             )
             if proven:
                 claim.status, claim.bonk_name = LinkClaim.PROVEN, message.username
+                claim.bonk_level = level
                 roombot.close(claim.room_id, "Code accepted! You're signed in on Bonkverse.")
                 log_event(None, "room_code_claim_proven", claim_id=claim.pk)
             return
@@ -240,6 +225,15 @@ def _check_room(claim: LinkClaim) -> None:
             "Too many wrong codes. Closing this room.",
             "Too many wrong codes were typed. Start again to get a new code.",
         )
+
+
+def _level_of(players, key: str) -> int | None:
+    """The level bonk.io's server shows for the (non-guest) player named
+    `key`, or None if they've left the room or it isn't known."""
+    for player in players:
+        if not player.guest and name_key(player.username) == key and player.level > 0:
+            return player.level
+    return None
 
 
 def _tries_left(wrong: int) -> str:
@@ -276,5 +270,7 @@ def _finish(request, claim: LinkClaim) -> None:
         )
     if not taken:
         return  # finished by another request from this browser
-    user = sign_in_by_room_code(request, bonk_name=claim.bonk_name, add=adding)
+    user = sign_in_by_room_code(
+        request, bonk_name=claim.bonk_name, add=adding, level=claim.bonk_level
+    )
     log_event(user, "account_proven_by_room_code", claim_id=claim.pk, added=adding)

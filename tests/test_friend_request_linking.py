@@ -226,7 +226,7 @@ class TestFinishing:
         assert client.get("/api/me/").json()["user"]["username"] == "AltOne"
         link = BonkAccountLink.objects.get(user__username="AltOne")
         assert link.bonk_player.bonk_id == 555
-        assert link.token_encrypted is None and link.password_proven_at is None
+        assert link.token_encrypted is None and link.owner_proven_at is None
         assert client.session["bonk_user_id"] == 555
 
     def test_finishes_only_once(self, client):
