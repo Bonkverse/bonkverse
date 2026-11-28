@@ -143,6 +143,14 @@ export class BonkRoom {
     setTimeout(() => this._socket?.emit(OUT.CHAT, { message }), 800);
   }
 
+  /** Say something in the open room for Bonkverse (a wrong code, say).
+   * Returns whether the room was open to hear it. */
+  say(message) {
+    if (this.state !== "open" || !this._socket) return false;
+    this._socket.emit(OUT.CHAT, { message });
+    return true;
+  }
+
   _kick(id) {
     // Unverified live: kick is 9 {banshortid, kickonly: true} per bonk.io's
     // client (ban) and DemystifyBonk; it frees the slot for the real player.

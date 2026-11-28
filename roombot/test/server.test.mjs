@@ -66,6 +66,24 @@ test("open a room, read who joined and what they typed, close it", async () => {
   });
 });
 
+test("say something in an open room; a closed or unknown room can't", async () => {
+  await withServer(async ({ call, sockets }) => {
+    const opening = call("/rooms", { method: "POST", body: { name: "ButDoge" } });
+    await new Promise((r) => setTimeout(r, 50));
+    await createdRoom(sockets[0]);
+    const { id } = await (await opening).json();
+
+    const said = await call(`/rooms/${id}/say`, { method: "POST", body: { message: "That's not the code. 2 tries left." } });
+    assert.equal(said.status, 200);
+    assert.ok(sockets[0].sent.some(([, data]) => data?.message === "That's not the code. 2 tries left."));
+    assert.equal((await call(`/rooms/${id}/say`, { method: "POST", body: { message: " " } })).status, 400);
+
+    await call(`/rooms/${id}/close`, { method: "POST", body: {} });
+    assert.equal((await call(`/rooms/${id}/say`, { method: "POST", body: { message: "hi" } })).status, 409);
+    assert.equal((await call("/rooms/abcdefghijkl/say", { method: "POST", body: { message: "hi" } })).status, 404);
+  });
+});
+
 test("names must be plain ASCII and short", async () => {
   await withServer(async ({ call }) => {
     for (const name of ["", " ", "x".repeat(65), "Boſsman", 42]) {

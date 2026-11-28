@@ -129,6 +129,20 @@ def close_room(base_url: str, token: str, room_id: str, message: str = "") -> bo
     return reply.status_code == 200
 
 
+def say_in_room(base_url: str, token: str, room_id: str, message: str) -> bool:
+    """Say `message` in the open room (a wrong code, say). Never raises."""
+    try:
+        reply = requests.post(
+            f"{base_url}/rooms/{room_id}/say",
+            json={"message": message},
+            headers=_headers(token),
+            timeout=READ_TIMEOUT,
+        )
+    except requests.RequestException:
+        return False
+    return reply.status_code == 200
+
+
 # ── With settings ─────────────────────────────────────────────────────
 
 
@@ -154,3 +168,7 @@ def read(room_id: str) -> RoomResult:
 
 def close(room_id: str, message: str = "") -> bool:
     return close_room(*_conf(), room_id, message)
+
+
+def say(room_id: str, message: str) -> bool:
+    return say_in_room(*_conf(), room_id, message)

@@ -103,3 +103,8 @@ keeps the claims, codes and sign-in, as in ADR 0024.
   share link, what happens without pings, and rooms per IP.
 - **Replace or keep:** does friend-request sign-in stay as a fallback, or go
   away once rooms work?
+
+**Added 2026-11-27.** Each wrong code is answered at once, in the room
+("That's not the code. 2 tries left.", through roombot's `POST /rooms/:id/say`)
+and on the waiting page; before, nothing was said until the third wrong code
+ended the claim.

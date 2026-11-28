@@ -18,6 +18,7 @@ Every route except `/health` requires `Authorization: Bearer $ROOMBOT_TOKEN`.
 | `POST /rooms` `{"name": "ButDoge"}` | `201 {id, link, expires_in}`, `429 {retry_after}` when busy, `502` if bonk.io can't be reached |
 | `GET /rooms/:id` | `{id, state, closed_reason, link, expected_name, players[], messages[]}` |
 | `POST /rooms/:id/close` `{"message": "..."}` | says the message in the room, then closes it |
+| `POST /rooms/:id/say` `{"message": "..."}` | says the message in the open room (Bonkverse answers each wrong code this way); `409` if the room isn't open |
 | `GET /health` | `{ok, open}` |
 
 ## What a room does
